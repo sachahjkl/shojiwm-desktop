@@ -35,7 +35,9 @@
       root = ./.;
       fileset = nixpkgs.lib.fileset.unions [
         ./src
-        ./assets
+        # The screenshots of the README live under assets; they are not part
+        # of the configuration.
+        (nixpkgs.lib.fileset.difference ./assets ./assets/site)
         ./shell
         ./package.json
         ./tsconfig.json
@@ -154,6 +156,7 @@
             --uncreatable-type info \
             --unresolved-type info \
             --unqualified info \
+            --missing-type info \
             ./*.qml components/*.qml
           touch "$out"
         '';
