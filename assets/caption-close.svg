@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="45" height="20" viewBox="0 0 45 20">
+  <!-- Original glyph. Close: two strokes, centred in the wider close button. -->
+  <g fill="none" stroke-linecap="round">
+    <g transform="translate(0,1)" stroke="#2a0404" stroke-opacity=".55" stroke-width="2">
+      <path d="M17.5 5.5l10 9M27.5 5.5l-10 9"/>
+    </g>
+    <g stroke="#ffffff" stroke-width="2">
+      <path d="M17.5 4.5l10 9M27.5 4.5l-10 9"/>
+    </g>
+  </g>
+</svg>

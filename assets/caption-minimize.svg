@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="29" height="20" viewBox="0 0 29 20">
+  <!-- Original glyph. Minimise: one short bar, centred in the button box. -->
+  <g stroke-linecap="square" fill="none">
+    <path d="M9.5 11.5h10" stroke="#06131f" stroke-opacity=".5" stroke-width="2"/>
+    <path d="M9.5 10.5h10" stroke="#ffffff" stroke-width="2"/>
+  </g>
+</svg>
