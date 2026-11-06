@@ -93,7 +93,7 @@ Item {
             MenuRow {
                 width: parent.width
                 label: "Documents"
-                icon: "../assets/place-documents.svg"
+                icon: Qt.resolvedUrl("../assets/place-documents.svg")
                 labelColor: Theme.textOnPlaces
                 onActivated: {
                     Apps.openPath(Apps.home + "/Documents");
@@ -103,7 +103,7 @@ Item {
             MenuRow {
                 width: parent.width
                 label: "Pictures"
-                icon: "../assets/place-pictures.svg"
+                icon: Qt.resolvedUrl("../assets/place-pictures.svg")
                 labelColor: Theme.textOnPlaces
                 onActivated: {
                     Apps.openPath(Apps.home + "/Pictures");
@@ -113,7 +113,7 @@ Item {
             MenuRow {
                 width: parent.width
                 label: "Music"
-                icon: "../assets/place-music.svg"
+                icon: Qt.resolvedUrl("../assets/place-music.svg")
                 labelColor: Theme.textOnPlaces
                 onActivated: {
                     Apps.openPath(Apps.home + "/Music");
@@ -123,7 +123,7 @@ Item {
             MenuRow {
                 width: parent.width
                 label: "Computer"
-                icon: "../assets/place-computer.svg"
+                icon: Qt.resolvedUrl("../assets/place-computer.svg")
                 labelColor: Theme.textOnPlaces
                 onActivated: {
                     Apps.openPath("/");
@@ -133,7 +133,7 @@ Item {
             MenuRow {
                 width: parent.width
                 label: "Control Panel"
-                icon: "../assets/place-settings.svg"
+                icon: Qt.resolvedUrl("../assets/place-settings.svg")
                 labelColor: Theme.textOnPlaces
                 onActivated: {
                     Apps.run(Apps.controlPanel);

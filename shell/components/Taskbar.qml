@@ -4,13 +4,36 @@ import QtQuick
 import ".."
 import "../theme.js" as Theme
 
-// The taskbar: the orb, one button per window, the notification area, the
+// The taskbar: the orb, one button per program, the notification area, the
 // clock, and the show-desktop strip at the far right.
+//
+// It owns the three popups the buttons and the tray ask for, so there is one
+// of each rather than one per button.
 Item {
     id: bar
 
     property bool menuOpen: false
+    /// The layer-shell window this bar is drawn in. Popups anchor to it.
+    property var window: null
+
     signal startRequested
+
+    // Whether the pointer is on the button or the icon a menu belongs to. A
+    // layer-shell popup is told nothing about presses outside itself, so the
+    // menus close on their own once the pointer is away from both.
+    property bool pointerOnButton: false
+    property bool pointerOnTray: false
+
+    // What each popup is showing, or null.
+    property var previewGroup: null
+    property var jumpListGroup: null
+    property var trayMenuItem: null
+
+    function closePopups() {
+        bar.previewGroup = null;
+        bar.jumpListGroup = null;
+        bar.trayMenuItem = null;
+    }
 
     // ----- glass ------------------------------------------------------------
 
@@ -24,7 +47,7 @@ Item {
         }
     }
 
-    // The lit top edge, and the hairline under it.
+    // The lit top edge, and the hairline at the bottom.
     Rectangle {
         anchors.left: parent.left
         anchors.right: parent.right
@@ -47,11 +70,20 @@ Item {
 
         anchors.right: parent.right
         anchors.verticalCenter: parent.verticalCenter
-        anchors.rightMargin: 0
         spacing: Theme.trayGap
 
         TrayArea {
             anchors.verticalCenter: parent.verticalCenter
+
+            onMenuRequested: function (item, at) {
+                bar.previewGroup = null;
+                bar.jumpListGroup = null;
+                bar.trayMenuItem = bar.trayMenuItem === item ? null : item;
+                trayMenu.anchorRect = at;
+            }
+            onHoverChanged: function (inside) {
+                bar.pointerOnTray = inside;
+            }
         }
 
         Rectangle {
@@ -91,12 +123,15 @@ Item {
                 id: showDesktopArea
                 anchors.fill: parent
                 hoverEnabled: true
-                onClicked: Apps.minimizeAll()
+                onClicked: {
+                    bar.closePopups();
+                    Apps.minimizeAll();
+                }
             }
         }
     }
 
-    // ----- the orb and the windows ------------------------------------------
+    // ----- the orb and the programs -----------------------------------------
 
     StartOrb {
         id: orb
@@ -105,41 +140,122 @@ Item {
         anchors.leftMargin: Theme.taskbarPadding
         anchors.verticalCenter: parent.verticalCenter
         menuOpen: bar.menuOpen
-        onActivated: bar.startRequested()
+        onActivated: {
+            bar.closePopups();
+            bar.startRequested();
+        }
     }
 
-    readonly property int windowCount: Apps.windows.length
+    readonly property int groupCount: Apps.groups.length
     readonly property real buttonsAvailable: Math.max(
         0,
         status.x - (orb.x + orb.width) - Theme.taskButtonGap * 2)
-    readonly property real buttonWidth: windowCount === 0 ? 0 : Math.min(
+    readonly property real buttonWidth: groupCount === 0 ? 0 : Math.min(
         Theme.taskButtonMaxWidth,
         Math.max(
             Theme.taskButtonMinWidth,
-            (buttonsAvailable - (windowCount - 1) * Theme.taskButtonGap)
-                / windowCount))
+            (buttonsAvailable - (groupCount - 1) * Theme.taskButtonGap)
+                / groupCount))
 
     Row {
         id: buttons
 
         anchors.left: orb.right
         anchors.leftMargin: Theme.taskButtonGap * 2
-        anchors.verticalCenter: parent.verticalCenter
-        // Named so a very long row is cut off instead of running under the
+        anchors.bottom: parent.bottom
+        anchors.bottomMargin: (Theme.taskbarHeight - Theme.taskButtonHeight) / 2
+        // Sized so a very long row is cut off instead of running under the
         // clock.
         width: bar.buttonsAvailable
-        height: Theme.taskButtonHeight
+        height: Theme.taskButtonHeight + 4
         clip: true
         spacing: Theme.taskButtonGap
 
         Repeater {
-            model: Apps.windows
+            model: Apps.groups
 
             delegate: TaskButton {
                 required property var modelData
-                toplevel: modelData
+
+                group: modelData
                 width: bar.buttonWidth
+                height: buttons.height
+
+                onPreviewRequested: function (at) {
+                    bar.jumpListGroup = null;
+                    bar.trayMenuItem = null;
+                    bar.previewGroup = modelData;
+                    thumbnails.anchorRect = at;
+                    hideThumbnails.stop();
+                }
+                onPreviewCancelled: hideThumbnails.restart()
+                onHoverChanged: function (inside) {
+                    bar.pointerOnButton = inside;
+                }
+                onMenuRequested: function (at) {
+                    bar.previewGroup = null;
+                    bar.trayMenuItem = null;
+                    bar.jumpListGroup =
+                        bar.jumpListGroup === modelData ? null : modelData;
+                    jumpList.anchorRect = at;
+                }
             }
         }
+    }
+
+    // ----- popups -----------------------------------------------------------
+
+    // The thumbnails stay up while the pointer moves from the button into
+    // them.
+    Timer {
+        id: hideThumbnails
+        interval: 180
+        onTriggered: {
+            if (!thumbnails.pointerInside)
+                bar.previewGroup = null;
+            else
+                hideThumbnails.restart();
+        }
+    }
+
+    // A menu the pointer has left closes on its own: a layer-shell popup gets
+    // no press from outside itself.
+    Timer {
+        id: hideMenus
+        interval: 900
+        running: bar.jumpListGroup !== null || bar.trayMenuItem !== null
+        repeat: true
+        onTriggered: {
+            if (bar.jumpListGroup !== null
+                && !jumpList.pointerInside && !bar.pointerOnButton)
+                bar.jumpListGroup = null;
+            if (bar.trayMenuItem !== null
+                && !trayMenu.pointerInside && !bar.pointerOnTray)
+                bar.trayMenuItem = null;
+        }
+    }
+
+    ThumbnailPopup {
+        id: thumbnails
+
+        anchorWindow: bar.window
+        windows: bar.previewGroup ? bar.previewGroup.windows : []
+        onDismissed: bar.previewGroup = null
+    }
+
+    JumpList {
+        id: jumpList
+
+        anchorWindow: bar.window
+        group: bar.jumpListGroup
+        onDismissed: bar.jumpListGroup = null
+    }
+
+    TrayMenu {
+        id: trayMenu
+
+        anchorWindow: bar.window
+        item: bar.trayMenuItem
+        onDismissed: bar.trayMenuItem = null
     }
 }

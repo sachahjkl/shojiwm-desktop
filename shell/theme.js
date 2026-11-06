@@ -22,6 +22,41 @@ var trayGap = 8;
 var clockWidth = 74;
 var showDesktopWidth = 10;
 
+// Combine every window of one program into one button, as Windows 7 does by
+// default. Set this to false for one button per window ("never combine").
+var combineWindows = true;
+
+// ---------------------------------------------------------------------------
+// Thumbnails, over a taskbar button
+// ---------------------------------------------------------------------------
+
+var thumbWidth = 184;
+var thumbHeight = 104;
+var thumbTitleHeight = 20;
+var thumbGap = 6;
+var thumbPadding = 8;
+// Show the window itself in a thumbnail, rather than the program's icon.
+//
+// Off, because it does not work here: asking Quickshell 0.3.0 or 0.3.2 to
+// capture a ShojiWM window ends the shell's Wayland connection ("fatal
+// error: Invalid argument") and the whole bar disappears. The code is in
+// ThumbnailPopup.qml; turn this on to try it on your own pair.
+var liveThumbnails = false;
+
+// How long the pointer rests on a button before the thumbnails come up.
+var thumbDelay = 350;
+
+// ---------------------------------------------------------------------------
+// Popup menus: the jump list and the tray menus
+// ---------------------------------------------------------------------------
+
+var popupGap = 2;
+var popupItemHeight = 26;
+var popupMinWidth = 170;
+var popupMaxWidth = 340;
+var popupPadX = 10;
+var popupPadY = 5;
+
 // ---------------------------------------------------------------------------
 // Start menu
 // ---------------------------------------------------------------------------
@@ -37,40 +72,53 @@ var menuFooterHeight = 42;
 
 // ---------------------------------------------------------------------------
 // Colours
+//
+// Qt reads a hex colour as #AARRGGBB: the alpha comes first, unlike CSS.
 // ---------------------------------------------------------------------------
 
 // Taskbar glass: dark blue-grey over the blur, lit along the top edge.
-var barTop = "#4c6881a8";
-var barMiddle = "#1b2c3cc4";
-var barBottom = "#16222ecc";
-var barHighlight = "#bfd8ef73";
-var barEdge = "#0a131bcc";
+var barTop = "#a84c6881";
+var barMiddle = "#c41b2c3c";
+var barBottom = "#cc16222e";
+var barHighlight = "#73bfd8ef";
+var barEdge = "#cc0a131b";
 
 // Task buttons.
-var buttonRest = "#ffffff1c";
-var buttonRestBorder = "#ffffff30";
-var buttonHover = "#aad4f55e";
-var buttonHoverBorder = "#cfe9ff8c";
-var buttonActive = "#d6ecff52";
-var buttonActiveBorder = "#e8f5ff99";
-var buttonGloss = "#ffffff2b";
+var buttonRest = "#1cffffff";
+var buttonRestBorder = "#30ffffff";
+var buttonHover = "#5eaad4f5";
+var buttonHoverBorder = "#8ccfe9ff";
+var buttonActive = "#52d6ecff";
+var buttonActiveBorder = "#99e8f5ff";
+var buttonGloss = "#2bffffff";
+
+// The stack drawn behind a button that stands for several windows.
+var buttonStack = "#14ffffff";
+var buttonStackBorder = "#26ffffff";
+
+// Popup menus and thumbnails.
+var popupTop = "#eef4f9ff";
+var popupBottom = "#eedbe8f4";
+var popupBorder = "#ccffffff";
+var popupOutline = "#cc2c5779";
+var thumbFrame = "#1b3c58";
 
 // Start menu glass.
-var menuTop = "#e8f2fbf2";
-var menuBottom = "#cfe0eff2";
-var menuPlacesTop = "#2f536fe6";
-var menuPlacesBottom = "#1d394fe6";
-var menuBorder = "#ffffff8c";
-var menuOutline = "#12314bcc";
-var menuDivider = "#8fb0c959";
+var menuTop = "#f2e8f2fb";
+var menuBottom = "#f2cfe0ef";
+var menuPlacesTop = "#e62f536f";
+var menuPlacesBottom = "#e61d394f";
+var menuBorder = "#8cffffff";
+var menuOutline = "#cc12314b";
+var menuDivider = "#598fb0c9";
 
 // Text.
 var textOnGlass = "#f2f8ff";
 var textMuted = "#c3d6e6";
 var textOnMenu = "#10283c";
 var textOnPlaces = "#eaf4ff";
-var selection = "#9ad0f766";
-var selectionBorder = "#cfe9ffb3";
+var selection = "#669ad0f7";
+var selectionBorder = "#b3cfe9ff";
 
 var fontFamily = "Inter";
 var fontFallback = "Noto Sans";

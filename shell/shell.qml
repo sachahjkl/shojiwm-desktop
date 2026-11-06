@@ -76,6 +76,7 @@ ShellRoot {
 
             Taskbar {
                 anchors.fill: parent
+                window: barWindow
                 menuOpen: StartMenuState.openOn === barWindow.modelData.name
                 onStartRequested: StartMenuState.toggle(barWindow.modelData.name)
             }
@@ -87,15 +88,23 @@ ShellRoot {
     // A surface the size of the screen, under the menu and over everything
     // else, that does nothing but close the menu. It asks for no blur: there
     // is nothing of it to see.
+    //
+    // It stays mapped and empties its input region instead of unmapping.
+    // Unmapping a layer surface while another was unmapping in the same frame
+    // ended the Wayland connection of the shell ("fatal error: Invalid
+    // argument"), which took the whole bar down with it.
 
     Variants {
         model: Quickshell.screens
 
         PanelWindow {
+            id: dismissWindow
+
             required property var modelData
             screen: modelData
 
-            visible: StartMenuState.openOn !== ""
+            readonly property bool open: StartMenuState.openOn !== ""
+
             color: "transparent"
             anchors.top: true
             anchors.bottom: true
@@ -106,6 +115,11 @@ ShellRoot {
             WlrLayershell.layer: WlrLayer.Top
             WlrLayershell.namespace: "no_blur"
             WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
+
+            mask: Region {
+                width: dismissWindow.open ? dismissWindow.width : 0
+                height: dismissWindow.open ? dismissWindow.height : 0
+            }
 
             MouseArea {
                 anchors.fill: parent
@@ -125,7 +139,8 @@ ShellRoot {
             required property var modelData
             screen: modelData
 
-            visible: StartMenuState.openOn === modelData.name
+            readonly property bool open: StartMenuState.openOn === modelData.name
+
             color: "transparent"
             anchors.bottom: true
             anchors.left: true
@@ -137,17 +152,25 @@ ShellRoot {
             exclusionMode: ExclusionMode.Ignore
             WlrLayershell.layer: WlrLayer.Top
             WlrLayershell.namespace: "shojiwm-win7-start"
-            WlrLayershell.keyboardFocus: menuWindow.visible
+            WlrLayershell.keyboardFocus: menuWindow.open
                 ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
+
+            // Mapped at all times, empty while closed. The blur behind it is
+            // clipped to what it draws, so an empty menu shows nothing.
+            mask: Region {
+                width: menuWindow.open ? menuWindow.width : 0
+                height: menuWindow.open ? menuWindow.height : 0
+            }
 
             StartMenu {
                 id: startMenu
                 anchors.fill: parent
+                visible: menuWindow.open
                 onDismissed: StartMenuState.close()
             }
 
-            onVisibleChanged: {
-                if (visible)
+            onOpenChanged: {
+                if (menuWindow.open)
                     startMenu.reset();
             }
         }

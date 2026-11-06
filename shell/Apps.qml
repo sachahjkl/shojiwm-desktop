@@ -3,6 +3,7 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
+import "theme.js" as Theme
 
 // What the taskbar and the Start menu know about programs and windows.
 //
@@ -30,6 +31,94 @@ Singleton {
         ? ToplevelManager.toplevels.values : []
     /// The window that has the keyboard.
     readonly property var activeWindow: ToplevelManager.activeToplevel
+
+    // ----- grouping ---------------------------------------------------------
+
+    /// Combine the windows of one program into one button.
+    readonly property bool combine: Theme.combineWindows
+
+    /// The row of the taskbar, left to right. Each entry is
+    /// `{ key, name, icon, entry, windows }`, in the order the first window
+    /// of the program opened.
+    property var groups: []
+
+    /// The key of the group a window belongs to. With `combine` off every
+    /// window gets its own.
+    function groupKey(toplevel, position) {
+        if (!root.combine)
+            return "window:" + position;
+        var appId = toplevel ? toplevel.appId : "";
+        var entry = entryFor(appId);
+        if (entry)
+            return "entry:" + entry.id;
+        return "appid:" + (appId ? String(appId).toLowerCase() : "<none>");
+    }
+
+    function rebuildGroups() {
+        var list = [];
+        var index = ({});
+        var open = windows;
+
+        for (var i = 0; i < open.length; i++) {
+            var toplevel = open[i];
+            if (!toplevel)
+                continue;
+            var key = groupKey(toplevel, i);
+            var group = index[key];
+            if (!group) {
+                var entry = entryFor(toplevel.appId);
+                group = {
+                    key: key,
+                    entry: entry,
+                    name: entry && entry.name ? entry.name : titleOf(toplevel),
+                    icon: iconFor(toplevel.appId),
+                    windows: []
+                };
+                index[key] = group;
+                list.push(group);
+            }
+            group.windows.push(toplevel);
+        }
+
+        groups = list;
+    }
+
+    onWindowsChanged: rebuildGroups()
+    onCombineChanged: rebuildGroups()
+    Component.onCompleted: rebuildGroups()
+
+    // A window's app id can arrive after the window itself, and the grouping
+    // is built from it. The list changing does not catch that: the window is
+    // already in it.
+    Instantiator {
+        model: ToplevelManager.toplevels
+
+        delegate: QtObject {
+            required property var modelData
+            readonly property string appId: modelData ? modelData.appId : ""
+            onAppIdChanged: root.rebuildGroups()
+        }
+    }
+
+    /// What a left click on a group does. One window: show it, or put it away
+    /// when it is the one you are looking at. Several: the caller shows the
+    /// thumbnails instead.
+    function activateGroup(group) {
+        if (!group || group.windows.length === 0)
+            return;
+        toggleWindow(group.windows[0]);
+    }
+
+    /// `true` while any window of the group has the keyboard.
+    function groupIsCurrent(group) {
+        if (!group)
+            return false;
+        for (var i = 0; i < group.windows.length; i++) {
+            if (group.windows[i].activated && !group.windows[i].minimized)
+                return true;
+        }
+        return false;
+    }
 
     function titleOf(toplevel) {
         if (!toplevel)
