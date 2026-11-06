@@ -304,6 +304,8 @@ export function createAltTab(manager: FloatingWindowManager): AltTab {
         <Layers layers={["background", "bottom"]} />
         <Windows />
         <Solid color="#0a1c2b4d" />
+        {/* The panel goes over the taskbar, as the one on Windows does. */}
+        <Layers layers={["top", "overlay"]} />
         <Solid
           color="#ffffff59"
           x={panel.x - 1}
@@ -330,7 +332,6 @@ export function createAltTab(manager: FloatingWindowManager): AltTab {
         {current.windows.map((window, index) =>
           thumbnail(output, window, panel.cells[index]),
         )}
-        <Layers layers={["top", "overlay"]} />
         <LayerPopups />
       </>
     );
