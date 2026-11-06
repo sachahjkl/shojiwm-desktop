@@ -13,16 +13,16 @@ required.
 
 ## What you get
 
-| | |
-| --- | --- |
+|                         |                                                                                                                                                                                              |
+| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Glass window frames** | The compositor blurs what is behind the caption bar and tints it blue-grey. A drawn sheen lies over the blur. The focused window has a stronger tint, a lighter outline and a deeper shadow. |
-| **Caption buttons** | Minimise, maximise or restore, and a wider close button. Each one lights up under the pointer; the close button glows red. Each shows a label after half a second. |
-| **Floating windows** | Every window floats. New windows open in a cascade in the middle of the screen. |
-| **Fast animations** | Windows open in 140 ms and close in 110 ms. Minimise and restore take 130 ms. |
-| **Alt+Tab** | A panel of live thumbnails over the desktop. Tab, the arrow keys and the pointer pick a window. |
-| **Aero Snap keys** | `Super`+`Left` and `Super`+`Right` put the window against one side. `Super`+`Up` maximises it. |
-| **Taskbar** | Glass bar at the bottom: the orb, one button per window, the notification area, the clock, and the show-desktop strip at the far right. |
-| **Start menu** | Programs on the left with a search box, places on the right, and the shut-down button in the corner. |
+| **Caption buttons**     | Minimise, maximise or restore, and a wider close button. Each one lights up under the pointer; the close button glows red. Each shows a label after half a second.                           |
+| **Floating windows**    | Every window floats. New windows open in a cascade in the middle of the screen.                                                                                                              |
+| **Fast animations**     | Windows open in 140 ms and close in 110 ms. Minimise and restore take 130 ms.                                                                                                                |
+| **Alt+Tab**             | A panel of live thumbnails over the desktop. Tab, the arrow keys and the pointer pick a window.                                                                                              |
+| **Aero Snap keys**      | `Super`+`Left` and `Super`+`Right` put the window against one side. `Super`+`Up` maximises it.                                                                                               |
+| **Taskbar**             | Glass bar at the bottom: the orb, one button per window, the notification area, the clock, and the show-desktop strip at the far right.                                                      |
+| **Start menu**          | Programs on the left with a search box, places on the right, and the shut-down button in the corner.                                                                                         |
 
 ## Requirements
 
@@ -82,40 +82,40 @@ running one.
 
 ## Keys
 
-| Key | Action |
-| --- | --- |
-| `Super` (tap) | Show or hide the Start menu |
-| `Super`+`Return` | Terminal |
-| `Super`+`E` | File manager |
-| `Super`+`B` | Browser |
-| `Alt`+`F4` | Close the focused window |
-| `Alt`+`Tab` / `Alt`+`Shift`+`Tab` | Switch window |
-| `Super`+`Up` | Maximise |
-| `Super`+`Down` | Restore |
-| `Super`+`Left` / `Super`+`Right` | Put the window against that side |
-| `Super`+`D` | Show the desktop, then put the windows back |
-| `Super`+drag | Move a window from anywhere on it |
-| `Super`+`Shift`+`R` | Reload this configuration (built into ShojiWM) |
-| `Super`+`Shift`+`Q` | Quit the session (built into ShojiWM) |
+| Key                               | Action                                         |
+| --------------------------------- | ---------------------------------------------- |
+| `Super` (tap)                     | Show or hide the Start menu                    |
+| `Super`+`Return`                  | Terminal                                       |
+| `Super`+`E`                       | File manager                                   |
+| `Super`+`B`                       | Browser                                        |
+| `Alt`+`F4`                        | Close the focused window                       |
+| `Alt`+`Tab` / `Alt`+`Shift`+`Tab` | Switch window                                  |
+| `Super`+`Up`                      | Maximise                                       |
+| `Super`+`Down`                    | Restore                                        |
+| `Super`+`Left` / `Super`+`Right`  | Put the window against that side               |
+| `Super`+`D`                       | Show the desktop, then put the windows back    |
+| `Super`+drag                      | Move a window from anywhere on it              |
+| `Super`+`Shift`+`R`               | Reload this configuration (built into ShojiWM) |
+| `Super`+`Shift`+`Q`               | Quit the session (built into ShojiWM)          |
 
 ## The files
 
-| File | What it holds |
-| --- | --- |
-| `src/index.tsx` | The entry point: environment, keys, the programs that start with the session, the blur, and the composition of every window. |
-| `src/theme.ts` | Every size and colour of the window frame. |
-| `src/decoration.tsx` | The frame itself: the caption bar, the sheen, the caption buttons and their labels. |
-| `src/window-manager.ts` | The floating window manager: placement, move, resize, maximise, minimise, fullscreen and Aero Snap. |
-| `src/alt-tab.tsx` | The Alt+Tab panel, built from render textures and an input grab. |
-| `assets/*.svg` | The caption glyphs and the two sheens. Drawn by hand. |
-| `shell/shell.qml` | The Quickshell root: the wallpaper, the taskbar and the Start menu, one of each per screen. |
-| `shell/theme.js` | Every size and colour of the shell. |
-| `shell/Apps.qml` | The window list, the program list, and what a click does. The programs the places open are named here. |
-| `shell/StartMenuState.qml` | Which screen shows the Start menu. |
-| `shell/StartMenuIpc.qml` | The IPC entry point the compositor calls to open the menu. |
-| `shell/components/*.qml` | The taskbar, the orb, a task button, the clock, the notification area, the Start menu and one menu row. |
-| `shell/assets/*.svg` | The orb, the place icons, the account tile and the wallpaper. Drawn by hand. |
-| `flake.nix` | The package, the install command, and the checks. |
+| File                       | What it holds                                                                                                                |
+| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `src/index.tsx`            | The entry point: environment, keys, the programs that start with the session, the blur, and the composition of every window. |
+| `src/theme.ts`             | Every size and colour of the window frame.                                                                                   |
+| `src/decoration.tsx`       | The frame itself: the caption bar, the sheen, the caption buttons and their labels.                                          |
+| `src/window-manager.ts`    | The floating window manager: placement, move, resize, maximise, minimise, fullscreen and Aero Snap.                          |
+| `src/alt-tab.tsx`          | The Alt+Tab panel, built from render textures and an input grab.                                                             |
+| `assets/*.svg`             | The caption glyphs and the two sheens. Drawn by hand.                                                                        |
+| `shell/shell.qml`          | The Quickshell root: the wallpaper, the taskbar and the Start menu, one of each per screen.                                  |
+| `shell/theme.js`           | Every size and colour of the shell.                                                                                          |
+| `shell/Apps.qml`           | The window list, the program list, and what a click does. The programs the places open are named here.                       |
+| `shell/StartMenuState.qml` | Which screen shows the Start menu.                                                                                           |
+| `shell/StartMenuIpc.qml`   | The IPC entry point the compositor calls to open the menu.                                                                   |
+| `shell/components/*.qml`   | The taskbar, the orb, a task button, the clock, the notification area, the Start menu and one menu row.                      |
+| `shell/assets/*.svg`       | The orb, the place icons, the account tile and the wallpaper. Drawn by hand.                                                 |
+| `flake.nix`                | The package, the install command, and the checks.                                                                            |
 
 ## Changing it
 
@@ -134,7 +134,7 @@ when a QML file changes.
 
 Chromium and Firefox draw their own title bar by default, so they keep it. To
 give Chromium the Aero frame, right click its tab strip and turn off **Use
-system title bar and borders**... in Chromium's wording, switch *on* the
+system title bar and borders**... in Chromium's wording, switch _on_ the
 system title bar. Firefox has the same setting under **Customise toolbar →
 Title bar**.
 

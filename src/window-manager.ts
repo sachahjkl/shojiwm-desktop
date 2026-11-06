@@ -158,6 +158,8 @@ export class FloatingWindowManager {
   private currentOutput: string | undefined;
   /** Windows that "show desktop" minimised, so the next call restores them. */
   private hiddenByShowDesktop: string[] = [];
+  /** The window being dragged, and the rectangle its drag started from. */
+  private moveDrag: { id: string; base: Rect } | null = null;
 
   // ----- queries ----------------------------------------------------------
 
@@ -358,14 +360,64 @@ export class FloatingWindowManager {
     if (window.state[WIN_FULLSCREEN]()) {
       return;
     }
-    if (event.phase === "start") {
+
+    if (event.phase === "start" || this.moveDrag?.id !== window.id) {
       window.focus();
-      // Dragging a maximised window restores it, as on Windows 7.
-      if (window.state[WIN_MAXIMIZED]()) {
-        this.setMaximized(window, false);
-      }
+      this.moveDrag = {
+        id: window.id,
+        base: this.moveBaseRect(event),
+      };
     }
-    window.state[WIN_RECT].set(snapshotRect(event.currentRect));
+
+    const drag = this.moveDrag;
+    if (!drag) {
+      return;
+    }
+    if (event.phase === "cancel") {
+      window.state[WIN_RECT].set(drag.base);
+      this.moveDrag = null;
+      return;
+    }
+
+    window.state[WIN_RECT].set({
+      x: drag.base.x + (event.currentRect.x - event.startRect.x),
+      y: drag.base.y + (event.currentRect.y - event.startRect.y),
+      width: drag.base.width,
+      height: drag.base.height,
+    });
+
+    if (event.phase === "end") {
+      this.moveDrag = null;
+    }
+  }
+
+  /**
+   * The rectangle a drag starts from. Dragging a maximised window restores
+   * it, as on Windows 7: it takes back its old size under the pointer.
+   */
+  private moveBaseRect(event: WindowMoveEvent): Rect {
+    const window = event.window;
+    if (!window.state[WIN_MAXIMIZED]()) {
+      return snapshotRect(event.startRect);
+    }
+
+    const restore = window.state[WIN_RESTORE_RECT]() ?? naturalRect(window);
+    const width = read(restore.width);
+    const height = read(restore.height);
+    window.state[WIN_MAXIMIZED].set(false);
+    window.unmaximize();
+
+    // Keep the pointer at the same place along the caption bar.
+    const ratio =
+      event.startRect.width > 0
+        ? (event.startPointer.x - event.startRect.x) / event.startRect.width
+        : 0.5;
+    return {
+      x: Math.round(event.startPointer.x - width * ratio),
+      y: Math.round(event.startPointer.y - FRAME_HEIGHT_EXTRA / 2),
+      width,
+      height,
+    };
   }
 
   public onWindowResize(event: WindowResizeEvent): void {

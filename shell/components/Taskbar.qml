@@ -125,6 +125,11 @@ Item {
         anchors.left: orb.right
         anchors.leftMargin: Theme.taskButtonGap * 2
         anchors.verticalCenter: parent.verticalCenter
+        // Named so a very long row is cut off instead of running under the
+        // clock.
+        width: bar.buttonsAvailable
+        height: Theme.taskButtonHeight
+        clip: true
         spacing: Theme.taskButtonGap
 
         Repeater {
