@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+  <!-- Original glyph: a sheet with a folded corner. -->
+  <g fill="none" stroke="#eaf4ff" stroke-width="1.6" stroke-linejoin="round">
+    <path d="M6 3h7l5 5v13H6z"/>
+    <path d="M13 3v5h5"/>
+    <path d="M9 13h6M9 16.5h6" stroke-linecap="round"/>
+  </g>
+</svg>

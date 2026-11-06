@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+  <!-- Original glyph: a screen on a stand. -->
+  <g fill="none" stroke="#eaf4ff" stroke-width="1.6" stroke-linejoin="round">
+    <rect x="3.5" y="4.5" width="17" height="11" rx="1.5"/>
+    <path d="M9 19h6M12 15.5V19" stroke-linecap="round"/>
+  </g>
+</svg>

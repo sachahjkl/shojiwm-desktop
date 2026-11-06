@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid slice">
+  <!--
+    Original artwork. A dark blue field, a light rising from the horizon, and
+    two ribbons drawn over it. It is written by hand, not traced from
+    anything.
+  -->
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#030b16"/>
+      <stop offset=".45" stop-color="#07243f"/>
+      <stop offset=".78" stop-color="#0d4a72"/>
+      <stop offset="1" stop-color="#06243b"/>
+    </linearGradient>
+    <radialGradient id="glow" cx=".5" cy=".86" r=".62">
+      <stop offset="0" stop-color="#7fd8ff" stop-opacity=".55"/>
+      <stop offset=".35" stop-color="#2f9ad6" stop-opacity=".25"/>
+      <stop offset="1" stop-color="#2f9ad6" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="ribbonA" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#7fe0ff" stop-opacity="0"/>
+      <stop offset=".5" stop-color="#9fe9ff" stop-opacity=".5"/>
+      <stop offset="1" stop-color="#7fe0ff" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="ribbonB" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#4fb6f0" stop-opacity="0"/>
+      <stop offset=".45" stop-color="#8ad6ff" stop-opacity=".3"/>
+      <stop offset="1" stop-color="#4fb6f0" stop-opacity="0"/>
+    </linearGradient>
+    <radialGradient id="spark" cx=".5" cy=".5" r=".5">
+      <stop offset="0" stop-color="#ffffff" stop-opacity=".9"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="1920" height="1080" fill="url(#sky)"/>
+  <rect width="1920" height="1080" fill="url(#glow)"/>
+
+  <g fill="none" stroke-linecap="round">
+    <path d="M-100 760C260 640 520 900 880 780s640-300 1180-120"
+          stroke="url(#ribbonA)" stroke-width="70" opacity=".55"/>
+    <path d="M-100 820C300 720 560 960 940 840s660-260 1180-80"
+          stroke="url(#ribbonB)" stroke-width="140" opacity=".45"/>
+    <path d="M-100 700C300 600 600 840 1000 720s620-280 1120-140"
+          stroke="url(#ribbonA)" stroke-width="18" opacity=".5"/>
+  </g>
+
+  <g fill="url(#spark)">
+    <circle cx="420" cy="300" r="2.5"/>
+    <circle cx="1480" cy="220" r="3"/>
+    <circle cx="1120" cy="420" r="2"/>
+    <circle cx="300" cy="620" r="2"/>
+    <circle cx="1720" cy="560" r="2.5"/>
+    <circle cx="760" cy="180" r="2"/>
+  </g>
+</svg>

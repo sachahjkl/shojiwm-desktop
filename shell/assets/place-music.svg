@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+  <!-- Original glyph: two notes. -->
+  <g fill="none" stroke="#eaf4ff" stroke-width="1.6" stroke-linejoin="round">
+    <path d="M10 17V5.5l8-1.5V15"/>
+    <circle cx="7.5" cy="17" r="2.5"/>
+    <circle cx="15.5" cy="15" r="2.5"/>
+  </g>
+</svg>

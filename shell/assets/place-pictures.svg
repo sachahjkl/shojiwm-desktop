@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+  <!-- Original glyph: a framed landscape. -->
+  <g fill="none" stroke="#eaf4ff" stroke-width="1.6" stroke-linejoin="round">
+    <rect x="3.5" y="5.5" width="17" height="13" rx="1.5"/>
+    <path d="M4 16l4.5-4.5 3.5 3.5 3-3L20 16"/>
+    <circle cx="9" cy="9.5" r="1.6"/>
+  </g>
+</svg>

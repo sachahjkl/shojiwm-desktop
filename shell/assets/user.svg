@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+  <!-- Original artwork: the account tile of the Start menu. -->
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#8fc6ea"/>
+      <stop offset="1" stop-color="#36688f"/>
+    </linearGradient>
+  </defs>
+  <rect width="48" height="48" rx="4" fill="url(#tile)"/>
+  <circle cx="24" cy="19" r="7.5" fill="#ffffff" fill-opacity=".9"/>
+  <path d="M9 44c2.5-8.5 8.5-13 15-13s12.5 4.5 15 13z" fill="#ffffff" fill-opacity=".9"/>
+  <rect x=".5" y=".5" width="47" height="47" rx="4" fill="none" stroke="#ffffff" stroke-opacity=".7"/>
+</svg>
