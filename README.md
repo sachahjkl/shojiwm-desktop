@@ -16,7 +16,7 @@ required.
 |                         |                                                                                                                                                                                                                                                                             |
 | ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Glass window frames** | The compositor blurs what is behind the caption bar and tints it blue-grey. A drawn sheen lies over the blur. The focused window has a stronger tint, a lighter outline and a deeper shadow. The frame is rounded at the top and square at the bottom, as Windows draws it. |
-| **Caption buttons**     | Minimise, maximise or restore, and a wider close button. Each one lights up under the pointer; the close button glows red. Each shows a label after half a second.                                                                                                          |
+| **Caption buttons**     | Minimise, maximise or restore, and a wider close button. Each one lights up under the pointer; the close button glows red. A label appears when the pointer rests on one.                                                                                                   |
 | **Floating windows**    | Every window floats. New windows open in a cascade in the middle of the screen.                                                                                                                                                                                             |
 | **Fast animations**     | Windows open in 140 ms and close in 110 ms. Minimise and restore take 130 ms.                                                                                                                                                                                               |
 | **Alt+Tab**             | A panel of live thumbnails over the desktop. Tab, the arrow keys and the pointer pick a window.                                                                                                                                                                             |
@@ -270,9 +270,10 @@ Run, on a server with no display and no GPU:
 - `tools/screenshots.sh` — the whole session: the compositor in its nested
   backend inside Xvfb with Mesa's software renderer, the shell, two `foot`
   windows and a tray item. Every picture above comes from that run.
-- In that session, by hand through xdotool: opening and closing the Start
-  menu, the thumbnails of a taskbar button, a jump list, a tray menu, Aero
-  Snap by dragging a window to an edge, and Alt+Tab.
+- In that session, through xdotool: moving a window by its caption bar,
+  opening and closing the Start menu, the thumbnails of a taskbar button, a
+  jump list, the menu of a tray item, Aero Snap by dragging a window to the
+  left edge, and Alt+Tab.
 
 Not run:
 
