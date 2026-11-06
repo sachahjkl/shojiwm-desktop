@@ -16,8 +16,10 @@ import {
   createWindowState,
   cubicBezier,
   read,
+  signal,
   type PointerMoveEvent,
   type ReadonlySignal,
+  type Signal,
   type WaylandWindow,
   type WindowActivateRequestEvent,
   type WindowFullscreenRequestEvent,
@@ -66,6 +68,22 @@ const CLOSE_EASING = cubicBezier(0.4, 0, 1, 1);
 const MINIMIZE_CHANNEL = "win7.minimize";
 const OPEN_CHANNEL = "win7.open";
 const CLOSE_CHANNEL = "win7.close";
+
+/** Two presses this close together, in milliseconds, are a double click. */
+const DOUBLE_CLICK_MS = 400;
+/** How far a press may move and still count as a click, in logical pixels. */
+const CLICK_SLACK_PX = 4;
+/** How close to an edge the pointer must be for Aero Snap, in logical px. */
+const SNAP_EDGE_PX = 8;
+
+/** Where a dragged window would land. */
+export type SnapZoneKind = "maximize" | "left" | "right";
+
+export interface SnapZone {
+  kind: SnapZoneKind;
+  outputName: string;
+  rect: Rect;
+}
 
 /** How far each new window is placed below and right of the previous one. */
 const CASCADE_STEP = 26;
@@ -160,6 +178,21 @@ export class FloatingWindowManager {
   private hiddenByShowDesktop: string[] = [];
   /** The window being dragged, and the rectangle its drag started from. */
   private moveDrag: { id: string; base: Rect } | null = null;
+  /** The last caption press that neither moved nor dragged the window. */
+  private lastCaptionClick: {
+    id: string;
+    at: number;
+    x: number;
+    y: number;
+  } | null = null;
+  /** The window whose current drag is ignored (a double click started it). */
+  private suppressedDragId: string | null = null;
+  /**
+   * Where the window would land if the drag ended now, for the preview the
+   * composition draws. `null` while no edge is touched.
+   */
+  public readonly snapPreview: Signal<SnapZone | null> =
+    signal<SnapZone | null>(null);
 
   // ----- queries ----------------------------------------------------------
 
@@ -361,6 +394,25 @@ export class FloatingWindowManager {
       return;
     }
 
+    // The second click of a double click on the caption bar also starts a
+    // move. Ignore that move until the button is released.
+    if (this.suppressedDragId === window.id) {
+      if (event.phase === "end" || event.phase === "cancel") {
+        this.suppressedDragId = null;
+      }
+      return;
+    }
+
+    if (event.phase === "start") {
+      if (this.isDoubleClick(event)) {
+        this.suppressedDragId = window.id;
+        this.lastCaptionClick = null;
+        this.toggleMaximized(window);
+        return;
+      }
+      this.lastCaptionClick = null;
+    }
+
     if (event.phase === "start" || this.moveDrag?.id !== window.id) {
       window.focus();
       this.moveDrag = {
@@ -373,9 +425,11 @@ export class FloatingWindowManager {
     if (!drag) {
       return;
     }
+
     if (event.phase === "cancel") {
       window.state[WIN_RECT].set(drag.base);
       this.moveDrag = null;
+      this.setSnapPreview(null);
       return;
     }
 
@@ -386,9 +440,105 @@ export class FloatingWindowManager {
       height: drag.base.height,
     });
 
+    this.setSnapPreview(this.snapZoneAt(event));
+
     if (event.phase === "end") {
+      const zone = this.snapPreview.peek();
+      this.setSnapPreview(null);
       this.moveDrag = null;
+
+      // A click that did not move the window can be the first half of a
+      // double click.
+      if (
+        event.source === "ssd" &&
+        Math.abs(event.delta.x) <= CLICK_SLACK_PX &&
+        Math.abs(event.delta.y) <= CLICK_SLACK_PX
+      ) {
+        this.lastCaptionClick = {
+          id: window.id,
+          at: event.timestamp,
+          x: event.startPointer.x,
+          y: event.startPointer.y,
+        };
+      }
+
+      if (zone) {
+        this.applySnap(window, zone.kind);
+      }
     }
+  }
+
+  /** `true` when this press follows a press that neither moved nor dragged. */
+  private isDoubleClick(event: WindowMoveEvent): boolean {
+    const previous = this.lastCaptionClick;
+    return (
+      event.source === "ssd" &&
+      previous !== null &&
+      previous.id === event.window.id &&
+      event.timestamp - previous.at <= DOUBLE_CLICK_MS &&
+      Math.abs(event.startPointer.x - previous.x) <= CLICK_SLACK_PX &&
+      Math.abs(event.startPointer.y - previous.y) <= CLICK_SLACK_PX
+    );
+  }
+
+  /**
+   * Aero Snap: the zone the pointer is in while dragging, or `null`. The top
+   * edge maximises, the left and right edges take half the work area.
+   */
+  private snapZoneAt(event: WindowMoveEvent): SnapZone | null {
+    const outputName = event.outputName ?? this.outputName();
+    const screen = this.outputRect(outputName);
+    const area = this.workArea(outputName);
+    if (!outputName || !screen || !area) {
+      return null;
+    }
+
+    const x = event.currentPointer.x;
+    const y = event.currentPointer.y;
+    const halfWidth = Math.round(area.width / 2);
+
+    if (y <= screen.y + SNAP_EDGE_PX) {
+      return { kind: "maximize", outputName, rect: area };
+    }
+    if (x <= screen.x + SNAP_EDGE_PX) {
+      return {
+        kind: "left",
+        outputName,
+        rect: { x: area.x, y: area.y, width: halfWidth, height: area.height },
+      };
+    }
+    if (x >= screen.x + screen.width - SNAP_EDGE_PX) {
+      return {
+        kind: "right",
+        outputName,
+        rect: {
+          x: area.x + area.width - halfWidth,
+          y: area.y,
+          width: halfWidth,
+          height: area.height,
+        },
+      };
+    }
+    return null;
+  }
+
+  private setSnapPreview(zone: SnapZone | null): void {
+    const current = this.snapPreview.peek();
+    if (current === zone) {
+      return;
+    }
+    if (current && zone && current.kind === zone.kind) {
+      return;
+    }
+    this.snapPreview.set(zone);
+  }
+
+  private applySnap(window: WaylandWindow, kind: SnapZoneKind): void {
+    if (kind === "maximize") {
+      this.setMaximized(window, true);
+      return;
+    }
+    this.snap(window, kind);
   }
 
   /**

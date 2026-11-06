@@ -12,12 +12,21 @@ import {
   COMPOSITOR,
   ClientWindow,
   DefaultComposition,
+  LayerPopups,
+  Layers,
   ManagedWindow,
+  Solid,
+  Windows,
   backdropSource,
   compileEffect,
   compileLayerEffect,
   computed,
   dualKawaseBlur,
+  layerSource,
+  loadShader,
+  shaderStage,
+  type CompositionRenderable,
+  type OutputInfo,
   type WaylandWindow,
 } from "shoji_wm";
 import { aeroFrame } from "./decoration";
@@ -54,6 +63,13 @@ COMPOSITOR.env.publish();
 COMPOSITOR.process.once("shell", {
   command: `exec quickshell --path ${SHELL_PATH}`,
   runPolicy: "once-per-session",
+  env: {
+    // Qt asks for a text-input protocol as soon as the search box of the
+    // Start menu takes the keyboard. Closing the menu then took the whole
+    // shell down with "fatal error: Invalid argument". The search box reads
+    // plain keys, so the protocol is left out.
+    QT_WAYLAND_TEXT_INPUT_PROTOCOL: "none",
+  },
 });
 
 // ---------------------------------------------------------------------------
@@ -186,12 +202,27 @@ const WINDOW_GLASS = compileEffect({
   pipeline: [dualKawaseBlur({ radius: 5, passes: 3 })],
 });
 
-/** The blur behind the taskbar and the Start menu. */
+/**
+ * The blur behind the taskbar and the Start menu.
+ *
+ * The second stage clips the blur to the pixels the surface itself draws, so
+ * the rounded corners of the Start menu have no blurred square behind them.
+ */
 const LAYER_GLASS = compileLayerEffect({
   input: backdropSource(),
   capturePadding: 24,
   invalidate: { kind: "on-source-damage-box", damagePadding: 8 },
-  pipeline: [dualKawaseBlur({ radius: 5, passes: 3 })],
+  alpha: "preserve",
+  pipeline: [
+    dualKawaseBlur({ radius: 5, passes: 3 }),
+    shaderStage(loadShader("./assets/layer-mask.frag"), {
+      textures: { layer_mask: layerSource() },
+      uniforms: {
+        opacity_threshold: 0.25,
+        mask_feather: 0.04,
+      },
+    }),
+  ],
 });
 
 COMPOSITOR.effect.layer = (layer) => {
@@ -202,10 +233,53 @@ COMPOSITOR.effect.layer = (layer) => {
   return { behind: LAYER_GLASS };
 };
 
+/**
+ * The preview Windows draws while a window is dragged against an edge: the
+ * rectangle it would take, over the desktop and under the taskbar.
+ */
+function snapPreviewComposition(
+  output: OutputInfo,
+): CompositionRenderable | null {
+  const zone = WINDOWS.snapPreview();
+  if (!zone || zone.outputName !== output.name) {
+    return null;
+  }
+  const x = zone.rect.x - output.position.x;
+  const y = zone.rect.y - output.position.y;
+  const { width, height } = zone.rect;
+
+  return (
+    <>
+      <Layers layers={["background", "bottom"]} />
+      <Windows />
+      <Solid color="#bfe4ff4d" x={x} y={y} width={width} height={height} />
+      <Solid color="#eaf6ffcc" x={x} y={y} width={width} height={2} />
+      <Solid
+        color="#eaf6ffcc"
+        x={x}
+        y={y + height - 2}
+        width={width}
+        height={2}
+      />
+      <Solid color="#eaf6ffcc" x={x} y={y} width={2} height={height} />
+      <Solid
+        color="#eaf6ffcc"
+        x={x + width - 2}
+        y={y}
+        width={2}
+        height={height}
+      />
+      <Layers layers={["top", "overlay"]} />
+      <LayerPopups />
+    </>
+  );
+}
+
 // Alt+Tab draws each window alone in its own texture, where a backdrop blur
 // has nothing under it to show. Leave the glass out while it is open.
 COMPOSITOR.rendering.composition = (output) =>
-  ALT_TAB.compose(output) ?? <DefaultComposition />;
+  ALT_TAB.compose(output) ??
+  snapPreviewComposition(output) ?? <DefaultComposition />;
 
 // ---------------------------------------------------------------------------
 // The frame of every window

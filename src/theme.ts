@@ -59,6 +59,8 @@ export const COLOR = {
   /** Caption text. */
   titleActive: "#ffffff",
   titleInactive: "#e8f0f7cc",
+  /** The pale copies drawn under the title of the focused window. */
+  titleGlow: "#eaf6ff",
   /** Caption button, at rest and under the pointer. */
   buttonRest: "#ffffff1a",
   buttonHover: "#bfe4ff73",

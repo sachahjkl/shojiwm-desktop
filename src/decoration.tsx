@@ -17,6 +17,7 @@ import {
   ShaderEffect,
   WindowBorder,
   computed,
+  paintShader,
   useState,
   type CompiledEffectHandle,
   type ReadonlySignal,
@@ -28,6 +29,15 @@ import { CAPTION_BUTTON, COLOR, FONT, FRAME } from "./theme";
 import { WIN_MAXIMIZED } from "./window-manager";
 
 type ButtonTone = "normal" | "close";
+
+/**
+ * The frame is painted by a shader so that only its top corners are rounded.
+ * A style has one radius for all four corners; a paint shader has one per
+ * corner.
+ */
+const FRAME_PAINT = paintShader("./assets/frame.frag", {
+  uniforms: { top_radius: FRAME.radius },
+});
 
 /** The pale label Windows shows under a caption button you rest on. */
 const Tooltip = ({ text }: { text: string }) => (
@@ -200,6 +210,82 @@ const CaptionButtons = ({
   </Box>
 );
 
+/**
+ * Where the pale copies of the title go, in logical pixels. Windows 7 puts a
+ * blurred light copy behind the caption text. ShojiWM draws no text shadow
+ * (SSDStyle has no shadow for `<Label/>`), so the glow is several offset
+ * copies of the same label under the real one.
+ */
+const TITLE_GLOW_OFFSETS: Array<[number, number]> = [
+  [-1, 0],
+  [1, 0],
+  [0, -1],
+  [0, 1],
+  [-1, -1],
+  [1, 1],
+  [1, -1],
+  [-1, 1],
+  [-2, 0],
+  [2, 0],
+];
+
+/** Height of the title box. Every copy fills it, so they all line up. */
+const TITLE_HEIGHT = 16;
+
+const CaptionTitle = ({ window }: { window: WaylandWindow }) => {
+  const titleStyle: SSDStyle = {
+    position: "absolute",
+    inset: 0,
+    fontFamily: FONT,
+    fontSize: 12,
+    fontWeight: "medium",
+    textOverflow: "ellipsis",
+    lineHeight: TITLE_HEIGHT,
+    pointerEvents: "none",
+  };
+  const glowOpacity = window.isFocused((focused: boolean) =>
+    focused ? 0.16 : 0,
+  );
+
+  const copies: CompositionRenderable[] = TITLE_GLOW_OFFSETS.map(([x, y]) => (
+    <Label
+      text={window.title}
+      style={{
+        ...titleStyle,
+        color: COLOR.titleGlow,
+        opacity: glowOpacity,
+        transform: { translateX: x, translateY: y },
+      }}
+    />
+  ));
+  copies.push(
+    <Label
+      text={window.title}
+      style={{
+        ...titleStyle,
+        zIndex: 1,
+        color: window.isFocused((focused: boolean) =>
+          focused ? COLOR.titleActive : COLOR.titleInactive,
+        ),
+      }}
+    />,
+  );
+
+  return (
+    <Box
+      style={{
+        position: "relative",
+        height: TITLE_HEIGHT,
+        flexGrow: 1,
+        flexShrink: 1,
+        minWidth: 0,
+      }}
+    >
+      {copies}
+    </Box>
+  );
+};
+
 /** The icon, the title and the buttons, laid out across the caption. */
 function captionContent(
   window: WaylandWindow,
@@ -222,21 +308,7 @@ function captionContent(
       icon={window.icon}
       style={{ width: 16, height: 16, flexShrink: 0 }}
     />,
-    <Label
-      text={window.title}
-      style={{
-        color: window.isFocused((focused: boolean) =>
-          focused ? COLOR.titleActive : COLOR.titleInactive,
-        ),
-        fontFamily: FONT,
-        fontSize: 12,
-        fontWeight: "medium",
-        textOverflow: "ellipsis",
-        flexGrow: 1,
-        flexShrink: 1,
-        minWidth: 0,
-      }}
-    />,
+    <CaptionTitle window={window} />,
     <CaptionButtons
       window={window}
       onMinimize={onMinimize}
@@ -304,6 +376,7 @@ export function aeroFrame(
 
   return (
     <WindowBorder
+      paint={FRAME_PAINT}
       style={{
         border: { px: FRAME.outline, color: outline },
         borderRadius: FRAME.radius,
