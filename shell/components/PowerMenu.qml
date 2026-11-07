@@ -53,7 +53,7 @@ PopupWindow {
     }
 
     /// `true` while the pointer is over the menu.
-    readonly property bool pointerInside: hoverArea.containsMouse
+    readonly property bool pointerInside: hoverArea.hovered
 
     Rectangle {
         anchors.fill: parent
@@ -66,12 +66,10 @@ PopupWindow {
         }
     }
 
-    MouseArea {
+    // A hover handler, not a MouseArea: it sees the pointer over the rows
+    // and icons too, which take the hover from a MouseArea under them.
+    HoverHandler {
         id: hoverArea
-
-        anchors.fill: parent
-        hoverEnabled: true
-        acceptedButtons: Qt.NoButton
     }
 
     Column {

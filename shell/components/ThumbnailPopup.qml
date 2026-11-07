@@ -52,14 +52,12 @@ PopupWindow {
 
     /// `true` while the pointer is over the popup, so the taskbar can keep
     /// it up when the pointer leaves the button through it.
-    readonly property bool pointerInside: hoverArea.containsMouse
+    readonly property bool pointerInside: hoverArea.hovered
 
-    MouseArea {
+    // A hover handler, not a MouseArea: it sees the pointer over the rows
+    // and icons too, which take the hover from a MouseArea under them.
+    HoverHandler {
         id: hoverArea
-
-        anchors.fill: parent
-        hoverEnabled: true
-        acceptedButtons: Qt.NoButton
     }
 
     Row {

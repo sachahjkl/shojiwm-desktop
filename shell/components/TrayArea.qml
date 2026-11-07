@@ -2,83 +2,87 @@ pragma ComponentBehavior: Bound
 
 import QtQuick
 import Quickshell.Services.SystemTray
-import Quickshell.Widgets
 import ".."
 import "../theme.js" as Theme
 
-// The notification area: one icon per status-notifier item. A left click
-// activates the item, a right click opens its menu. An item that offers
-// nothing but a menu opens it on either button.
+// The notification area, as Windows 7 has it: the icons chosen to show on
+// the taskbar, and left of them the arrow that opens the popover of the
+// hidden ones. Which is which is set in the Control Panel; a new icon is
+// hidden.
 Row {
     id: tray
 
     readonly property var items: SystemTray.items ? SystemTray.items.values : []
+    readonly property var shown: items.filter(function (item) {
+        return item && Settings.trayVisible(item.id);
+    })
+    readonly property var hidden: items.filter(function (item) {
+        return item && !Settings.trayVisible(item.id);
+    })
 
-    /// The taskbar owns the menu, so it is told which item and where.
+    /// Whether the popover of hidden icons is open, so the arrow turns.
+    property bool overflowOpen: false
+
+    /// The taskbar owns the menus and the popover, so it is told which item
+    /// and where.
     signal menuRequested(var item, rect at)
-    /// The pointer entered or left one of the icons.
+    signal overflowRequested(rect at)
+    /// The pointer entered or left one of the icons or the arrow.
     signal hoverChanged(bool inside)
 
-    spacing: Theme.trayGap
+    spacing: 2
+
+    // "Show hidden icons".
+    Item {
+        id: arrow
+
+        visible: tray.hidden.length > 0
+        width: 18
+        height: Theme.trayIconSize + 8
+        anchors.verticalCenter: parent.verticalCenter
+
+        function arrowRect() {
+            var point = arrow.mapToItem(null, 0, 0);
+            return Qt.rect(point.x, point.y, arrow.width, arrow.height);
+        }
+
+        Rectangle {
+            anchors.fill: parent
+            radius: Scheme.itemRadius
+            color: "#2effffff"
+            opacity: arrowArea.containsMouse || tray.overflowOpen ? 1 : 0
+            Behavior on opacity {
+                NumberAnimation { duration: Theme.fade }
+            }
+        }
+
+        Text {
+            anchors.centerIn: parent
+            text: tray.overflowOpen ? "▼" : "▲"
+            color: Theme.textOnGlass
+            font.pixelSize: 8
+        }
+
+        MouseArea {
+            id: arrowArea
+            anchors.fill: parent
+            hoverEnabled: true
+            onEntered: tray.hoverChanged(true)
+            onExited: tray.hoverChanged(false)
+            onClicked: tray.overflowRequested(arrow.arrowRect())
+        }
+    }
 
     Repeater {
-        model: tray.items
+        model: tray.shown
 
-        delegate: Item {
-            id: trayItem
-
+        delegate: TrayIcon {
             required property var modelData
 
-            width: Theme.trayIconSize + 6
-            height: Theme.trayIconSize + 6
-
-            function iconRect() {
-                var point = trayItem.mapToItem(null, 0, 0);
-                return Qt.rect(point.x, point.y, trayItem.width, trayItem.height);
-            }
-
-            Rectangle {
-                anchors.fill: parent
-                radius: Scheme.itemRadius
-                color: "#ffffff"
-                opacity: area.containsMouse ? 0.18 : 0
-                Behavior on opacity {
-                    NumberAnimation { duration: Theme.fade }
-                }
-            }
-
-            IconImage {
-                anchors.centerIn: parent
-                implicitSize: Theme.trayIconSize
-                source: trayItem.modelData && trayItem.modelData.icon
-                    ? trayItem.modelData.icon : ""
-            }
-
-            MouseArea {
-                id: area
-                anchors.fill: parent
-                hoverEnabled: true
-                acceptedButtons: Qt.LeftButton | Qt.RightButton
-
-                onEntered: tray.hoverChanged(true)
-                onExited: tray.hoverChanged(false)
-
-                onClicked: function (event) {
-                    var item = trayItem.modelData;
-                    if (!item)
-                        return;
-                    var wantsMenu = event.button === Qt.RightButton
-                        || item.onlyMenu;
-                    if (wantsMenu) {
-                        if (item.hasMenu)
-                            tray.menuRequested(item, trayItem.iconRect());
-                        else if (!item.onlyMenu)
-                            item.secondaryActivate();
-                        return;
-                    }
-                    item.activate();
-                }
-            }
+            anchors.verticalCenter: parent ? parent.verticalCenter : undefined
+            item: modelData
+            onMenuRequested: function (item, at) { tray.menuRequested(item, at); }
+            onHoverChanged: function (inside) { tray.hoverChanged(inside); }
         }
     }
 }

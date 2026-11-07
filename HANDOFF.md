@@ -217,6 +217,28 @@ removed. What is left:
   `PowerSplitButton.square`, and `arrow-square*.svg`, the bead's glass in a
   square. The orb stays round: it is the identity.
 
+## Eighth pass: softer glass, the title, the notification area
+
+- **Glass light.** `frame.frag` lifts the glass towards white along the top
+  of the caption and in broad slanted bands (`glass_light`, `sheen`
+  uniform: 1 active, 0.55 inactive), the streaks that make Aero read as
+  glass. The four lines are softer than measured (`src/theme.ts`), after
+  the owner compared with official screenshots and found ours harsh.
+- **Title.** A ShojiWM label ignores its colour's alpha and its opacity
+  (both tried: every copy came out opaque white), so a glow cannot be made
+  of text copies. The white cloud is three images (`title-glow-left`,
+  `-middle`, `-right`), denser than before, with ends of fixed size.
+- **Taskbar.** Translucent blue-grey instead of 80 % near-black
+  (`shell/theme.js`), so the blur shows.
+- **Notification area.** As on Windows 7: icons chosen to show, the
+  others behind the arrow in `TrayOverflow.qml`, with "Customize...",
+  which opens the Control Panel's "Notification Area Icons" page
+  (`Settings.trayShown`, `trayShowAll`). New icons are hidden. The menu of
+  a hidden icon opens on the icon, over the popover.
+- **Popups kept closing.** Their "pointer inside" was a MouseArea under
+  their rows, which lost the hover to the rows; it is now a HoverHandler in
+  every popup.
+
 ## What remains, in priority order
 
 1. **Look at all of it on a real GPU.** Colours, blur, animation speed and
@@ -247,7 +269,7 @@ removed. What is left:
 
 | Defect                                                                                                                                 | Where                                                      | Why                                                                                                                                                                                                       |
 | -------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| The glow behind the title is a soft box, not the shape of the letters. It lights the space between two words as much as the words.     | `src/decoration.tsx:165`, `assets/title-glow.svg`          | `SSDStyle` has no shadow and no blur for a `<Label/>`. There is no way to blur a text shape in the config API.                                                                                            |
+| The glow behind the title is a soft box, not the shape of the letters. It lights the space between two words as much as the words.     | `src/decoration.tsx`, `assets/title-glow-*.svg`            | `SSDStyle` has no shadow and no blur for a `<Label/>`. There is no way to blur a text shape in the config API.                                                                                            |
 | The Alt+Tab panel has no window title and square corners.                                                                              | `src/alt-tab.tsx:309`                                      | An output composition has no label node and `<Solid>` has no radius.                                                                                                                                      |
 | Live window thumbnails end the shell's Wayland connection.                                                                             | `shell/theme.js:45`, `shell/components/ThumbnailPopup.qml` | With Quickshell 0.3.0 and 0.3.2 against ShojiWM `9e778dc`, asking for a capture kills the client: "fatal error: Invalid argument". Try again on the real session; it may be a software-rendering problem. |
 | The caption button group is 103 px wide. The reference also has a 1 px light bevel outside its left and right dark borders, so 105 px. | `tools/make-caption-svgs.py`                               | Measured late, after the owner validated the corner. Left alone on purpose.                                                                                                                               |

@@ -32,6 +32,25 @@ Singleton {
     property alias showDate: adapter.showDate
     property alias lockAfterMinutes: adapter.lockAfterMinutes
     property alias lockOnSuspend: adapter.lockOnSuspend
+    property alias trayShowAll: adapter.trayShowAll
+    property alias trayShown: adapter.trayShown
+
+    /// Whether a notification-area item shows on the taskbar, or only in the
+    /// popover of hidden icons. New items are hidden, as on Windows 7.
+    function trayVisible(id) {
+        return adapter.trayShowAll || adapter.trayShown.indexOf(String(id)) >= 0;
+    }
+
+    function setTrayVisible(id, on) {
+        var list = [];
+        for (var i = 0; i < adapter.trayShown.length; i++) {
+            if (adapter.trayShown[i] !== String(id))
+                list.push(adapter.trayShown[i]);
+        }
+        if (on)
+            list.push(String(id));
+        adapter.trayShown = list;
+    }
 
     // ----- pictures -----------------------------------------------------------
 
@@ -110,6 +129,12 @@ Singleton {
             /// 0 for never.
             property int lockAfterMinutes: 10
             property bool lockOnSuspend: true
+
+            /// Show every notification-area icon on the taskbar.
+            property bool trayShowAll: false
+            /// The ids of the icons shown on the taskbar; the rest wait in
+            /// the popover of hidden icons.
+            property list<string> trayShown: []
         }
     }
 

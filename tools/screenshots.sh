@@ -332,15 +332,31 @@ alive "jump-list"
 xdotool mousemove --window "$window" $((WIDTH / 2)) $((HEIGHT / 2))
 sleep 2
 
-say "the notification area menu"
-xdotool mousemove --window "$window" $((WIDTH - 120)) "$bar_y"
+say "the hidden notification-area icons"
+# A new icon is hidden, as on Windows 7: the arrow left of the clock opens
+# the popover that holds it.
+xdotool mousemove --window "$window" $((WIDTH - 118)) "$bar_y"
 sleep 1
+xdotool click 1
+sleep 2
+shot "tray-overflow"
+alive "tray-overflow"
+
+say "the notification area menu"
+# A right click on the icon in the popover; the pointer then rests on the
+# menu, as a hand would.
+xdotool mousemove --window "$window" $((WIDTH - 140)) $((HEIGHT - 75))
+sleep 0.3
+xdotool mousemove --window "$window" $((WIDTH - 132)) $((HEIGHT - 83))
+sleep 0.5
 xdotool click 3
+sleep 0.5
+xdotool mousemove --window "$window" $((WIDTH - 132)) $((HEIGHT - 110))
 sleep 2
 shot "tray-menu"
 alive "tray-menu"
 xdotool mousemove --window "$window" $((WIDTH / 2)) $((HEIGHT / 2))
-sleep 1
+sleep 2
 xdotool click 1
 sleep 1
 

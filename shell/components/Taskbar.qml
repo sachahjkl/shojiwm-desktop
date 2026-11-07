@@ -31,12 +31,14 @@ Item {
     property var jumpListGroup: null
     property var trayMenuItem: null
     property bool calendarOpen: false
+    property bool trayOverflowOpen: false
 
     function closePopups() {
         bar.previewGroup = null;
         bar.jumpListGroup = null;
         bar.trayMenuItem = null;
         bar.calendarOpen = false;
+        bar.trayOverflowOpen = false;
     }
 
     // ----- glass ------------------------------------------------------------
@@ -90,12 +92,22 @@ Item {
         spacing: Theme.trayGap
 
         TrayArea {
-            anchors.verticalCenter: parent.verticalCenter
+            id: trayArea
 
+            anchors.verticalCenter: parent.verticalCenter
+            overflowOpen: bar.trayOverflowOpen
+
+            onOverflowRequested: function (at) {
+                var open = !bar.trayOverflowOpen;
+                bar.closePopups();
+                bar.trayOverflowOpen = open;
+                trayOverflow.anchorRect = at;
+            }
             onMenuRequested: function (item, at) {
                 bar.previewGroup = null;
                 bar.jumpListGroup = null;
                 bar.trayMenuItem = bar.trayMenuItem === item ? null : item;
+                trayMenu.anchorWindow = bar.window;
                 trayMenu.anchorRect = at;
             }
             onHoverChanged: function (inside) {
@@ -282,18 +294,21 @@ Item {
         id: hideMenus
         interval: 900
         running: bar.jumpListGroup !== null || bar.trayMenuItem !== null
-            || bar.calendarOpen
+            || bar.calendarOpen || bar.trayOverflowOpen
         repeat: true
         onTriggered: {
             if (bar.jumpListGroup !== null
                 && !jumpList.pointerInside && !bar.pointerOnButton)
                 bar.jumpListGroup = null;
-            if (bar.trayMenuItem !== null
-                && !trayMenu.pointerInside && !bar.pointerOnTray)
+            if (bar.trayMenuItem !== null && !trayMenu.pointerInside
+                && !bar.pointerOnTray && !trayOverflow.pointerInside)
                 bar.trayMenuItem = null;
             if (bar.calendarOpen
                 && !calendar.pointerInside && !bar.pointerOnClock)
                 bar.calendarOpen = false;
+            if (bar.trayOverflowOpen && bar.trayMenuItem === null
+                && !trayOverflow.pointerInside && !bar.pointerOnTray)
+                bar.trayOverflowOpen = false;
         }
     }
 
@@ -313,6 +328,22 @@ Item {
         onDismissed: bar.jumpListGroup = null
     }
 
+    TrayOverflow {
+        id: trayOverflow
+
+        anchorWindow: bar.window
+        items: trayArea.hidden
+        open: bar.trayOverflowOpen
+        onDismissed: bar.trayOverflowOpen = false
+        // An icon's menu opens on the icon, in the popover, which stays
+        // open under it.
+        onMenuRequested: function (item, at) {
+            bar.trayMenuItem = bar.trayMenuItem === item ? null : item;
+            trayMenu.anchorWindow = trayOverflow;
+            trayMenu.anchorRect = at;
+        }
+    }
+
     CalendarPopup {
         id: calendar
 
@@ -325,6 +356,11 @@ Item {
 
         anchorWindow: bar.window
         item: bar.trayMenuItem
-        onDismissed: bar.trayMenuItem = null
+        // A choice made in the menu of a hidden icon closes the popover too.
+        onDismissed: {
+            if (trayMenu.anchorWindow === trayOverflow)
+                bar.trayOverflowOpen = false;
+            bar.trayMenuItem = null;
+        }
     }
 }

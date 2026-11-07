@@ -151,30 +151,37 @@ const CaptionButton = ({
   );
 };
 
-/** The caption title: crisp text over a soft light shape. */
-const CaptionTitle = ({ window }: { window: WaylandWindow }) => (
-  <Box
-    style={{
-      position: "relative",
-      height: FRAME.titleHeight,
-      flexShrink: 1,
-      minWidth: 0,
-    }}
-  >
+/** The caption title: crisp dark text over a white cloud that follows it. */
+const CaptionTitle = ({ window }: { window: WaylandWindow }) => {
+  const glowOpacity = window.isFocused((focused: boolean) =>
+    focused ? 1 : 0.5,
+  );
+  // The cloud reaches this far past the text on each side, and its rounded
+  // ends are this wide.
+  const reach = FRAME.glowMargin;
+  const cap = 16;
+  const piece = (src: string, horizontal: Record<string, number>) => (
     <Image
-      src="./assets/title-glow.svg"
+      src={src}
       fit="fill"
       style={{
         position: "absolute",
-        top: -FRAME.glowMargin,
-        right: -FRAME.glowMargin,
-        bottom: -FRAME.glowMargin,
-        left: -FRAME.glowMargin,
+        top: -reach,
+        bottom: -reach,
+        ...horizontal,
         zIndex: 0,
         pointerEvents: "none",
-        opacity: window.isFocused((focused: boolean) => (focused ? 1 : 0.45)),
+        opacity: glowOpacity,
       }}
     />
+  );
+  const children: CompositionRenderable[] = [
+    piece("./assets/title-glow-left.svg", { left: -reach, width: cap }),
+    piece("./assets/title-glow-middle.svg", {
+      left: cap - reach,
+      right: cap - reach,
+    }),
+    piece("./assets/title-glow-right.svg", { right: -reach, width: cap }),
     <Label
       text={window.title}
       style={{
@@ -190,9 +197,21 @@ const CaptionTitle = ({ window }: { window: WaylandWindow }) => (
         flexShrink: 1,
         minWidth: 0,
       }}
-    />
-  </Box>
-);
+    />,
+  ];
+  return (
+    <Box
+      style={{
+        position: "relative",
+        height: FRAME.titleHeight,
+        flexShrink: 1,
+        minWidth: 0,
+      }}
+    >
+      {children}
+    </Box>
+  );
+};
 
 export interface FrameOptions {
   /**
@@ -270,6 +289,7 @@ export function aeroFrame(
         maximized() || options.square ? 0 : FRAME.radiusBottom,
       ),
       outer_lines: computed(() => (maximized() ? 0 : 1)),
+      sheen: computed(() => (focused() ? 1 : 0.55)),
       caption_h: captionHeight,
       border_w: borderWidth,
       tint: focusColour(focused, COLOR.glassActive, COLOR.glassInactive),

@@ -24,6 +24,22 @@ uniform vec4 edge_dark;       // the dark line around the client
 // 1 while the window has its outer two lines, 0 when it is maximised and
 // they sit off the screen.
 uniform float outer_lines;
+// How strongly the glass catches the light: 1 for the active window, less
+// for the others.
+uniform float sheen;
+
+// The light on the glass, as Windows 7 draws it: the caption brighter at the
+// top, and broad pale bands running down at a slant across the whole frame,
+// which is what makes Aero glass read as glass rather than as a tint.
+// `q` is in logical pixels from the window's top left.
+float glass_light(vec2 q, float cap) {
+    float top = (1.0 - smoothstep(0.0, cap * 1.1, q.y)) * 0.20;
+    float u = q.x + q.y * 0.85;
+    float broad = smoothstep(0.45, 0.95, 0.5 + 0.5 * sin(u / 46.0));
+    float narrow = smoothstep(0.7, 1.0, 0.5 + 0.5 * sin(u / 13.0 + 1.7));
+    float bands = broad * 0.17 + narrow * broad * 0.07;
+    return clamp(top + bands, 0.0, 0.35);
+}
 
 float sharp_rect(vec2 p, vec4 r) {
     return shoji_rrect_coverage(p, r, vec4(0.0));
@@ -75,7 +91,10 @@ vec4 paint_main(PaintContext ctx) {
     vec4 colour = vec4(0.0);
     colour += shoji_premultiply(line_outer) * (outer - after_dark) * outer_lines;
     colour += shoji_premultiply(line_inner) * (after_dark - after_light) * outer_lines;
-    colour += shoji_premultiply(tint) * max(after_light - light_cov, 0.0);
+    // The glass: the tint, lifted towards white where the light falls on it.
+    float lit = glass_light(p / s, caption_h) * sheen;
+    vec4 glass = vec4(mix(tint.rgb, vec3(1.0), lit), tint.a + (1.0 - tint.a) * lit * 0.6);
+    colour += shoji_premultiply(glass) * max(after_light - light_cov, 0.0);
     colour += shoji_premultiply(edge_light) * max(light_cov - dark_cov, 0.0);
     colour += shoji_premultiply(edge_dark) * max(dark_cov - client_cov, 0.0);
     return colour;

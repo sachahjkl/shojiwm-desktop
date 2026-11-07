@@ -309,7 +309,7 @@ running one.
 | `src/peek.tsx`                                                                                      | Aero Peek, and the socket the shell asks for it and for the show-desktop toggle through.                                                                                  |
 | `assets/frame.frag`                                                                                 | The paint shader that draws the frame: the dark outer line, the light line, the glass, the two lines around the client, and the corner radii that a style cannot express. |
 | `assets/caption/*.svg`                                                                              | The three caption buttons, one file per state, drawn at their exact pixel size.                                                                                           |
-| `assets/title-glow.svg`                                                                             | The soft light behind the caption text.                                                                                                                                   |
+| `assets/title-glow-*.svg`                                                                           | The soft light behind the caption text.                                                                                                                                   |
 | `docs/aero-measurements.md`                                                                         | Every measured number, and the reference screenshot each came from.                                                                                                       |
 | `tools/make-caption-svgs.py`                                                                        | Draws `assets/caption/*.svg` from those numbers.                                                                                                                          |
 | `tools/details.py`                                                                                  | Finds the windows in a capture and cuts the zoomed details out of it.                                                                                                     |
@@ -393,7 +393,7 @@ Four things that do not work, each with the file that shows why.
   which is the shape of a box, and nothing for text
   (`packages/shoji_wm/src/types.ts`). Windows blurs the text itself and lays
   the blur under it. Here the light behind the title is one soft shape,
-  `assets/title-glow.svg`, stretched over the box the text occupies: no hard
+  `assets/title-glow-*.svg`, stretched over the box the text occupies: no hard
   edge anywhere, but it does not follow the letters, so it lights the gaps
   between words as much as the words.
 - **The Alt+Tab panel has no text.** An output composition is built from

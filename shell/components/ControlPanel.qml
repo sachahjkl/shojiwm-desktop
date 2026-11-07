@@ -2,6 +2,8 @@ pragma ComponentBehavior: Bound
 
 import QtQuick
 import Quickshell
+import Quickshell.Services.SystemTray
+import Quickshell.Widgets
 import ".."
 import "../theme.js" as Theme
 
@@ -37,6 +39,7 @@ FloatingWindow {
         "lockscreen": { title: "Lock Screen", category: "Appearance and Personalization" },
         "account": { title: "Account Picture", category: "User Accounts" },
         "taskbar": { title: "Taskbar and Start Menu", category: "Appearance and Personalization" },
+        "notifications": { title: "Notification Area Icons", category: "Appearance and Personalization" },
         "clock": { title: "Date and Time", category: "Clock and Region" },
         "about": { title: "System", category: "System" }
     })
@@ -185,7 +188,7 @@ FloatingWindow {
 
             Repeater {
                 model: ["appearance", "background", "lockscreen", "account",
-                        "taskbar", "clock", "about"]
+                        "taskbar", "notifications", "clock", "about"]
 
                 delegate: CpLink {
                     required property string modelData
@@ -231,6 +234,7 @@ FloatingWindow {
                 case "lockscreen": return lockPage;
                 case "account": return accountPage;
                 case "taskbar": return taskbarPage;
+                case "notifications": return notificationsPage;
                 case "clock": return clockPage;
                 case "about": return aboutPage;
                 default: return homePage;
@@ -323,7 +327,8 @@ FloatingWindow {
                     links: [
                         { text: "Choose a style, light or dark", page: "appearance" },
                         { text: "Change desktop background", page: "background" },
-                        { text: "Taskbar and Start menu", page: "taskbar" }
+                        { text: "Taskbar and Start menu", page: "taskbar" },
+                        { text: "Notification area icons", page: "notifications" }
                     ]
                 }
 
@@ -808,6 +813,77 @@ FloatingWindow {
                         onClicked: Settings.powerButtonAction = modelData.id
                     }
                 }
+            }
+        }
+    }
+
+    Component {
+        id: notificationsPage
+
+        Column {
+            spacing: 10
+
+            Heading { text: "Select which icons appear on the taskbar" }
+
+            Note {
+                width: parent.width
+                text: "An icon left off the taskbar waits in the popover the "
+                    + "arrow beside the clock opens. A program that starts "
+                    + "later puts its icon there until you choose otherwise."
+            }
+
+            CpCheck {
+                label: "Always show all icons on the taskbar"
+                checked: Settings.trayShowAll
+                onToggled: function (on) { Settings.trayShowAll = on; }
+            }
+
+            Item { width: 1; height: 4 }
+
+            Repeater {
+                model: SystemTray.items ? SystemTray.items.values : []
+
+                delegate: Row {
+                    id: trayRow
+
+                    required property var modelData
+
+                    spacing: 12
+                    opacity: Settings.trayShowAll ? 0.5 : 1
+
+                    IconImage {
+                        anchors.verticalCenter: parent.verticalCenter
+                        implicitSize: 20
+                        source: trayRow.modelData && trayRow.modelData.icon
+                            ? trayRow.modelData.icon : ""
+                    }
+
+                    Text {
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: 260
+                        text: trayRow.modelData.tooltipTitle
+                            || trayRow.modelData.title || trayRow.modelData.id
+                        color: Scheme.text
+                        font.family: Theme.fontFamily
+                        font.pixelSize: Theme.fontSize
+                        elide: Text.ElideRight
+                    }
+
+                    CpCheck {
+                        anchors.verticalCenter: parent.verticalCenter
+                        label: "Show on the taskbar"
+                        checked: Settings.trayVisible(trayRow.modelData.id)
+                        onToggled: function (on) {
+                            Settings.setTrayVisible(trayRow.modelData.id, on);
+                        }
+                    }
+                }
+            }
+
+            Note {
+                width: parent.width
+                visible: !SystemTray.items || SystemTray.items.values.length === 0
+                text: "No program has an icon in the notification area now."
             }
         }
     }

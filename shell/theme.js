@@ -80,15 +80,17 @@ var menuFooterHeight = 42;
 // Qt reads a hex colour as #AARRGGBB: the alpha comes first, unlike CSS.
 // ---------------------------------------------------------------------------
 
-// Taskbar glass: dark blue-grey over the blur, lit along the top edge.
-var barTop = "#b84a6b8a";
-var barUpper = "#c7203247";
-var barMiddle = "#d10d1621";
-var barLower = "#cc1a2a38";
-var barBottom = "#d6090e13";
-var barHighlight = "#73bfd8ef";
+// Taskbar glass: a blue-grey tint over the blur, translucent enough that the
+// wallpaper's colour comes through, lit along the top edge and darkest a
+// little under half way, as the Windows 7 bar is.
+var barTop = "#8c7aa6c8";
+var barUpper = "#73416685";
+var barMiddle = "#801c3049";
+var barLower = "#73284460";
+var barBottom = "#8c142233";
+var barHighlight = "#80c9e2f5";
 var barEdge = "#cc0a131b";
-var barBottomEdge = "#d9070d12";
+var barBottomEdge = "#b3070d12";
 
 // Task buttons.
 var buttonRest = "#1cffffff";
