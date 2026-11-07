@@ -28,6 +28,7 @@ required.
 | **Window thumbnails**   | Rest on a taskbar button and its windows are listed with their titles. A click raises one, a middle click closes it. The live picture of each window is written but off; see "Real limits".                                                                                 |
 | **Jump lists**          | Right click a taskbar button for the files the program opened last (from `recently-used.xbel`), the tasks of its `.desktop` file, a second instance, and close.                                                                                                             |
 | **Notification area**   | A tray item's own menu, drawn in the same style, with its submenus, check boxes and radio buttons.                                                                                                                                                                          |
+| **Aero Peek**           | Rest on the show-desktop strip at the far right and every window turns into a glass outline over the desktop. Click it to put the windows away; click again to bring them back.                                                                                             |
 | **Start menu**          | Programs on the left with a search box, places on the right, and the shut-down button in the corner.                                                                                                                                                                        |
 
 ## Screenshots
@@ -75,6 +76,11 @@ The menu of a tray item, drawn in the same style.
 ![Aero Snap](assets/site/snap.png)
 
 Dragging a window against the left edge draws the rectangle it would take.
+
+![Aero Peek](assets/site/peek.png)
+
+Aero Peek: the pointer rests on the show-desktop strip, and the two windows
+are left as glass outlines over the wallpaper.
 
 ![Alt+Tab](assets/site/alt-tab.png)
 
@@ -196,6 +202,7 @@ running one.
 | `src/decoration.tsx`                                                                         | The frame itself: the painted glass, the caption, the title with its glow, the caption buttons and their labels.                                                          |
 | `src/window-manager.ts`                                                                      | The floating window manager: placement, move, resize, maximise, minimise, fullscreen, double click, and Aero Snap.                                                        |
 | `src/alt-tab.tsx`                                                                            | The Alt+Tab panel, built from render textures and an input grab.                                                                                                          |
+| `src/peek.tsx`                                                                               | Aero Peek, and the socket the shell asks for it and for the show-desktop toggle through.                                                                                  |
 | `assets/frame.frag`                                                                          | The paint shader that draws the frame: the dark outer line, the light line, the glass, the two lines around the client, and the corner radii that a style cannot express. |
 | `assets/caption/*.svg`                                                                       | The three caption buttons, one file per state, drawn at their exact pixel size.                                                                                           |
 | `assets/title-glow.svg`                                                                      | The soft light behind the caption text.                                                                                                                                   |
@@ -210,6 +217,7 @@ running one.
 | `shell/Apps.qml`                                                                             | The window list, the grouping, the pinned programs, the recent files, the program list, and what a click does. The programs the places open are named here.               |
 | `shell/StartMenuState.qml`                                                                   | Which screen shows the Start menu.                                                                                                                                        |
 | `shell/StartMenuIpc.qml`                                                                     | The IPC entry point the compositor calls to open the menu.                                                                                                                |
+| `shell/CompositorIpc.qml`                                                                    | The other way round: the socket the shell uses to ask the compositor for Aero Peek and the show-desktop toggle.                                                           |
 | `shell/components/Taskbar.qml`                                                               | The bar, and the three popups its buttons ask for.                                                                                                                        |
 | `shell/components/TaskButton.qml`                                                            | One program: its stack, its states, its clicks.                                                                                                                           |
 | `shell/components/ThumbnailPopup.qml`                                                        | The live pictures over a button.                                                                                                                                          |
@@ -295,10 +303,9 @@ Four things that do not work, each with the file that shows why.
 
 Possible with the APIs above, simply not written:
 
-- **Aero Peek**, the desktop seen through glass outlines while you rest on the
-  show-desktop strip. The shell would have to ask the compositor to hide the
-  windows; `COMPOSITOR` can serve a socket (`shoji_wm/ipc`) and Quickshell can
-  speak to one (`Quickshell.Io.Socket`), so the way is open.
+- **Aero Peek on one window**, from its taskbar thumbnail. The shell knows a
+  window as a `zwlr_foreign_toplevel` handle and the compositor as a
+  `WaylandWindow`; nothing ties the two together over the socket yet.
 - **An "All Programs" tree** in the Start menu. The list is flat, and the
   search box filters it.
 - **A menu that closes on a press outside it.** A layer-shell popup is told

@@ -9,7 +9,7 @@ import "../theme.js" as Theme
 // `QsMenuOpener` opens the item's DBusMenu and lists its entries
 // (Quickshell/QsMenuOpener, Quickshell/QsMenuEntry). An entry with children
 // is itself a menu: resting on it, or clicking it, opens this same component
-// beside the line, through a Loader, as deep as the item goes.
+// beside the line, through a LazyLoader, as deep as the item goes.
 PopupWindow {
     id: popup
 
@@ -123,14 +123,17 @@ PopupWindow {
         popup.openRect = rect;
     }
 
-    Loader {
+    // Quickshell's loader, not Qt's: what it loads is a window, not an item.
+    LazyLoader {
         id: child
 
         active: popup.openEntry !== null
         source: "TrayMenu.qml"
 
-        onLoaded: {
+        onItemChanged: {
             var menu = popup.childMenu;
+            if (!menu)
+                return;
             menu.submenu = true;
             menu.anchorWindow = popup;
             menu.anchorRect = Qt.binding(function () {

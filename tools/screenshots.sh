@@ -290,6 +290,14 @@ sleep 1
 xdotool click 1
 sleep 1
 
+say "Aero Peek"
+xdotool mousemove --window "$window" $((WIDTH - 4)) "$bar_y"
+sleep 3
+shot "peek"
+alive "peek"
+xdotool mousemove --window "$window" $((WIDTH / 2)) $((HEIGHT / 2))
+sleep 2
+
 say "Aero Snap, while dragging to an edge"
 # Press on the caption bar of the front window, where the move above put
 # it, and drag to the left edge.
