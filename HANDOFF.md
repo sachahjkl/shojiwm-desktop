@@ -418,3 +418,24 @@ ShojiWM package, the QML against the Quickshell types, and the formatters.
 - Both corner radii are 8 px: at 5 px the bottom corners read as square.
 - The caption buttons start one pixel down, right under the dark outline, and
   have no light line along their top (`tools/make-caption-svgs.py`).
+
+### Thirteenth pass: taskbar, desktop icons, the desktop's menu
+
+- Caption buttons: their bottom is a single dark line, rounded 4 px at the
+  two outer corners (a clip in each SVG, `tools/make-caption-svgs.py`).
+- Taskbar: buttons are glass plates 36 px tall (dark outline, light line
+  inside, lighter upper half), icons alone by default (`taskbarCompact`
+  defaults to true, as Windows 7's "always combine, hide labels"); labels
+  are white with a shadow. Combined windows stack at the right. The clock
+  writes the date in full; the show-desktop button is a visible glass strip.
+- `shell/components/Desktop.qml`: desktop icons over the wallpaper (Recycle
+  Bin + XDG_DESKTOP_DIR), picking, a box, renaming (the wallpaper surface
+  takes the keyboard only then), opening through `gio` (path substituted by
+  the flake into `shell/tools.js`).
+- `shell/components/DesktopMenu.qml`: the right-click menus. They are items,
+  not popups, drawn in a full-screen Overlay surface while open
+  (`shell.qml`): ShojiWM hit-tests windows before the popups of a
+  background surface (`surface_under` in `state.rs`), so a popup of the
+  wallpaper would be drawn over a window and give it its clicks. The
+  overlay also closes the menu on a click anywhere else, and on Escape.
+- Settings: `desktopIconSize`, `showDesktopIcons`, `desktopSort`.

@@ -128,6 +128,18 @@ for i in $(seq -w 1 24); do
     "$HOME/Pictures/sample-$i.png"
 done
 
+# A few things on the desktop: a shortcut, a folder, a picture, a text file.
+mkdir -p "$HOME/Desktop/Projects"
+cp "$HOME/Pictures/sample-07.png" "$HOME/Desktop/Holiday.png"
+printf 'Remember the milk.\n' >"$HOME/Desktop/Shopping list.txt"
+cat >"$HOME/Desktop/foot.desktop" <<'DESKTOP'
+[Desktop Entry]
+Type=Application
+Name=Terminal
+Exec=foot
+Icon=utilities-terminal
+DESKTOP
+
 # Nothing here opens files through GTK, so no program records them. Write the
 # list a desktop keeps of them, naming foot, for the jump list to read.
 mkdir -p "$XDG_DATA_HOME"
@@ -324,7 +336,7 @@ sleep 2
 alive "menu closed"
 
 say "the taskbar thumbnails"
-xdotool mousemove --window "$window" 120 "$bar_y"
+xdotool mousemove --window "$window" 78 "$bar_y"
 sleep 3
 shot "taskbar-thumbnail"
 alive "taskbar-thumbnail"
@@ -332,13 +344,33 @@ xdotool mousemove --window "$window" $((WIDTH / 2)) $((HEIGHT / 2))
 sleep 2
 
 say "the jump list"
-xdotool mousemove --window "$window" 120 "$bar_y"
+xdotool mousemove --window "$window" 78 "$bar_y"
 sleep 1
 xdotool click 3
 sleep 2
 shot "jump-list"
 alive "jump-list"
 xdotool mousemove --window "$window" $((WIDTH / 2)) $((HEIGHT / 2))
+sleep 2
+
+say "the desktop's menu"
+# Pick an icon, then right click on the empty desktop and open View.
+xdotool mousemove --window "$window" 40 140
+xdotool click 1
+sleep 1
+xdotool mousemove --window "$window" 1150 220
+xdotool click 3
+sleep 2
+xdotool mousemove --window "$window" 1070 236
+sleep 0.3
+xdotool mousemove --window "$window" 1080 238
+sleep 1
+xdotool click 1
+sleep 2
+shot "desktop-menu"
+alive "desktop-menu"
+xdotool mousemove --window "$window" 1200 600
+xdotool click 1
 sleep 2
 
 say "the hidden notification-area icons"
@@ -438,12 +470,12 @@ shot "control-panel-scroll"
 qs controlpanel open
 sleep 1
 
-say "the compact taskbar"
+say "the taskbar with labels"
 settings="$XDG_CONFIG_HOME/shojiwm/settings.json"
-sed -i 's/"taskbarCompact": false/"taskbarCompact": true/' "$settings"
-sleep 3
-shot "taskbar-compact"
 sed -i 's/"taskbarCompact": true/"taskbarCompact": false/' "$settings"
+sleep 3
+shot "taskbar-labels"
+sed -i 's/"taskbarCompact": false/"taskbarCompact": true/' "$settings"
 sleep 2
 
 say "the Control Panel, dark"

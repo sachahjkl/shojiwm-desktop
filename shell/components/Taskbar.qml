@@ -115,14 +115,6 @@ Item {
             }
         }
 
-        Rectangle {
-            width: 1
-            height: Theme.taskbarHeight - 12
-            color: Theme.barHighlight
-            opacity: 0.5
-            anchors.verticalCenter: parent.verticalCenter
-        }
-
         Clock {
             id: clock
 
@@ -136,25 +128,34 @@ Item {
             onHoveredChanged: bar.pointerOnClock = clock.hovered
         }
 
-        // Show desktop: the strip Windows puts past the clock.
-        Rectangle {
+        // Show desktop: the glass strip Windows puts past the clock, a
+        // dark line and a light one at its left, lit under the pointer.
+        Item {
             id: showDesktop
 
             width: Theme.showDesktopWidth
             height: Theme.taskbarHeight
-            color: "#ffffff"
-            opacity: showDesktopArea.containsMouse ? 0.22 : 0.06
-
-            Behavior on opacity {
-                NumberAnimation { duration: Theme.fade }
-            }
 
             Rectangle {
-                anchors.left: parent.left
+                anchors.fill: parent
+                anchors.leftMargin: 2
+                anchors.topMargin: 2
+                gradient: Gradient {
+                    GradientStop { position: 0.0; color: showDesktopArea.containsMouse ? "#80ffffff" : "#40ffffff" }
+                    GradientStop { position: 0.5; color: showDesktopArea.containsMouse ? "#4dffffff" : "#1affffff" }
+                    GradientStop { position: 1.0; color: showDesktopArea.containsMouse ? "#66ffffff" : "#26ffffff" }
+                }
+            }
+            Rectangle {
                 width: 1
                 height: parent.height
-                color: Theme.barHighlight
-                opacity: 0.6
+                color: Theme.buttonOutline
+            }
+            Rectangle {
+                x: 1
+                width: 1
+                height: parent.height
+                color: Theme.buttonRestBorder
             }
 
             // Aero Peek: resting here turns every window to glass, through
@@ -236,7 +237,7 @@ Item {
         // Sized so a very long row is cut off instead of running under the
         // clock.
         width: bar.buttonsAvailable
-        height: Theme.taskButtonHeight + 4
+        height: Theme.taskButtonHeight
         clip: true
         spacing: Theme.taskButtonGap
 

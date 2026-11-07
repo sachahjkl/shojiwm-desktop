@@ -29,6 +29,9 @@ icons=(
   "audio-file:file-audio"
   "video-file:file-video"
   "calendar:calendar"
+  "empty-trash:recycle-bin"
+  "full-trash:recycle-bin-full"
+  "home:home"
 )
 
 for pair in "${icons[@]}"; do

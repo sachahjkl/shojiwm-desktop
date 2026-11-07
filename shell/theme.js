@@ -14,19 +14,23 @@ var taskbarHeight = 40;
 var taskbarPadding = 2;
 var orbSize = 36;
 var orbLeft = 8;
-var taskButtonHeight = 30;
+// Buttons fill the bar but for a pixel or two, as on Windows 7.
+var taskButtonHeight = 36;
 var taskButtonMaxWidth = 168;
 var taskButtonMinWidth = 44;
-var taskButtonGap = 3;
+var taskButtonGap = 2;
+// Room at the right of a button for the edges of the windows stacked behind
+// it.
+var stackRoom = 4;
 // A pinned program with no window open: the icon alone, as Windows draws it.
-var pinnedButtonWidth = 46;
+var pinnedButtonWidth = 62;
 var pinnedIconSize = 24;
 // A button in the compact taskbar: the icon alone, for a running program too.
-var compactButtonWidth = 54;
+var compactButtonWidth = 62;
 var trayIconSize = 16;
 var trayGap = 8;
 var clockWidth = 74;
-var showDesktopWidth = 10;
+var showDesktopWidth = 15;
 // How long the pointer rests on the show-desktop strip before Aero Peek.
 var peekDelay = 500;
 
@@ -88,30 +92,45 @@ var menuGlassBorder = 8;
 // Qt reads a hex colour as #AARRGGBB: the alpha comes first, unlike CSS.
 // ---------------------------------------------------------------------------
 
-// Taskbar glass: a blue-grey tint over the blur, translucent enough that the
-// wallpaper's colour comes through, lit along the top edge and darkest a
-// little under half way, as the Windows 7 bar is.
-var barTop = "#667aa6c8";
-var barUpper = "#4d416685";
-var barMiddle = "#591c3049";
-var barLower = "#4d284460";
-var barBottom = "#66142233";
-var barHighlight = "#80c9e2f5";
-var barEdge = "#cc0a131b";
-var barBottomEdge = "#b3070d12";
+// Taskbar glass: a pale haze over the blur, so the wallpaper's own colour
+// comes through, lit along the top and a little darker towards the bottom,
+// as the Windows 7 bar is over the default wallpaper.
+var barTop = "#4dffffff";
+var barUpper = "#29d9ebf7";
+var barMiddle = "#1f3a5a75";
+var barLower = "#33223a50";
+var barBottom = "#4d0e1c28";
+var barHighlight = "#80ffffff";
+var barEdge = "#99000000";
+var barBottomEdge = "#80000000";
 
-// Task buttons.
-var buttonRest = "#1cffffff";
-var buttonRestBorder = "#30ffffff";
-var buttonHover = "#5eaad4f5";
-var buttonHoverBorder = "#8ccfe9ff";
-var buttonActive = "#52d6ecff";
-var buttonActiveBorder = "#99e8f5ff";
-var buttonGloss = "#2bffffff";
+// Task buttons: glass plates with a dark outline and a light line inside it,
+// the upper half lighter than the lower. A running program has one at rest;
+// the window you are looking at has a brighter one.
+var buttonOutline = "#73000000";
+var buttonRestTop = "#40ffffff";
+var buttonRestUpper = "#24ffffff";
+var buttonRestLower = "#0affffff";
+var buttonRestBottom = "#21ffffff";
+var buttonRestBorder = "#73ffffff";
+var buttonHoverTop = "#66ffffff";
+var buttonHoverUpper = "#40ffffff";
+var buttonHoverLower = "#1fffffff";
+var buttonHoverBottom = "#4dffffff";
+var buttonHoverBorder = "#a6ffffff";
+var buttonActiveTop = "#80ffffff";
+var buttonActiveUpper = "#59ffffff";
+var buttonActiveLower = "#2effffff";
+var buttonActiveBottom = "#59ffffff";
+var buttonActiveBorder = "#bfffffff";
+var buttonPressedTop = "#33ffffff";
+var buttonPressedUpper = "#1affffff";
+var buttonPressedLower = "#26000000";
+var buttonPressedBottom = "#1affffff";
 
-// The stack drawn behind a button that stands for several windows.
-var buttonStack = "#14ffffff";
-var buttonStackBorder = "#26ffffff";
+// The windows stacked behind a button that stands for several.
+var buttonStack = "#29ffffff";
+var buttonStackBorder = "#8cffffff";
 
 // Popup menus and thumbnails.
 var popupTop = "#eef4f9ff";

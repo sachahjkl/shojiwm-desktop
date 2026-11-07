@@ -10,7 +10,7 @@ import Quickshell.Wayland
 import "components"
 import "theme.js" as Theme
 
-// The desktop shell: a wallpaper, a taskbar and a Start menu, one of each per
+// The desktop shell: a wallpaper with its icons, a taskbar and a Start menu, one of each per
 // screen.
 //
 // Every surface is a wlr-layer-shell surface. The compositor blurs what is
@@ -50,30 +50,85 @@ ShellRoot {
     Variants {
         model: Quickshell.screens
 
-        PanelWindow {
+        Scope {
+            id: desktopScope
+
             required property var modelData
-            screen: modelData
 
-            color: "transparent"
-            anchors.top: true
-            anchors.bottom: true
-            anchors.left: true
-            anchors.right: true
+            PanelWindow {
+                id: wallpaperWindow
 
-            exclusionMode: ExclusionMode.Ignore
-            WlrLayershell.layer: WlrLayer.Background
-            WlrLayershell.namespace: "no_blur"
-            WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
-            // A wallpaper must not take a click away from the compositor.
-            mask: Region {}
+                screen: desktopScope.modelData
 
-            Image {
-                anchors.fill: parent
-                source: Settings.wallpaperSource
-                sourceSize.width: parent.width * 1.0
-                sourceSize.height: parent.height * 1.0
-                fillMode: Image.PreserveAspectCrop
-                smooth: true
+                color: "transparent"
+                anchors.top: true
+                anchors.bottom: true
+                anchors.left: true
+                anchors.right: true
+
+                exclusionMode: ExclusionMode.Ignore
+                WlrLayershell.layer: WlrLayer.Background
+                WlrLayershell.namespace: "no_blur"
+                // The desktop takes the keyboard only to rename an icon.
+                WlrLayershell.keyboardFocus: desktopIcons.renaming
+                    ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
+
+                Image {
+                    anchors.fill: parent
+                    source: Settings.wallpaperSource
+                    sourceSize.width: parent.width * 1.0
+                    sourceSize.height: parent.height * 1.0
+                    fillMode: Image.PreserveAspectCrop
+                    smooth: true
+                }
+
+                // The icons.
+                Desktop {
+                    id: desktopIcons
+                    anchors.fill: parent
+                }
+            }
+
+            // The desktop's right-click menu, over everything while it is
+            // open. A click anywhere else on the screen closes it, as on
+            // Windows 7, and so does Escape.
+            PanelWindow {
+                screen: desktopScope.modelData
+                visible: desktopIcons.menuOpen
+
+                color: "transparent"
+                anchors.top: true
+                anchors.bottom: true
+                anchors.left: true
+                anchors.right: true
+
+                exclusionMode: ExclusionMode.Ignore
+                WlrLayershell.layer: WlrLayer.Overlay
+                WlrLayershell.namespace: "no_blur"
+                WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
+
+                Item {
+                    id: menuLayer
+
+                    anchors.fill: parent
+                    focus: true
+                    Keys.onEscapePressed: desktopIcons.closeMenu()
+
+                    MouseArea {
+                        anchors.fill: parent
+                        acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
+                        onPressed: desktopIcons.closeMenu()
+                    }
+
+                    DesktopMenu {
+                        entries: desktopIcons.menuEntries
+                        atX: desktopIcons.menuAt.x
+                        atY: desktopIcons.menuAt.y
+                        boundsWidth: menuLayer.width
+                        boundsHeight: menuLayer.height
+                        onDismissed: desktopIcons.closeMenu()
+                    }
+                }
             }
         }
     }

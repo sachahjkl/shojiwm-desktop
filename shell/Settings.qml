@@ -23,6 +23,9 @@ Singleton {
     property alias userPicture: adapter.userPicture
     property alias combineWindows: adapter.combineWindows
     property alias taskbarCompact: adapter.taskbarCompact
+    property alias desktopIconSize: adapter.desktopIconSize
+    property alias showDesktopIcons: adapter.showDesktopIcons
+    property alias desktopSort: adapter.desktopSort
     property alias showFrequent: adapter.showFrequent
     property alias powerButtonAction: adapter.powerButtonAction
     property alias peek: adapter.peek
@@ -114,9 +117,16 @@ Singleton {
 
             property bool combineWindows: true
             /// Taskbar buttons show the icon alone, as Windows 7's "hide
-            /// labels".
-            property bool taskbarCompact: false
+            /// labels", which is its default too.
+            property bool taskbarCompact: true
             property bool showFrequent: true
+
+            /// The desktop: "large", "medium" or "small" icons, whether they
+            /// show at all, and how they are sorted: "name", "size", "type"
+            /// or "date".
+            property string desktopIconSize: "medium"
+            property bool showDesktopIcons: true
+            property string desktopSort: "name"
             /// "shutdown", "restart", "sleep", "hibernate", "lock" or "logoff".
             property string powerButtonAction: "shutdown"
             property bool peek: true

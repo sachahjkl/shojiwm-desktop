@@ -45,17 +45,18 @@ Item {
         return Qt.rect(point.x, point.y, button.width, body.height);
     }
 
-    // The stack: two plates behind the button, as Windows 7 draws a combined
-    // button.
+    // The stack: the edges of the other windows, behind the button at its
+    // right, as Windows 7 draws a combined button.
     Repeater {
-        model: button.stacked ? 2 : 0
+        model: button.stacked ? Math.min(2, button.windows.length - 1) : 0
 
         delegate: Rectangle {
             required property int index
 
-            x: 0
-            y: -(index + 1) * 2
-            width: button.width - (index + 1) * 3
+            x: (index + 1) * 2
+            y: body.y
+            z: -1 - index
+            width: body.width
             height: body.height
             radius: Scheme.itemRadius
             color: Theme.buttonStack
@@ -64,43 +65,50 @@ Item {
         }
     }
 
+    // The plate: a dark outline, a light line inside it, and glass that is
+    // lighter in its upper half.
     Rectangle {
         id: body
 
-        width: button.width
+        readonly property string look: area.pressed ? "Pressed"
+            : button.current ? "Active"
+            : button.hovered ? "Hover" : "Rest"
+
+        width: button.width - Theme.stackRoom
         height: Theme.taskButtonHeight
         anchors.bottom: parent.bottom
         radius: Scheme.itemRadius
         antialiasing: true
+        color: "transparent"
+        border.width: 1
+        border.color: Theme.buttonOutline
         opacity: button.idle && !button.hovered && !area.pressed ? 0 : 1
 
         Behavior on opacity {
             NumberAnimation { duration: Theme.fade }
         }
 
-        border.width: 1
-        border.color: button.current ? Theme.buttonActiveBorder
-            : button.hovered ? Theme.buttonHoverBorder : Theme.buttonRestBorder
-
-        readonly property color fill: area.pressed || button.current
-            ? Theme.buttonActive
-            : button.hovered ? Theme.buttonHover : Theme.buttonRest
-
-        gradient: Gradient {
-            GradientStop { position: 0.0; color: Theme.buttonGloss }
-            GradientStop { position: 0.48; color: body.fill }
-            GradientStop { position: 0.52; color: Qt.darker(body.fill, 1.15) }
-            GradientStop { position: 1.0; color: body.fill }
-        }
-
-        Behavior on border.color {
-            ColorAnimation { duration: Theme.fade }
+        Rectangle {
+            anchors.fill: parent
+            anchors.margins: 1
+            radius: Scheme.itemRadius - 1
+            antialiasing: true
+            border.width: 1
+            border.color: body.look === "Pressed" ? Theme.buttonRestBorder
+                : Theme["button" + body.look + "Border"]
+            gradient: Gradient {
+                GradientStop { position: 0.0; color: Theme["button" + body.look + "Top"] }
+                GradientStop { position: 0.46; color: Theme["button" + body.look + "Upper"] }
+                GradientStop { position: 0.5; color: Theme["button" + body.look + "Lower"] }
+                GradientStop { position: 1.0; color: Theme["button" + body.look + "Bottom"] }
+            }
         }
     }
 
     // The icon alone, for a pinned program that is not running.
     IconImage {
         anchors.centerIn: body
+        anchors.verticalCenterOffset: area.pressed ? 1 : 0
         implicitSize: Theme.pinnedIconSize
         source: button.group ? button.group.icon : ""
         visible: button.iconOnly
@@ -118,21 +126,40 @@ Item {
 
             IconImage {
                 anchors.verticalCenter: parent.verticalCenter
-                implicitSize: 16
+                implicitSize: Theme.pinnedIconSize
                 source: button.group ? button.group.icon : ""
             }
 
-            Text {
+            // White, with a dark shadow a pixel down, as Windows 7 writes on
+            // glass.
+            Item {
                 anchors.verticalCenter: parent.verticalCenter
-                width: Math.max(0, body.width - 12 - 16 - 6)
-                text: button.stacked
-                    ? button.group.name
-                    : Apps.titleOf(button.windows[0])
-                color: Theme.textOnGlass
-                font.family: Theme.fontFamily
-                font.pixelSize: Theme.fontSize
-                elide: Text.ElideRight
+                width: Math.max(0, body.width - 12 - Theme.pinnedIconSize - 6)
+                height: label.implicitHeight
                 visible: body.width > 70
+
+                Text {
+                    x: 0
+                    y: 1
+                    width: parent.width
+                    text: label.text
+                    font: label.font
+                    elide: Text.ElideRight
+                    color: "#b3000000"
+                }
+
+                Text {
+                    id: label
+
+                    width: parent.width
+                    text: button.stacked
+                        ? button.group.name
+                        : Apps.titleOf(button.windows[0])
+                    color: "#ffffff"
+                    font.family: Theme.fontFamily
+                    font.pixelSize: Theme.fontSize
+                    elide: Text.ElideRight
+                }
             }
         }
     }

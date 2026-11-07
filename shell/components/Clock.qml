@@ -50,10 +50,16 @@ Item {
         Text {
             anchors.horizontalCenter: parent.horizontalCenter
             visible: Settings.showDate
-            text: source.date.toLocaleDateString(Qt.locale(), Locale.ShortFormat)
-            color: Theme.textMuted
+            // The date in full, day first, as Windows 7 shows it; the
+            // locale's own form when it has one.
+            text: Qt.locale().name === "C"
+                ? Qt.formatDate(source.date, "dd/MM/yyyy")
+                : Qt.formatDate(source.date, Qt.locale().dateFormat(Locale.ShortFormat)
+                    .replace(/\bd\b/, "dd").replace(/\bM\b/, "MM")
+                    .replace(/\byy\b/, "yyyy").replace(/ /g, "/"))
+            color: Theme.textOnGlass
             font.family: Theme.fontFamily
-            font.pixelSize: Theme.fontSizeSmall
+            font.pixelSize: Theme.fontSize
         }
     }
 

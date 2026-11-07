@@ -115,7 +115,7 @@ RED_OFF = [
 GREY_LINE = "#242c35"  # dark border under and beside the grey buttons
 RED_LINE = "#52281e"  # the same around the close button
 OFF_LINE = "#4a4f56"  # inactive
-# The 1 px light edge inside each cell, on the sides and the bottom: measured at 0.45
+# The 1 px light edge inside each cell, on its two sides only: measured at 0.45
 # on the sides, raised after the ShojiWM author's own frame, where every
 # button reads as a dark outline with a light line just inside it.
 EDGE = ("#ffffff", 0.7)
@@ -130,6 +130,9 @@ GLYPH_FILL_OFF = "#e8e8e8"
 def gradient(stops, gid):
     out = [f'<linearGradient id="{gid}" x1="0" y1="0" x2="0" y2="1">']
     previous = None
+    # The measured last row is a light line; the bottom of the group is the
+    # dark line alone, so the row above it carries on to the end.
+    stops = [stop for stop in stops if stop[0] != 16]
     for row, colour, alpha in stops:
         offset = row / FILL_H
         if previous is not None and row == 8:
@@ -201,6 +204,45 @@ def runs_to_rects(pixels, colour):
             )
             start = previous = x
     return "".join(out)
+
+
+# The two outer bottom corners of the group are rounded, as on Windows 7: the
+# bottom left of the minimize button and the bottom right of the close button.
+CORNER = 4
+
+
+def rounded(w, left, right):
+    """The outline of a w x H button, its bottom corners rounded as asked."""
+    r = CORNER
+    out = [f"M0,0 H{w}"]
+    if right:
+        out.append(f"V{H - r} A{r},{r} 0 0 1 {w - r},{H}")
+    else:
+        out.append(f"V{H}")
+    if left:
+        out.append(f"H{r} A{r},{r} 0 0 1 0,{H - r}")
+    else:
+        out.append("H0")
+    out.append("Z")
+    return " ".join(out)
+
+
+def corner_line(w, left, right, colour):
+    """The dark line round the rounded corners, 1 px inside the clip."""
+    r = CORNER
+    out = []
+    if left:
+        out.append(f"M0,{H - r - 1} V{H - r} A{r},{r} 0 0 0 {r},{H} H{r + 1}")
+    if right:
+        out.append(
+            f"M{w},{H - r - 1} V{H - r} A{r},{r} 0 0 1 {w - r},{H} H{w - r - 1}"
+        )
+    if not out:
+        return ""
+    return (
+        f'<path d="{" ".join(out)}" fill="none" stroke="{colour}"'
+        ' stroke-width="2" shape-rendering="auto" clip-path="url(#c)"/>'
+    )
 
 
 ORIGIN = 1  # x=0 is the dark line, so the cell starts one pixel in
@@ -275,6 +317,8 @@ GLYPHS = {
 def button(name, cell_w, stops, line_colour, glyph, edge, glyph_colours):
     """One caption button: the dark lines, the fill, the edges, the glyph."""
     right_line = 1 if glyph == "close" else 0
+    left = glyph == "min"
+    right = glyph == "close"
     total_w = 1 + cell_w + right_line
     edge_colour, edge_alpha = edge
     glyph_line, glyph_fill = glyph_colours
@@ -283,7 +327,10 @@ def button(name, cell_w, stops, line_colour, glyph, edge, glyph_colours):
         f' height="{H}" viewBox="0 0 {total_w} {H}"'
         f' shape-rendering="crispEdges">',
         "<!-- Drawn by tools/make-caption-svgs.py from docs/aero-measurements.md. -->",
-        f"<defs>{gradient(stops, 'g')}</defs>",
+        f"<defs>{gradient(stops, 'g')}"
+        f'<clipPath id="c"><path d="{rounded(total_w, left, right)}"'
+        ' shape-rendering="auto"/></clipPath></defs>',
+        '<g clip-path="url(#c)">',
         # the fill
         f'<rect x="1" y="0" width="{cell_w}" height="{FILL_H}" fill="url(#g)"/>',
         # the 1 px light edge on both sides of the cell
@@ -291,10 +338,8 @@ def button(name, cell_w, stops, line_colour, glyph, edge, glyph_colours):
         f' fill-opacity="{edge_alpha}"/>',
         f'<rect x="{cell_w}" y="0" width="1" height="{FILL_H}"'
         f' fill="{edge_colour}" fill-opacity="{edge_alpha}"/>',
-        # ... and along the bottom. There is no light line along the top: the
-        # group hangs straight from the window's dark outline, as on Windows 7.
-        f'<rect x="2" y="{FILL_H - 1}" width="{cell_w - 2}" height="1"'
-        f' fill="{edge_colour}" fill-opacity="{edge_alpha * 0.6:.2f}"/>',
+        # No light line along the top or the bottom: the group hangs straight
+        # from the window's dark outline, and its bottom is the one dark line.
         # the dark line on the left, and under the whole button
         f'<rect x="0" y="0" width="1" height="{H}" fill="{line_colour}"/>',
         f'<rect x="0" y="{H - 1}" width="{total_w}" height="1"'
@@ -310,6 +355,8 @@ def button(name, cell_w, stops, line_colour, glyph, edge, glyph_colours):
         + GLYPHS[glyph](cell_w, glyph_line, glyph_fill)
         + "</g>"
     )
+    body.append("</g>")
+    body.append(corner_line(total_w, left, right, line_colour))
     body.append("</svg>")
     return "\n".join(body)
 

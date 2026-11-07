@@ -11,3 +11,7 @@ var dconf = "dconf";
 
 // Listens for logind's Lock signal, so `loginctl lock-session` locks.
 var gdbus = "gdbus";
+
+// Opens, launches and trashes the desktop's files: `gio open`, `gio launch`
+// for a .desktop shortcut, `gio trash`.
+var gio = "gio";

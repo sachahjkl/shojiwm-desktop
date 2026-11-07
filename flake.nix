@@ -73,10 +73,12 @@
           substituteInPlace "$out/src/index.tsx" \
             --replace-fail 'const VICINAE = "vicinae";' \
               'const VICINAE = "${vicinae}/bin/vicinae";'
-          # dconf for the light or dark preference, gdbus for logind's Lock.
+          # dconf for the light or dark preference, gdbus for logind's Lock,
+          # gio for the desktop's files.
           substituteInPlace "$out/shell/tools.js" \
             --replace-fail 'var dconf = "dconf";' 'var dconf = "${nixpkgs.lib.getExe' pkgs.dconf "dconf"}";' \
-            --replace-fail 'var gdbus = "gdbus";' 'var gdbus = "${nixpkgs.lib.getExe' pkgs.glib "gdbus"}";'
+            --replace-fail 'var gdbus = "gdbus";' 'var gdbus = "${nixpkgs.lib.getExe' pkgs.glib "gdbus"}";' \
+            --replace-fail 'var gio = "gio";' 'var gio = "${nixpkgs.lib.getExe' pkgs.glib "gio"}";'
           runHook postInstall
         '';
 

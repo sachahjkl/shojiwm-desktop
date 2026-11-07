@@ -1,11 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="28" height="18" viewBox="0 0 28 18" shape-rendering="crispEdges">
 <!-- Drawn by tools/make-caption-svgs.py from docs/aero-measurements.md. -->
-<defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0.0000" stop-color="#ffffff" stop-opacity="0.53"/><stop offset="0.2353" stop-color="#fffcf9" stop-opacity="0.47"/><stop offset="0.4118" stop-color="#dbd7d5" stop-opacity="0.43"/><stop offset="0.4706" stop-color="#dbd7d5" stop-opacity="0.43"/><stop offset="0.4706" stop-color="#5d6670" stop-opacity="0.57"/><stop offset="0.5882" stop-color="#545f6c" stop-opacity="0.59"/><stop offset="0.7647" stop-color="#6e748b" stop-opacity="0.48"/><stop offset="0.8824" stop-color="#b4b1c3" stop-opacity="0.3"/><stop offset="0.9412" stop-color="#b4b1c3" stop-opacity="0.3"/><stop offset="0.9412" stop-color="#ffffff" stop-opacity="0.35"/><stop offset="1" stop-color="#ffffff" stop-opacity="0.35"/></linearGradient></defs>
+<defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0.0000" stop-color="#ffffff" stop-opacity="0.53"/><stop offset="0.2353" stop-color="#fffcf9" stop-opacity="0.47"/><stop offset="0.4118" stop-color="#dbd7d5" stop-opacity="0.43"/><stop offset="0.4706" stop-color="#dbd7d5" stop-opacity="0.43"/><stop offset="0.4706" stop-color="#5d6670" stop-opacity="0.57"/><stop offset="0.5882" stop-color="#545f6c" stop-opacity="0.59"/><stop offset="0.7647" stop-color="#6e748b" stop-opacity="0.48"/><stop offset="0.8824" stop-color="#b4b1c3" stop-opacity="0.3"/><stop offset="0.9412" stop-color="#b4b1c3" stop-opacity="0.3"/><stop offset="1" stop-color="#b4b1c3" stop-opacity="0.3"/></linearGradient><clipPath id="c"><path d="M0,0 H28 V18 H4 A4,4 0 0 1 0,14 Z" shape-rendering="auto"/></clipPath></defs>
+<g clip-path="url(#c)">
 <rect x="1" y="0" width="27" height="17" fill="url(#g)"/>
 <rect x="1" y="0" width="1" height="17" fill="#ffffff" fill-opacity="0.7"/>
 <rect x="27" y="0" width="1" height="17" fill="#ffffff" fill-opacity="0.7"/>
-<rect x="2" y="16" width="25" height="1" fill="#ffffff" fill-opacity="0.42"/>
 <rect x="0" y="0" width="1" height="18" fill="#242c35"/>
 <rect x="0" y="17" width="28" height="1" fill="#242c35"/>
 <g shape-rendering="auto"><rect x="9" y="8" width="12" height="5" fill="#535666"/><rect x="10" y="9" width="10" height="3" fill="#ffffff"/></g>
+</g>
+<path d="M0,13 V14 A4,4 0 0 0 4,18 H5" fill="none" stroke="#242c35" stroke-width="2" shape-rendering="auto" clip-path="url(#c)"/>
 </svg>
