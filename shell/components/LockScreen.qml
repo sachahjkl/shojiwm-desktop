@@ -115,7 +115,7 @@ Item {
             id: field
 
             width: 225
-            height: 25
+            height: 26
             anchors.verticalCenter: parent.verticalCenter
             color: "#ffffff"
             border.width: 1
@@ -168,33 +168,26 @@ Item {
             }
         }
 
-        // The round arrow: a glass bead, pale over its top half and blue
-        // below, with a solid white arrow. Drawn in arrow-bead.svg.
+        // The round arrow: a bead of glass, drawn in arrow-bead.svg, and
+        // brighter under the pointer (arrow-bead-hot.svg).
         Item {
             id: go
 
             anchors.left: field.right
-            anchors.leftMargin: 5
+            anchors.leftMargin: 4
             anchors.verticalCenter: parent.verticalCenter
-            width: 28
-            height: 28
+            width: 32
+            height: 32
 
             Image {
                 anchors.fill: parent
-                source: "../assets/arrow-bead.svg"
-                sourceSize.width: 56
-                sourceSize.height: 56
+                source: goArea.containsMouse && !goArea.pressed
+                    ? "../assets/arrow-bead-hot.svg" : "../assets/arrow-bead.svg"
+                sourceSize.width: 64
+                sourceSize.height: 64
                 smooth: true
-                opacity: goArea.pressed ? 0.85 : 1
-            }
-
-            // Lit under the pointer.
-            Rectangle {
-                anchors.fill: parent
-                anchors.margins: 1
-                radius: width / 2
-                color: "#ffffff"
-                opacity: goArea.pressed ? 0 : goArea.containsMouse ? 0.22 : 0
+                // Pressed: the glass dims, as if pushed in.
+                opacity: goArea.pressed ? 0.8 : 1
             }
 
             MouseArea {

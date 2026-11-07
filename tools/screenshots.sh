@@ -441,6 +441,10 @@ qs lock lock
 sleep 4
 shot "lock-screen"
 alive "locked"
+# The pointer on the round arrow, right of the field under the name.
+xdotool mousemove --window "$window" $((WIDTH / 2 + 127)) $((HEIGHT / 2 + 87))
+sleep 1
+shot "lock-screen-hover"
 xdotool type --delay 60 "not my password"
 xdotool key Return
 sleep 5

@@ -5,8 +5,8 @@ import QtQuick
 // a 98 px picture) and drawn here at 136:
 //
 //   a dark blue outer line, a one-pixel highlight inside it,
-//   a band of glass, pale cyan at the top, steel blue in the middle, bright
-//   blue at the bottom, about 7 px wide,
+//   a band of glass, nearly white at the top, cyan-blue down the sides,
+//   blue at the bottom (measured again on a 1280 x 720 capture),
 //   a light line, then a dark grey-blue line round the picture, which is
 //   square and fills its place.
 //
@@ -56,12 +56,12 @@ Item {
         anchors.margins: 2
         radius: tile.r - 2
         gradient: Gradient {
-            GradientStop { position: 0.0; color: "#d4ecf8" }
-            GradientStop { position: 0.12; color: "#b4d6ea" }
-            GradientStop { position: 0.45; color: "#7cadca" }
-            GradientStop { position: 0.55; color: "#5d97b9" }
-            GradientStop { position: 0.85; color: "#5ea6d2" }
-            GradientStop { position: 1.0; color: "#62b2e0" }
+            GradientStop { position: 0.0; color: "#e0f4f6" }
+            GradientStop { position: 0.1; color: "#d2ecf0" }
+            GradientStop { position: 0.35; color: "#8fc0d2" }
+            GradientStop { position: 0.6; color: "#5f9fc0" }
+            GradientStop { position: 0.9; color: "#3f8dbf" }
+            GradientStop { position: 1.0; color: "#4a9ccf" }
         }
     }
 

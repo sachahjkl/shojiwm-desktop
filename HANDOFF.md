@@ -177,6 +177,16 @@ frame; it is now full bleed. The arrow is `assets/arrow-bead.svg`: a dark
 ring, pale glass above and blue below, and a broad solid white arrow. The
 Start menu frames the account picture with the same `UserTile`, small.
 
+The owner then supplied two better references (a 1192 x 670 log-on
+screen and a 1280 x 720 capture of three of them). Measured on those, the
+arrow is a bead of glass: translucent, a white veil over the top half with
+a bright crescent, a band darker than the background under the middle, a
+saturated cyan glow from the bottom, a dark ring, and a white arrow about
+65 % of its width. `arrow-bead.svg` and `arrow-bead-hot.svg` (under the
+pointer) cut every layer to the disc with its own path: Qt's SVG renderer
+ignores clip paths, which had left square corners. The frame's band is
+nearly white at the top.
+
 Light and dark no longer forces Adwaita on GTK 3: `shell/gtk-switch.sh`
 moves the theme in use to its installed light or dark variant, or leaves
 it.
