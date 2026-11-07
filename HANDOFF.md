@@ -1,7 +1,9 @@
 # Handoff
 
-This branch, `wip-aero-polish`, carries work that was done on a server with
-no display. `main` is untouched and still holds the previous state.
+`wip-aero-polish` carries the first pass, done on a server with no display.
+`claude/terminer-passation-wywvdz` continues it: it holds `wip-aero-polish`
+unchanged plus the second pass below. `main` is untouched and still holds the
+state before both.
 
 Everything below was checked with a nested compositor inside an X server with
 no screen, Mesa in software, at 1280x800 and scale 1. Nothing was ever run on
@@ -36,6 +38,41 @@ a real GPU.
 6. The wallpaper is brighter, so the glass reads like Aero rather than like
    smoked glass.
 
+## Second pass: written, not reviewed
+
+1. **Pinned taskbar programs.** `taskbarPinnedIds` in `shell/Apps.qml`. A
+   pinned program with no window is an icon-only button (`pinnedButtonWidth`,
+   `pinnedIconSize` in `shell/theme.js`); a click starts it, and its windows
+   then gather behind the same button. With `combineWindows` off, the first
+   window takes the pinned button's place and the others follow it. A middle
+   click on any button starts another instance.
+2. **A bug in the Start menu's pinned list.** Quickshell keys `.desktop`
+   entries by the name without the extension, so
+   `DesktopEntries.byId("kitty.desktop")` was null and the list was always
+   empty. `Apps.entryById` strips the extension for both lists.
+3. **Recent files in the jump list.** `Apps.recentFiles` reads
+   `$XDG_DATA_HOME/recently-used.xbel` through a `FileView` that watches it.
+   A file belongs to a program when one of its `bookmark:application` entries
+   names the program (its id, name, `StartupWMClass`, the first word of its
+   command, or the last part of a reverse-DNS id). The file is opened with the
+   program's own command plus the path. Eight at most (`recentLimit`).
+4. **Tray submenus.** `TrayMenu.qml` loads itself through a `LazyLoader` for
+   an entry with children, beside the line, after `submenuDelay` or on a
+   click. Check boxes and radio buttons show a check mark.
+5. **Aero Peek.** `src/peek.tsx` serves a socket
+   (`$XDG_RUNTIME_DIR/shojiwm-<display>-win7.sock`, handed to the shell in
+   `SHOJIWM_WIN7_SOCKET`) with ShojiWM's own IPC. `peek {on}` swaps the output
+   composition for the background layers, one glass outline per window, then
+   the top layers. `show-desktop` calls the window manager's toggle, so the
+   strip's second click brings the windows back, as `Super`+`D` does. The
+   shell side is `shell/CompositorIpc.qml`; without the socket the strip falls
+   back to minimising everything.
+6. `tools/screenshots.sh` pins `foot` and `footclient` in its copy of the
+   configuration and writes a `recently-used.xbel` naming `foot`, since the
+   test machine has neither the default programs nor anything that records
+   recent files. It also takes `peek.png`. `SHOJIWM_FLAKE` points it at a
+   local ShojiWM clone.
+
 ## What remains, in priority order
 
 1. **Look at all of it on a real GPU.** Colours, blur, animation speed and
@@ -53,10 +90,14 @@ a real GPU.
 5. **The taskbar glass alpha.** Only one wallpaper was available behind a
    reference taskbar, so colour and alpha could not be separated. The
    gradient is right over a dark wallpaper and too dark over a light one.
-6. **Live taskbar thumbnails.** `shell/theme.js:45` turns them on. See the
-   defect below.
-7. **Aero Peek, jump-list recent files, pinned taskbar programs.** Not
-   written; the README lists them.
+6. **Live taskbar thumbnails.** `shell/theme.js` (`liveThumbnails`) turns
+   them on. See the defect below.
+7. **Peek at one window** from its thumbnail. The shell knows a
+   `zwlr_foreign_toplevel` handle, the compositor a `WaylandWindow`; nothing
+   maps one to the other over the socket yet (title and app id would be a
+   start).
+8. **Unpinning from the jump list.** Pins are configuration, not state; a
+   "Pin / Unpin this program" line would need somewhere to write them.
 
 ## Known defects
 
