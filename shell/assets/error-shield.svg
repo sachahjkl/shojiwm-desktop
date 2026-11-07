@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+  <!-- Original glyph: a red disc with a white cross, lit at the top. -->
+  <defs>
+    <linearGradient id="red" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f26a5a"/>
+      <stop offset="1" stop-color="#b3150a"/>
+    </linearGradient>
+  </defs>
+  <circle cx="12" cy="12" r="10.5" fill="url(#red)" stroke="#7a0c04"/>
+  <path d="M5 9.5a7.5 5 0 0 1 14 0" fill="#ffffff" opacity=".25"/>
+  <path d="M8.2 8.2l7.6 7.6M15.8 8.2l-7.6 7.6" stroke="#ffffff" stroke-width="2.4"
+        stroke-linecap="round"/>
+</svg>

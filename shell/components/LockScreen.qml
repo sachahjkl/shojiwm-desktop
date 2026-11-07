@@ -7,8 +7,9 @@ import "../theme.js" as Theme
 
 // The lock screen, as the Windows 7 log-on screen is laid out: the picture
 // of your choice behind, the time over it, your account picture in its glass
-// frame, your name, and the password field with the round blue arrow. The
-// power button sits in the bottom right corner.
+// frame, your name, and the password field with the round arrow. A wrong
+// password replaces the field with the message and OK, as Windows does. The
+// red power button and its arrow sit in the bottom right corner.
 //
 // One per screen. The password is checked once, by LockState.
 Item {
@@ -74,53 +75,18 @@ Item {
     }
 
     // ----- you ------------------------------------------------------------------
+    //
+    // Measured on Windows 7 log-on screenshots: a frame of about 116 px round
+    // a 98 px picture at 800 x 600, a 175 x 20 field, a 22 px round arrow.
+    // Here at the size a 1080p screen shows them.
 
-    // The account picture in its glass frame: a light rim, a soft glow.
-    Item {
+    UserTile {
         id: tile
 
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.verticalCenter: parent.verticalCenter
-        anchors.verticalCenterOffset: -40
-        width: 146
-        height: 146
-
-        Rectangle {
-            anchors.fill: parent
-            anchors.margins: -6
-            radius: 14
-            color: "transparent"
-            border.width: 6
-            border.color: "#26ffffff"
-        }
-
-        Rectangle {
-            anchors.fill: parent
-            radius: 9
-            border.width: 1
-            border.color: "#e6ffffff"
-            gradient: Gradient {
-                GradientStop { position: 0.0; color: "#8cffffff" }
-                GradientStop { position: 1.0; color: "#40ffffff" }
-            }
-        }
-
-        Rectangle {
-            anchors.fill: parent
-            anchors.margins: 10
-            radius: 3
-            color: "#ffffff"
-            clip: true
-
-            Image {
-                anchors.fill: parent
-                source: Settings.userPictureSource
-                sourceSize.width: 252
-                sourceSize.height: 252
-                fillMode: Image.PreserveAspectCrop
-                smooth: true
-            }
-        }
+        anchors.verticalCenterOffset: -50
+        source: Settings.userPictureSource
     }
 
     ShadowText {
@@ -128,59 +94,61 @@ Item {
 
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.top: tile.bottom
-        anchors.topMargin: 16
+        anchors.topMargin: 14
         text: Apps.userName
-        font.pixelSize: 26
+        font.pixelSize: 22
     }
 
-    // ----- the password ---------------------------------------------------------
-
+    // The password field and its round arrow, or, after a wrong password,
+    // the message and OK, as Windows 7 swaps them.
     Item {
         id: entry
 
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.top: name.bottom
-        anchors.topMargin: 16
-        width: field.width + 8 + go.width
-        height: 30
+        anchors.topMargin: 12
+        width: field.width + 6 + go.width
+        height: 28
+        visible: !screen.showingError
 
         Rectangle {
             id: field
 
-            width: 240
-            height: 28
+            width: 225
+            height: 25
             anchors.verticalCenter: parent.verticalCenter
-            radius: 3
             color: "#ffffff"
             border.width: 1
-            border.color: password.activeFocus ? "#3f82b4" : "#7a8fa3"
+            border.color: password.activeFocus ? "#3d7bad" : "#5a7f9c"
 
-            // A faint inner shade at the top, as a Windows text box has.
+            // The inner shade a Windows text box has along its top and left.
             Rectangle {
-                anchors.left: parent.left
-                anchors.right: parent.right
-                anchors.top: parent.top
-                anchors.margins: 1
-                height: 3
-                radius: 2
-                gradient: Gradient {
-                    GradientStop { position: 0.0; color: "#1f000000" }
-                    GradientStop { position: 1.0; color: "#00000000" }
-                }
+                x: 1
+                y: 1
+                width: parent.width - 2
+                height: 1
+                color: "#c4d3de"
+            }
+            Rectangle {
+                x: 1
+                y: 1
+                width: 1
+                height: parent.height - 2
+                color: "#dde6ec"
             }
 
             TextInput {
                 id: password
 
                 anchors.fill: parent
-                anchors.leftMargin: 8
-                anchors.rightMargin: 8
+                anchors.leftMargin: 6
+                anchors.rightMargin: 6
                 verticalAlignment: TextInput.AlignVCenter
                 echoMode: TextInput.Password
-                passwordCharacter: "●"
-                color: "#10283c"
+                passwordCharacter: "\u25CF"
+                color: "#000000"
                 font.family: Theme.fontFamily
-                font.pixelSize: Theme.fontSize + 1
+                font.pixelSize: Theme.fontSize
                 clip: true
                 focus: true
                 enabled: !LockState.busy
@@ -193,53 +161,63 @@ Item {
                     anchors.fill: parent
                     verticalAlignment: Text.AlignVCenter
                     text: "Password"
-                    color: "#8a9aa8"
+                    color: "#6d6d6d"
                     font: password.font
                     visible: password.text.length === 0
                 }
             }
         }
 
-        // The round blue arrow.
+        // The round arrow: a pale glass bead with a blue arrow in it.
         Item {
             id: go
 
             anchors.left: field.right
-            anchors.leftMargin: 8
+            anchors.leftMargin: 6
             anchors.verticalCenter: parent.verticalCenter
-            width: 30
-            height: 30
+            width: 28
+            height: 28
 
             Rectangle {
                 anchors.fill: parent
                 radius: width / 2
                 border.width: 1
-                border.color: "#1d4f86"
+                border.color: goArea.containsMouse ? "#2c6aa0" : "#3d6f96"
                 gradient: Gradient {
                     GradientStop {
                         position: 0.0
-                        color: goArea.pressed ? "#2a6db8" : goArea.containsMouse ? "#7cc0ff" : "#5aa9f0"
+                        color: goArea.pressed ? "#bcdcf2" : goArea.containsMouse ? "#ffffff" : "#f4fbff"
                     }
-                    GradientStop { position: 0.5; color: goArea.pressed ? "#1f5a9e" : "#2a7fd4" }
-                    GradientStop { position: 1.0; color: goArea.pressed ? "#174a85" : "#1c63ae" }
+                    GradientStop {
+                        position: 0.5
+                        color: goArea.pressed ? "#8cc0e6" : goArea.containsMouse ? "#cdeafd" : "#bfe0f6"
+                    }
+                    GradientStop {
+                        position: 0.51
+                        color: goArea.pressed ? "#6aaadb" : goArea.containsMouse ? "#94cff5" : "#86c2ea"
+                    }
+                    GradientStop {
+                        position: 1.0
+                        color: goArea.pressed ? "#4f95cf" : goArea.containsMouse ? "#6ab9ef" : "#5fa6da"
+                    }
                 }
             }
 
-            // The gloss on the upper half.
+            // A bright rim inside the dark one.
             Rectangle {
-                anchors.horizontalCenter: parent.horizontalCenter
-                y: 2
-                width: parent.width - 6
-                height: parent.height / 2 - 2
-                radius: height / 2
-                color: "#40ffffff"
+                anchors.fill: parent
+                anchors.margins: 1
+                radius: width / 2
+                color: "transparent"
+                border.width: 1
+                border.color: "#99ffffff"
             }
 
             Image {
                 anchors.centerIn: parent
                 width: 16
                 height: 16
-                source: "../assets/arrow-right.svg"
+                source: "../assets/arrow-bead.svg"
                 sourceSize.width: 32
                 sourceSize.height: 32
             }
@@ -253,50 +231,146 @@ Item {
         }
     }
 
+    // "Welcome", while PAM checks.
     ShadowText {
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.top: entry.bottom
         anchors.topMargin: 14
-        text: LockState.busy ? "Welcome" : LockState.message
-        visible: text.length > 0
-        font.pixelSize: Theme.fontSize + 2
+        text: "Welcome"
+        visible: LockState.busy
+        font.pixelSize: Theme.fontSize + 4
     }
 
-    // ----- the power button -----------------------------------------------------
+    // A wrong password: the field gives way to the message and OK.
+    Column {
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.top: name.bottom
+        anchors.topMargin: 14
+        spacing: 16
+        visible: screen.showingError
 
-    Item {
-        anchors.right: parent.right
-        anchors.bottom: parent.bottom
-        anchors.margins: 28
-        width: 40
-        height: 30
+        Row {
+            anchors.horizontalCenter: parent.horizontalCenter
+            spacing: 10
 
-        Rectangle {
-            anchors.fill: parent
-            radius: 3
-            border.width: 1
-            border.color: "#80200b06"
-            gradient: Gradient {
-                GradientStop { position: 0.0; color: powerArea.containsMouse ? "#f07a62" : "#e0644b" }
-                GradientStop { position: 0.5; color: powerArea.containsMouse ? "#d24a30" : "#c23d24" }
-                GradientStop { position: 1.0; color: powerArea.containsMouse ? "#b8381f" : "#a53019" }
+            Image {
+                anchors.verticalCenter: parent.verticalCenter
+                width: 24
+                height: 24
+                source: "../assets/error-shield.svg"
+                sourceSize.width: 48
+                sourceSize.height: 48
+            }
+
+            ShadowText {
+                anchors.verticalCenter: parent.verticalCenter
+                text: LockState.message
+                font.pixelSize: Theme.fontSize + 4
             }
         }
 
-        Image {
-            anchors.centerIn: parent
-            width: 16
-            height: 16
-            source: "../assets/power-white.svg"
-            sourceSize.width: 32
-            sourceSize.height: 32
+        LogonButton {
+            id: okButton
+            anchors.horizontalCenter: parent.horizontalCenter
+            label: "OK"
+            onClicked: screen.dismissError()
         }
+    }
 
-        MouseArea {
-            id: powerArea
-            anchors.fill: parent
-            hoverEnabled: true
-            onClicked: Apps.runPower("shutdown")
+    // ----- the power button -------------------------------------------------------
+
+    PowerSplitButton {
+        anchors.right: parent.right
+        anchors.bottom: parent.bottom
+        anchors.margins: 26
+        onPower: Apps.runPower(Apps.powerButtonAction === "lock"
+            ? "shutdown" : Apps.powerButtonAction)
+        onMenu: powerMenuOpen = !powerMenuOpen
+    }
+
+    property bool powerMenuOpen: false
+
+    // Restart, sleep, hibernate, shut down, above the button.
+    Rectangle {
+        visible: screen.powerMenuOpen
+        anchors.right: parent.right
+        anchors.bottom: parent.bottom
+        anchors.rightMargin: 26
+        anchors.bottomMargin: 26 + 26
+        width: 150
+        height: powerColumn.implicitHeight + 8
+        radius: 4
+        color: "#e6f4f9ff"
+        border.width: 1
+        border.color: "#2c5779"
+
+        Column {
+            id: powerColumn
+
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.top: parent.top
+            anchors.margins: 4
+
+            Repeater {
+                model: Apps.powerActions.filter(function (action) {
+                    return ["restart", "sleep", "hibernate", "shutdown"].indexOf(action.id) >= 0;
+                })
+
+                delegate: Rectangle {
+                    id: powerRow
+
+                    required property var modelData
+
+                    width: powerColumn.width
+                    height: 26
+                    radius: 3
+                    color: powerRowArea.containsMouse ? "#669ad0f7" : "transparent"
+                    border.width: powerRowArea.containsMouse ? 1 : 0
+                    border.color: "#b3cfe9ff"
+
+                    Text {
+                        anchors.verticalCenter: parent.verticalCenter
+                        anchors.left: parent.left
+                        anchors.leftMargin: 10
+                        text: powerRow.modelData.label
+                        color: "#10283c"
+                        font.family: Theme.fontFamily
+                        font.pixelSize: Theme.fontSize
+                    }
+
+                    MouseArea {
+                        id: powerRowArea
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        onClicked: {
+                            screen.powerMenuOpen = false;
+                            Apps.runPower(powerRow.modelData.id);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // ----- behaviour --------------------------------------------------------------
+
+    /// A wrong password is on show, until OK.
+    property bool showingError: false
+
+    function dismissError() {
+        screen.showingError = false;
+        password.text = "";
+        password.forceActiveFocus();
+    }
+
+    // Return or Escape on the message is OK.
+    Keys.onPressed: function (event) {
+        if (screen.showingError && (event.key === Qt.Key_Return
+            || event.key === Qt.Key_Enter || event.key === Qt.Key_Escape
+            || event.key === Qt.Key_Space)) {
+            screen.dismissError();
+            event.accepted = true;
         }
     }
 
@@ -306,15 +380,17 @@ Item {
         LockState.authenticate(password.text);
     }
 
-    // A wrong password: empty the field and keep typing.
     Connections {
         target: LockState
         function onFailuresChanged() {
             password.text = "";
-            password.forceActiveFocus();
+            screen.showingError = true;
+            screen.forceActiveFocus();
         }
         function onLockedChanged() {
             password.text = "";
+            screen.showingError = false;
+            screen.powerMenuOpen = false;
         }
     }
 

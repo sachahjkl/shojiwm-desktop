@@ -155,13 +155,18 @@ Singleton {
         }
     }
 
-    /// Set the preference for every program: the colour scheme, and the GTK 3
-    /// theme, which GTK 3 programs read instead.
+    /// Set the preference for every program. The colour scheme is what GTK 4,
+    /// libadwaita, Qt, the browsers and Vicinae read. GTK 3 programs read the
+    /// theme instead: it moves to the light or dark variant of the theme in
+    /// use, when that variant is installed (Arc and Arc-Dark, Adwaita and
+    /// Adwaita-dark, Foo-Light and Foo-Dark), and is left alone otherwise.
     function setDark(on) {
         root.colorScheme = on ? "prefer-dark" : "default";
         Quickshell.execDetached([Tools.dconf, "write", root.schemeKey,
                                  on ? "'prefer-dark'" : "'default'"]);
-        Quickshell.execDetached([Tools.dconf, "write", root.gtkThemeKey,
-                                 on ? "'Adwaita-dark'" : "'Adwaita'"]);
+        Quickshell.execDetached(["sh", root.gtkSwitch,
+                                 Tools.dconf, root.gtkThemeKey, on ? "dark" : "light"]);
     }
+
+    readonly property string gtkSwitch: String(Qt.resolvedUrl("gtk-switch.sh")).replace(/^file:\/\//, "")
 }

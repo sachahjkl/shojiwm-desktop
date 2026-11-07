@@ -155,6 +155,24 @@ actions or a typed command was actually run.
 5. **`shell/tools.js`** holds `dconf` and `gdbus`; the Nix package writes
    their store paths there.
 
+## Sixth pass: the lock screen from references
+
+The owner found the first lock screen too far from Windows 7 and the wrong
+password hard to see. Redrawn from two Windows 7 Ultimate log-on
+screenshots (Seven Forums tutorials 5382 and 182279, read in a temporary
+directory, not committed): the account frame (`UserTile.qml`, 116 px round
+98 at 800 x 600, drawn 136 round 120), the 175 x 20 field, the pale round
+arrow with a blue arrow, the red power button in one piece with its arrow
+(`PowerSplitButton.qml`, 38 + 14 x 18) and a menu of restart, sleep,
+hibernate and shut down above it. A wrong password now swaps the field for
+"The user name or password is incorrect." with a red mark and an OK button
+(`LogonButton.qml`, the dark glass of the log-on buttons), as Windows 7
+does; Return, Escape or Space is OK.
+
+Light and dark no longer forces Adwaita on GTK 3: `shell/gtk-switch.sh`
+moves the theme in use to its installed light or dark variant, or leaves
+it.
+
 ## What remains, in priority order
 
 1. **Look at all of it on a real GPU.** Colours, blur, animation speed and

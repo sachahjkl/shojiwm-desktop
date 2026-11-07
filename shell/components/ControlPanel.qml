@@ -465,7 +465,8 @@ FloatingWindow {
                 color: "#c42b1c"
                 text: "dconf could not be reached, so programs will not see this "
                     + "choice; only this desktop will, until it restarts. "
-                    + "On NixOS, set programs.dconf.enable = true."
+                    + "On NixOS: programs.dconf.enable = true (the shojiwm "
+                    + "module of nixconfig sets it)."
             }
         }
     }

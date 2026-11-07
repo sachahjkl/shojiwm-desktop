@@ -76,7 +76,7 @@ Singleton {
                 root.message = "";
                 root.locked = false;
             } else {
-                root.fail("The password is incorrect. Try again.");
+                root.fail("The user name or password is incorrect.");
             }
         }
 

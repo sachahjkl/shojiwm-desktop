@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
+  <!-- Original glyph: the power mark as a white ring and bar with a dark
+       edge, for the red button of the lock screen. -->
+  <g fill="none" stroke-linecap="round">
+    <path d="M5 4.4a5 5 0 1 0 6 0" stroke="#3a0000" stroke-width="3.6"/>
+    <path d="M8 2.2v5.4" stroke="#3a0000" stroke-width="3.6"/>
+    <path d="M5 4.4a5 5 0 1 0 6 0" stroke="#ffffff" stroke-width="2"/>
+    <path d="M8 2.2v5.4" stroke="#ffffff" stroke-width="2"/>
+  </g>
+</svg>
