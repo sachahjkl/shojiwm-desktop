@@ -1,5 +1,4 @@
 import QtQuick
-import ".."
 import "../theme.js" as Theme
 
 // The orb at the left end of the taskbar. It lights up under the pointer and
@@ -16,7 +15,7 @@ Item {
     Image {
         id: picture
         anchors.fill: parent
-        source: Scheme.modern ? "../assets/start-modern.svg" : "../assets/start-orb.svg"
+        source: "../assets/start-orb.svg"
         sourceSize.width: Theme.orbSize * 2
         sourceSize.height: Theme.orbSize * 2
         smooth: true
@@ -27,7 +26,7 @@ Item {
         anchors.centerIn: parent
         width: Theme.orbSize - 6
         height: width
-        radius: Scheme.modern ? 7 : width / 2
+        radius: width / 2
         color: "#ffffff"
         opacity: orb.menuOpen ? 0.3 : area.containsMouse ? 0.18 : 0
 

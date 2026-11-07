@@ -77,7 +77,7 @@ FloatingWindow {
             anchors.verticalCenter: parent.verticalCenter
             width: 26
             height: 26
-            radius: 13
+            radius: Scheme.modern ? 0 : 13
             opacity: window.page === "home" ? 0.45 : 1
             border.width: 1
             border.color: "#1d4f86"
@@ -113,7 +113,7 @@ FloatingWindow {
             anchors.rightMargin: 8
             anchors.verticalCenter: parent.verticalCenter
             height: 24
-            radius: 2
+            radius: Scheme.fieldRadius
             color: Scheme.field
             border.width: 1
             border.color: Scheme.fieldBorder
@@ -368,11 +368,10 @@ FloatingWindow {
 
             Note {
                 width: parent.width
-                text: "Aero is Windows 7 as it was: glossy glass, bevels, the "
-                    + "orb. Modern keeps the glass and the blue, and drops the "
-                    + "gloss: flat fills, rounder corners, quieter frames that "
-                    + "follow light or dark. Windows opened from now on take "
-                    + "the new frame size."
+                text: "Aero is Windows 7 as it was. Modern is the same Aero, "
+                    + "squared: the glass, the gloss and the colours stay, and "
+                    + "every corner, of the windows, the menus, the buttons and "
+                    + "the lock screen, is a right angle."
             }
 
             Row {
@@ -396,7 +395,7 @@ FloatingWindow {
 
                         Rectangle {
                             anchors.fill: parent
-                            radius: Scheme.itemRadius + 1
+                            radius: Scheme.itemRadius
                             color: styleChoice.isChosen ? Scheme.selection
                                 : styleArea.containsMouse ? Scheme.hover : "transparent"
                             border.width: styleChoice.isChosen || styleArea.containsMouse
@@ -404,14 +403,13 @@ FloatingWindow {
                             border.color: Scheme.selectionBorder
                         }
 
-                        // A small window in that style, on a bit of desktop.
+                        // A small Aero window on a bit of desktop, rounded or
+                        // square.
                         Rectangle {
                             x: 16
                             y: 12
                             width: parent.width - 32
                             height: 96
-                            radius: 3
-                            clip: true
                             gradient: Gradient {
                                 GradientStop { position: 0.0; color: "#1b5e97" }
                                 GradientStop { position: 1.0; color: "#2f8cc4" }
@@ -422,17 +420,15 @@ FloatingWindow {
                                 y: 10
                                 width: parent.width - 28
                                 height: 78
-                                radius: styleChoice.isModern ? 7 : 4
-                                color: styleChoice.isModern ? "#d9e8f0f7" : "#b3538ebe"
+                                radius: styleChoice.isModern ? 0 : 5
+                                color: "#b3538ebe"
                                 border.width: 1
-                                border.color: styleChoice.isModern ? "#40000000" : "#000000"
+                                border.color: "#000000"
 
-                                // Aero's white bevel inside the black line.
                                 Rectangle {
-                                    visible: !styleChoice.isModern
                                     anchors.fill: parent
                                     anchors.margins: 1
-                                    radius: 3
+                                    radius: styleChoice.isModern ? 0 : 4
                                     color: "transparent"
                                     border.width: 1
                                     border.color: "#ccffffff"
@@ -441,20 +437,19 @@ FloatingWindow {
                                 // The caption buttons.
                                 Row {
                                     anchors.right: parent.right
-                                    anchors.rightMargin: styleChoice.isModern ? 5 : 4
-                                    y: styleChoice.isModern ? 4 : 1
-                                    spacing: styleChoice.isModern ? 3 : 0
+                                    anchors.rightMargin: 4
+                                    y: 1
 
                                     Repeater {
                                         model: 3
                                         delegate: Rectangle {
                                             required property int index
-                                            width: styleChoice.isModern ? 10 : (index === 2 ? 20 : 12)
-                                            height: styleChoice.isModern ? 8 : 9
-                                            radius: styleChoice.isModern ? 2 : 1
-                                            color: styleChoice.isModern
-                                                ? (index === 2 ? "#33000000" : "#1a000000")
-                                                : (index === 2 ? "#c94535" : "#9fc4e3")
+                                            width: index === 2 ? 20 : 12
+                                            height: 9
+                                            radius: styleChoice.isModern ? 0 : 1
+                                            color: index === 2 ? "#c94535" : "#9fc4e3"
+                                            border.width: 1
+                                            border.color: "#66000000"
                                         }
                                     }
                                 }
@@ -464,8 +459,9 @@ FloatingWindow {
                                     y: 16
                                     width: parent.width - 10
                                     height: parent.height - 21
-                                    radius: styleChoice.isModern ? 3 : 0
                                     color: "#ffffff"
+                                    border.width: 1
+                                    border.color: "#8c0b1b2a"
                                 }
                             }
                         }
@@ -498,10 +494,8 @@ FloatingWindow {
                 text: "This is the system's own setting: programs that follow it "
                     + "(GTK, libadwaita, Qt, Firefox, Chromium, Vicinae) change "
                     + "with it, and so do the menus of this desktop. "
-                    + (Scheme.modern
-                        ? "In the modern style the window frames follow it too."
-                        : "In Aero the taskbar and the window frames stay dark "
-                          + "glass, as on Windows 7.")
+                    + "The taskbar and the window frames stay dark glass, as "
+                    + "on Windows 7."
             }
 
             Row {

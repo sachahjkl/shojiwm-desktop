@@ -23,7 +23,7 @@ Item {
 
     Rectangle {
         anchors.fill: parent
-        radius: 3
+        radius: Scheme.itemRadius
         color: "#ffffff"
         opacity: clock.active ? 0.22 : area.containsMouse ? 0.14 : 0
         Behavior on opacity {

@@ -30,7 +30,6 @@ import {
   type WaylandWindow,
 } from "shoji_wm";
 import { aeroFrame } from "./decoration";
-import { modernFrame } from "./decoration-modern";
 import { STYLE } from "./style";
 import { createAltTab } from "./alt-tab";
 import { SHELL_SOCKET, createPeek } from "./peek";
@@ -380,7 +379,8 @@ COMPOSITOR.window.composition = (window: WaylandWindow) => {
       // Tell the client it is tiled, so it squares off its own corners.
       tiled={true}
     >
-      {(STYLE() === "modern" ? modernFrame : aeroFrame)(window, {
+      {aeroFrame(window, {
+        square: STYLE() === "modern",
         glass: WINDOW_GLASS,
         glassSuspended: ALT_TAB.blurSuspended(),
         onMinimize: () => WINDOWS.setMinimized(window, true),

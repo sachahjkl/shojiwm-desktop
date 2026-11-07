@@ -33,14 +33,7 @@ import type {
   WindowDecorationState,
   WindowSizeConstraints,
 } from "shoji_wm/types";
-import {
-  FRAME_HEIGHT_EXTRA,
-  FRAME_WIDTH_EXTRA,
-  MODERN_FRAME_HEIGHT_EXTRA,
-  MODERN_FRAME_WIDTH_EXTRA,
-  TIMING,
-} from "./theme";
-import { STYLE } from "./style";
+import { FRAME_HEIGHT_EXTRA, FRAME_WIDTH_EXTRA, TIMING } from "./theme";
 
 /** The frame rectangle of a window: the chrome, not the client surface. */
 export const WIN_RECT = createWindowState<ManagedWindowRect>("rect", {
@@ -147,11 +140,7 @@ export function frameExtra(window: WaylandWindow): {
   if (usesClientDecoration(window)) {
     return { width: 0, height: 0 };
   }
-  // The frame the window will be drawn with: the style may have changed
-  // since another window was placed.
-  return STYLE.peek() === "modern"
-    ? { width: MODERN_FRAME_WIDTH_EXTRA, height: MODERN_FRAME_HEIGHT_EXTRA }
-    : { width: FRAME_WIDTH_EXTRA, height: FRAME_HEIGHT_EXTRA };
+  return { width: FRAME_WIDTH_EXTRA, height: FRAME_HEIGHT_EXTRA };
 }
 
 /** The frame rectangle a window would have at the size the client chose. */

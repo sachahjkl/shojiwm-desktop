@@ -84,7 +84,7 @@ Item {
         id: tile
 
         dark: Settings.dark
-        round: Scheme.modern
+        square: Scheme.modern
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.verticalCenter: parent.verticalCenter
         anchors.verticalCenterOffset: -50
@@ -116,14 +116,10 @@ Item {
         Rectangle {
             id: field
 
-            width: Scheme.modern ? 240 : 225
-            height: Scheme.modern ? 32 : 26
+            width: 225
+            height: 26
             anchors.verticalCenter: parent.verticalCenter
-            radius: Scheme.modern ? 6 : 0
-            // Modern: translucent, so the picture behind shows through.
-            color: Scheme.modern
-                ? (Settings.dark ? "#59000000" : "#d9ffffff")
-                : (Settings.dark ? "#141c24" : "#ffffff")
+            color: Settings.dark ? "#141c24" : "#ffffff"
             border.width: 1
             border.color: password.activeFocus
                 ? (Settings.dark ? "#4b8fd0" : "#3d7bad")
@@ -135,7 +131,6 @@ Item {
                 y: 1
                 width: parent.width - 2
                 height: 1
-                visible: !Scheme.modern
                 color: Settings.dark ? "#0a1016" : "#c4d3de"
             }
             Rectangle {
@@ -143,7 +138,6 @@ Item {
                 y: 1
                 width: 1
                 height: parent.height - 2
-                visible: !Scheme.modern
                 color: Settings.dark ? "#0d141b" : "#dde6ec"
             }
 
@@ -151,8 +145,8 @@ Item {
                 id: password
 
                 anchors.fill: parent
-                anchors.leftMargin: Scheme.modern ? 10 : 6
-                anchors.rightMargin: Scheme.modern ? 10 : 6
+                anchors.leftMargin: 6
+                anchors.rightMargin: 6
                 verticalAlignment: TextInput.AlignVCenter
                 echoMode: TextInput.Password
                 passwordCharacter: "\u25CF"
@@ -189,28 +183,9 @@ Item {
             width: 32
             height: 32
 
-            // Modern: a flat round button of the accent blue.
-            Rectangle {
-                anchors.fill: parent
-                visible: Scheme.modern
-                radius: width / 2
-                color: goArea.pressed ? Qt.darker(Scheme.accent, 1.15)
-                    : goArea.containsMouse ? Scheme.accentHot : Scheme.accent
-
-                Image {
-                    anchors.centerIn: parent
-                    width: 14
-                    height: 14
-                    source: "../assets/arrow-right.svg"
-                    sourceSize.width: 28
-                    sourceSize.height: 28
-                }
-            }
-
             Image {
                 anchors.fill: parent
-                visible: !Scheme.modern
-                source: "../assets/arrow-bead"
+                source: "../assets/arrow-" + (Scheme.modern ? "square" : "bead")
                     + (Settings.dark ? "-dark" : "")
                     + (goArea.containsMouse && !goArea.pressed ? "-hot" : "")
                     + ".svg"
@@ -270,8 +245,8 @@ Item {
 
         LogonButton {
             id: okButton
+            square: Scheme.modern
             anchors.horizontalCenter: parent.horizontalCenter
-            modern: Scheme.modern
             label: "OK"
             onClicked: screen.dismissError()
         }
@@ -280,7 +255,7 @@ Item {
     // ----- the power button -------------------------------------------------------
 
     PowerSplitButton {
-        modern: Scheme.modern
+        square: Scheme.modern
         anchors.right: parent.right
         anchors.bottom: parent.bottom
         anchors.margins: 26
@@ -300,7 +275,7 @@ Item {
         anchors.bottomMargin: 26 + 26
         width: 150
         height: powerColumn.implicitHeight + 8
-        radius: 4
+        radius: Scheme.popupRadius
         color: "#e6f4f9ff"
         border.width: 1
         border.color: "#2c5779"
@@ -325,7 +300,7 @@ Item {
 
                     width: powerColumn.width
                     height: 26
-                    radius: 3
+                    radius: Scheme.itemRadius
                     color: powerRowArea.containsMouse ? "#669ad0f7" : "transparent"
                     border.width: powerRowArea.containsMouse ? 1 : 0
                     border.color: "#b3cfe9ff"

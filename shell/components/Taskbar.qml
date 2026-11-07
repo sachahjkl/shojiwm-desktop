@@ -41,24 +41,8 @@ Item {
 
     // ----- glass ------------------------------------------------------------
 
-    // Modern: one flat tint of smoked glass and a faint line along the top.
     Rectangle {
         anchors.fill: parent
-        visible: Scheme.modern
-        color: Scheme.barFlat
-
-        Rectangle {
-            anchors.left: parent.left
-            anchors.right: parent.right
-            anchors.top: parent.top
-            height: 1
-            color: Scheme.barLine
-        }
-    }
-
-    Rectangle {
-        anchors.fill: parent
-        visible: !Scheme.modern
         // Light at the top, darkest a little under half way, a slight lift
         // in the lower third: the shape a Windows 7 taskbar has.
         gradient: Gradient {
@@ -78,7 +62,6 @@ Item {
         anchors.right: parent.right
         anchors.top: parent.top
         height: 1
-        visible: !Scheme.modern
         color: Theme.barEdge
     }
     Rectangle {
@@ -87,7 +70,6 @@ Item {
         anchors.top: parent.top
         anchors.topMargin: 1
         height: 1
-        visible: !Scheme.modern
         color: Theme.barHighlight
     }
     Rectangle {
@@ -95,7 +77,6 @@ Item {
         anchors.right: parent.right
         anchors.bottom: parent.bottom
         height: 1
-        visible: !Scheme.modern
         color: Theme.barBottomEdge
     }
 

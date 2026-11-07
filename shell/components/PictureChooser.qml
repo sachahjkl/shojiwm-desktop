@@ -74,7 +74,7 @@ Item {
 
                     Rectangle {
                         anchors.fill: parent
-                        radius: 3
+                        radius: Scheme.itemRadius
                         color: cell.isSelected ? Scheme.selection
                             : cellArea.containsMouse ? Scheme.hover : "transparent"
                         border.width: cell.isSelected || cellArea.containsMouse ? 1 : 0
@@ -122,7 +122,7 @@ Item {
             Rectangle {
                 width: Math.min(420, chooser.width - 110)
                 height: 24
-                radius: 2
+                radius: Scheme.fieldRadius
                 color: Scheme.field
                 border.width: 1
                 border.color: pathInput.activeFocus ? Scheme.fieldFocus : Scheme.fieldBorder

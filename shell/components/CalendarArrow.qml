@@ -11,7 +11,7 @@ Rectangle {
 
     width: 24
     height: 22
-    radius: 3
+    radius: Scheme.itemRadius
     color: area.containsMouse ? Scheme.hover : "transparent"
     border.width: area.containsMouse ? 1 : 0
     border.color: Scheme.selectionBorder

@@ -10,7 +10,7 @@
 
 import { signal, type Signal } from "shoji_wm";
 
-/** `aero`: Windows 7 as it was. `modern`: the same glass, flatter. */
+/** `aero`: Windows 7 as it was. `modern`: the same Aero, squared. */
 export type Style = "aero" | "modern";
 
 export const STYLE: Signal<Style> = signal<Style>("aero");

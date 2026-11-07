@@ -41,20 +41,15 @@ are Icons8's MIT-licensed "Flat Color Icons" (see "Licence").
 
 The Control Panel offers two looks, and either works in light or dark:
 
-- **Aero**, Windows 7 as it was: glossy glass, the bevelled frame, the orb,
-  the gel buttons of the lock screen.
-- **Modern**, the same glass with what dates it taken out: flat fills,
-  rounder corners, thin window frames with separate caption buttons that
-  follow light or dark, a flat taskbar with a bar under each running
-  program, a round account picture, colour icons in the Start menu.
+- **Aero**, Windows 7 as it was.
+- **Modern**, the same Aero squared: the glass, the gloss, the bevels, the
+  orb and the colours stay; every corner is a right angle, the windows, the
+  menus, the Start menu, the buttons and the lock screen, whose bead of
+  glass becomes a square of glass.
 
-![The modern style](assets/site/modern-desktop.png)
+![The modern style](assets/site/modern-start-menu.png)
 
-The modern style, light: the frames, the taskbar and its Start button.
-
-![The modern style, dark](assets/site/modern-start-menu-dark.png)
-
-The modern style, dark, with the Start menu open.
+The modern style: square window frames, Start menu and taskbar buttons.
 
 ![The modern lock screen](assets/site/modern-lock-screen.png)
 
@@ -310,7 +305,7 @@ running one.
 | `src/decoration.tsx`                                                                                | The frame itself: the painted glass, the caption, the title with its glow, the caption buttons and their labels.                                                          |
 | `src/window-manager.ts`                                                                             | The floating window manager: placement, move, resize, maximise, minimise, fullscreen, double click, and Aero Snap.                                                        |
 | `src/alt-tab.tsx`                                                                                   | The Alt+Tab panel, built from render textures and an input grab.                                                                                                          |
-| `src/style.ts`, `src/decoration-modern.tsx`                                                         | The style and light or dark the shell sends, and the modern window frame.                                                                                                 |
+| `src/style.ts`                                                                                      | The style and light or dark the shell sends.                                                                                                                              |
 | `src/peek.tsx`                                                                                      | Aero Peek, and the socket the shell asks for it and for the show-desktop toggle through.                                                                                  |
 | `assets/frame.frag`                                                                                 | The paint shader that draws the frame: the dark outer line, the light line, the glass, the two lines around the client, and the corner radii that a style cannot express. |
 | `assets/caption/*.svg`                                                                              | The three caption buttons, one file per state, drawn at their exact pixel size.                                                                                           |

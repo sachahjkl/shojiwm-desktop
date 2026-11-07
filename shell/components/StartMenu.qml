@@ -87,7 +87,7 @@ Item {
         anchors.bottom: parent.bottom
         anchors.margins: 1
         width: menu.width - Theme.menuProgramsWidth - 2
-        radius: Scheme.menuRadius - 1
+        radius: Math.max(0, Scheme.menuRadius - 1)
         gradient: Gradient {
             GradientStop { position: 0.0; color: Scheme.placesTop }
             GradientStop { position: 1.0; color: Scheme.placesBottom }
@@ -118,7 +118,7 @@ Item {
                         anchors.fill: parent
                         source: Settings.userPictureSource
                         dark: Settings.dark
-                        round: Scheme.modern
+                        square: Scheme.modern
                         opacity: menu.hoveredPlace.length > 0 ? 0 : 1
                         Behavior on opacity {
                             NumberAnimation { duration: Theme.fade }
@@ -211,12 +211,8 @@ Item {
                         anchors.fill: parent
                         visible: place.modelData.separator !== true
                         label: place.modelData.label || ""
-                        // Aero: white glyphs on the dark pane. Modern: the
-                        // colour icons, on its pale one.
-                        icon: Scheme.modern && place.modelData.tile
-                            ? Qt.resolvedUrl("../assets/icons/" + place.modelData.tile + ".svg")
-                            : place.modelData.icon
-                                ? Qt.resolvedUrl("../assets/" + place.modelData.icon) : ""
+                        icon: place.modelData.icon
+                            ? Qt.resolvedUrl("../assets/" + place.modelData.icon) : ""
                         labelColor: Scheme.placesText
                         onHoveredChanged: {
                             if (hovered)
@@ -247,7 +243,6 @@ Item {
             anchors.bottom: parent.bottom
             anchors.margins: Theme.menuPadding
             height: 28
-            spacing: Scheme.modern ? 2 : 0
 
             readonly property var action: Apps.powerAction(Apps.powerButtonAction)
 

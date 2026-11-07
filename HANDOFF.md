@@ -199,27 +199,23 @@ it.
 ## Seventh pass: the modern style
 
 A second look beside Aero, chosen in the Control Panel (`Settings.style`,
-"aero" or "modern"; IPC `appearance setStyle`). The owner's brief: keep the
-glass, lose the kitsch. Not measured off anything.
+"aero" or "modern"; IPC `appearance setStyle`).
 
-- **Frames.** `src/decoration-modern.tsx`, the same `frame.frag` with
-  other values (`MODERN_FRAME`, `MODERN_COLOR` in `src/theme.ts`): 9 px
-  corners, 4 px sides, a 34 px caption, faint lines, a lighter tint that
-  follows light or dark, no title glow, three separate rounded buttons lit
-  only under the pointer, the close one red. Glyphs in
-  `assets/caption-modern/`.
+A first attempt flattened everything (flat fills, round corners, flat
+caption buttons). The owner rejected it outright: modern means Aero
+**squared**, keeping its identity, not a flat redesign. That attempt was
+removed. What is left:
+
+- **Frames.** The Aero frame itself, with `square: true` (`FrameOptions`):
+  the shader's corner radii are 0, every line and the title glow stay.
 - **How the compositor knows.** It cannot read files. The shell sends
   `appearance {style, dark}` over the `peek.tsx` socket when it connects
-  and on every change (`CompositorIpc.qml`); `src/style.ts` keeps them as
-  signals and the window composition picks the frame. `frameExtra` follows
-  the style, so windows opened afterwards get the new frame size; open ones
-  keep their rectangle and their client is resized inside it.
-- **Shell.** Everything that changes lives in `Scheme.qml`: radii, flat
-  fills instead of gloss, picks marked without a bevelled frame, the flat
-  taskbar (`barFlat`), the indicator under running programs, the Start
-  button `start-modern.svg`, colour icons in the places pane, the round
-  account picture (`UserTile.round`, cut with `MultiEffect`), the modern
-  lock screen (translucent field, flat accent button, round power button).
+  and on every change (`CompositorIpc.qml`); `src/style.ts` keeps them.
+- **Shell.** `Scheme.qml` keeps every Aero colour and gradient; only the
+  radii (`popupRadius`, `menuRadius`, `itemRadius`, `fieldRadius`,
+  `buttonRadius`) drop to 0. `UserTile.square`, `LogonButton.square`,
+  `PowerSplitButton.square`, and `arrow-square*.svg`, the bead's glass in a
+  square. The orb stays round: it is the identity.
 
 ## What remains, in priority order
 

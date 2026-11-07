@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="34" height="34" viewBox="0 0 34 34">
+  <!--
+    The modern style's square version of arrow-bead: the same glass in a square.
+
+    Original drawing of the round "go" button of a Windows 7 style log-on
+    screen, in dark mode: the same bead, smoked. A bead of glass, after the colours measured on Windows 7
+    screenshots: the background shows through it; a white veil over the top
+    half with a bright crescent at its edge; a band darker than the
+    background just under the middle; a saturated cyan glow rising from the
+    bottom; a dark ring; a broad white arrow with a soft shadow.
+
+    Every layer is cut to the disc by its own path: Qt's SVG renderer has no
+    clip paths.
+  -->
+  <defs>
+    <radialGradient id="body" cx="17" cy="17" r="23" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0a3c86" stop-opacity=".05"/>
+      <stop offset=".75" stop-color="#062e70" stop-opacity=".2"/>
+      <stop offset="1" stop-color="#020a14" stop-opacity=".7"/>
+    </radialGradient>
+    <linearGradient id="veil" x1="0" y1="1" x2="0" y2="18" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#dfe8f2" stop-opacity=".42"/>
+      <stop offset=".55" stop-color="#9fb4cc" stop-opacity=".16"/>
+      <stop offset="1" stop-color="#7f97b3" stop-opacity=".16"/>
+    </linearGradient>
+    <linearGradient id="horizon" x1="0" y1="18" x2="0" y2="25" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#001a5c" stop-opacity=".8"/>
+      <stop offset=".5" stop-color="#002a78" stop-opacity=".35"/>
+      <stop offset="1" stop-color="#003a90" stop-opacity="0"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="17" cy="33" r="15" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#8fe6f5" stop-opacity=".85"/>
+      <stop offset=".35" stop-color="#1696c2" stop-opacity=".75"/>
+      <stop offset=".8" stop-color="#0b5f8f" stop-opacity=".3"/>
+      <stop offset="1" stop-color="#0a6fd0" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="arrow" x1="0" y1="8" x2="0" y2="27" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset=".6" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#c3d3e2"/>
+    </linearGradient>
+  </defs>
+  <rect x="1" y="1" width="32" height="32" fill="url(#body)"/>
+  <!-- The lower half, then the upper half, of the disc. -->
+  <rect x="1" y="18" width="32" height="15" fill="url(#glow)"/>
+  <rect x="1" y="18" width="32" height="15" fill="url(#horizon)"/>
+  <rect x="1" y="1" width="32" height="17" fill="url(#veil)"/>
+  <!-- The bright crescent along the top edge. -->
+  <path d="M2.2 2.4H31.8" fill="none" stroke="#cfe3f2" stroke-opacity=".5" stroke-width="1.3"/>
+  <rect x="0.5" y="0.5" width="33" height="33" fill="none" stroke="#010c18" stroke-opacity=".9" stroke-width="1"/>
+  <path d="M8 15.4h9.6V9l8.6 8.5-8.6 8.5v-6.4H8z" fill="#001a50" fill-opacity=".4" stroke="#001a50" stroke-opacity=".4" stroke-width="1.6" stroke-linejoin="round" transform="translate(0 1.1)"/>
+  <path d="M8 15.4h9.6V9l8.6 8.5-8.6 8.5v-6.4H8z" fill="url(#arrow)" stroke="url(#arrow)" stroke-width="1.6" stroke-linejoin="round"/>
+</svg>

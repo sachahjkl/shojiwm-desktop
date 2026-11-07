@@ -10,12 +10,11 @@ Item {
 
     signal power
     signal menu
-    /// The modern style: two flat translucent circles, the power mark and
-    /// the arrow, in place of the red gloss.
-    property bool modern: false
+    /// The modern style: square corners.
+    property bool square: false
 
-    width: modern ? 36 + 4 + 24 : 70
-    height: modern ? 36 : 24
+    width: 70
+    height: 24
 
     readonly property int divider: 50
 
@@ -35,9 +34,8 @@ Item {
     // The outline, and the clip that rounds both parts as one.
     Rectangle {
         id: shape
-        visible: !split.modern
         anchors.fill: parent
-        radius: 3
+        radius: split.square ? 0 : 3
         color: "#2a0303"
         clip: true
 
@@ -46,7 +44,7 @@ Item {
             y: 1
             width: split.divider - 1
             height: parent.height - 2
-            radius: 2
+            radius: split.square ? 0 : 2
             hot: mainArea.containsMouse
             down: mainArea.pressed
         }
@@ -56,7 +54,7 @@ Item {
             y: 1
             width: parent.width - split.divider - 2
             height: parent.height - 2
-            radius: 2
+            radius: split.square ? 0 : 2
             hot: arrowArea.containsMouse
             down: arrowArea.pressed
         }
@@ -64,17 +62,15 @@ Item {
 
     // The light rim inside the outline.
     Rectangle {
-        visible: !split.modern
         anchors.fill: parent
         anchors.margins: 1
-        radius: 2
+        radius: split.square ? 0 : 2
         color: "transparent"
         border.width: 1
         border.color: "#4dffdada"
     }
 
     Image {
-        visible: !split.modern
         x: (split.divider - width) / 2
         anchors.verticalCenter: parent.verticalCenter
         width: 16
@@ -85,7 +81,6 @@ Item {
     }
 
     Text {
-        visible: !split.modern
         x: split.divider + (split.width - split.divider - width) / 2
         anchors.verticalCenter: parent.verticalCenter
         text: "\u25B2"
@@ -93,47 +88,9 @@ Item {
         font.pixelSize: 7
     }
 
-    // ----- modern -----------------------------------------------------------
-
-    Rectangle {
-        visible: split.modern
-        width: 36
-        height: 36
-        radius: 18
-        color: mainArea.pressed ? "#1fffffff" : mainArea.containsMouse ? "#47ffffff" : "#29ffffff"
-        border.width: 1
-        border.color: "#33ffffff"
-
-        Image {
-            anchors.centerIn: parent
-            width: 16
-            height: 16
-            source: "../assets/power-white.svg"
-            sourceSize.width: 32
-            sourceSize.height: 32
-        }
-    }
-
-    Rectangle {
-        visible: split.modern
-        x: 40
-        anchors.verticalCenter: parent.verticalCenter
-        width: 24
-        height: 24
-        radius: 12
-        color: arrowArea.pressed ? "#1fffffff" : arrowArea.containsMouse ? "#47ffffff" : "#1affffff"
-
-        Text {
-            anchors.centerIn: parent
-            text: "\u25B2"
-            color: "#ffffff"
-            font.pixelSize: 7
-        }
-    }
-
     MouseArea {
         id: mainArea
-        width: split.modern ? 36 : split.divider
+        width: split.divider
         height: parent.height
         hoverEnabled: true
         onClicked: split.power()
@@ -141,8 +98,8 @@ Item {
 
     MouseArea {
         id: arrowArea
-        x: split.modern ? 40 : split.divider
-        width: split.modern ? 24 : split.width - split.divider
+        x: split.divider
+        width: split.width - split.divider
         height: parent.height
         hoverEnabled: true
         onClicked: split.menu()
