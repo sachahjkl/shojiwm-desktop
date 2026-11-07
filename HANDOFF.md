@@ -150,6 +150,8 @@ actions or a typed command was actually run.
    xdg-desktop-portal-gtk passes it to programs. The shell's colours that
    change are in `Scheme.qml` (not `Palette`: QtQuick has a `Palette` type,
    which hides a singleton of that name). Vicinae has `aero-dark.toml`.
+   The built-in wallpaper has a night version, `wallpaper-dark.svg`, used
+   for the desktop and the lock screen while the system prefers dark.
 5. **`shell/tools.js`** holds `dconf` and `gdbus`; the Nix package writes
    their store paths there.
 

@@ -32,7 +32,10 @@ Singleton {
 
     // ----- pictures -----------------------------------------------------------
 
-    readonly property url builtInWallpaper: Qt.resolvedUrl("assets/wallpaper.svg")
+    /// The built-in picture, in its night version while the system prefers
+    /// dark.
+    readonly property url builtInWallpaper: Qt.resolvedUrl(root.dark
+        ? "assets/wallpaper-dark.svg" : "assets/wallpaper.svg")
 
     function fileUrl(path) {
         return path && path.length > 0 ? "file://" + path : "";

@@ -135,7 +135,9 @@ Start menu follow it.
 
 ![The Start menu in dark](assets/site/start-menu-dark.png)
 
-The Start menu in dark.
+The Start menu in dark. With the built-in wallpaper, the desktop and the lock
+screen take its night version, `shell/assets/wallpaper-dark.svg`; a picture
+of your own stays as it is.
 
 ![The lock screen settings](assets/site/control-panel-lock.png)
 
