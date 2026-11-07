@@ -46,7 +46,7 @@ Singleton {
     readonly property color startGlassTop: dark ? "#e61c2f3c" : "#d93f6b85"
     readonly property color startGlassMiddle: dark ? "#e6182836" : "#d93a6079"
     readonly property color startGlassBottom: dark ? "#e6223a4b" : "#d95a97bb"
-    readonly property color startGlassOutline: "#cc0b2234"
+    readonly property color startGlassOutline: "#a6000000"
     readonly property color startGlassHighlight: "#66ffffff"
 
     /// The places pane: dark blue glass.

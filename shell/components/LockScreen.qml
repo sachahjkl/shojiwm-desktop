@@ -275,7 +275,7 @@ Item {
         radius: Scheme.popupRadius
         color: "#e6f4f9ff"
         border.width: 1
-        border.color: "#2c5779"
+        border.color: "#6e000000"
 
         Column {
             id: powerColumn

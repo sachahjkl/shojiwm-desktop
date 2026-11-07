@@ -169,7 +169,7 @@ Item {
                         anchors.centerIn: parent
                         visible: place.modelData.separator === true
 
-                        Rectangle { width: place.width * 0.72; height: 1; color: "#4d0b2234" }
+                        Rectangle { width: place.width * 0.72; height: 1; color: "#4d000000" }
                         Rectangle { width: place.width * 0.72; height: 1; color: "#33ffffff" }
                     }
 
@@ -324,7 +324,7 @@ Item {
                 anchors.fill: parent
                 anchors.margins: 1
                 radius: Scheme.popupRadius + 1
-                color: "#cc0b2234"
+                color: "#a6000000"
             }
         }
         Rectangle {

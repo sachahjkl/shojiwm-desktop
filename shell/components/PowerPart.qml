@@ -33,7 +33,7 @@ Item {
         anchors.fill: parent
         radius: Scheme.buttonRadius
         border.width: 1
-        border.color: part.glass ? "#b30b2234" : Scheme.menuOutline
+        border.color: part.glass ? "#a6000000" : Scheme.menuOutline
         gradient: Gradient {
             GradientStop { position: 0.0; color: part.fillTop }
             GradientStop { position: 1.0; color: part.fillBottom }

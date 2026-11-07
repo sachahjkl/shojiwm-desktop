@@ -33,7 +33,7 @@ Item {
             radius: parent.radius + 1
             color: "transparent"
             border.width: 1
-            border.color: "#400b2234"
+            border.color: "#40000000"
         }
     }
 

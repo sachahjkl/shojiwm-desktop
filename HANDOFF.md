@@ -408,3 +408,13 @@ Downloaded to a temporary directory for measuring, never committed.
 
 `nix flake check` passes on this branch: the TypeScript against the pinned
 ShojiWM package, the QML against the Quickshell types, and the formatters.
+
+### Twelfth pass: neutral lines, round corners, flush buttons
+
+- Every frame and popup line is translucent black or white (`src/theme.ts`,
+  `Scheme.qml`, `theme.js`, `PowerPart.qml`, `LockScreen.qml`). The navy and
+  cyan in the author's screenshot are those alphas seen over a blue
+  wallpaper; never copy them as opaque colours again.
+- Both corner radii are 8 px: at 5 px the bottom corners read as square.
+- The caption buttons start one pixel down, right under the dark outline, and
+  have no light line along their top (`tools/make-caption-svgs.py`).

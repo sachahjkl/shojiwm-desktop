@@ -117,7 +117,8 @@ var buttonStackBorder = "#26ffffff";
 var popupTop = "#eef4f9ff";
 var popupBottom = "#eedbe8f4";
 var popupBorder = "#ccffffff";
-var popupOutline = "#cc2c5779";
+// A neutral grey line, as Windows 7 menus have.
+var popupOutline = "#6e000000";
 var thumbFrame = "#1b3c58";
 
 // Start menu glass.

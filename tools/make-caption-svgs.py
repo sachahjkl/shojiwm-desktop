@@ -115,7 +115,7 @@ RED_OFF = [
 GREY_LINE = "#242c35"  # dark border under and beside the grey buttons
 RED_LINE = "#52281e"  # the same around the close button
 OFF_LINE = "#4a4f56"  # inactive
-# The 1 px light edge inside each cell, on all four sides: measured at 0.45
+# The 1 px light edge inside each cell, on the sides and the bottom: measured at 0.45
 # on the sides, raised after the ShojiWM author's own frame, where every
 # button reads as a dark outline with a light line just inside it.
 EDGE = ("#ffffff", 0.7)
@@ -291,10 +291,8 @@ def button(name, cell_w, stops, line_colour, glyph, edge, glyph_colours):
         f' fill-opacity="{edge_alpha}"/>',
         f'<rect x="{cell_w}" y="0" width="1" height="{FILL_H}"'
         f' fill="{edge_colour}" fill-opacity="{edge_alpha}"/>',
-        # ... and along the top and the bottom of the cell, so the light line
-        # runs all the way round inside the dark one
-        f'<rect x="2" y="0" width="{cell_w - 2}" height="1" fill="{edge_colour}"'
-        f' fill-opacity="{edge_alpha * 0.8:.2f}"/>',
+        # ... and along the bottom. There is no light line along the top: the
+        # group hangs straight from the window's dark outline, as on Windows 7.
         f'<rect x="2" y="{FILL_H - 1}" width="{cell_w - 2}" height="1"'
         f' fill="{edge_colour}" fill-opacity="{edge_alpha * 0.6:.2f}"/>',
         # the dark line on the left, and under the whole button

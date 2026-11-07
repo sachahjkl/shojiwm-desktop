@@ -18,16 +18,16 @@ export const FRAME = {
   border: 8,
   borderMaximized: 2,
   /** The two top corners. */
-  radiusTop: 6,
-  /** The two bottom corners. */
-  radiusBottom: 5,
+  radiusTop: 8,
+  /** The two bottom corners: as round as the top ones, as on Windows 7. */
+  radiusBottom: 8,
   /**
    * The caption button group hangs from the top edge of the window: it
-   * starts on the first glass row, right under the two lines of the frame,
-   * and has no top border of its own. Maximised, it starts at the very top.
+   * starts right under the dark outline, covering the light line there, and
+   * has no top border of its own. Maximised, it starts at the very top.
    */
   buttonHeight: 18,
-  buttonTop: 2,
+  buttonTop: 1,
   buttonTopMaximized: 0,
   /** Distance from the group's right edge to the window's right edge. */
   buttonRight: 7,
@@ -59,9 +59,10 @@ export const CAPTION_BUTTON = {
  * Colours. Every value is `#rrggbbaa`, the order ShojiWM reads.
  *
  * The four lines and the glass follow the ShojiWM author's own Windows 7
- * setup (a screenshot the owner sent): a near-black blue outline with a
- * cyan-white line inside it, the same pair reversed round the client, and
- * glass clear enough that the caption is nearly the wallpaper's colour.
+ * setup (a screenshot the owner sent). The lines are translucent black and
+ * white: over his blue wallpaper they read as navy and pale cyan, and the
+ * alphas below are what gives those colours over that blue. Outside, black
+ * then white; round the client, white then black.
  *
  * The glass is a tint over the compositor's blur, so its alpha matters: the
  * numbers below reproduce both a window over a black desktop and one over a
@@ -76,16 +77,16 @@ export const COLOR = {
    */
   glassInactive: "#e2e9ef57",
   /** The 1 px line around the outside. */
-  outlineActive: "#002953f2",
-  outlineInactive: "#1f3550cc",
+  outlineActive: "#000000a3",
+  outlineInactive: "#00000073",
   /** The 1 px light line just inside it. */
-  highlightActive: "#a5defff0",
-  highlightInactive: "#d6ecfaa6",
+  highlightActive: "#ffffff9c",
+  highlightInactive: "#ffffff73",
   /** The two lines around the client area. */
-  clientLightActive: "#9cd8ffe6",
+  clientLightActive: "#ffffff8c",
   clientLightInactive: "#ffffff80",
-  clientDarkActive: "#25527ce6",
-  clientDarkInactive: "#55656fb3",
+  clientDarkActive: "#00000073",
+  clientDarkInactive: "#0000004d",
   /** Caption text. */
   titleActive: "#000000",
   titleInactive: "#46545e",
