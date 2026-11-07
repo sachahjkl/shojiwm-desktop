@@ -151,67 +151,27 @@ const CaptionButton = ({
   );
 };
 
-/** The caption title: crisp dark text over a white cloud that follows it. */
-const CaptionTitle = ({ window }: { window: WaylandWindow }) => {
-  const glowOpacity = window.isFocused((focused: boolean) =>
-    focused ? 1 : 0.5,
-  );
-  // The cloud reaches this far past the text on each side, and its rounded
-  // ends are this wide.
-  const reach = FRAME.glowMargin;
-  const cap = 16;
-  const piece = (src: string, horizontal: Record<string, number>) => (
-    <Image
-      src={src}
-      fit="fill"
-      style={{
-        position: "absolute",
-        top: -reach,
-        bottom: -reach,
-        ...horizontal,
-        zIndex: 0,
-        pointerEvents: "none",
-        opacity: glowOpacity,
-      }}
-    />
-  );
-  const children: CompositionRenderable[] = [
-    piece("./assets/title-glow-left.svg", { left: -reach, width: cap }),
-    piece("./assets/title-glow-middle.svg", {
-      left: cap - reach,
-      right: cap - reach,
-    }),
-    piece("./assets/title-glow-right.svg", { right: -reach, width: cap }),
-    <Label
-      text={window.title}
-      style={{
-        zIndex: 1,
-        color: window.isFocused((focused: boolean) =>
-          focused ? COLOR.titleActive : COLOR.titleInactive,
-        ),
-        fontFamily: FONT,
-        fontSize: FRAME.fontSize,
-        fontWeight: "normal",
-        lineHeight: FRAME.titleHeight,
-        textOverflow: "ellipsis",
-        flexShrink: 1,
-        minWidth: 0,
-      }}
-    />,
-  ];
-  return (
-    <Box
-      style={{
-        position: "relative",
-        height: FRAME.titleHeight,
-        flexShrink: 1,
-        minWidth: 0,
-      }}
-    >
-      {children}
-    </Box>
-  );
-};
+/**
+ * The caption title: plain dark text. The glass is light enough to carry it
+ * without a glow, as on the ShojiWM author's own Windows 7 setup.
+ */
+const CaptionTitle = ({ window }: { window: WaylandWindow }) => (
+  <Label
+    text={window.title}
+    style={{
+      color: window.isFocused((focused: boolean) =>
+        focused ? COLOR.titleActive : COLOR.titleInactive,
+      ),
+      fontFamily: FONT,
+      fontSize: FRAME.fontSize,
+      fontWeight: "normal",
+      lineHeight: FRAME.titleHeight,
+      textOverflow: "ellipsis",
+      flexShrink: 1,
+      minWidth: 0,
+    }}
+  />
+);
 
 export interface FrameOptions {
   /**

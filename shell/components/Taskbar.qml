@@ -247,8 +247,9 @@ Item {
                 required property var modelData
 
                 group: modelData
-                width: modelData.windows.length === 0
-                    ? Theme.pinnedButtonWidth : bar.buttonWidth
+                width: Settings.taskbarCompact ? Theme.compactButtonWidth
+                    : modelData.windows.length === 0
+                        ? Theme.pinnedButtonWidth : bar.buttonWidth
                 height: buttons.height
 
                 onPreviewRequested: function (at) {

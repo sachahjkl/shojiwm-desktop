@@ -23,6 +23,9 @@ Item {
     readonly property bool stacked: windows.length > 1
     /// Pinned, and no window of it is open.
     readonly property bool idle: windows.length === 0
+    /// The icon alone: a pinned program that is not running, or any button
+    /// of the compact taskbar.
+    readonly property bool iconOnly: idle || Settings.taskbarCompact
     readonly property bool current: Apps.groupIsCurrent(group)
     readonly property bool hovered: area.containsMouse
 
@@ -100,12 +103,12 @@ Item {
         anchors.centerIn: body
         implicitSize: Theme.pinnedIconSize
         source: button.group ? button.group.icon : ""
-        visible: button.idle
+        visible: button.iconOnly
     }
 
     Item {
         anchors.fill: body
-        visible: !button.idle
+        visible: !button.iconOnly
 
         Row {
             anchors.fill: parent

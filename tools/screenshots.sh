@@ -119,6 +119,15 @@ sed -i 's|readonly property var pinnedIds: \[.*\]|readonly property var pinnedId
   "$XDG_CONFIG_HOME/shojiwm/shell/Apps.qml"
 grep -q 'pinnedIds: \["foot.desktop"' "$XDG_CONFIG_HOME/shojiwm/shell/Apps.qml"
 
+# Two dozen pictures in ~/Pictures, for the Control Panel's background chooser
+# to show (and to need its scroll bar for).
+mkdir -p "$HOME/Pictures"
+for i in $(seq -w 1 24); do
+  hue=$((10#$i * 15))
+  magick -size 640x400 "gradient:hsl($hue,60%,35%)-hsl($((hue + 40)),70%,60%)" \
+    "$HOME/Pictures/sample-$i.png"
+done
+
 # Nothing here opens files through GTK, so no program records them. Write the
 # list a desktop keeps of them, naming foot, for the jump list to read.
 mkdir -p "$XDG_DATA_HOME"
@@ -421,6 +430,21 @@ qs controlpanel open
 sleep 4
 shot "control-panel"
 alive "control panel"
+
+say "the Control Panel's own scroll bar"
+qs controlpanel openPage background
+sleep 3
+shot "control-panel-scroll"
+qs controlpanel open
+sleep 1
+
+say "the compact taskbar"
+settings="$XDG_CONFIG_HOME/shojiwm/settings.json"
+sed -i 's/"taskbarCompact": false/"taskbarCompact": true/' "$settings"
+sleep 3
+shot "taskbar-compact"
+sed -i 's/"taskbarCompact": true/"taskbarCompact": false/' "$settings"
+sleep 2
 
 say "the Control Panel, dark"
 qs controlpanel openPage appearance

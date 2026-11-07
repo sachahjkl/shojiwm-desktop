@@ -38,10 +38,8 @@ export const FRAME = {
   iconGap: 3,
   /** Caption text: Segoe UI 9 pt is 12 px at 96 DPI. */
   fontSize: 12,
-  /** The box the title and its glow live in. */
+  /** The height of the title line. */
   titleHeight: 16,
-  /** How far the glow reaches past the text. */
-  glowMargin: 9,
 } as const;
 
 /** Width the frame adds to the client surface. */
@@ -70,12 +68,12 @@ export const CAPTION_BUTTON = {
  */
 export const COLOR = {
   /** The glass of an active window. */
-  glassActive: "#6f9fcc3d",
+  glassActive: "#d2e4f442",
   /**
    * The glass of every other window. Windows drains the colour out of it and
    * makes it heavier, so the caption stays legible over any wallpaper.
    */
-  glassInactive: "#c2ced766",
+  glassInactive: "#e2e9ef57",
   /** The 1 px line around the outside. */
   outlineActive: "#15212ead",
   outlineInactive: "#2a36408c",

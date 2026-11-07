@@ -1,6 +1,7 @@
 pragma ComponentBehavior: Bound
 
 import QtQuick
+import QtQuick.Controls.Basic
 import ".."
 import "../theme.js" as Theme
 
@@ -357,11 +358,12 @@ Item {
             clip: true
             contentHeight: homeColumn.implicitHeight
             boundsBehavior: Flickable.StopAtBounds
+            ScrollBar.vertical: AeroScrollBar { id: homeBar }
 
             Column {
                 id: homeColumn
 
-                width: home.width
+                width: home.width - (homeBar.visible ? homeBar.width + 2 : 0)
                 spacing: 1
 
                 Repeater {
@@ -420,6 +422,7 @@ Item {
             spacing: 1
             boundsBehavior: Flickable.StopAtBounds
             model: Apps.folders
+            ScrollBar.vertical: AeroScrollBar { id: foldersBar }
 
             delegate: Column {
                 id: folder
@@ -427,7 +430,7 @@ Item {
                 required property var modelData
                 readonly property bool expanded: menu.openFolder === modelData.name
 
-                width: folderList.width
+                width: folderList.width - (foldersBar.visible ? foldersBar.width + 2 : 0)
 
                 MenuRow {
                     width: folder.width
@@ -469,9 +472,11 @@ Item {
             model: menu.found
             currentIndex: 0
             boundsBehavior: Flickable.StopAtBounds
+            ScrollBar.vertical: AeroScrollBar { id: resultsBar }
+            readonly property real rowWidth: width - (resultsBar.visible ? resultsBar.width + 2 : 0)
 
             header: MenuRow {
-                width: results.width
+                width: results.rowWidth
                 heading: true
                 label: menu.found.length > 0 ? "Programs" : "No program matches"
             }
@@ -479,7 +484,7 @@ Item {
             delegate: MenuRow {
                 required property var modelData
                 required property int index
-                width: results.width
+                width: results.rowWidth
                 label: modelData ? modelData.name : ""
                 icon: Apps.entryIcon(modelData)
                 selected: index === results.currentIndex
@@ -488,7 +493,7 @@ Item {
 
             // With nothing found, Return runs the text, as Run... does.
             footer: MenuRow {
-                width: results.width
+                width: results.rowWidth
                 visible: menu.found.length === 0
                 height: visible ? Theme.menuRowHeight : 0
                 label: "Run “" + search.text.trim() + "”"

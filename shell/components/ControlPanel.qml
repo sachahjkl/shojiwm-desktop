@@ -1,6 +1,7 @@
 pragma ComponentBehavior: Bound
 
 import QtQuick
+import QtQuick.Controls.Basic
 import Quickshell
 import Quickshell.Services.SystemTray
 import Quickshell.Widgets
@@ -220,13 +221,14 @@ FloatingWindow {
         contentHeight: content.implicitHeight + 48
         clip: true
         boundsBehavior: Flickable.StopAtBounds
+        ScrollBar.vertical: AeroScrollBar { id: pageBar }
 
         Loader {
             id: content
 
             x: 28
             y: 22
-            width: flick.width - 56
+            width: flick.width - 56 - (pageBar.visible ? pageBar.width : 0)
             sourceComponent: {
                 switch (window.page) {
                 case "appearance": return appearancePage;
@@ -779,6 +781,12 @@ FloatingWindow {
                 label: "Combine the windows of a program into one button"
                 checked: Settings.combineWindows
                 onToggled: function (on) { Settings.combineWindows = on; }
+            }
+
+            CpCheck {
+                label: "Compact: show the icons alone, without labels"
+                checked: Settings.taskbarCompact
+                onToggled: function (on) { Settings.taskbarCompact = on; }
             }
 
             CpCheck {

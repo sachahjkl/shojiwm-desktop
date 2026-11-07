@@ -21,6 +21,8 @@ var taskButtonGap = 3;
 // A pinned program with no window open: the icon alone, as Windows draws it.
 var pinnedButtonWidth = 46;
 var pinnedIconSize = 24;
+// A button in the compact taskbar: the icon alone, for a running program too.
+var compactButtonWidth = 54;
 var trayIconSize = 16;
 var trayGap = 8;
 var clockWidth = 74;

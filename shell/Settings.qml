@@ -25,6 +25,7 @@ Singleton {
     property alias lockBackground: adapter.lockBackground
     property alias userPicture: adapter.userPicture
     property alias combineWindows: adapter.combineWindows
+    property alias taskbarCompact: adapter.taskbarCompact
     property alias showFrequent: adapter.showFrequent
     property alias powerButtonAction: adapter.powerButtonAction
     property alias peek: adapter.peek
@@ -117,6 +118,9 @@ Singleton {
             property string userPicture: ""
 
             property bool combineWindows: true
+            /// Taskbar buttons show the icon alone, as Windows 7's "hide
+            /// labels".
+            property bool taskbarCompact: false
             property bool showFrequent: true
             /// "shutdown", "restart", "sleep", "hibernate", "lock" or "logoff".
             property string powerButtonAction: "shutdown"

@@ -251,6 +251,24 @@ Tried and dropped: a `<ShaderEffect/>` blurring a white copy of the title
 for a glow that follows the letters. `backdropSource()` in a decoration
 does not see the decoration's own nodes, so the copy came out sharp.
 
+## Tenth pass: the author's look, scroll bars, compact taskbar
+
+From the ShojiWM author's own Windows 7 desktop (a screenshot the owner
+sent): the title is plain dark text with no glow at all, readable because
+the glass is light (a pale tint, `glassActive` about 26 %), not a dark
+blue one. The glow images are gone.
+
+- **Scroll bars.** `AeroScrollBar.qml`: the Windows 7 trough, arrow
+  buttons (hold to repeat) and grip thumb, blue under the pointer, light
+  and dark, square in the modern style. On the Start menu's lists and the
+  Control Panel's page. Programs draw their own, from their GTK or Qt
+  theme.
+- **Compact taskbar.** `Settings.taskbarCompact` ("Compact: show the icons
+  alone", Control Panel → Taskbar and Start Menu): every button is the
+  icon alone, `Theme.compactButtonWidth` wide.
+- `tools/screenshots.sh` puts two dozen generated pictures in ~/Pictures,
+  so the background chooser has something to show and to scroll.
+
 ## What remains, in priority order
 
 1. **Look at all of it on a real GPU.** Colours, blur, animation speed and
