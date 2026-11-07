@@ -4,27 +4,22 @@ import QtQuick
 import Quickshell
 import "theme.js" as Theme
 
-// The colours and shapes that change with the style and with light or dark:
+// The colours and shapes that change with light or dark:
 // the taskbar, the menus, the Start menu, the calendar, the Control Panel
 // and the lock screen.
-//
-// Aero is Windows 7 as it was. Modern is the same Aero, squared: the glass,
-// the gloss, the bevels and the colours stay; every corner is a right
-// angle.
 //
 // Light and dark: the taskbar and the window frames are dark glass either
 // way, as on Windows 7.
 Singleton {
     readonly property bool dark: Settings.dark
-    readonly property bool modern: Settings.modern
 
     // ----- shapes ---------------------------------------------------------------
 
-    readonly property int popupRadius: modern ? 0 : 4
-    readonly property int menuRadius: modern ? 0 : 5
-    readonly property int itemRadius: modern ? 0 : 3
-    readonly property int fieldRadius: modern ? 0 : 2
-    readonly property int buttonRadius: modern ? 0 : 3
+    readonly property int popupRadius: 4
+    readonly property int menuRadius: 5
+    readonly property int itemRadius: 3
+    readonly property int fieldRadius: 2
+    readonly property int buttonRadius: 3
     /// The frame round a picked item.
     readonly property int selectionBorderWidth: 1
 
@@ -33,14 +28,26 @@ Singleton {
     readonly property color popupTop: (dark ? "#f02a3644" : Theme.popupTop)
     readonly property color popupBottom: (dark ? "#f01d2731" : Theme.popupBottom)
     readonly property color popupOutline: (dark ? "#cc6b8aa6" : Theme.popupOutline)
+    /// The light line just inside a popup's outline.
+    readonly property color popupInnerLine: dark ? "#33ffffff" : "#e6ffffff"
 
     // ----- the Start menu ----------------------------------------------------------
 
-    readonly property color menuTop: (dark ? "#f2273340" : Theme.menuTop)
-    readonly property color menuBottom: (dark ? "#f21b242e" : Theme.menuBottom)
+    /// The programs pane: white, as on Windows 7.
+    readonly property color menuTop: dark ? "#f2273340" : "#ffffff"
+    readonly property color menuBottom: dark ? "#f21b242e" : "#f7f9fb"
     readonly property color menuOutline: (dark ? "#cc6b8aa6" : Theme.menuOutline)
     readonly property color menuDivider: (dark ? "#59a8c4dc" : Theme.menuDivider)
     readonly property color menuHeading: dark ? "#9cc8f0" : Theme.menuHeading
+
+    /// The glass of the Start menu, round the white programs pane and under
+    /// the places: steel blue, lighter towards the bottom (measured on the
+    /// ShojiWM author's Windows 7 Start menu).
+    readonly property color startGlassTop: dark ? "#e61c2f3c" : "#d93f6b85"
+    readonly property color startGlassMiddle: dark ? "#e6182836" : "#d93a6079"
+    readonly property color startGlassBottom: dark ? "#e6223a4b" : "#d95a97bb"
+    readonly property color startGlassOutline: "#cc0b2234"
+    readonly property color startGlassHighlight: "#66ffffff"
 
     /// The places pane: dark blue glass.
     readonly property color placesTop: Theme.menuPlacesTop

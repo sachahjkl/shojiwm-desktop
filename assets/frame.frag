@@ -37,7 +37,7 @@ float glass_light(vec2 q, float cap) {
     float u = q.x + q.y * 0.85;
     float broad = smoothstep(0.45, 0.95, 0.5 + 0.5 * sin(u / 46.0));
     float narrow = smoothstep(0.7, 1.0, 0.5 + 0.5 * sin(u / 13.0 + 1.7));
-    float bands = broad * 0.17 + narrow * broad * 0.07;
+    float bands = broad * 0.10 + narrow * broad * 0.04;
     return clamp(top + bands, 0.0, 0.35);
 }
 

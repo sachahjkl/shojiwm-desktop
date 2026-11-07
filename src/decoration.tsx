@@ -174,11 +174,6 @@ const CaptionTitle = ({ window }: { window: WaylandWindow }) => (
 );
 
 export interface FrameOptions {
-  /**
-   * The modern style: the same frame with square corners, as the window has
-   * when maximised, but with all its lines.
-   */
-  square?: boolean;
   /** The compiled blur that stands behind the glass. */
   glass: CompiledEffectHandle;
   /** `true` while the blur must be left out (the Alt+Tab panel is open). */
@@ -242,12 +237,8 @@ export function aeroFrame(
 
   const paint = paintShader("./assets/frame.frag", {
     uniforms: {
-      radius_top: computed(() =>
-        maximized() || options.square ? 0 : FRAME.radiusTop,
-      ),
-      radius_bottom: computed(() =>
-        maximized() || options.square ? 0 : FRAME.radiusBottom,
-      ),
+      radius_top: computed(() => (maximized() ? 0 : FRAME.radiusTop)),
+      radius_bottom: computed(() => (maximized() ? 0 : FRAME.radiusBottom)),
       outer_lines: computed(() => (maximized() ? 0 : 1)),
       sheen: computed(() => (focused() ? 1 : 0.55)),
       caption_h: captionHeight,
@@ -278,8 +269,8 @@ export function aeroFrame(
 
   const shadow = focused((on: boolean) =>
     on
-      ? [{ y: 6, blur: 20, spread: -3, color: "#0000008c" }]
-      : [{ y: 3, blur: 12, spread: -3, color: "#00000059" }],
+      ? [{ y: 2, blur: 16, spread: 0, color: "#00000080" }]
+      : [{ y: 1, blur: 10, spread: 0, color: "#00000052" }],
   );
 
   const captionStyle: SSDStyle = {
@@ -369,9 +360,7 @@ export function aeroFrame(
   return (
     <WindowBorder
       style={{
-        borderRadius: computed(() =>
-          maximized() || options.square ? 0 : FRAME.radiusTop,
-        ),
+        borderRadius: computed(() => (maximized() ? 0 : FRAME.radiusTop)),
         boxShadow: shadow,
         background: "#00000000",
       }}

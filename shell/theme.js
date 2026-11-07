@@ -75,6 +75,12 @@ var menuRowHeight = 32;
 var menuPadding = 8;
 var menuSearchHeight = 26;
 var menuFooterHeight = 42;
+// The account picture stands above the menu's top edge by this much, and
+// is this big, frame included.
+var menuTileOverhang = 30;
+var menuTileSize = 68;
+// The glass round the white programs pane.
+var menuGlassBorder = 8;
 
 // ---------------------------------------------------------------------------
 // Colours

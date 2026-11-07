@@ -66,16 +66,36 @@ Item {
             menu.dismissed();
     }
 
-    // ----- the panel --------------------------------------------------------
+    // ----- the glass ----------------------------------------------------------
+    //
+    // As Windows 7 builds it: the whole menu is a pane of glass with the
+    // frame's lines, the programs sit in a white pane set into it on the
+    // left, and the places are white text on the glass on the right. The
+    // account picture stands above the top edge.
 
-    Rectangle {
+    Item {
+        id: glass
+
         anchors.fill: parent
-        radius: Scheme.menuRadius
-        border.width: 1
-        border.color: Scheme.menuOutline
-        gradient: Gradient {
-            GradientStop { position: 0.0; color: Scheme.menuTop }
-            GradientStop { position: 1.0; color: Scheme.menuBottom }
+        anchors.topMargin: Theme.menuTileOverhang
+
+        Rectangle {
+            anchors.fill: parent
+            radius: Scheme.menuRadius + 1
+            color: Scheme.startGlassOutline
+        }
+
+        Rectangle {
+            anchors.fill: parent
+            anchors.margins: 1
+            radius: Scheme.menuRadius
+            gradient: Gradient {
+                GradientStop { position: 0.0; color: Scheme.startGlassTop }
+                GradientStop { position: 0.55; color: Scheme.startGlassMiddle }
+                GradientStop { position: 1.0; color: Scheme.startGlassBottom }
+            }
+            border.width: 1
+            border.color: Scheme.startGlassHighlight
         }
     }
 
@@ -84,15 +104,11 @@ Item {
         id: places
 
         anchors.right: parent.right
-        anchors.top: parent.top
+        anchors.top: glass.top
         anchors.bottom: parent.bottom
         anchors.margins: 1
         width: menu.width - Theme.menuProgramsWidth - 2
-        radius: Math.max(0, Scheme.menuRadius - 1)
-        gradient: Gradient {
-            GradientStop { position: 0.0; color: Scheme.placesTop }
-            GradientStop { position: 1.0; color: Scheme.placesBottom }
-        }
+        color: "transparent"
 
         Column {
             id: placesColumn
@@ -103,74 +119,20 @@ Item {
             anchors.margins: Theme.menuPadding
             spacing: 2
 
+            // Room under the picture, which hangs over this corner.
             Item {
                 width: parent.width
-                height: 64
-
-                // The user's picture, or the place the pointer is on.
-                Item {
-                    id: avatar
-                    anchors.left: parent.left
-                    anchors.verticalCenter: parent.verticalCenter
-                    width: 44
-                    height: 44
-
-                    UserTile {
-                        anchors.fill: parent
-                        source: Settings.userPictureSource
-                        dark: Settings.dark
-                        square: Scheme.modern
-                        opacity: menu.hoveredPlace.length > 0 ? 0 : 1
-                        Behavior on opacity {
-                            NumberAnimation { duration: Theme.fade }
-                        }
-                    }
-
-                    // A framed tile, as the user's picture is.
-                    Rectangle {
-                        anchors.fill: parent
-                        radius: 4
-                        color: "#33ffffff"
-                        border.width: 1
-                        border.color: "#99ffffff"
-                        opacity: menu.hoveredPlace.length > 0 ? 1 : 0
-                        Behavior on opacity {
-                            NumberAnimation { duration: Theme.fade }
-                        }
-
-                        Image {
-                            anchors.centerIn: parent
-                            width: 34
-                            height: 34
-                            source: menu.hoveredPlace.length > 0
-                                ? "../assets/icons/" + menu.hoveredPlace + ".svg" : ""
-                            sourceSize.width: 68
-                            sourceSize.height: 68
-                            smooth: true
-                        }
-                    }
-                }
-
-                // Cut short with an ellipsis, and kept off the right edge.
-                Text {
-                    anchors.left: avatar.right
-                    anchors.leftMargin: 10
-                    anchors.right: parent.right
-                    anchors.rightMargin: Theme.menuPadding
-                    anchors.verticalCenter: parent.verticalCenter
-                    text: Apps.userName
-                    color: Scheme.placesText
-                    font.family: Theme.fontFamily
-                    font.pixelSize: Theme.fontSize + 1
-                    elide: Text.ElideRight
-                    maximumLineCount: 1
-                }
+                height: Theme.menuTileSize - Theme.menuTileOverhang
             }
 
-            Rectangle {
+            // The account's name, the first line, as Windows 7 has it.
+            PlaceRow {
                 width: parent.width
-                height: 1
-                color: Scheme.menuDivider
+                label: Apps.userName
+                onActivated: {
+                    Apps.openPath(Apps.home);
+                    menu.dismissed();
+                }
             }
 
             Repeater {
@@ -188,8 +150,10 @@ Item {
                     { separator: true },
                     { label: "Computer", icon: "place-computer.svg", tile: "computer",
                       path: "/" },
+                    { separator: true },
                     { label: "Control Panel", icon: "place-settings.svg", tile: "control-panel",
-                      panel: true }
+                      panel: true },
+                    { label: "Run...", tile: "run", run: true }
                 ]
 
                 delegate: Item {
@@ -198,23 +162,21 @@ Item {
                     required property var modelData
 
                     width: placesColumn.width
-                    height: modelData.separator ? 9 : Theme.menuRowHeight
+                    height: modelData.separator ? 11 : Theme.menuRowHeight
 
-                    Rectangle {
-                        anchors.verticalCenter: parent.verticalCenter
-                        width: parent.width
-                        height: 1
-                        color: Scheme.menuDivider
+                    // An etched line: dark over light, short of both edges.
+                    Column {
+                        anchors.centerIn: parent
                         visible: place.modelData.separator === true
+
+                        Rectangle { width: place.width * 0.72; height: 1; color: "#4d0b2234" }
+                        Rectangle { width: place.width * 0.72; height: 1; color: "#33ffffff" }
                     }
 
-                    MenuRow {
+                    PlaceRow {
                         anchors.fill: parent
                         visible: place.modelData.separator !== true
                         label: place.modelData.label || ""
-                        icon: place.modelData.icon
-                            ? Qt.resolvedUrl("../assets/" + place.modelData.icon) : ""
-                        labelColor: Scheme.placesText
                         onHoveredChanged: {
                             if (hovered)
                                 menu.hoveredPlace = place.modelData.tile || "";
@@ -222,6 +184,12 @@ Item {
                                 menu.hoveredPlace = "";
                         }
                         onActivated: {
+                            if (place.modelData.run) {
+                                // Run... is the search box, which runs what
+                                // it does not find.
+                                search.forceActiveFocus();
+                                return;
+                            }
                             if (place.modelData.panel)
                                 ControlPanelState.open("");
                             else if (place.modelData.command)
@@ -250,6 +218,7 @@ Item {
             PowerPart {
                 width: 104
                 leftRounded: true
+                glass: true
                 hot: buttonArea.containsMouse
                 pressed: buttonArea.pressed
 
@@ -261,7 +230,7 @@ Item {
                         anchors.verticalCenter: parent.verticalCenter
                         width: 16
                         height: 16
-                        source: Scheme.dark ? "../assets/power-white.svg" : "../assets/power.svg"
+                        source: "../assets/power-white.svg"
                         sourceSize.width: 32
                         sourceSize.height: 32
                         smooth: true
@@ -270,7 +239,7 @@ Item {
                     Text {
                         anchors.verticalCenter: parent.verticalCenter
                         text: power.action ? power.action.label : ""
-                        color: Scheme.text
+                        color: "#ffffff"
                         font.family: Theme.fontFamily
                         font.pixelSize: Theme.fontSize
                     }
@@ -298,7 +267,7 @@ Item {
                 Text {
                     anchors.centerIn: parent
                     text: "▸"
-                    color: Scheme.text
+                    color: "#ffffff"
                     font.family: Theme.fontFamily
                     font.pixelSize: Theme.fontSize
                 }
@@ -339,10 +308,33 @@ Item {
         id: programs
 
         anchors.left: parent.left
-        anchors.top: parent.top
+        anchors.top: glass.top
         anchors.bottom: parent.bottom
-        anchors.margins: 1
-        width: Theme.menuProgramsWidth
+        anchors.margins: Theme.menuGlassBorder
+        width: Theme.menuProgramsWidth - Theme.menuGlassBorder
+
+        // The white pane, set into the glass with the frame's two lines.
+        Rectangle {
+            anchors.fill: parent
+            anchors.margins: -2
+            radius: Scheme.popupRadius + 2
+            color: "#99ffffff"
+
+            Rectangle {
+                anchors.fill: parent
+                anchors.margins: 1
+                radius: Scheme.popupRadius + 1
+                color: "#cc0b2234"
+            }
+        }
+        Rectangle {
+            anchors.fill: parent
+            radius: Scheme.popupRadius
+            gradient: Gradient {
+                GradientStop { position: 0.0; color: Scheme.menuTop }
+                GradientStop { position: 1.0; color: Scheme.menuBottom }
+            }
+        }
 
         // --- pinned, then used most -------------------------------------------
 
@@ -609,6 +601,40 @@ Item {
                     if (menu.searching && results.currentIndex < menu.found.length - 1)
                         results.currentIndex += 1;
                 }
+            }
+        }
+    }
+
+    // ----- the account picture, over the top edge -------------------------------
+
+    Item {
+        id: avatar
+
+        x: places.x + (places.width - width) / 2
+        y: 0
+        width: Theme.menuTileSize
+        height: Theme.menuTileSize
+
+        UserTile {
+            anchors.fill: parent
+            source: Settings.userPictureSource
+            dark: Settings.dark
+            opacity: menu.hoveredPlace.length > 0 ? 0 : 1
+            Behavior on opacity {
+                NumberAnimation { duration: Theme.fade }
+            }
+        }
+
+        // The place under the pointer, in the same frame, as Windows 7
+        // shows it.
+        UserTile {
+            anchors.fill: parent
+            source: menu.hoveredPlace.length > 0
+                ? Qt.resolvedUrl("../assets/icons/" + menu.hoveredPlace + ".svg") : ""
+            dark: Settings.dark
+            opacity: menu.hoveredPlace.length > 0 ? 1 : 0
+            Behavior on opacity {
+                NumberAnimation { duration: Theme.fade }
             }
         }
     }

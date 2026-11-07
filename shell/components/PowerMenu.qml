@@ -66,6 +66,16 @@ PopupWindow {
         }
     }
 
+    // The light line inside the outline, as every Windows 7 menu has.
+    Rectangle {
+        anchors.fill: parent
+        anchors.margins: 1
+        radius: Math.max(0, Scheme.popupRadius - 1)
+        color: "transparent"
+        border.width: 1
+        border.color: Scheme.popupInnerLine
+    }
+
     // A hover handler, not a MouseArea: it sees the pointer over the rows
     // and icons too, which take the hover from a MouseArea under them.
     HoverHandler {

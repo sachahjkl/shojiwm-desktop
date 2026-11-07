@@ -7,8 +7,6 @@ Item {
     id: button
 
     property string label: ""
-    /// The modern style: square corners.
-    property bool square: false
     signal clicked
 
     width: Math.max(94, text.implicitWidth + 30)
@@ -16,7 +14,7 @@ Item {
 
     Rectangle {
         anchors.fill: parent
-        radius: button.square ? 0 : 3
+        radius: 3
         border.width: 1
         border.color: "#0b2238"
         gradient: Gradient {
@@ -43,7 +41,7 @@ Item {
     Rectangle {
         anchors.fill: parent
         anchors.margins: 1
-        radius: button.square ? 0 : 2
+        radius: 2
         color: "transparent"
         border.width: 1
         border.color: area.containsMouse ? "#b3d9eeff" : "#7fa8cdee"

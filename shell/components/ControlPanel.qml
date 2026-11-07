@@ -35,7 +35,7 @@ FloatingWindow {
 
     readonly property var pages: ({
         "home": { title: "Control Panel Home", category: "" },
-        "appearance": { title: "Style, light or dark", category: "Appearance and Personalization" },
+        "appearance": { title: "Light or dark", category: "Appearance and Personalization" },
         "background": { title: "Desktop Background", category: "Appearance and Personalization" },
         "lockscreen": { title: "Lock Screen", category: "Appearance and Personalization" },
         "account": { title: "Account Picture", category: "User Accounts" },
@@ -81,7 +81,7 @@ FloatingWindow {
             anchors.verticalCenter: parent.verticalCenter
             width: 26
             height: 26
-            radius: Scheme.modern ? 0 : 13
+            radius: 13
             opacity: window.page === "home" ? 0.45 : 1
             border.width: 1
             border.color: "#1d4f86"
@@ -327,7 +327,7 @@ FloatingWindow {
                     name: "Appearance and Personalization"
                     target: "appearance"
                     links: [
-                        { text: "Choose a style, light or dark", page: "appearance" },
+                        { text: "Choose light or dark", page: "appearance" },
                         { text: "Change desktop background", page: "background" },
                         { text: "Taskbar and Start menu", page: "taskbar" },
                         { text: "Notification area icons", page: "notifications" }
@@ -370,129 +370,6 @@ FloatingWindow {
 
         Column {
             spacing: 12
-
-            Heading { text: "Choose a style" }
-
-            Note {
-                width: parent.width
-                text: "Aero is Windows 7 as it was. Modern is the same Aero, "
-                    + "squared: the glass, the gloss and the colours stay, and "
-                    + "every corner, of the windows, the menus, the buttons and "
-                    + "the lock screen, is a right angle."
-            }
-
-            Row {
-                spacing: 18
-
-                Repeater {
-                    model: [
-                        { value: "aero", label: "Aero" },
-                        { value: "modern", label: "Modern" }
-                    ]
-
-                    delegate: Item {
-                        id: styleChoice
-
-                        required property var modelData
-                        readonly property bool isChosen: Settings.style === modelData.value
-                        readonly property bool isModern: modelData.value === "modern"
-
-                        width: 200
-                        height: 150
-
-                        Rectangle {
-                            anchors.fill: parent
-                            radius: Scheme.itemRadius
-                            color: styleChoice.isChosen ? Scheme.selection
-                                : styleArea.containsMouse ? Scheme.hover : "transparent"
-                            border.width: styleChoice.isChosen || styleArea.containsMouse
-                                ? Scheme.selectionBorderWidth : 0
-                            border.color: Scheme.selectionBorder
-                        }
-
-                        // A small Aero window on a bit of desktop, rounded or
-                        // square.
-                        Rectangle {
-                            x: 16
-                            y: 12
-                            width: parent.width - 32
-                            height: 96
-                            gradient: Gradient {
-                                GradientStop { position: 0.0; color: "#1b5e97" }
-                                GradientStop { position: 1.0; color: "#2f8cc4" }
-                            }
-
-                            Rectangle {
-                                x: 14
-                                y: 10
-                                width: parent.width - 28
-                                height: 78
-                                radius: styleChoice.isModern ? 0 : 5
-                                color: "#b3538ebe"
-                                border.width: 1
-                                border.color: "#000000"
-
-                                Rectangle {
-                                    anchors.fill: parent
-                                    anchors.margins: 1
-                                    radius: styleChoice.isModern ? 0 : 4
-                                    color: "transparent"
-                                    border.width: 1
-                                    border.color: "#ccffffff"
-                                }
-
-                                // The caption buttons.
-                                Row {
-                                    anchors.right: parent.right
-                                    anchors.rightMargin: 4
-                                    y: 1
-
-                                    Repeater {
-                                        model: 3
-                                        delegate: Rectangle {
-                                            required property int index
-                                            width: index === 2 ? 20 : 12
-                                            height: 9
-                                            radius: styleChoice.isModern ? 0 : 1
-                                            color: index === 2 ? "#c94535" : "#9fc4e3"
-                                            border.width: 1
-                                            border.color: "#66000000"
-                                        }
-                                    }
-                                }
-
-                                Rectangle {
-                                    x: 5
-                                    y: 16
-                                    width: parent.width - 10
-                                    height: parent.height - 21
-                                    color: "#ffffff"
-                                    border.width: 1
-                                    border.color: "#8c0b1b2a"
-                                }
-                            }
-                        }
-
-                        CpRadio {
-                            anchors.horizontalCenter: parent.horizontalCenter
-                            anchors.bottom: parent.bottom
-                            anchors.bottomMargin: 10
-                            label: styleChoice.modelData.label
-                            checked: styleChoice.isChosen
-                            onClicked: Settings.style = styleChoice.modelData.value
-                        }
-
-                        MouseArea {
-                            id: styleArea
-                            anchors.fill: parent
-                            hoverEnabled: true
-                            onClicked: Settings.style = styleChoice.modelData.value
-                        }
-                    }
-                }
-            }
-
-            Item { width: 1; height: 8 }
 
             Heading { text: "Choose light or dark" }
 

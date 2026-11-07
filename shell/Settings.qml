@@ -18,9 +18,6 @@ Singleton {
         || (Quickshell.env("HOME") + "/.config")
     readonly property string home: Quickshell.env("HOME") || "/"
 
-    /// "aero", Windows 7 as it was, or "modern", the same glass made quieter.
-    property alias style: adapter.style
-    readonly property bool modern: adapter.style === "modern"
     property alias wallpaper: adapter.wallpaper
     property alias lockBackground: adapter.lockBackground
     property alias userPicture: adapter.userPicture
@@ -109,8 +106,6 @@ Singleton {
         JsonAdapter {
             id: adapter
 
-            property string style: "aero"
-
             /// Absolute paths; "" for the built-in picture. For the lock
             /// screen, "" is the desktop's picture and "builtin" the built-in.
             property string wallpaper: ""
@@ -151,11 +146,6 @@ Singleton {
         function setDark(on: bool): void { root.setDark(on); }
         function toggle(): void { root.setDark(!root.dark); }
         function isDark(): bool { return root.dark; }
-        /// "aero" or "modern".
-        function setStyle(style: string): void {
-            if (style === "aero" || style === "modern")
-                adapter.style = style;
-        }
     }
 
     /// The system's preference, as GNOME stores it and the settings portal

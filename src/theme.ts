@@ -58,9 +58,10 @@ export const CAPTION_BUTTON = {
 /**
  * Colours. Every value is `#rrggbbaa`, the order ShojiWM reads.
  *
- * The four lines were measured, then softened by eye against Windows 7
- * screenshots the owner supplied: at full strength the black outline and
- * the white bevel read as harsh, where Windows' read as soft.
+ * The four lines and the glass follow the ShojiWM author's own Windows 7
+ * setup (a screenshot the owner sent): a near-black blue outline with a
+ * cyan-white line inside it, the same pair reversed round the client, and
+ * glass clear enough that the caption is nearly the wallpaper's colour.
  *
  * The glass is a tint over the compositor's blur, so its alpha matters: the
  * numbers below reproduce both a window over a black desktop and one over a
@@ -68,22 +69,22 @@ export const CAPTION_BUTTON = {
  */
 export const COLOR = {
   /** The glass of an active window. */
-  glassActive: "#d2e4f442",
+  glassActive: "#d2e4f429",
   /**
    * The glass of every other window. Windows drains the colour out of it and
    * makes it heavier, so the caption stays legible over any wallpaper.
    */
   glassInactive: "#e2e9ef57",
   /** The 1 px line around the outside. */
-  outlineActive: "#15212ead",
-  outlineInactive: "#2a36408c",
+  outlineActive: "#002953f2",
+  outlineInactive: "#1f3550cc",
   /** The 1 px light line just inside it. */
-  highlightActive: "#ffffff99",
-  highlightInactive: "#ffffff73",
+  highlightActive: "#a5defff0",
+  highlightInactive: "#d6ecfaa6",
   /** The two lines around the client area. */
-  clientLightActive: "#ffffff8c",
+  clientLightActive: "#9cd8ffe6",
   clientLightInactive: "#ffffff80",
-  clientDarkActive: "#1b2b3a99",
+  clientDarkActive: "#25527ce6",
   clientDarkInactive: "#55656fb3",
   /** Caption text. */
   titleActive: "#000000",

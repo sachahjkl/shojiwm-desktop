@@ -269,6 +269,26 @@ blue one. The glow images are gone.
 - `tools/screenshots.sh` puts two dozen generated pictures in ~/Pictures,
   so the background chooser has something to show and to scroll.
 
+## Eleventh pass: the author's Start menu and frame lines; no modern style
+
+- **Modern style removed.** The owner did not want it in any form. Gone:
+  `Settings.style`, `Scheme.modern`, the square variants, `src/style.ts`,
+  the `appearance` socket method, `arrow-square*.svg`, the Control Panel's
+  style chooser and the modern captures. (The sixth and seventh passes
+  above describe what it was.)
+- **Start menu, after the ShojiWM author's.** The whole menu is a pane of
+  steel-blue glass with the frame's lines; the programs sit in a white pane
+  set into it; the account picture stands above the top edge
+  (`Theme.menuTileOverhang`, the menu window is that much taller); the
+  places are white text on the glass, no icons, with etched separators
+  (`PlaceRow.qml`); the Shut down button is glass (`PowerPart.glass`).
+  "Run..." focuses the search box, which runs what it does not find.
+- **Frame lines.** From his screenshot: a near-opaque dark navy outline,
+  a cyan-white line inside it, the same pair reversed round the client, and
+  a centred soft shadow. Each caption button now has its light line on all
+  four sides (`tools/make-caption-svgs.py`, `EDGE`). Popups got the same
+  double line (`Scheme.popupInnerLine`).
+
 ## What remains, in priority order
 
 1. **Look at all of it on a real GPU.** Colours, blur, animation speed and

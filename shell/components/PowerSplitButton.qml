@@ -10,8 +10,6 @@ Item {
 
     signal power
     signal menu
-    /// The modern style: square corners.
-    property bool square: false
 
     width: 70
     height: 24
@@ -35,7 +33,7 @@ Item {
     Rectangle {
         id: shape
         anchors.fill: parent
-        radius: split.square ? 0 : 3
+        radius: 3
         color: "#2a0303"
         clip: true
 
@@ -44,7 +42,7 @@ Item {
             y: 1
             width: split.divider - 1
             height: parent.height - 2
-            radius: split.square ? 0 : 2
+            radius: 2
             hot: mainArea.containsMouse
             down: mainArea.pressed
         }
@@ -54,7 +52,7 @@ Item {
             y: 1
             width: parent.width - split.divider - 2
             height: parent.height - 2
-            radius: split.square ? 0 : 2
+            radius: 2
             hot: arrowArea.containsMouse
             down: arrowArea.pressed
         }
@@ -64,7 +62,7 @@ Item {
     Rectangle {
         anchors.fill: parent
         anchors.margins: 1
-        radius: split.square ? 0 : 2
+        radius: 2
         color: "transparent"
         border.width: 1
         border.color: "#4dffdada"

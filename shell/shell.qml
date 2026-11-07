@@ -175,7 +175,9 @@ ShellRoot {
             margins.bottom: Theme.taskbarHeight + Theme.menuMargin
             margins.left: Theme.menuMargin
             implicitWidth: Theme.menuWidth
-            implicitHeight: Theme.menuHeight
+            // Room above the glass for the account picture, which stands
+            // over the menu's top edge.
+            implicitHeight: Theme.menuHeight + Theme.menuTileOverhang
 
             exclusionMode: ExclusionMode.Ignore
             WlrLayershell.layer: WlrLayer.Top

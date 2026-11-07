@@ -12,13 +12,20 @@ Item {
     property bool rightRounded: false
     property bool hot: false
     property bool pressed: false
+    /// On the Start menu's glass: a pale band of glass with a light rim,
+    /// for white text.
+    property bool glass: false
 
     height: parent ? parent.height : 28
 
-    readonly property color fillTop: part.pressed ? Scheme.buttonPressedTop
-        : part.hot ? Scheme.buttonHotTop : Scheme.buttonTop
-    readonly property color fillBottom: part.pressed ? Scheme.buttonPressedBottom
-        : part.hot ? Scheme.buttonHotBottom : Scheme.buttonBottom
+    readonly property color fillTop: part.glass
+        ? (part.pressed ? "#26ffffff" : part.hot ? "#66ffffff" : "#40ffffff")
+        : part.pressed ? Scheme.buttonPressedTop
+            : part.hot ? Scheme.buttonHotTop : Scheme.buttonTop
+    readonly property color fillBottom: part.glass
+        ? (part.pressed ? "#14ffffff" : part.hot ? "#38ffffff" : "#1fffffff")
+        : part.pressed ? Scheme.buttonPressedBottom
+            : part.hot ? Scheme.buttonHotBottom : Scheme.buttonBottom
 
     // Rounded all round, then squared off on the inner side by a second
     // rectangle that covers those corners.
@@ -26,7 +33,7 @@ Item {
         anchors.fill: parent
         radius: Scheme.buttonRadius
         border.width: 1
-        border.color: Scheme.menuOutline
+        border.color: part.glass ? "#b30b2234" : Scheme.menuOutline
         gradient: Gradient {
             GradientStop { position: 0.0; color: part.fillTop }
             GradientStop { position: 1.0; color: part.fillBottom }

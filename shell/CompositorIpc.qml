@@ -34,17 +34,6 @@ Singleton {
         return send("show-desktop", {});
     }
 
-    /// The window frames follow the style and light or dark: the compositor
-    /// draws them, so it is told whenever either changes.
-    function sendAppearance() {
-        return send("appearance", { style: Settings.style, dark: Settings.dark });
-    }
-
-    Connections {
-        target: Settings
-        function onStyleChanged() { root.sendAppearance(); }
-        function onDarkChanged() { root.sendAppearance(); }
-    }
 
     Socket {
         id: socket
@@ -53,9 +42,7 @@ Singleton {
         connected: root.path.length > 0
         // The compositor can be reloaded, which closes its end.
         onConnectedChanged: {
-            if (connected)
-                root.sendAppearance();
-            else if (root.path.length > 0)
+            if (!connected && root.path.length > 0)
                 reconnect.restart();
         }
     }

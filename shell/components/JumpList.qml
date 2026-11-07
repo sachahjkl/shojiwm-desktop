@@ -74,6 +74,16 @@ PopupWindow {
         }
     }
 
+    // The light line inside the outline, as every Windows 7 menu has.
+    Rectangle {
+        anchors.fill: parent
+        anchors.margins: 1
+        radius: Math.max(0, Scheme.popupRadius - 1)
+        color: "transparent"
+        border.width: 1
+        border.color: Scheme.popupInnerLine
+    }
+
     /// `true` while the pointer is over the menu. The taskbar closes a menu
     /// the pointer has left.
     readonly property bool pointerInside: hoverArea.hovered

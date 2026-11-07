@@ -2,8 +2,10 @@
 <!-- Drawn by tools/make-caption-svgs.py from docs/aero-measurements.md. -->
 <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0.0000" stop-color="#e8cdc8" stop-opacity="0.42"/><stop offset="0.2353" stop-color="#dfc0ba" stop-opacity="0.44"/><stop offset="0.4118" stop-color="#d6b3ac" stop-opacity="0.46"/><stop offset="0.4706" stop-color="#d6b3ac" stop-opacity="0.46"/><stop offset="0.4706" stop-color="#9b665e" stop-opacity="0.5"/><stop offset="0.5882" stop-color="#99645c" stop-opacity="0.5"/><stop offset="0.7647" stop-color="#a3726a" stop-opacity="0.48"/><stop offset="0.8824" stop-color="#b98d85" stop-opacity="0.45"/><stop offset="0.9412" stop-color="#b98d85" stop-opacity="0.45"/><stop offset="0.9412" stop-color="#e6cdc8" stop-opacity="0.42"/><stop offset="1" stop-color="#e6cdc8" stop-opacity="0.42"/></linearGradient></defs>
 <rect x="1" y="0" width="46" height="17" fill="url(#g)"/>
-<rect x="1" y="0" width="1" height="17" fill="#ffffff" fill-opacity="0.28"/>
-<rect x="46" y="0" width="1" height="17" fill="#ffffff" fill-opacity="0.28"/>
+<rect x="1" y="0" width="1" height="17" fill="#ffffff" fill-opacity="0.4"/>
+<rect x="46" y="0" width="1" height="17" fill="#ffffff" fill-opacity="0.4"/>
+<rect x="2" y="0" width="44" height="1" fill="#ffffff" fill-opacity="0.32"/>
+<rect x="2" y="16" width="44" height="1" fill="#ffffff" fill-opacity="0.24"/>
 <rect x="0" y="0" width="1" height="18" fill="#4a4f56"/>
 <rect x="0" y="17" width="48" height="1" fill="#4a4f56"/>
 <rect x="47" y="0" width="1" height="18" fill="#4a4f56"/>

@@ -84,7 +84,6 @@ Item {
         id: tile
 
         dark: Settings.dark
-        square: Scheme.modern
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.verticalCenter: parent.verticalCenter
         anchors.verticalCenterOffset: -50
@@ -185,7 +184,7 @@ Item {
 
             Image {
                 anchors.fill: parent
-                source: "../assets/arrow-" + (Scheme.modern ? "square" : "bead")
+                source: "../assets/arrow-bead"
                     + (Settings.dark ? "-dark" : "")
                     + (goArea.containsMouse && !goArea.pressed ? "-hot" : "")
                     + ".svg"
@@ -245,7 +244,6 @@ Item {
 
         LogonButton {
             id: okButton
-            square: Scheme.modern
             anchors.horizontalCenter: parent.horizontalCenter
             label: "OK"
             onClicked: screen.dismissError()
@@ -255,7 +253,6 @@ Item {
     // ----- the power button -------------------------------------------------------
 
     PowerSplitButton {
-        square: Scheme.modern
         anchors.right: parent.right
         anchors.bottom: parent.bottom
         anchors.margins: 26

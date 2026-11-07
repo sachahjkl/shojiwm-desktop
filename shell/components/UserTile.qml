@@ -18,8 +18,6 @@ Item {
     property url source
     /// Smoked glass, for dark mode.
     property bool dark: false
-    /// The modern style: the same frame with square corners.
-    property bool square: false
 
     width: 136
     height: 136
@@ -27,7 +25,7 @@ Item {
     // Everything scales with the size, so the Start menu can use it small.
     readonly property real k: width / 136
     readonly property int band: Math.max(3, Math.round(10 * k))
-    readonly property real r: square ? 0 : Math.max(3, 8 * k)
+    readonly property real r: Math.max(3, 8 * k)
 
     // The shadow under the frame.
     Rectangle {
@@ -35,7 +33,7 @@ Item {
         anchors.margins: -2
         anchors.topMargin: 0
         anchors.bottomMargin: -Math.max(1, Math.round(3 * tile.k))
-        radius: tile.square ? 0 : tile.r + 2
+        radius: tile.r + 2
         color: "#38001a33"
     }
 
@@ -86,7 +84,7 @@ Item {
     Rectangle {
         anchors.fill: parent
         anchors.margins: tile.band - 2
-        radius: tile.square ? 0 : Math.max(1, 2 * tile.k)
+        radius: Math.max(1, 2 * tile.k)
         color: tile.dark ? "#5f7d95" : "#a8d8f0"
     }
     Rectangle {

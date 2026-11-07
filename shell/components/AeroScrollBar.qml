@@ -48,7 +48,7 @@ ScrollBar {
                 y: down ? parent.height - bar.arrow : 0
                 width: bar.thickness
                 height: bar.arrow
-                radius: Scheme.modern ? 0 : 2
+                radius: 2
                 border.width: 1
                 border.color: area.containsMouse
                     ? "#3c7fb1" : (bar.lit ? "#9da8b2" : "transparent")
@@ -96,7 +96,7 @@ ScrollBar {
     // The thumb.
     contentItem: Rectangle {
         implicitWidth: bar.thickness
-        radius: Scheme.modern ? 0 : 3
+        radius: 3
         border.width: 1
         border.color: bar.pressed ? "#3c7fb1" : bar.hovered ? "#3c7fb1"
             : (Scheme.dark ? "#56687a" : "#9b9b9b")
