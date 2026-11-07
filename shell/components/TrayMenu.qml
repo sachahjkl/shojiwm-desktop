@@ -7,28 +7,49 @@ import "../theme.js" as Theme
 // The menu of a notification-area item, drawn like a Windows 7 menu.
 //
 // `QsMenuOpener` opens the item's DBusMenu and lists its entries
-// (Quickshell/QsMenuOpener, Quickshell/QsMenuEntry). Triggering an entry is
-// what the item expects, submenus included.
+// (Quickshell/QsMenuOpener, Quickshell/QsMenuEntry). An entry with children
+// is itself a menu: resting on it, or clicking it, opens this same component
+// beside the line, through a Loader, as deep as the item goes.
 PopupWindow {
     id: popup
 
+    /// The tray item whose menu this is. A submenu leaves it null and sets
+    /// `menu` instead.
     property var item: null
+    property var menu: item ? item.menu : null
     property var anchorWindow: null
     property rect anchorRect: Qt.rect(0, 0, 1, 1)
+    /// `true` for a menu opened from a line of another one.
+    property bool submenu: false
 
     signal dismissed
 
     readonly property var entries: opener.children ? opener.children.values : []
 
+    /// The entry whose submenu is open, or null.
+    property var openEntry: null
+    property rect openRect: Qt.rect(0, 0, 1, 1)
+
+    onMenuChanged: popup.openEntry = null
+    onVisibleChanged: {
+        if (!visible)
+            popup.openEntry = null;
+    }
+
     color: "transparent"
-    visible: item !== null && entries.length > 0
+    visible: menu !== null && menu !== undefined && entries.length > 0
 
     anchor.window: popup.anchorWindow
     anchor.rect: popup.anchorRect
-    anchor.edges: Edges.Top
-    anchor.gravity: Edges.Top
-    anchor.margins.bottom: Theme.popupGap
-    anchor.adjustment: PopupAdjustment.SlideX | PopupAdjustment.FlipY
+    // The root menu stands on the tray icon; a submenu hangs from the right
+    // of its line, and moves to the left when the screen ends.
+    anchor.edges: popup.submenu ? Edges.Right | Edges.Top : Edges.Top
+    anchor.gravity: popup.submenu ? Edges.Right | Edges.Bottom : Edges.Top
+    anchor.margins.bottom: popup.submenu ? 0 : Theme.popupGap
+    anchor.margins.top: popup.submenu ? -Theme.popupPadY - 1 : 0
+    anchor.adjustment: popup.submenu
+        ? PopupAdjustment.FlipX | PopupAdjustment.SlideY
+        : PopupAdjustment.SlideX | PopupAdjustment.FlipY
 
     implicitWidth: Math.min(
         Theme.popupMaxWidth,
@@ -37,7 +58,7 @@ PopupWindow {
 
     QsMenuOpener {
         id: opener
-        menu: popup.item ? popup.item.menu : null
+        menu: popup.menu
     }
 
     FontMetrics {
@@ -68,9 +89,59 @@ PopupWindow {
         }
     }
 
-    /// `true` while the pointer is over the menu. The taskbar closes a menu
-    /// the pointer has left.
+    /// `true` while the pointer is over the menu or one of its submenus. The
+    /// taskbar closes a menu the pointer has left.
     readonly property bool pointerInside: hoverArea.containsMouse
+        || (popup.childMenu !== null && popup.childMenu.pointerInside)
+
+    /// The open submenu, a TrayMenu, or null.
+    readonly property var childMenu: child.item
+
+    // The line the pointer rests on, and the timer that opens its submenu.
+    property var restingEntry: null
+    property rect restingRect: Qt.rect(0, 0, 1, 1)
+
+    Timer {
+        id: submenuTimer
+        interval: Theme.submenuDelay
+        onTriggered: {
+            popup.openEntry = popup.restingEntry;
+            popup.openRect = popup.restingRect;
+        }
+    }
+
+    function rest(entry, rect) {
+        popup.restingEntry = entry;
+        popup.restingRect = rect;
+        if (popup.openEntry !== entry)
+            submenuTimer.restart();
+    }
+
+    function openSubmenu(entry, rect) {
+        submenuTimer.stop();
+        popup.openEntry = entry;
+        popup.openRect = rect;
+    }
+
+    Loader {
+        id: child
+
+        active: popup.openEntry !== null
+        source: "TrayMenu.qml"
+
+        onLoaded: {
+            var menu = popup.childMenu;
+            menu.submenu = true;
+            menu.anchorWindow = popup;
+            menu.anchorRect = Qt.binding(function () {
+                return popup.openRect;
+            });
+            menu.menu = Qt.binding(function () {
+                return popup.openEntry;
+            });
+            menu.dismissed.connect(popup.dismissed);
+        }
+    }
 
     MouseArea {
         id: hoverArea
@@ -96,14 +167,40 @@ PopupWindow {
             delegate: MenuItemRow {
                 required property var modelData
 
+                id: entryRow
+
                 width: column.width
                 separator: modelData ? modelData.isSeparator : false
                 itemEnabled: modelData ? modelData.enabled : false
                 label: modelData && modelData.text ? modelData.text : ""
                 icon: modelData && modelData.icon ? modelData.icon : ""
+                hasChildren: modelData ? modelData.hasChildren : false
+                highlighted: popup.openEntry !== null
+                    && popup.openEntry === modelData
+                checkable: modelData
+                    ? modelData.buttonType !== QsMenuButtonType.None : false
+                checked: modelData ? modelData.checkState === Qt.Checked : false
+
+                onHoveredChanged: {
+                    if (!entryRow.hovered)
+                        return;
+                    if (entryRow.hasChildren && entryRow.itemEnabled) {
+                        popup.rest(modelData, entryRow.rowRect());
+                    } else {
+                        // Resting on a plain line closes an open submenu.
+                        popup.restingEntry = null;
+                        submenuTimer.restart();
+                    }
+                }
+
                 onActivated: {
-                    if (modelData)
-                        modelData.triggered();
+                    if (!modelData)
+                        return;
+                    if (entryRow.hasChildren) {
+                        popup.openSubmenu(modelData, entryRow.rowRect());
+                        return;
+                    }
+                    modelData.triggered();
                     popup.dismissed();
                 }
             }

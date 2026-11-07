@@ -7,9 +7,10 @@ import "../theme.js" as Theme
 
 // The jump list of a taskbar button, on a right click.
 //
-// Its tasks are the actions of the program's .desktop file, which Quickshell
-// exposes as `DesktopEntry.actions` (a list of `DesktopAction`, each with
-// `name`, `icon` and `execute()`).
+// From the top: the files the program opened last, from
+// `recently-used.xbel`; its tasks, which are the actions of its .desktop file
+// (`DesktopEntry.actions`, each with `name`, `icon` and `execute()`); then
+// the program itself and "Close window".
 PopupWindow {
     id: popup
 
@@ -22,6 +23,7 @@ PopupWindow {
     readonly property var entry: group ? group.entry : null
     readonly property var actions: entry && entry.actions ? entry.actions : []
     readonly property int windowCount: group ? group.windows.length : 0
+    readonly property var recent: popup.visible ? Apps.recentFor(entry) : []
 
     color: "transparent"
     visible: group !== null
@@ -48,6 +50,8 @@ PopupWindow {
         var texts = [popup.closeLabel, popup.openLabel];
         for (var i = 0; i < actions.length; i++)
             texts.push(String(actions[i].name));
+        for (var k = 0; k < recent.length; k++)
+            texts.push(String(recent[k].name));
         var width = 0;
         for (var j = 0; j < texts.length; j++)
             width = Math.max(width, metrics.advanceWidth(texts[j]));
@@ -92,6 +96,36 @@ PopupWindow {
         anchors.leftMargin: 1
         anchors.rightMargin: 1
 
+        MenuItemRow {
+            width: column.width
+            heading: true
+            label: "Recent"
+            visible: popup.recent.length > 0
+        }
+
+        Repeater {
+            model: popup.recent
+
+            delegate: MenuItemRow {
+                required property var modelData
+
+                width: column.width
+                label: modelData ? modelData.name : ""
+                icon: Quickshell.iconPath("text-x-generic", true)
+                onActivated: {
+                    Apps.openWith(popup.entry, modelData.path);
+                    popup.dismissed();
+                }
+            }
+        }
+
+        MenuItemRow {
+            width: column.width
+            heading: true
+            label: "Tasks"
+            visible: popup.actions.length > 0
+        }
+
         Repeater {
             model: popup.actions
 
@@ -113,7 +147,7 @@ PopupWindow {
         MenuItemRow {
             width: column.width
             separator: true
-            visible: popup.actions.length > 0
+            visible: popup.actions.length > 0 || popup.recent.length > 0
         }
 
         MenuItemRow {
@@ -130,12 +164,13 @@ PopupWindow {
         MenuItemRow {
             width: column.width
             separator: true
+            visible: popup.windowCount > 0
         }
 
         MenuItemRow {
             width: column.width
             label: popup.closeLabel
-            itemEnabled: popup.windowCount > 0
+            visible: popup.windowCount > 0
             onActivated: {
                 var open = popup.group ? popup.group.windows.slice() : [];
                 for (var i = 0; i < open.length; i++)

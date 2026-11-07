@@ -18,10 +18,15 @@ var taskButtonHeight = 30;
 var taskButtonMaxWidth = 168;
 var taskButtonMinWidth = 44;
 var taskButtonGap = 3;
+// A pinned program with no window open: the icon alone, as Windows draws it.
+var pinnedButtonWidth = 46;
+var pinnedIconSize = 24;
 var trayIconSize = 16;
 var trayGap = 8;
 var clockWidth = 74;
 var showDesktopWidth = 10;
+// How long the pointer rests on the show-desktop strip before Aero Peek.
+var peekDelay = 500;
 
 // Combine every window of one program into one button, as Windows 7 does by
 // default. Set this to false for one button per window ("never combine").
@@ -57,6 +62,8 @@ var popupMinWidth = 170;
 var popupMaxWidth = 340;
 var popupPadX = 10;
 var popupPadY = 5;
+// How long the pointer rests on a line before its submenu opens.
+var submenuDelay = 300;
 
 // ---------------------------------------------------------------------------
 // Start menu
@@ -120,6 +127,7 @@ var menuDivider = "#598fb0c9";
 var textOnGlass = "#f2f8ff";
 var textMuted = "#c3d6e6";
 var textOnMenu = "#10283c";
+var menuHeading = "#1e3287";
 var textOnPlaces = "#eaf4ff";
 var selection = "#669ad0f7";
 var selectionBorder = "#b3cfe9ff";

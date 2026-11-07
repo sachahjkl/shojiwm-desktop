@@ -9,7 +9,11 @@ import "../theme.js" as Theme
 //
 // Left click: show the window, or put it away when it is the one you are
 // looking at. With several windows it shows the thumbnails instead.
-// Right click: the jump list. Resting on it shows the thumbnails.
+// Right click: the jump list. Middle click: start another instance. Resting
+// on it shows the thumbnails.
+//
+// A pinned program with no window open is the icon alone, with no plate
+// until the pointer is on it. A click starts it.
 Item {
     id: button
 
@@ -17,6 +21,8 @@ Item {
 
     readonly property var windows: group ? group.windows : []
     readonly property bool stacked: windows.length > 1
+    /// Pinned, and no window of it is open.
+    readonly property bool idle: windows.length === 0
     readonly property bool current: Apps.groupIsCurrent(group)
     readonly property bool hovered: area.containsMouse
 
@@ -63,6 +69,11 @@ Item {
         anchors.bottom: parent.bottom
         radius: 3
         antialiasing: true
+        opacity: button.idle && !button.hovered && !area.pressed ? 0 : 1
+
+        Behavior on opacity {
+            NumberAnimation { duration: Theme.fade }
+        }
 
         border.width: 1
         border.color: button.current ? Theme.buttonActiveBorder
@@ -82,6 +93,19 @@ Item {
         Behavior on border.color {
             ColorAnimation { duration: Theme.fade }
         }
+    }
+
+    // The icon alone, for a pinned program that is not running.
+    IconImage {
+        anchors.centerIn: body
+        implicitSize: Theme.pinnedIconSize
+        source: button.group ? button.group.icon : ""
+        visible: button.idle
+    }
+
+    Item {
+        anchors.fill: body
+        visible: !button.idle
 
         Row {
             anchors.fill: parent
@@ -121,10 +145,11 @@ Item {
 
         anchors.fill: parent
         hoverEnabled: true
-        acceptedButtons: Qt.LeftButton | Qt.RightButton
+        acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
 
         onEntered: {
-            restTimer.restart();
+            if (!button.idle)
+                restTimer.restart();
             button.hoverChanged(true);
         }
         onExited: {
@@ -137,6 +162,10 @@ Item {
             restTimer.stop();
             if (event.button === Qt.RightButton) {
                 button.menuRequested(button.buttonRect());
+                return;
+            }
+            if (event.button === Qt.MiddleButton) {
+                Apps.launch(button.group ? button.group.entry : null);
                 return;
             }
             if (button.stacked) {

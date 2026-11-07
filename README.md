@@ -22,11 +22,12 @@ required.
 | **Alt+Tab**             | A panel of live thumbnails over the desktop. Tab, the arrow keys and the pointer pick a window.                                                                                                                                                                             |
 | **Aero Snap**           | Drag a window against the top, left or right edge, or hold `Super` and press an arrow key. The rectangle the window would take is drawn while you drag.                                                                                                                     |
 | **Double click**        | On the caption bar: maximise, and again to restore.                                                                                                                                                                                                                         |
-| **Taskbar**             | Glass bar at the bottom: the orb, one button per program, the notification area, the clock, and the show-desktop strip at the far right.                                                                                                                                    |
+| **Taskbar**             | Glass bar at the bottom: the orb, the pinned programs, one button per running program, the notification area, the clock, and the show-desktop strip at the far right.                                                                                                       |
+| **Pinned programs**     | A pinned program keeps its icon on the taskbar while it is closed; a click starts it. Once it runs, its windows gather behind that same button. A middle click on any button starts another instance.                                                                       |
 | **Combined buttons**    | Every window of one program sits behind one button, drawn as a stack. One setting in `shell/theme.js` gives one button per window instead.                                                                                                                                  |
 | **Window thumbnails**   | Rest on a taskbar button and its windows are listed with their titles. A click raises one, a middle click closes it. The live picture of each window is written but off; see "Real limits".                                                                                 |
-| **Jump lists**          | Right click a taskbar button for the tasks of the program's `.desktop` file, a second instance, and close.                                                                                                                                                                  |
-| **Notification area**   | A tray item's own menu, drawn in the same style.                                                                                                                                                                                                                            |
+| **Jump lists**          | Right click a taskbar button for the files the program opened last (from `recently-used.xbel`), the tasks of its `.desktop` file, a second instance, and close.                                                                                                             |
+| **Notification area**   | A tray item's own menu, drawn in the same style, with its submenus, check boxes and radio buttons.                                                                                                                                                                          |
 | **Start menu**          | Programs on the left with a search box, places on the right, and the shut-down button in the corner.                                                                                                                                                                        |
 
 ## Screenshots
@@ -59,8 +60,13 @@ live picture of the window.
 
 ![A jump list](assets/site/jump-list.png)
 
-A right click on the same button. `foot` declares no tasks in its `.desktop`
-file, so the list holds the program itself and "Close all windows".
+A right click on the same button: the files the program opened last, then
+the program itself and "Close all windows". `foot` declares no tasks in its
+`.desktop` file, so there is no "Tasks" section. Nothing on the test machine
+opens files through GTK, so `tools/screenshots.sh` writes the
+`recently-used.xbel` the list is read from, naming `foot`; and since Thunar,
+Chromium and kitty are not installed there, it pins `foot` and `footclient`
+instead.
 
 ![A notification-area menu](assets/site/tray-menu.png)
 
@@ -201,14 +207,14 @@ running one.
 | `assets/*.svg`                                                                               | The caption glyphs and the two sheens. Drawn by hand.                                                                                                                     |
 | `shell/shell.qml`                                                                            | The Quickshell root: the wallpaper, the taskbar and the Start menu, one of each per screen.                                                                               |
 | `shell/theme.js`                                                                             | Every size and colour of the shell, and the combine setting.                                                                                                              |
-| `shell/Apps.qml`                                                                             | The window list, the grouping, the program list, and what a click does. The programs the places open are named here.                                                      |
+| `shell/Apps.qml`                                                                             | The window list, the grouping, the pinned programs, the recent files, the program list, and what a click does. The programs the places open are named here.               |
 | `shell/StartMenuState.qml`                                                                   | Which screen shows the Start menu.                                                                                                                                        |
 | `shell/StartMenuIpc.qml`                                                                     | The IPC entry point the compositor calls to open the menu.                                                                                                                |
 | `shell/components/Taskbar.qml`                                                               | The bar, and the three popups its buttons ask for.                                                                                                                        |
 | `shell/components/TaskButton.qml`                                                            | One program: its stack, its states, its clicks.                                                                                                                           |
 | `shell/components/ThumbnailPopup.qml`                                                        | The live pictures over a button.                                                                                                                                          |
-| `shell/components/JumpList.qml`                                                              | The tasks of a program, on a right click.                                                                                                                                 |
-| `shell/components/TrayMenu.qml`                                                              | A notification-area item's own menu.                                                                                                                                      |
+| `shell/components/JumpList.qml`                                                              | The recent files and the tasks of a program, on a right click.                                                                                                            |
+| `shell/components/TrayMenu.qml`                                                              | A notification-area item's own menu, and each of its submenus.                                                                                                            |
 | `shell/components/MenuItemRow.qml`                                                           | One line of either menu.                                                                                                                                                  |
 | `shell/components/StartMenu.qml`, `StartOrb.qml`, `Clock.qml`, `TrayArea.qml`, `MenuRow.qml` | The Start menu, the orb, the clock, the notification area, and one menu line.                                                                                             |
 | `shell/assets/*.svg`                                                                         | The orb, the place icons, the account tile and the wallpaper. Drawn by hand.                                                                                              |
@@ -219,7 +225,9 @@ running one.
 
 - **Programs:** `TERMINAL`, `FILE_MANAGER` and `BROWSER` at the top of
   `src/index.tsx`, and `terminal`, `fileManager`, `browser`, `controlPanel`
-  and `pinnedIds` at the top of `shell/Apps.qml`.
+  at the top of `shell/Apps.qml`. `pinnedIds` there is the Start menu's
+  pinned list and `taskbarPinnedIds` the taskbar's, both as `.desktop` file
+  names.
 - **Frame colours and sizes:** `src/theme.ts`.
 - **Shell colours and sizes:** `shell/theme.js`. Set `combineWindows` to
   `false` there for one taskbar button per window.
@@ -291,11 +299,6 @@ Possible with the APIs above, simply not written:
   show-desktop strip. The shell would have to ask the compositor to hide the
   windows; `COMPOSITOR` can serve a socket (`shoji_wm/ipc`) and Quickshell can
   speak to one (`Quickshell.Io.Socket`), so the way is open.
-- **Submenus of a notification-area item.** An entry with children is
-  triggered instead of opened in place (`QsMenuEntry.hasChildren`).
-- **Recent files in a jump list**, from `recently-used.xbel`.
-- **Pinned programs in the taskbar.** The Start menu has a pinned list; the
-  taskbar shows only what is open.
 - **An "All Programs" tree** in the Start menu. The list is flat, and the
   search box filters it.
 - **A menu that closes on a press outside it.** A layer-shell popup is told

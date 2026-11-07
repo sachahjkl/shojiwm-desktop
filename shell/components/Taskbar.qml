@@ -4,8 +4,9 @@ import QtQuick
 import ".."
 import "../theme.js" as Theme
 
-// The taskbar: the orb, one button per program, the notification area, the
-// clock, and the show-desktop strip at the far right.
+// The taskbar: the orb, the pinned programs and one button per running
+// program, the notification area, the clock, and the show-desktop strip at
+// the far right.
 //
 // It owns the three popups the buttons and the tray ask for, so there is one
 // of each rather than one per button.
@@ -132,13 +133,29 @@ Item {
                 opacity: 0.6
             }
 
+            // Aero Peek: resting here turns every window to glass, through
+            // the compositor. A click puts them away, and a second one brings
+            // them back.
+            Timer {
+                id: peekTimer
+                interval: Theme.peekDelay
+                onTriggered: CompositorIpc.peek(true)
+            }
+
             MouseArea {
                 id: showDesktopArea
                 anchors.fill: parent
                 hoverEnabled: true
+                onEntered: peekTimer.restart()
+                onExited: {
+                    peekTimer.stop();
+                    CompositorIpc.peek(false);
+                }
                 onClicked: {
+                    peekTimer.stop();
                     bar.closePopups();
-                    Apps.minimizeAll();
+                    if (!CompositorIpc.showDesktop())
+                        Apps.minimizeAll();
                 }
             }
         }
@@ -159,16 +176,28 @@ Item {
         }
     }
 
+    // A pinned program with no window open keeps its narrow icon button; the
+    // others share what is left.
+    readonly property int idleCount: {
+        var count = 0;
+        for (var i = 0; i < Apps.groups.length; i++) {
+            if (Apps.groups[i].windows.length === 0)
+                count++;
+        }
+        return count;
+    }
     readonly property int groupCount: Apps.groups.length
+    readonly property int openCount: groupCount - idleCount
     readonly property real buttonsAvailable: Math.max(
         0,
         status.x - (orb.x + orb.width) - Theme.taskButtonGap * 2)
-    readonly property real buttonWidth: groupCount === 0 ? 0 : Math.min(
+    readonly property real buttonWidth: openCount === 0 ? 0 : Math.min(
         Theme.taskButtonMaxWidth,
         Math.max(
             Theme.taskButtonMinWidth,
-            (buttonsAvailable - (groupCount - 1) * Theme.taskButtonGap)
-                / groupCount))
+            (buttonsAvailable - idleCount * Theme.pinnedButtonWidth
+                - (groupCount - 1) * Theme.taskButtonGap)
+                / openCount))
 
     Row {
         id: buttons
@@ -191,7 +220,8 @@ Item {
                 required property var modelData
 
                 group: modelData
-                width: bar.buttonWidth
+                width: modelData.windows.length === 0
+                    ? Theme.pinnedButtonWidth : bar.buttonWidth
                 height: buttons.height
 
                 onPreviewRequested: function (at) {

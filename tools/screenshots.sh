@@ -12,7 +12,8 @@
 #   tools/screenshots.sh            # all of them
 #   KEEP=1 tools/screenshots.sh     # keep the session running at the end
 #
-# Override the Quickshell it uses with QUICKSHELL_FLAKE.
+# Override the Quickshell it uses with QUICKSHELL_FLAKE, and the compositor
+# with SHOJIWM_FLAKE (a local clone: SHOJIWM_FLAKE=path:/src/ShojiWM#default).
 set -euo pipefail
 
 repo="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -20,7 +21,7 @@ out="$repo/assets/site"
 
 if [ "${1:-}" != "--inner" ]; then
   exec nix shell \
-    "github:bea4dev/ShojiWM#default" \
+    "${SHOJIWM_FLAKE:-github:bea4dev/ShojiWM#default}" \
     "nixpkgs#xorg-server" \
     "nixpkgs#xdotool" \
     "nixpkgs#imagemagick" \
@@ -92,6 +93,35 @@ mkdir -p "$XDG_CONFIG_HOME/shojiwm"
 cp -R "$repo/src" "$repo/assets" "$repo/shell" "$repo/package.json" \
   "$repo/tsconfig.json" "$XDG_CONFIG_HOME/shojiwm/"
 chmod -R u+w "$XDG_CONFIG_HOME/shojiwm"
+
+# The programs pinned by default (Thunar, Chromium, kitty) are not installed
+# here. Pin the two that are, so the taskbar shows one pinned program with
+# windows open and one with none.
+sed -i 's|taskbarPinnedIds: \[.*\]|taskbarPinnedIds: ["foot.desktop", "footclient.desktop"]|' \
+  "$XDG_CONFIG_HOME/shojiwm/shell/Apps.qml"
+grep -q '"footclient.desktop"' "$XDG_CONFIG_HOME/shojiwm/shell/Apps.qml"
+
+# Nothing here opens files through GTK, so no program records them. Write the
+# list a desktop keeps of them, naming foot, for the jump list to read.
+mkdir -p "$XDG_DATA_HOME"
+for name in notes.txt todo.md shojiwm.log; do
+  printf 'sample\n' >"$work/$name"
+done
+{
+  printf '<?xml version="1.0" encoding="UTF-8"?>\n'
+  printf '<xbel version="1.0" xmlns:bookmark="http://www.freedesktop.org/standards/desktop-bookmarks">\n'
+  minute=10
+  for name in notes.txt todo.md shojiwm.log; do
+    printf '  <bookmark href="file://%s/%s" added="2026-11-07T10:%s:00Z" modified="2026-11-07T10:%s:00Z" visited="2026-11-07T10:%s:00Z">\n' \
+      "$work" "$name" "$minute" "$minute" "$minute"
+    printf '    <info><metadata owner="http://freedesktop.org"><bookmark:applications>\n'
+    printf '      <bookmark:application name="foot" exec="&apos;foot %%u&apos;" modified="2026-11-07T10:%s:00Z" count="1"/>\n' "$minute"
+    printf '    </bookmark:applications></metadata></info>\n'
+    printf '  </bookmark>\n'
+    minute=$((minute + 5))
+  done
+  printf '</xbel>\n'
+} >"$XDG_DATA_HOME/recently-used.xbel"
 
 # ---------------------------------------------------------------------------
 # The session

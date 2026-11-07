@@ -146,6 +146,7 @@
           singleton Apps 1.0 Apps.qml
           singleton StartMenuState 1.0 StartMenuState.qml
           singleton StartMenuIpc 1.0 StartMenuIpc.qml
+          singleton CompositorIpc 1.0 CompositorIpc.qml
           EOF
           cd ./shell
           qmllint \

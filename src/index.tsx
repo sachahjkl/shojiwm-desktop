@@ -31,6 +31,7 @@ import {
 } from "shoji_wm";
 import { aeroFrame } from "./decoration";
 import { createAltTab } from "./alt-tab";
+import { SHELL_SOCKET, createPeek } from "./peek";
 import {
   FloatingWindowManager,
   WIN_FULLSCREEN,
@@ -69,6 +70,8 @@ COMPOSITOR.process.once("shell", {
     // shell down with "fatal error: Invalid argument". The search box reads
     // plain keys, so the protocol is left out.
     QT_WAYLAND_TEXT_INPUT_PROTOCOL: "none",
+    // Where the shell asks for Aero Peek and the show-desktop toggle.
+    SHOJIWM_WIN7_SOCKET: SHELL_SOCKET,
   },
 });
 
@@ -95,6 +98,7 @@ COMPOSITOR.rendering.framePacing = "throughput";
 
 const WINDOWS = new FloatingWindowManager();
 const ALT_TAB = createAltTab(WINDOWS);
+const PEEK = createPeek(WINDOWS);
 
 const FULLSCREEN_Z_INDEX = 2_000_000_000;
 
@@ -279,7 +283,8 @@ function snapPreviewComposition(
 // has nothing under it to show. Leave the glass out while it is open.
 COMPOSITOR.rendering.composition = (output) =>
   ALT_TAB.compose(output) ??
-  snapPreviewComposition(output) ?? <DefaultComposition />;
+  snapPreviewComposition(output) ??
+  PEEK.compose(output) ?? <DefaultComposition />;
 
 // ---------------------------------------------------------------------------
 // The frame of every window
