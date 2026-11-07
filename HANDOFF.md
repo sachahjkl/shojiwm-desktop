@@ -79,6 +79,29 @@ list's "Recent" section, and Aero Peek all show in the captures, and the shell
 stayed up through every step. Not exercised: a tray submenu (CopyQ has none),
 and clicks on a recent file, a pinned button or the show-desktop strip.
 
+## Third pass: the Start menu
+
+Asked for by the owner: the name ran into the right edge, and the power
+button did one thing only.
+
+1. The name is the full name from `getent passwd` (else the login name), cut
+   short with an ellipsis and kept `menuPadding` off the right edge.
+2. The power button is split: the button runs `powerButtonAction`, the arrow
+   opens `PowerMenu.qml` with the rest of `Apps.powerActions` (log off, lock,
+   restart, sleep, hibernate). Lock is `loginctl lock-session`, which does
+   nothing unless a locker listens for it.
+3. The left pane: pinned programs in bold, then the programs started most
+   (`Apps.frequent`, counted in `Quickshell.statePath("launch-counts.json")`),
+   then **All Programs**, which swaps in the programs grouped into folders by
+   their first freedesktop main category.
+4. Search: arrow keys move through the results, Return starts the one picked,
+   Escape clears the box before it closes the menu, and with no result Return
+   runs the text through `sh -c`.
+5. The places come from `user-dirs.dirs`, with Downloads and Videos added.
+
+Captured in the headless session (`start-menu*.png`); none of the power
+actions or a typed command was actually run.
+
 ## What remains, in priority order
 
 1. **Look at all of it on a real GPU.** Colours, blur, animation speed and

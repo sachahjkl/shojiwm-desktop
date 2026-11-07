@@ -277,8 +277,211 @@ Singleton {
     }
 
     function launch(entry) {
-        if (entry)
-            entry.execute();
+        if (!entry)
+            return;
+        entry.execute();
+        countLaunch(entry);
+    }
+
+    /// Run what was typed in the Start menu's search box, as the Run dialog
+    /// does: through the shell, so arguments, pipes and `~` work.
+    function runTyped(text) {
+        var command = String(text).trim();
+        if (command.length === 0)
+            return false;
+        Quickshell.execDetached({
+            command: ["sh", "-c", command],
+            workingDirectory: root.home
+        });
+        return true;
+    }
+
+    // ----- the programs used most -------------------------------------------
+
+    /// How many programs the Start menu lists under the pinned ones.
+    readonly property int frequentLimit: 7
+
+    /// How often each program was started from the shell, by entry id.
+    property var launchCounts: ({})
+
+    // Kept in Quickshell's state directory for this shell, which it creates.
+    FileView {
+        id: countsFile
+
+        path: Quickshell.statePath("launch-counts.json")
+        printErrors: false
+        onLoaded: {
+            try {
+                var parsed = JSON.parse(countsFile.text());
+                root.launchCounts = parsed && typeof parsed === "object"
+                    ? parsed : ({});
+            } catch (error) {
+                root.launchCounts = ({});
+            }
+        }
+    }
+
+    function countLaunch(entry) {
+        var counts = Object.assign({}, root.launchCounts);
+        counts[entry.id] = (counts[entry.id] || 0) + 1;
+        root.launchCounts = counts;
+        countsFile.setText(JSON.stringify(counts));
+    }
+
+    /// The programs started most often, most first, leaving out the pinned
+    /// ones and any that are no longer installed.
+    readonly property var frequent: {
+        var counts = root.launchCounts;
+        var pinnedIds = pinned.map(function (entry) {
+            return entry.id;
+        });
+        var ids = Object.keys(counts).filter(function (id) {
+            return pinnedIds.indexOf(id) < 0;
+        });
+        ids.sort(function (a, b) {
+            return counts[b] - counts[a];
+        });
+        var list = [];
+        for (var i = 0; i < ids.length && list.length < frequentLimit; i++) {
+            var entry = DesktopEntries.byId(ids[i]);
+            if (entry && !entry.noDisplay)
+                list.push(entry);
+        }
+        return list;
+    }
+
+    // ----- All Programs -----------------------------------------------------
+
+    // The main categories of the freedesktop menu specification, under the
+    // names Windows gave its folders where it had one.
+    readonly property var folderNames: ({
+        "AudioVideo": "Multimedia",
+        "Audio": "Multimedia",
+        "Video": "Multimedia",
+        "Development": "Development",
+        "Education": "Education",
+        "Game": "Games",
+        "Graphics": "Graphics",
+        "Network": "Internet",
+        "Office": "Office",
+        "Science": "Science",
+        "Settings": "Settings",
+        "System": "System Tools",
+        "Utility": "Accessories"
+    })
+
+    function folderOf(entry) {
+        var categories = entry.categories || [];
+        for (var i = 0; i < categories.length; i++) {
+            var name = folderNames[categories[i]];
+            if (name)
+                return name;
+        }
+        return "Other";
+    }
+
+    /// Every listed program, in folders: `[{ name, entries }]`, by name.
+    readonly property var folders: {
+        var byName = ({});
+        var list = [];
+        for (var i = 0; i < applications.length; i++) {
+            var entry = applications[i];
+            var name = folderOf(entry);
+            if (!byName[name]) {
+                byName[name] = { name: name, entries: [] };
+                list.push(byName[name]);
+            }
+            byName[name].entries.push(entry);
+        }
+        list.sort(function (a, b) {
+            return a.name.localeCompare(b.name);
+        });
+        return list;
+    }
+
+    // ----- the user ---------------------------------------------------------
+
+    readonly property string loginName: Quickshell.env("USER")
+        || home.split("/").pop()
+    /// The full name from the password database, else the login name.
+    property string userName: loginName
+
+    Process {
+        command: ["getent", "passwd", root.loginName]
+        running: root.loginName.length > 0
+        stdout: StdioCollector {
+            onStreamFinished: {
+                var fields = String(text).trim().split(":");
+                // The GECOS field: full name first, then comma-separated
+                // extras nobody fills in.
+                var full = fields.length > 4 ? fields[4].split(",")[0].trim() : "";
+                if (full.length > 0)
+                    root.userName = full;
+            }
+        }
+    }
+
+    // ----- the user's folders -----------------------------------------------
+
+    /// The folders of xdg-user-dirs, by key (DOCUMENTS, PICTURES, ...), with
+    /// `$HOME` expanded. Missing keys fall back to the English names.
+    property var userDirs: ({})
+
+    FileView {
+        id: userDirsFile
+
+        path: (Quickshell.env("XDG_CONFIG_HOME") || (root.home + "/.config"))
+            + "/user-dirs.dirs"
+        watchChanges: true
+        printErrors: false
+        onFileChanged: reload()
+        onLoaded: {
+            var dirs = ({});
+            var lines = userDirsFile.text().split("\n");
+            for (var i = 0; i < lines.length; i++) {
+                var match = /^\s*XDG_([A-Z]+)_DIR\s*=\s*"(.*)"\s*$/.exec(lines[i]);
+                if (match)
+                    dirs[match[1]] = match[2].replace(/^\$HOME/, root.home);
+            }
+            root.userDirs = dirs;
+        }
+    }
+
+    function userDir(key, fallback) {
+        return userDirs[key] || (root.home + "/" + fallback);
+    }
+
+    // ----- power ------------------------------------------------------------
+
+    /// What the Start menu's power button does, and what its arrow offers.
+    /// Each command runs as is; change them for a system without systemd.
+    readonly property var powerActions: [
+        { id: "logoff", label: "Log off",
+          command: Quickshell.env("XDG_SESSION_ID")
+              ? ["loginctl", "terminate-session", Quickshell.env("XDG_SESSION_ID")]
+              : ["loginctl", "terminate-user", root.loginName] },
+        { id: "lock", label: "Lock", command: ["loginctl", "lock-session"] },
+        { id: "separator" },
+        { id: "restart", label: "Restart", command: ["systemctl", "reboot"] },
+        { id: "sleep", label: "Sleep", command: ["systemctl", "suspend"] },
+        { id: "hibernate", label: "Hibernate", command: ["systemctl", "hibernate"] },
+        { id: "shutdown", label: "Shut down", command: ["systemctl", "poweroff"] }
+    ]
+    /// The action the button itself runs, by id.
+    readonly property string powerButtonAction: "shutdown"
+
+    function powerAction(id) {
+        for (var i = 0; i < powerActions.length; i++) {
+            if (powerActions[i].id === id)
+                return powerActions[i];
+        }
+        return null;
+    }
+
+    function runPower(id) {
+        var action = powerAction(id);
+        if (action && action.command)
+            Quickshell.execDetached(action.command);
     }
 
     /// Open one of the places of the Start menu in the file manager.

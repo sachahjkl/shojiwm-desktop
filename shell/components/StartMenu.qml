@@ -4,21 +4,62 @@ import QtQuick
 import ".."
 import "../theme.js" as Theme
 
-// The Start menu: programs on the left with a search box under them, places
-// on the right, and the shut-down button in the corner.
+// The Start menu, laid out as Windows 7 lays it out.
+//
+// Left: the pinned programs, the ones used most under them, and "All
+// Programs", which swaps the list for the programs in folders. Typing filters
+// every program instead; the arrow keys move through the results, Return
+// starts the one picked, and with nothing found Return runs what was typed.
+//
+// Right: the user, the places, and the power button, whose arrow opens log
+// off, lock, restart, sleep and hibernate.
 Item {
     id: menu
 
     signal dismissed
 
+    /// "home" (pinned and frequent) or "all" (All Programs).
+    property string page: "home"
+    /// The folder open in All Programs, by name, or "".
+    property string openFolder: ""
+    property bool powerMenuOpen: false
+
     /// Cleared by the window every time the menu is opened.
     function reset() {
         search.text = "";
+        menu.page = "home";
+        menu.openFolder = "";
+        menu.powerMenuOpen = false;
+        results.currentIndex = 0;
         search.forceActiveFocus();
     }
 
-    readonly property var results: Apps.search(search.text)
-    readonly property bool searching: search.text.length > 0
+    onVisibleChanged: {
+        if (!visible)
+            menu.powerMenuOpen = false;
+    }
+
+    readonly property var found: Apps.search(search.text)
+    readonly property bool searching: search.text.trim().length > 0
+
+    function launch(entry) {
+        Apps.launch(entry);
+        menu.dismissed();
+    }
+
+    /// Return in the search box: the program picked, else run the text.
+    function accept() {
+        if (!menu.searching)
+            return;
+        var found = menu.found;
+        if (found.length > 0) {
+            var index = Math.max(0, Math.min(results.currentIndex, found.length - 1));
+            menu.launch(found[index]);
+            return;
+        }
+        if (Apps.runTyped(search.text))
+            menu.dismissed();
+    }
 
     // ----- the panel --------------------------------------------------------
 
@@ -73,14 +114,19 @@ Item {
                     smooth: true
                 }
 
+                // Cut short with an ellipsis, and kept off the right edge.
                 Text {
                     anchors.left: avatar.right
-                    anchors.leftMargin: 8
+                    anchors.leftMargin: 10
+                    anchors.right: parent.right
+                    anchors.rightMargin: Theme.menuPadding
                     anchors.verticalCenter: parent.verticalCenter
-                    text: Apps.home.split("/").pop()
+                    text: Apps.userName
                     color: Theme.textOnPlaces
                     font.family: Theme.fontFamily
                     font.pixelSize: Theme.fontSize + 1
+                    elide: Text.ElideRight
+                    maximumLineCount: 1
                 }
             }
 
@@ -90,110 +136,154 @@ Item {
                 color: Theme.menuDivider
             }
 
-            MenuRow {
-                width: parent.width
-                label: "Documents"
-                icon: Qt.resolvedUrl("../assets/place-documents.svg")
-                labelColor: Theme.textOnPlaces
-                onActivated: {
-                    Apps.openPath(Apps.home + "/Documents");
-                    menu.dismissed();
-                }
-            }
-            MenuRow {
-                width: parent.width
-                label: "Pictures"
-                icon: Qt.resolvedUrl("../assets/place-pictures.svg")
-                labelColor: Theme.textOnPlaces
-                onActivated: {
-                    Apps.openPath(Apps.home + "/Pictures");
-                    menu.dismissed();
-                }
-            }
-            MenuRow {
-                width: parent.width
-                label: "Music"
-                icon: Qt.resolvedUrl("../assets/place-music.svg")
-                labelColor: Theme.textOnPlaces
-                onActivated: {
-                    Apps.openPath(Apps.home + "/Music");
-                    menu.dismissed();
-                }
-            }
-            MenuRow {
-                width: parent.width
-                label: "Computer"
-                icon: Qt.resolvedUrl("../assets/place-computer.svg")
-                labelColor: Theme.textOnPlaces
-                onActivated: {
-                    Apps.openPath("/");
-                    menu.dismissed();
-                }
-            }
-            MenuRow {
-                width: parent.width
-                label: "Control Panel"
-                icon: Qt.resolvedUrl("../assets/place-settings.svg")
-                labelColor: Theme.textOnPlaces
-                onActivated: {
-                    Apps.run(Apps.controlPanel);
-                    menu.dismissed();
+            Repeater {
+                model: [
+                    { label: "Documents", icon: "place-documents.svg",
+                      path: Apps.userDir("DOCUMENTS", "Documents") },
+                    { label: "Downloads", icon: "place-downloads.svg",
+                      path: Apps.userDir("DOWNLOAD", "Downloads") },
+                    { label: "Pictures", icon: "place-pictures.svg",
+                      path: Apps.userDir("PICTURES", "Pictures") },
+                    { label: "Music", icon: "place-music.svg",
+                      path: Apps.userDir("MUSIC", "Music") },
+                    { label: "Videos", icon: "place-videos.svg",
+                      path: Apps.userDir("VIDEOS", "Videos") },
+                    { separator: true },
+                    { label: "Computer", icon: "place-computer.svg", path: "/" },
+                    { label: "Control Panel", icon: "place-settings.svg",
+                      command: Apps.controlPanel }
+                ]
+
+                delegate: Item {
+                    id: place
+
+                    required property var modelData
+
+                    width: placesColumn.width
+                    height: modelData.separator ? 9 : Theme.menuRowHeight
+
+                    Rectangle {
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: parent.width
+                        height: 1
+                        color: Theme.menuDivider
+                        visible: place.modelData.separator === true
+                    }
+
+                    MenuRow {
+                        anchors.fill: parent
+                        visible: place.modelData.separator !== true
+                        label: place.modelData.label || ""
+                        icon: place.modelData.icon
+                            ? Qt.resolvedUrl("../assets/" + place.modelData.icon) : ""
+                        labelColor: Theme.textOnPlaces
+                        onActivated: {
+                            if (place.modelData.command)
+                                Apps.run(place.modelData.command);
+                            else
+                                Apps.openPath(place.modelData.path);
+                            menu.dismissed();
+                        }
+                    }
                 }
             }
         }
 
-        // Shut down, in the corner.
-        Rectangle {
-            id: shutdown
+        // ----- the power button, in the corner --------------------------------
+
+        Row {
+            id: power
 
             anchors.right: parent.right
             anchors.bottom: parent.bottom
             anchors.margins: Theme.menuPadding
-            width: 128
             height: 28
-            radius: 3
-            border.width: 1
-            border.color: Theme.menuOutline
-            gradient: Gradient {
-                GradientStop {
-                    position: 0.0
-                    color: shutdownArea.containsMouse ? "#ffffff" : "#eef6ff"
+
+            readonly property var action: Apps.powerAction(Apps.powerButtonAction)
+
+            PowerPart {
+                width: 104
+                leftRounded: true
+                hot: buttonArea.containsMouse
+                pressed: buttonArea.pressed
+
+                Row {
+                    anchors.centerIn: parent
+                    spacing: 6
+
+                    Image {
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: 16
+                        height: 16
+                        source: "../assets/power.svg"
+                        sourceSize.width: 32
+                        sourceSize.height: 32
+                        smooth: true
+                    }
+
+                    Text {
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: power.action ? power.action.label : ""
+                        color: Theme.textOnMenu
+                        font.family: Theme.fontFamily
+                        font.pixelSize: Theme.fontSize
+                    }
                 }
-                GradientStop { position: 1.0; color: "#c3d7e8" }
+
+                MouseArea {
+                    id: buttonArea
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    onClicked: {
+                        menu.dismissed();
+                        Apps.runPower(Apps.powerButtonAction);
+                    }
+                }
             }
 
-            Row {
-                anchors.centerIn: parent
-                spacing: 6
+            PowerPart {
+                id: arrow
 
-                Image {
-                    anchors.verticalCenter: parent.verticalCenter
-                    width: 16
-                    height: 16
-                    source: "../assets/power.svg"
-                    sourceSize.width: 32
-                    sourceSize.height: 32
-                    smooth: true
-                }
+                width: 24
+                rightRounded: true
+                hot: arrowArea.containsMouse || menu.powerMenuOpen
+                pressed: arrowArea.pressed || menu.powerMenuOpen
 
                 Text {
-                    anchors.verticalCenter: parent.verticalCenter
-                    text: "Shut down"
+                    anchors.centerIn: parent
+                    text: "▸"
                     color: Theme.textOnMenu
                     font.family: Theme.fontFamily
                     font.pixelSize: Theme.fontSize
                 }
-            }
 
-            MouseArea {
-                id: shutdownArea
-                anchors.fill: parent
-                hoverEnabled: true
-                onClicked: {
-                    menu.dismissed();
-                    Apps.run(["systemctl", "poweroff"]);
+                MouseArea {
+                    id: arrowArea
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    onClicked: menu.powerMenuOpen = !menu.powerMenuOpen
                 }
             }
+        }
+    }
+
+    PowerMenu {
+        id: powerMenu
+
+        anchorItem: arrow
+        open: menu.powerMenuOpen && menu.visible
+        onDismissed: menu.powerMenuOpen = false
+    }
+
+    // A menu with no outside presses closes once the pointer has left both
+    // it and its arrow.
+    Timer {
+        interval: 900
+        running: menu.powerMenuOpen
+        repeat: true
+        onTriggered: {
+            if (!powerMenu.pointerInside && !arrowArea.containsMouse)
+                menu.powerMenuOpen = false;
         }
     }
 
@@ -208,62 +298,190 @@ Item {
         anchors.margins: 1
         width: Theme.menuProgramsWidth
 
-        Column {
-            id: pinnedColumn
+        // --- pinned, then used most -------------------------------------------
+
+        Flickable {
+            id: home
 
             anchors.left: parent.left
             anchors.right: parent.right
             anchors.top: parent.top
+            anchors.bottom: allPrograms.top
             anchors.margins: Theme.menuPadding
-            spacing: 1
-            visible: !menu.searching
+            visible: !menu.searching && menu.page === "home"
+            clip: true
+            contentHeight: homeColumn.implicitHeight
+            boundsBehavior: Flickable.StopAtBounds
 
-            Repeater {
-                model: Apps.pinned
+            Column {
+                id: homeColumn
 
-                delegate: MenuRow {
-                    required property var modelData
-                    width: pinnedColumn.width
-                    label: modelData ? modelData.name : ""
-                    icon: Apps.entryIcon(modelData)
-                    onActivated: {
-                        Apps.launch(modelData);
-                        menu.dismissed();
+                width: home.width
+                spacing: 1
+
+                Repeater {
+                    model: Apps.pinned
+
+                    delegate: MenuRow {
+                        required property var modelData
+                        width: homeColumn.width
+                        label: modelData ? modelData.name : ""
+                        icon: Apps.entryIcon(modelData)
+                        bold: true
+                        onActivated: menu.launch(modelData)
+                    }
+                }
+
+                Item {
+                    width: homeColumn.width
+                    height: 9
+                    visible: Apps.pinned.length > 0 && Apps.frequent.length > 0
+
+                    Rectangle {
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: parent.width
+                        height: 1
+                        color: Theme.menuDivider
+                    }
+                }
+
+                Repeater {
+                    model: Apps.frequent
+
+                    delegate: MenuRow {
+                        required property var modelData
+                        width: homeColumn.width
+                        label: modelData ? modelData.name : ""
+                        icon: Apps.entryIcon(modelData)
+                        onActivated: menu.launch(modelData)
                     }
                 }
             }
-
-            Rectangle {
-                width: parent.width
-                height: 1
-                color: Theme.menuDivider
-                visible: Apps.pinned.length > 0
-            }
         }
 
+        // --- All Programs, in folders -----------------------------------------
+
         ListView {
-            id: list
+            id: folderList
 
             anchors.left: parent.left
             anchors.right: parent.right
-            anchors.top: pinnedColumn.visible ? pinnedColumn.bottom : parent.top
+            anchors.top: parent.top
+            anchors.bottom: allPrograms.top
+            anchors.margins: Theme.menuPadding
+            visible: !menu.searching && menu.page === "all"
+            clip: true
+            spacing: 1
+            boundsBehavior: Flickable.StopAtBounds
+            model: Apps.folders
+
+            delegate: Column {
+                id: folder
+
+                required property var modelData
+                readonly property bool expanded: menu.openFolder === modelData.name
+
+                width: folderList.width
+
+                MenuRow {
+                    width: folder.width
+                    label: folder.modelData.name
+                    icon: Qt.resolvedUrl("../assets/folder.svg")
+                    selected: folder.expanded
+                    onActivated: menu.openFolder =
+                        folder.expanded ? "" : folder.modelData.name
+                }
+
+                Repeater {
+                    model: folder.expanded ? folder.modelData.entries : []
+
+                    delegate: MenuRow {
+                        required property var modelData
+                        width: folder.width
+                        indent: 22
+                        label: modelData ? modelData.name : ""
+                        icon: Apps.entryIcon(modelData)
+                        onActivated: menu.launch(modelData)
+                    }
+                }
+            }
+        }
+
+        // --- search results ---------------------------------------------------
+
+        ListView {
+            id: results
+
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.top: parent.top
             anchors.bottom: searchBox.top
             anchors.margins: Theme.menuPadding
+            visible: menu.searching
             clip: true
-            model: menu.results
+            model: menu.found
             currentIndex: 0
             boundsBehavior: Flickable.StopAtBounds
+
+            header: MenuRow {
+                width: results.width
+                heading: true
+                label: menu.found.length > 0 ? "Programs" : "No program matches"
+            }
 
             delegate: MenuRow {
                 required property var modelData
                 required property int index
-                width: list.width
+                width: results.width
                 label: modelData ? modelData.name : ""
                 icon: Apps.entryIcon(modelData)
-                selected: menu.searching && index === 0
+                selected: index === results.currentIndex
+                onActivated: menu.launch(modelData)
+            }
+
+            // With nothing found, Return runs the text, as Run... does.
+            footer: MenuRow {
+                width: results.width
+                visible: menu.found.length === 0
+                height: visible ? Theme.menuRowHeight : 0
+                label: "Run “" + search.text.trim() + "”"
+                icon: Qt.resolvedUrl("../assets/run.svg")
+                selected: true
+                onActivated: menu.accept()
+            }
+        }
+
+        // --- All Programs / Back ----------------------------------------------
+
+        Item {
+            id: allPrograms
+
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.bottom: searchBox.top
+            anchors.leftMargin: Theme.menuPadding
+            anchors.rightMargin: Theme.menuPadding
+            anchors.bottomMargin: 4
+            height: menu.searching ? 0 : Theme.menuRowHeight + 9
+            visible: !menu.searching
+
+            Rectangle {
+                anchors.top: parent.top
+                anchors.topMargin: 4
+                width: parent.width
+                height: 1
+                color: Theme.menuDivider
+            }
+
+            MenuRow {
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.bottom: parent.bottom
+                label: menu.page === "all" ? "◂  Back" : "All Programs  ▸"
+                bold: true
                 onActivated: {
-                    Apps.launch(modelData);
-                    menu.dismissed();
+                    menu.page = menu.page === "all" ? "home" : "all";
+                    menu.openFolder = "";
                 }
             }
         }
@@ -309,29 +527,37 @@ Item {
                 font.pixelSize: Theme.fontSize
                 selectByMouse: true
                 focus: true
+                clip: true
+
+                onTextChanged: results.currentIndex = 0
 
                 Text {
                     anchors.fill: parent
                     verticalAlignment: Text.AlignVCenter
-                    text: "Search programs"
+                    text: "Search programs, or type a command"
                     color: "#7d95a9"
                     font: search.font
+                    elide: Text.ElideRight
                     visible: search.text.length === 0
                 }
 
-                Keys.onEscapePressed: menu.dismissed()
-                Keys.onReturnPressed: menu.launchFirst()
-                Keys.onEnterPressed: menu.launchFirst()
+                Keys.onEscapePressed: {
+                    if (search.text.length > 0)
+                        search.text = "";
+                    else
+                        menu.dismissed();
+                }
+                Keys.onReturnPressed: menu.accept()
+                Keys.onEnterPressed: menu.accept()
+                Keys.onUpPressed: {
+                    if (menu.searching && results.currentIndex > 0)
+                        results.currentIndex -= 1;
+                }
+                Keys.onDownPressed: {
+                    if (menu.searching && results.currentIndex < menu.found.length - 1)
+                        results.currentIndex += 1;
+                }
             }
-        }
-    }
-
-    /// Start the first program the search found.
-    function launchFirst() {
-        var found = menu.results;
-        if (found.length > 0) {
-            Apps.launch(found[0]);
-            menu.dismissed();
         }
     }
 }

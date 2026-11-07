@@ -13,23 +13,23 @@ required.
 
 ## What you get
 
-|                         |                                                                                                                                                                                                                                                                             |
-| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Glass window frames** | The compositor blurs what is behind the caption bar and tints it blue-grey. A drawn sheen lies over the blur. The focused window has a stronger tint, a lighter outline and a deeper shadow. The frame is rounded at the top and square at the bottom, as Windows draws it. |
-| **Caption buttons**     | Minimise, maximise or restore, and a wider close button. Each one lights up under the pointer; the close button glows red. A label appears when the pointer rests on one.                                                                                                   |
-| **Floating windows**    | Every window floats. New windows open in a cascade in the middle of the screen.                                                                                                                                                                                             |
-| **Fast animations**     | Windows open in 140 ms and close in 110 ms. Minimise and restore take 130 ms.                                                                                                                                                                                               |
-| **Alt+Tab**             | A panel of live thumbnails over the desktop. Tab, the arrow keys and the pointer pick a window.                                                                                                                                                                             |
-| **Aero Snap**           | Drag a window against the top, left or right edge, or hold `Super` and press an arrow key. The rectangle the window would take is drawn while you drag.                                                                                                                     |
-| **Double click**        | On the caption bar: maximise, and again to restore.                                                                                                                                                                                                                         |
-| **Taskbar**             | Glass bar at the bottom: the orb, the pinned programs, one button per running program, the notification area, the clock, and the show-desktop strip at the far right.                                                                                                       |
-| **Pinned programs**     | A pinned program keeps its icon on the taskbar while it is closed; a click starts it. Once it runs, its windows gather behind that same button. A middle click on any button starts another instance.                                                                       |
-| **Combined buttons**    | Every window of one program sits behind one button, drawn as a stack. One setting in `shell/theme.js` gives one button per window instead.                                                                                                                                  |
-| **Window thumbnails**   | Rest on a taskbar button and its windows are listed with their titles. A click raises one, a middle click closes it. The live picture of each window is written but off; see "Real limits".                                                                                 |
-| **Jump lists**          | Right click a taskbar button for the files the program opened last (from `recently-used.xbel`), the tasks of its `.desktop` file, a second instance, and close.                                                                                                             |
-| **Notification area**   | A tray item's own menu, drawn in the same style, with its submenus, check boxes and radio buttons.                                                                                                                                                                          |
-| **Aero Peek**           | Rest on the show-desktop strip at the far right and every window turns into a glass outline over the desktop. Click it to put the windows away; click again to bring them back.                                                                                             |
-| **Start menu**          | Programs on the left with a search box, places on the right, and the shut-down button in the corner.                                                                                                                                                                        |
+|                         |                                                                                                                                                                                                                                                                                                                                                                               |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Glass window frames** | The compositor blurs what is behind the caption bar and tints it blue-grey. A drawn sheen lies over the blur. The focused window has a stronger tint, a lighter outline and a deeper shadow. The frame is rounded at the top and square at the bottom, as Windows draws it.                                                                                                   |
+| **Caption buttons**     | Minimise, maximise or restore, and a wider close button. Each one lights up under the pointer; the close button glows red. A label appears when the pointer rests on one.                                                                                                                                                                                                     |
+| **Floating windows**    | Every window floats. New windows open in a cascade in the middle of the screen.                                                                                                                                                                                                                                                                                               |
+| **Fast animations**     | Windows open in 140 ms and close in 110 ms. Minimise and restore take 130 ms.                                                                                                                                                                                                                                                                                                 |
+| **Alt+Tab**             | A panel of live thumbnails over the desktop. Tab, the arrow keys and the pointer pick a window.                                                                                                                                                                                                                                                                               |
+| **Aero Snap**           | Drag a window against the top, left or right edge, or hold `Super` and press an arrow key. The rectangle the window would take is drawn while you drag.                                                                                                                                                                                                                       |
+| **Double click**        | On the caption bar: maximise, and again to restore.                                                                                                                                                                                                                                                                                                                           |
+| **Taskbar**             | Glass bar at the bottom: the orb, the pinned programs, one button per running program, the notification area, the clock, and the show-desktop strip at the far right.                                                                                                                                                                                                         |
+| **Pinned programs**     | A pinned program keeps its icon on the taskbar while it is closed; a click starts it. Once it runs, its windows gather behind that same button. A middle click on any button starts another instance.                                                                                                                                                                         |
+| **Combined buttons**    | Every window of one program sits behind one button, drawn as a stack. One setting in `shell/theme.js` gives one button per window instead.                                                                                                                                                                                                                                    |
+| **Window thumbnails**   | Rest on a taskbar button and its windows are listed with their titles. A click raises one, a middle click closes it. The live picture of each window is written but off; see "Real limits".                                                                                                                                                                                   |
+| **Jump lists**          | Right click a taskbar button for the files the program opened last (from `recently-used.xbel`), the tasks of its `.desktop` file, a second instance, and close.                                                                                                                                                                                                               |
+| **Notification area**   | A tray item's own menu, drawn in the same style, with its submenus, check boxes and radio buttons.                                                                                                                                                                                                                                                                            |
+| **Aero Peek**           | Rest on the show-desktop strip at the far right and every window turns into a glass outline over the desktop. Click it to put the windows away; click again to bring them back.                                                                                                                                                                                               |
+| **Start menu**          | Pinned programs, then the ones you start most, and **All Programs** with every program in folders. Type to search; the arrow keys and Return pick a result, and Return with nothing found runs what you typed. On the right: your full name, your folders (as `xdg-user-dirs` names them), and a power button whose arrow offers log off, lock, restart, sleep and hibernate. |
 
 ## Screenshots
 
@@ -51,8 +51,23 @@ lighter outline, the other behind it.
 
 ![The Start menu](assets/site/start-menu.png)
 
-The Start menu: programs on the left, places on the right, the search box at
-the bottom and the shut-down button in the corner.
+The Start menu: the pinned programs on the left (`foot` and `footclient` here,
+pinned by the capture script), your folders on the right, the search box at
+the bottom and the power button with its arrow in the corner. The name at the
+top is cut short with an ellipsis when it does not fit.
+
+![All Programs](assets/site/start-menu-all.png)
+
+**All Programs**: every program in a folder named after its main category.
+One folder opens at a time.
+
+![The power menu](assets/site/start-menu-power.png)
+
+The arrow beside the power button: log off, lock, restart, sleep, hibernate.
+
+![Running a command](assets/site/start-menu-run.png)
+
+A search that finds no program offers to run the text as a command.
 
 ![The thumbnails of a taskbar button](assets/site/taskbar-thumbnail.png)
 
@@ -226,6 +241,7 @@ running one.
 | `shell/components/TrayMenu.qml`                                                              | A notification-area item's own menu, and each of its submenus.                                                                                                            |
 | `shell/components/MenuItemRow.qml`                                                           | One line of either menu.                                                                                                                                                  |
 | `shell/components/StartMenu.qml`, `StartOrb.qml`, `Clock.qml`, `TrayArea.qml`, `MenuRow.qml` | The Start menu, the orb, the clock, the notification area, and one menu line.                                                                                             |
+| `shell/components/PowerMenu.qml`, `PowerPart.qml`                                            | The menu behind the power button's arrow, and the two halves of that button.                                                                                              |
 | `shell/assets/*.svg`                                                                         | The orb, the place icons, the account tile and the wallpaper. Drawn by hand.                                                                                              |
 | `tools/screenshots.sh`                                                                       | Runs the whole desktop on a machine with no display and takes the pictures in this file.                                                                                  |
 | `flake.nix`                                                                                  | The package, the install command, and the checks.                                                                                                                         |
@@ -237,6 +253,9 @@ running one.
   at the top of `shell/Apps.qml`. `pinnedIds` there is the Start menu's
   pinned list and `taskbarPinnedIds` the taskbar's, both as `.desktop` file
   names.
+- **Power:** `powerActions` in `shell/Apps.qml` holds each command (`loginctl`
+  and `systemctl` by default), and `powerButtonAction` which one the button
+  itself runs.
 - **Frame colours and sizes:** `src/theme.ts`.
 - **Shell colours and sizes:** `shell/theme.js`. Set `combineWindows` to
   `false` there for one taskbar button per window.
@@ -307,8 +326,6 @@ Possible with the APIs above, simply not written:
 - **Aero Peek on one window**, from its taskbar thumbnail. The shell knows a
   window as a `zwlr_foreign_toplevel` handle and the compositor as a
   `WaylandWindow`; nothing ties the two together over the socket yet.
-- **An "All Programs" tree** in the Start menu. The list is flat, and the
-  search box filters it.
 - **A menu that closes on a press outside it.** A layer-shell popup is told
   nothing about such a press, so the jump list and the tray menus close when
   the pointer has been away from them for 900 ms.
@@ -346,6 +363,8 @@ Not run:
 - **The caption-button labels, the double click on the caption bar, and the
   minimise animation.** They are wired up, but no picture proves them.
 - **Tray submenus.** The only tray item on the test machine, CopyQ, has none.
+- **The power actions, running a typed command, and the programs used most.**
+  The menus are captured; nothing was shut down or run from them.
 - **Opening a recent file, starting a pinned program, the show-desktop
   click.** Wired up; the captures show the lists and the peek, not a click on
   them.

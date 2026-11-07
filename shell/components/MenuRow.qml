@@ -10,18 +10,25 @@ Rectangle {
     property string icon: ""
     property color labelColor: Theme.textOnMenu
     property bool selected: false
+    /// Pinned programs and "All Programs" are set in bold, as on Windows.
+    property bool bold: false
+    /// A section title: smaller, coloured, not a choice.
+    property bool heading: false
+    /// Extra room on the left, for the programs inside a folder.
+    property int indent: 0
     signal activated
 
     height: Theme.menuRowHeight
     radius: 3
-    color: selected || area.containsMouse ? Theme.selection : "transparent"
-    border.width: selected || area.containsMouse ? 1 : 0
+    readonly property bool lit: !heading && (selected || area.containsMouse)
+    color: lit ? Theme.selection : "transparent"
+    border.width: lit ? 1 : 0
     border.color: Theme.selectionBorder
 
     Row {
         anchors.left: parent.left
         anchors.right: parent.right
-        anchors.leftMargin: 6
+        anchors.leftMargin: 6 + row.indent
         anchors.rightMargin: 6
         anchors.verticalCenter: parent.verticalCenter
         spacing: 8
@@ -35,11 +42,12 @@ Rectangle {
 
         Text {
             anchors.verticalCenter: parent.verticalCenter
-            width: parent.width - 20 - 8 - 12
+            width: parent.width - (row.icon.length > 0 ? 20 + 8 : 0)
             text: row.label
-            color: row.labelColor
+            color: row.heading ? Theme.menuHeading : row.labelColor
             font.family: Theme.fontFamily
-            font.pixelSize: Theme.fontSize
+            font.pixelSize: row.heading ? Theme.fontSizeSmall : Theme.fontSize
+            font.bold: row.bold || row.heading
             elide: Text.ElideRight
         }
     }
@@ -47,7 +55,8 @@ Rectangle {
     MouseArea {
         id: area
         anchors.fill: parent
-        hoverEnabled: true
+        hoverEnabled: !row.heading
+        enabled: !row.heading
         onClicked: row.activated()
     }
 }

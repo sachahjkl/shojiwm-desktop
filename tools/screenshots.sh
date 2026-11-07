@@ -102,11 +102,15 @@ cp -R "$repo/src" "$repo/assets" "$repo/shell" "$repo/package.json" \
 chmod -R u+w "$XDG_CONFIG_HOME/shojiwm"
 
 # The programs pinned by default (Thunar, Chromium, kitty) are not installed
-# here. Pin the two that are, so the taskbar shows one pinned program with
-# windows open and one with none.
+# here. Pin two that are, so the taskbar shows one pinned program with
+# windows open and one with none, and the Start menu has a pinned list.
 sed -i 's|taskbarPinnedIds: \[.*\]|taskbarPinnedIds: ["foot.desktop", "footclient.desktop"]|' \
   "$XDG_CONFIG_HOME/shojiwm/shell/Apps.qml"
 grep -q '"footclient.desktop"' "$XDG_CONFIG_HOME/shojiwm/shell/Apps.qml"
+# The Start menu's pinned list, likewise.
+sed -i 's|readonly property var pinnedIds: \[.*\]|readonly property var pinnedIds: ["foot.desktop", "footclient.desktop"]|' \
+  "$XDG_CONFIG_HOME/shojiwm/shell/Apps.qml"
+grep -q 'pinnedIds: \["foot.desktop"' "$XDG_CONFIG_HOME/shojiwm/shell/Apps.qml"
 
 # Nothing here opens files through GTK, so no program records them. Write the
 # list a desktop keeps of them, naming foot, for the jump list to read.
@@ -260,6 +264,37 @@ quickshell -p "$XDG_CONFIG_HOME/shojiwm/shell" ipc call startmenu toggle || true
 sleep 3
 alive "menu open"
 shot "start-menu"
+
+# The menu stands on the taskbar at the left: 490 x 560, 2 px from both.
+menu_left=2
+menu_bottom=$((HEIGHT - 40 - 2))
+
+say "All Programs, with one folder open"
+xdotool mousemove --window "$window" $((menu_left + 60)) $((menu_bottom - 55))
+xdotool click 1
+sleep 1
+xdotool mousemove --window "$window" $((menu_left + 60)) $((menu_bottom - 545))
+xdotool click 1
+sleep 2
+shot "start-menu-all"
+alive "all programs"
+
+say "the power menu"
+xdotool mousemove --window "$window" $((menu_left + 469)) $((menu_bottom - 23))
+xdotool click 1
+sleep 2
+shot "start-menu-power"
+alive "power menu"
+xdotool click 1
+sleep 1
+
+say "a search that finds nothing"
+xdotool type --delay 60 "xyzzy --help"
+sleep 2
+shot "start-menu-run"
+alive "search"
+xdotool key Escape
+sleep 1
 # Closed with a click outside it rather than over IPC, which also tests the
 # surface that catches that click.
 xdotool mousemove --window "$window" $((WIDTH - 120)) 160

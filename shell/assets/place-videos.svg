@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+  <!-- Original glyph: a film frame with a play mark. -->
+  <g fill="none" stroke="#eaf4ff" stroke-width="1.6" stroke-linejoin="round">
+    <rect x="3.5" y="5.5" width="17" height="13" rx="1.5"/>
+    <path d="M10 9.2v5.6l4.8-2.8z"/>
+  </g>
+</svg>
