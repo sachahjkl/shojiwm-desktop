@@ -36,10 +36,10 @@ Item {
     Rectangle {
         anchors.fill: parent
         gradient: Gradient {
-            GradientStop { position: 0.0; color: "#59000000" }
-            GradientStop { position: 0.35; color: "#14000000" }
-            GradientStop { position: 0.7; color: "#14000000" }
-            GradientStop { position: 1.0; color: "#73000000" }
+            GradientStop { position: 0.0; color: Settings.dark ? "#80000000" : "#59000000" }
+            GradientStop { position: 0.35; color: Settings.dark ? "#33000000" : "#14000000" }
+            GradientStop { position: 0.7; color: Settings.dark ? "#33000000" : "#14000000" }
+            GradientStop { position: 1.0; color: Settings.dark ? "#99000000" : "#73000000" }
         }
     }
 
@@ -83,6 +83,7 @@ Item {
     UserTile {
         id: tile
 
+        dark: Settings.dark
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.verticalCenter: parent.verticalCenter
         anchors.verticalCenterOffset: -50
@@ -117,9 +118,11 @@ Item {
             width: 225
             height: 26
             anchors.verticalCenter: parent.verticalCenter
-            color: "#ffffff"
+            color: Settings.dark ? "#141c24" : "#ffffff"
             border.width: 1
-            border.color: password.activeFocus ? "#3d7bad" : "#5a7f9c"
+            border.color: password.activeFocus
+                ? (Settings.dark ? "#4b8fd0" : "#3d7bad")
+                : (Settings.dark ? "#3c5164" : "#5a7f9c")
 
             // The inner shade a Windows text box has along its top and left.
             Rectangle {
@@ -127,14 +130,14 @@ Item {
                 y: 1
                 width: parent.width - 2
                 height: 1
-                color: "#c4d3de"
+                color: Settings.dark ? "#0a1016" : "#c4d3de"
             }
             Rectangle {
                 x: 1
                 y: 1
                 width: 1
                 height: parent.height - 2
-                color: "#dde6ec"
+                color: Settings.dark ? "#0d141b" : "#dde6ec"
             }
 
             TextInput {
@@ -146,7 +149,7 @@ Item {
                 verticalAlignment: TextInput.AlignVCenter
                 echoMode: TextInput.Password
                 passwordCharacter: "\u25CF"
-                color: "#000000"
+                color: Settings.dark ? "#e8f1f9" : "#000000"
                 font.family: Theme.fontFamily
                 font.pixelSize: Theme.fontSize
                 clip: true
@@ -161,7 +164,7 @@ Item {
                     anchors.fill: parent
                     verticalAlignment: Text.AlignVCenter
                     text: "Password"
-                    color: "#6d6d6d"
+                    color: Settings.dark ? "#7f94a6" : "#6d6d6d"
                     font: password.font
                     visible: password.text.length === 0
                 }
@@ -181,8 +184,10 @@ Item {
 
             Image {
                 anchors.fill: parent
-                source: goArea.containsMouse && !goArea.pressed
-                    ? "../assets/arrow-bead-hot.svg" : "../assets/arrow-bead.svg"
+                source: "../assets/arrow-bead"
+                    + (Settings.dark ? "-dark" : "")
+                    + (goArea.containsMouse && !goArea.pressed ? "-hot" : "")
+                    + ".svg"
                 sourceSize.width: 64
                 sourceSize.height: 64
                 smooth: true

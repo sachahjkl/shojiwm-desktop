@@ -117,6 +117,7 @@ Item {
                     UserTile {
                         anchors.fill: parent
                         source: Settings.userPictureSource
+                        dark: Settings.dark
                         opacity: menu.hoveredPlace.length > 0 ? 0 : 1
                         Behavior on opacity {
                             NumberAnimation { duration: Theme.fade }

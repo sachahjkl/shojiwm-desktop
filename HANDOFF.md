@@ -187,6 +187,11 @@ pointer) cut every layer to the disc with its own path: Qt's SVG renderer
 ignores clip paths, which had left square corners. The frame's band is
 nearly white at the top.
 
+The lock screen follows light and dark like the rest: smoked glass for
+the frame (`UserTile.dark`), a dark field, `arrow-bead-dark*.svg`, a
+stronger shade. The references are inspiration, not a spec (the owner's
+words). IPC `appearance setDark <bool>` / `toggle` sets the preference.
+
 Light and dark no longer forces Adwaita on GTK 3: `shell/gtk-switch.sh`
 moves the theme in use to its installed light or dark variant, or leaves
 it.

@@ -16,6 +16,8 @@ Item {
     id: tile
 
     property url source
+    /// Smoked glass, for dark mode.
+    property bool dark: false
 
     width: 136
     height: 136
@@ -39,7 +41,7 @@ Item {
     Rectangle {
         anchors.fill: parent
         radius: tile.r
-        color: "#1b5f8c"
+        color: tile.dark ? "#06121c" : "#1b5f8c"
     }
 
     // The highlight just inside it.
@@ -47,7 +49,7 @@ Item {
         anchors.fill: parent
         anchors.margins: 1
         radius: tile.r - 1
-        color: "#b8ecff"
+        color: tile.dark ? "#7f9db4" : "#b8ecff"
     }
 
     // The glass.
@@ -55,14 +57,27 @@ Item {
         anchors.fill: parent
         anchors.margins: 2
         radius: tile.r - 2
-        gradient: Gradient {
-            GradientStop { position: 0.0; color: "#e0f4f6" }
-            GradientStop { position: 0.1; color: "#d2ecf0" }
-            GradientStop { position: 0.35; color: "#8fc0d2" }
-            GradientStop { position: 0.6; color: "#5f9fc0" }
-            GradientStop { position: 0.9; color: "#3f8dbf" }
-            GradientStop { position: 1.0; color: "#4a9ccf" }
-        }
+        gradient: tile.dark ? smoked : glass
+    }
+
+    Gradient {
+        id: glass
+        GradientStop { position: 0.0; color: "#e0f4f6" }
+        GradientStop { position: 0.1; color: "#d2ecf0" }
+        GradientStop { position: 0.35; color: "#8fc0d2" }
+        GradientStop { position: 0.6; color: "#5f9fc0" }
+        GradientStop { position: 0.9; color: "#3f8dbf" }
+        GradientStop { position: 1.0; color: "#4a9ccf" }
+    }
+
+    Gradient {
+        id: smoked
+        GradientStop { position: 0.0; color: "#a9bccb" }
+        GradientStop { position: 0.1; color: "#8ea4b6" }
+        GradientStop { position: 0.35; color: "#4f6678" }
+        GradientStop { position: 0.6; color: "#2f4556" }
+        GradientStop { position: 0.9; color: "#1f3a52" }
+        GradientStop { position: 1.0; color: "#2a5170" }
     }
 
     // The light line, then the dark one, round the picture.
@@ -70,12 +85,12 @@ Item {
         anchors.fill: parent
         anchors.margins: tile.band - 2
         radius: Math.max(1, 2 * tile.k)
-        color: "#a8d8f0"
+        color: tile.dark ? "#5f7d95" : "#a8d8f0"
     }
     Rectangle {
         anchors.fill: parent
         anchors.margins: tile.band - 1
-        color: "#476f8a"
+        color: tile.dark ? "#0e1a24" : "#476f8a"
     }
 
     Image {

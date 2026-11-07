@@ -124,6 +124,12 @@ Resting on a place shows its icon in the user's tile, as Windows 7 does.
 The lock screen, after a wrong password. The name is the test machine's;
 yours comes from your account.
 
+![The lock screen in dark](assets/site/lock-screen-dark.png)
+
+In dark: the night wallpaper, the frame in smoked glass, a dark field and a
+darker bead. `quickshell -p ~/.config/shojiwm/shell ipc call appearance
+setDark true` (or `toggle`) switches it, as the Control Panel does.
+
 ![The Control Panel](assets/site/control-panel.png)
 
 The Control Panel's home page.

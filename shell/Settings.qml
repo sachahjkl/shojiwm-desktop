@@ -110,6 +110,15 @@ Singleton {
 
     // ----- light or dark ------------------------------------------------------
 
+    //   quickshell -p ~/.config/shojiwm/shell ipc call appearance setDark true
+    IpcHandler {
+        target: "appearance"
+
+        function setDark(on: bool): void { root.setDark(on); }
+        function toggle(): void { root.setDark(!root.dark); }
+        function isDark(): bool { return root.dark; }
+    }
+
     /// The system's preference, as GNOME stores it and the settings portal
     /// passes it on: "default", "prefer-light" or "prefer-dark".
     property string colorScheme: "default"

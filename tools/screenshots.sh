@@ -451,6 +451,14 @@ sleep 5
 shot "lock-screen-wrong"
 alive "wrong password"
 
+say "the lock screen, dark"
+xdotool key Return
+sleep 1
+qs appearance setDark true
+sleep 3
+shot "lock-screen-dark"
+alive "dark lock"
+
 # ---------------------------------------------------------------------------
 # The same pictures, cut up and blown up, so the finish can be checked
 # ---------------------------------------------------------------------------
