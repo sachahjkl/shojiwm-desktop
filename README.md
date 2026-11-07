@@ -40,8 +40,9 @@ software, and the keys and the pointer driven by xdotool.
 
 ![The desktop](assets/site/desktop.png)
 
-The wallpaper, two windows, and the taskbar with one combined button, the
-notification area and the clock.
+The wallpaper, two windows, and the taskbar: one combined button for the two
+`foot` windows, the pinned `footclient` as an icon alone since none of its
+windows is open, the notification area and the clock.
 
 ![Two window frames](assets/site/frames.png)
 
@@ -329,7 +330,8 @@ Run, on a server with no display and no GPU:
   the pipeline out as the cause of the title text defect.
 - In that session, through xdotool: moving a window by its caption bar,
   opening and closing the Start menu, the thumbnails of a taskbar button, a
-  jump list, the menu of a tray item, Aero Snap by dragging a window to the
+  jump list with its recent files, the menu of a tray item, Aero Peek by
+  resting on the show-desktop strip, Aero Snap by dragging a window to the
   left edge, and Alt+Tab.
 
 Not run:
@@ -343,6 +345,10 @@ Not run:
   the X server.
 - **The caption-button labels, the double click on the caption bar, and the
   minimise animation.** They are wired up, but no picture proves them.
+- **Tray submenus.** The only tray item on the test machine, CopyQ, has none.
+- **Opening a recent file, starting a pinned program, the show-desktop
+  click.** Wired up; the captures show the lists and the peek, not a click on
+  them.
 
 ## Licence
 

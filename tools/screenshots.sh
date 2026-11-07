@@ -34,7 +34,12 @@ fi
 
 if [ -z "${DBUS_SESSION_BUS_ADDRESS:-}" ]; then
   # The notification area needs a session bus to find its items.
-  exec dbus-run-session -- bash "${BASH_SOURCE[0]}" --inner
+  # The bus's own configuration, for a machine with no /etc/dbus-1.
+  dbus_conf="$(dirname "$(command -v dbus-daemon)")/../share/dbus-1/session.conf"
+  if [ -e /etc/dbus-1/session.conf ] || [ ! -e "$dbus_conf" ]; then
+    exec dbus-run-session -- bash "${BASH_SOURCE[0]}" --inner
+  fi
+  exec dbus-run-session --config-file="$dbus_conf" -- bash "${BASH_SOURCE[0]}" --inner
 fi
 
 say() { printf '==> %s\n' "$*"; }
@@ -65,6 +70,8 @@ icons="$(nix build --no-link --print-out-paths \
   "nixpkgs#adwaita-icon-theme" "nixpkgs#hicolor-icon-theme")"
 foot_share="$(nix build --no-link --print-out-paths "nixpkgs#foot")/share"
 
+# A UTF-8 locale, or foot opens with a warning in every window.
+export LANG=C.UTF-8
 export HOME="$work"
 export XDG_CONFIG_HOME="$work/.config"
 export XDG_STATE_HOME="$work/.local/state"

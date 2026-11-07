@@ -73,6 +73,12 @@ a real GPU.
    recent files. It also takes `peek.png`. `SHOJIWM_FLAKE` points it at a
    local ShojiWM clone.
 
+Run in the headless session (`tools/screenshots.sh`, ShojiWM `9e778dc` built
+from a local clone, Quickshell 0.3.2): the pinned idle button, the jump
+list's "Recent" section, and Aero Peek all show in the captures, and the shell
+stayed up through every step. Not exercised: a tray submenu (CopyQ has none),
+and clicks on a recent file, a pinned button or the show-desktop strip.
+
 ## What remains, in priority order
 
 1. **Look at all of it on a real GPU.** Colours, blur, animation speed and
