@@ -81,7 +81,7 @@ PopupWindow {
 
     Rectangle {
         anchors.fill: parent
-        radius: 4
+        radius: Scheme.popupRadius
         border.width: 1
         border.color: Scheme.popupOutline
         gradient: Gradient {

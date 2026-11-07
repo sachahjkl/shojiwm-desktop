@@ -37,6 +37,32 @@ are Icons8's MIT-licensed "Flat Color Icons" (see "Licence").
 | **Aero Peek**           | Rest on the show-desktop strip at the far right and every window turns into a glass outline over the desktop. Click it to put the windows away; click again to bring them back.                                                                                                                                                                                               |
 | **Start menu**          | Pinned programs, then the ones you start most, and **All Programs** with every program in folders. Type to search; the arrow keys and Return pick a result, and Return with nothing found runs what you typed. On the right: your full name, your folders (as `xdg-user-dirs` names them), and a power button whose arrow offers log off, lock, restart, sleep and hibernate. |
 
+## Two styles
+
+The Control Panel offers two looks, and either works in light or dark:
+
+- **Aero**, Windows 7 as it was: glossy glass, the bevelled frame, the orb,
+  the gel buttons of the lock screen.
+- **Modern**, the same glass with what dates it taken out: flat fills,
+  rounder corners, thin window frames with separate caption buttons that
+  follow light or dark, a flat taskbar with a bar under each running
+  program, a round account picture, colour icons in the Start menu.
+
+![The modern style](assets/site/modern-desktop.png)
+
+The modern style, light: the frames, the taskbar and its Start button.
+
+![The modern style, dark](assets/site/modern-start-menu-dark.png)
+
+The modern style, dark, with the Start menu open.
+
+![The modern lock screen](assets/site/modern-lock-screen.png)
+
+The modern lock screen.
+
+`quickshell -p ~/.config/shojiwm/shell ipc call appearance setStyle modern`
+(or `aero`) switches it from a script.
+
 ## Screenshots
 
 Every picture here is a capture of this configuration running. None is drawn
@@ -284,6 +310,7 @@ running one.
 | `src/decoration.tsx`                                                                                | The frame itself: the painted glass, the caption, the title with its glow, the caption buttons and their labels.                                                          |
 | `src/window-manager.ts`                                                                             | The floating window manager: placement, move, resize, maximise, minimise, fullscreen, double click, and Aero Snap.                                                        |
 | `src/alt-tab.tsx`                                                                                   | The Alt+Tab panel, built from render textures and an input grab.                                                                                                          |
+| `src/style.ts`, `src/decoration-modern.tsx`                                                         | The style and light or dark the shell sends, and the modern window frame.                                                                                                 |
 | `src/peek.tsx`                                                                                      | Aero Peek, and the socket the shell asks for it and for the show-desktop toggle through.                                                                                  |
 | `assets/frame.frag`                                                                                 | The paint shader that draws the frame: the dark outer line, the light line, the glass, the two lines around the client, and the corner radii that a style cannot express. |
 | `assets/caption/*.svg`                                                                              | The three caption buttons, one file per state, drawn at their exact pixel size.                                                                                           |

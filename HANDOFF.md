@@ -196,6 +196,31 @@ Light and dark no longer forces Adwaita on GTK 3: `shell/gtk-switch.sh`
 moves the theme in use to its installed light or dark variant, or leaves
 it.
 
+## Seventh pass: the modern style
+
+A second look beside Aero, chosen in the Control Panel (`Settings.style`,
+"aero" or "modern"; IPC `appearance setStyle`). The owner's brief: keep the
+glass, lose the kitsch. Not measured off anything.
+
+- **Frames.** `src/decoration-modern.tsx`, the same `frame.frag` with
+  other values (`MODERN_FRAME`, `MODERN_COLOR` in `src/theme.ts`): 9 px
+  corners, 4 px sides, a 34 px caption, faint lines, a lighter tint that
+  follows light or dark, no title glow, three separate rounded buttons lit
+  only under the pointer, the close one red. Glyphs in
+  `assets/caption-modern/`.
+- **How the compositor knows.** It cannot read files. The shell sends
+  `appearance {style, dark}` over the `peek.tsx` socket when it connects
+  and on every change (`CompositorIpc.qml`); `src/style.ts` keeps them as
+  signals and the window composition picks the frame. `frameExtra` follows
+  the style, so windows opened afterwards get the new frame size; open ones
+  keep their rectangle and their client is resized inside it.
+- **Shell.** Everything that changes lives in `Scheme.qml`: radii, flat
+  fills instead of gloss, picks marked without a bevelled frame, the flat
+  taskbar (`barFlat`), the indicator under running programs, the Start
+  button `start-modern.svg`, colour icons in the places pane, the round
+  account picture (`UserTile.round`, cut with `MultiEffect`), the modern
+  lock screen (translucent field, flat accent button, round power button).
+
 ## What remains, in priority order
 
 1. **Look at all of it on a real GPU.** Colours, blur, animation speed and

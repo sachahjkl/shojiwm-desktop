@@ -7,13 +7,25 @@ Item {
     id: button
 
     property string label: ""
+    /// The modern style: a flat translucent pill, no gloss, no rim.
+    property bool modern: false
     signal clicked
 
     width: Math.max(94, text.implicitWidth + 30)
-    height: 28
+    height: modern ? 32 : 28
 
     Rectangle {
         anchors.fill: parent
+        visible: button.modern
+        radius: 6
+        color: area.pressed ? "#1fffffff" : area.containsMouse ? "#47ffffff" : "#33ffffff"
+        border.width: 1
+        border.color: "#33ffffff"
+    }
+
+    Rectangle {
+        anchors.fill: parent
+        visible: !button.modern
         radius: 3
         border.width: 1
         border.color: "#0b2238"
@@ -41,6 +53,7 @@ Item {
     Rectangle {
         anchors.fill: parent
         anchors.margins: 1
+        visible: !button.modern
         radius: 2
         color: "transparent"
         border.width: 1

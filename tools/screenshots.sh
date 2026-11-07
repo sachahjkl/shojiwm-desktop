@@ -435,6 +435,41 @@ shot "control-panel-lock"
 qs controlpanel close
 sleep 1
 
+say "the modern style"
+qs appearance setStyle modern
+sleep 3
+shot "modern-desktop"
+alive "modern"
+qs startmenu toggle
+sleep 3
+shot "modern-start-menu"
+qs startmenu toggle
+sleep 1
+xdotool mousemove --window "$window" 120 "$bar_y"
+sleep 1
+xdotool click 3
+sleep 2
+shot "modern-jump-list"
+xdotool mousemove --window "$window" $((WIDTH / 2)) $((HEIGHT / 2))
+sleep 2
+qs controlpanel openPage appearance
+sleep 3
+shot "modern-control-panel"
+qs controlpanel close
+sleep 1
+qs appearance setDark true
+sleep 3
+shot "modern-desktop-dark"
+qs startmenu toggle
+sleep 3
+shot "modern-start-menu-dark"
+qs startmenu toggle
+sleep 1
+alive "modern dark"
+qs appearance setDark false
+qs appearance setStyle aero
+sleep 3
+
 say "the lock screen"
 # Last: the test session has no password to unlock it with.
 qs lock lock
@@ -458,6 +493,13 @@ qs appearance setDark true
 sleep 3
 shot "lock-screen-dark"
 alive "dark lock"
+qs appearance setStyle modern
+sleep 3
+shot "modern-lock-screen-dark"
+qs appearance setDark false
+sleep 3
+shot "modern-lock-screen"
+alive "modern lock"
 
 # ---------------------------------------------------------------------------
 # The same pictures, cut up and blown up, so the finish can be checked

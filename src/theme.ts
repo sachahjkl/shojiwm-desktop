@@ -102,3 +102,69 @@ export const TIMING = {
   minimize: 130,
   management: 160,
 } as const;
+
+// ---------------------------------------------------------------------------
+// The modern style: the same glass, without what dates it. Not measured off
+// anything: a flatter, quieter take on the frame above. Rounder corners,
+// thinner sides, no outer black line or white bevel, no glow behind the
+// title, flat caption buttons, and a tint that follows light or dark.
+// ---------------------------------------------------------------------------
+
+export const MODERN_FRAME = {
+  caption: 34,
+  captionMaximized: 32,
+  border: 4,
+  borderMaximized: 0,
+  radius: 9,
+  /** The caption buttons: separate, rounded, and lit only under the pointer. */
+  buttonWidth: 38,
+  buttonHeight: 26,
+  buttonGap: 2,
+  buttonRadius: 6,
+  buttonRight: 5,
+  buttonTop: 4,
+  buttonTopMaximized: 3,
+  glyphSize: 10,
+  iconLeft: 12,
+  iconGap: 8,
+  fontSize: 12,
+} as const;
+
+export const MODERN_FRAME_WIDTH_EXTRA = 2 * MODERN_FRAME.border;
+export const MODERN_FRAME_HEIGHT_EXTRA =
+  MODERN_FRAME.caption + MODERN_FRAME.border;
+
+/** Colours of the modern frame, light and dark. `#rrggbbaa`. */
+export const MODERN_COLOR = {
+  light: {
+    glassActive: "#e8f0f7a3",
+    glassInactive: "#eef1f4d9",
+    outlineActive: "#0000003d",
+    outlineInactive: "#00000026",
+    highlightActive: "#ffffff73",
+    highlightInactive: "#ffffff4d",
+    clientLight: "#00000000",
+    clientDark: "#0000001a",
+    titleActive: "#1b2733",
+    titleInactive: "#7a858f",
+    buttonHover: "#0000000f",
+    buttonPress: "#0000001f",
+  },
+  dark: {
+    glassActive: "#1b232cb3",
+    glassInactive: "#242a31e0",
+    outlineActive: "#000000b3",
+    outlineInactive: "#00000080",
+    highlightActive: "#ffffff26",
+    highlightInactive: "#ffffff14",
+    clientLight: "#00000000",
+    clientDark: "#00000059",
+    titleActive: "#eef3f8",
+    titleInactive: "#8d98a3",
+    buttonHover: "#ffffff17",
+    buttonPress: "#ffffff0d",
+  },
+  /** The close button under the pointer, and pressed: the same in both. */
+  closeHover: "#c42b1c",
+  closePress: "#a3261a",
+} as const;

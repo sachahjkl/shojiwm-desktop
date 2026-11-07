@@ -12,6 +12,7 @@
  *
  *   { "method": "peek", "params": { "on": true } }
  *   { "method": "show-desktop" }
+ *   { "method": "appearance", "params": { "style": "modern", "dark": true } }
  */
 
 import {
@@ -33,6 +34,7 @@ import {
   WIN_MINIMIZED,
   WIN_RECT,
 } from "./window-manager";
+import { applyAppearance } from "./style";
 
 /** The colours of a window while it is peeked through. */
 const PEEK = {
@@ -73,6 +75,11 @@ export function createPeek(manager: FloatingWindowManager): Peek {
       (params as { on?: unknown }).on === true;
     peeking.set(on);
     return on;
+  });
+  // The look of the frames: the Control Panel's style, and light or dark.
+  server.handle("appearance", (params) => {
+    applyAppearance(params);
+    return true;
   });
   server.handle("show-desktop", () => {
     // The desktop is what the pointer was peeking at; show it for real.

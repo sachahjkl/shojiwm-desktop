@@ -32,7 +32,7 @@ FloatingWindow {
 
     readonly property var pages: ({
         "home": { title: "Control Panel Home", category: "" },
-        "appearance": { title: "Light or dark", category: "Appearance and Personalization" },
+        "appearance": { title: "Style, light or dark", category: "Appearance and Personalization" },
         "background": { title: "Desktop Background", category: "Appearance and Personalization" },
         "lockscreen": { title: "Lock Screen", category: "Appearance and Personalization" },
         "account": { title: "Account Picture", category: "User Accounts" },
@@ -321,7 +321,7 @@ FloatingWindow {
                     name: "Appearance and Personalization"
                     target: "appearance"
                     links: [
-                        { text: "Choose light or dark", page: "appearance" },
+                        { text: "Choose a style, light or dark", page: "appearance" },
                         { text: "Change desktop background", page: "background" },
                         { text: "Taskbar and Start menu", page: "taskbar" }
                     ]
@@ -364,14 +364,144 @@ FloatingWindow {
         Column {
             spacing: 12
 
+            Heading { text: "Choose a style" }
+
+            Note {
+                width: parent.width
+                text: "Aero is Windows 7 as it was: glossy glass, bevels, the "
+                    + "orb. Modern keeps the glass and the blue, and drops the "
+                    + "gloss: flat fills, rounder corners, quieter frames that "
+                    + "follow light or dark. Windows opened from now on take "
+                    + "the new frame size."
+            }
+
+            Row {
+                spacing: 18
+
+                Repeater {
+                    model: [
+                        { value: "aero", label: "Aero" },
+                        { value: "modern", label: "Modern" }
+                    ]
+
+                    delegate: Item {
+                        id: styleChoice
+
+                        required property var modelData
+                        readonly property bool isChosen: Settings.style === modelData.value
+                        readonly property bool isModern: modelData.value === "modern"
+
+                        width: 200
+                        height: 150
+
+                        Rectangle {
+                            anchors.fill: parent
+                            radius: Scheme.itemRadius + 1
+                            color: styleChoice.isChosen ? Scheme.selection
+                                : styleArea.containsMouse ? Scheme.hover : "transparent"
+                            border.width: styleChoice.isChosen || styleArea.containsMouse
+                                ? Scheme.selectionBorderWidth : 0
+                            border.color: Scheme.selectionBorder
+                        }
+
+                        // A small window in that style, on a bit of desktop.
+                        Rectangle {
+                            x: 16
+                            y: 12
+                            width: parent.width - 32
+                            height: 96
+                            radius: 3
+                            clip: true
+                            gradient: Gradient {
+                                GradientStop { position: 0.0; color: "#1b5e97" }
+                                GradientStop { position: 1.0; color: "#2f8cc4" }
+                            }
+
+                            Rectangle {
+                                x: 14
+                                y: 10
+                                width: parent.width - 28
+                                height: 78
+                                radius: styleChoice.isModern ? 7 : 4
+                                color: styleChoice.isModern ? "#d9e8f0f7" : "#b3538ebe"
+                                border.width: 1
+                                border.color: styleChoice.isModern ? "#40000000" : "#000000"
+
+                                // Aero's white bevel inside the black line.
+                                Rectangle {
+                                    visible: !styleChoice.isModern
+                                    anchors.fill: parent
+                                    anchors.margins: 1
+                                    radius: 3
+                                    color: "transparent"
+                                    border.width: 1
+                                    border.color: "#ccffffff"
+                                }
+
+                                // The caption buttons.
+                                Row {
+                                    anchors.right: parent.right
+                                    anchors.rightMargin: styleChoice.isModern ? 5 : 4
+                                    y: styleChoice.isModern ? 4 : 1
+                                    spacing: styleChoice.isModern ? 3 : 0
+
+                                    Repeater {
+                                        model: 3
+                                        delegate: Rectangle {
+                                            required property int index
+                                            width: styleChoice.isModern ? 10 : (index === 2 ? 20 : 12)
+                                            height: styleChoice.isModern ? 8 : 9
+                                            radius: styleChoice.isModern ? 2 : 1
+                                            color: styleChoice.isModern
+                                                ? (index === 2 ? "#33000000" : "#1a000000")
+                                                : (index === 2 ? "#c94535" : "#9fc4e3")
+                                        }
+                                    }
+                                }
+
+                                Rectangle {
+                                    x: 5
+                                    y: 16
+                                    width: parent.width - 10
+                                    height: parent.height - 21
+                                    radius: styleChoice.isModern ? 3 : 0
+                                    color: "#ffffff"
+                                }
+                            }
+                        }
+
+                        CpRadio {
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            anchors.bottom: parent.bottom
+                            anchors.bottomMargin: 10
+                            label: styleChoice.modelData.label
+                            checked: styleChoice.isChosen
+                            onClicked: Settings.style = styleChoice.modelData.value
+                        }
+
+                        MouseArea {
+                            id: styleArea
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            onClicked: Settings.style = styleChoice.modelData.value
+                        }
+                    }
+                }
+            }
+
+            Item { width: 1; height: 8 }
+
             Heading { text: "Choose light or dark" }
 
             Note {
                 width: parent.width
                 text: "This is the system's own setting: programs that follow it "
                     + "(GTK, libadwaita, Qt, Firefox, Chromium, Vicinae) change "
-                    + "with it, and so do the menus of this desktop. The taskbar "
-                    + "and the window frames are glass either way."
+                    + "with it, and so do the menus of this desktop. "
+                    + (Scheme.modern
+                        ? "In the modern style the window frames follow it too."
+                        : "In Aero the taskbar and the window frames stay dark "
+                          + "glass, as on Windows 7.")
             }
 
             Row {

@@ -45,7 +45,8 @@ Item {
     // The stack: two plates behind the button, as Windows 7 draws a combined
     // button.
     Repeater {
-        model: button.stacked ? 2 : 0
+        // Modern marks a group with a wider bar under the button instead.
+        model: button.stacked && !Scheme.modern ? 2 : 0
 
         delegate: Rectangle {
             required property int index
@@ -67,7 +68,7 @@ Item {
         width: button.width
         height: Theme.taskButtonHeight
         anchors.bottom: parent.bottom
-        radius: 3
+        radius: Scheme.modern ? 5 : 3
         antialiasing: true
         opacity: button.idle && !button.hovered && !area.pressed ? 0 : 1
 
@@ -75,19 +76,39 @@ Item {
             NumberAnimation { duration: Theme.fade }
         }
 
-        border.width: 1
+        border.width: Scheme.modern ? 0 : 1
         border.color: button.current ? Theme.buttonActiveBorder
             : button.hovered ? Theme.buttonHoverBorder : Theme.buttonRestBorder
 
-        readonly property color fill: area.pressed || button.current
-            ? Theme.buttonActive
-            : button.hovered ? Theme.buttonHover : Theme.buttonRest
+        readonly property color fill: Scheme.modern
+            ? (area.pressed || button.current ? Scheme.taskActive
+                : button.hovered ? Scheme.taskHover : Scheme.taskRest)
+            : (area.pressed || button.current ? Theme.buttonActive
+                : button.hovered ? Theme.buttonHover : Theme.buttonRest)
 
+        // Aero's gloss: a lit top, a step at the middle. Modern is flat.
         gradient: Gradient {
-            GradientStop { position: 0.0; color: Theme.buttonGloss }
+            GradientStop { position: 0.0; color: Scheme.modern ? body.fill : Theme.buttonGloss }
             GradientStop { position: 0.48; color: body.fill }
-            GradientStop { position: 0.52; color: Qt.darker(body.fill, 1.15) }
+            GradientStop { position: 0.52; color: Scheme.modern ? body.fill : Qt.darker(body.fill, 1.15) }
             GradientStop { position: 1.0; color: body.fill }
+        }
+
+        // Modern: a short bar under a running program, wider for the one
+        // in front, the full width for a group.
+        Rectangle {
+            visible: Scheme.modern && !button.idle
+            anchors.horizontalCenter: parent.horizontalCenter
+            anchors.bottom: parent.bottom
+            anchors.bottomMargin: 1
+            height: 3
+            radius: 1.5
+            width: button.current || button.stacked ? parent.width * 0.4 : 12
+            color: button.current ? Scheme.taskIndicator : "#99b8cfe0"
+
+            Behavior on width {
+                NumberAnimation { duration: Theme.fade }
+            }
         }
 
         Behavior on border.color {

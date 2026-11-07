@@ -21,10 +21,10 @@ Rectangle {
     signal activated
 
     height: Theme.menuRowHeight
-    radius: 3
+    radius: Scheme.itemRadius
     readonly property bool lit: !heading && (selected || area.containsMouse)
     color: lit ? Scheme.selection : "transparent"
-    border.width: lit ? 1 : 0
+    border.width: lit ? Scheme.selectionBorderWidth : 0
     border.color: Scheme.selectionBorder
 
     Row {

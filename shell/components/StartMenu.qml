@@ -69,7 +69,7 @@ Item {
 
     Rectangle {
         anchors.fill: parent
-        radius: 5
+        radius: Scheme.menuRadius
         border.width: 1
         border.color: Scheme.menuOutline
         gradient: Gradient {
@@ -87,10 +87,10 @@ Item {
         anchors.bottom: parent.bottom
         anchors.margins: 1
         width: menu.width - Theme.menuProgramsWidth - 2
-        radius: 5
+        radius: Scheme.menuRadius - 1
         gradient: Gradient {
-            GradientStop { position: 0.0; color: Theme.menuPlacesTop }
-            GradientStop { position: 1.0; color: Theme.menuPlacesBottom }
+            GradientStop { position: 0.0; color: Scheme.placesTop }
+            GradientStop { position: 1.0; color: Scheme.placesBottom }
         }
 
         Column {
@@ -118,6 +118,7 @@ Item {
                         anchors.fill: parent
                         source: Settings.userPictureSource
                         dark: Settings.dark
+                        round: Scheme.modern
                         opacity: menu.hoveredPlace.length > 0 ? 0 : 1
                         Behavior on opacity {
                             NumberAnimation { duration: Theme.fade }
@@ -157,7 +158,7 @@ Item {
                     anchors.rightMargin: Theme.menuPadding
                     anchors.verticalCenter: parent.verticalCenter
                     text: Apps.userName
-                    color: Theme.textOnPlaces
+                    color: Scheme.placesText
                     font.family: Theme.fontFamily
                     font.pixelSize: Theme.fontSize + 1
                     elide: Text.ElideRight
@@ -210,9 +211,13 @@ Item {
                         anchors.fill: parent
                         visible: place.modelData.separator !== true
                         label: place.modelData.label || ""
-                        icon: place.modelData.icon
-                            ? Qt.resolvedUrl("../assets/" + place.modelData.icon) : ""
-                        labelColor: Theme.textOnPlaces
+                        // Aero: white glyphs on the dark pane. Modern: the
+                        // colour icons, on its pale one.
+                        icon: Scheme.modern && place.modelData.tile
+                            ? Qt.resolvedUrl("../assets/icons/" + place.modelData.tile + ".svg")
+                            : place.modelData.icon
+                                ? Qt.resolvedUrl("../assets/" + place.modelData.icon) : ""
+                        labelColor: Scheme.placesText
                         onHoveredChanged: {
                             if (hovered)
                                 menu.hoveredPlace = place.modelData.tile || "";
@@ -242,6 +247,7 @@ Item {
             anchors.bottom: parent.bottom
             anchors.margins: Theme.menuPadding
             height: 28
+            spacing: Scheme.modern ? 2 : 0
 
             readonly property var action: Apps.powerAction(Apps.powerButtonAction)
 
@@ -259,7 +265,7 @@ Item {
                         anchors.verticalCenter: parent.verticalCenter
                         width: 16
                         height: 16
-                        source: "../assets/power.svg"
+                        source: Scheme.dark ? "../assets/power-white.svg" : "../assets/power.svg"
                         sourceSize.width: 32
                         sourceSize.height: 32
                         smooth: true
@@ -542,7 +548,7 @@ Item {
             anchors.bottom: parent.bottom
             anchors.margins: Theme.menuPadding
             height: Theme.menuSearchHeight
-            radius: 3
+            radius: Scheme.fieldRadius
             color: Scheme.field
             border.width: 1
             border.color: search.activeFocus ? Scheme.fieldFocus : Scheme.fieldBorder

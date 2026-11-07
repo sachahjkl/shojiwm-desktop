@@ -24,9 +24,9 @@ Item {
     // rectangle that covers those corners.
     Rectangle {
         anchors.fill: parent
-        radius: 3
+        radius: Scheme.buttonRadius
         border.width: 1
-        border.color: Scheme.menuOutline
+        border.color: Scheme.buttonOutline
         gradient: Gradient {
             GradientStop { position: 0.0; color: part.fillTop }
             GradientStop { position: 1.0; color: part.fillBottom }
@@ -38,7 +38,9 @@ Item {
         anchors.bottom: parent.bottom
         x: part.leftRounded ? parent.width - width : 0
         width: 4
-        visible: part.leftRounded !== part.rightRounded
+        // Modern draws two separate rounded halves: its fills are
+        // translucent, and a patch over them would show.
+        visible: !Scheme.modern && part.leftRounded !== part.rightRounded
         border.width: 0
         gradient: Gradient {
             GradientStop { position: 0.0; color: part.fillTop }
@@ -52,7 +54,7 @@ Item {
 
     // The line between the two halves: on the arrow's left edge.
     Rectangle {
-        visible: part.rightRounded && !part.leftRounded
+        visible: !Scheme.modern && part.rightRounded && !part.leftRounded
         anchors.top: parent.top
         anchors.bottom: parent.bottom
         width: 1

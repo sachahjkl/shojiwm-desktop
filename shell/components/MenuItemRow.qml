@@ -48,11 +48,11 @@ Item {
         anchors.fill: parent
         anchors.leftMargin: 2
         anchors.rightMargin: 2
-        radius: 3
+        radius: Scheme.itemRadius
         visible: !row.separator && !row.heading && row.itemEnabled
             && (area.containsMouse || row.highlighted)
         color: Scheme.selection
-        border.width: 1
+        border.width: Scheme.selectionBorderWidth
         border.color: Scheme.selectionBorder
     }
 
