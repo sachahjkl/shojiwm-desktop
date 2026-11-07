@@ -49,6 +49,13 @@ const TERMINAL = ["kitty"];
 const FILE_MANAGER = ["thunar"];
 const BROWSER = ["chromium", "--ozone-platform-hint=auto"];
 
+/**
+ * The launcher Super+D opens: Vicinae, a fast search for programs, files and
+ * commands. The Nix package of this configuration writes the path of its own
+ * Vicinae here, so it is a dependency rather than something to install.
+ */
+const VICINAE = "vicinae";
+
 /** Where the Quickshell shell lives, as a shell word. */
 const SHELL_PATH = "~/.config/shojiwm/shell";
 
@@ -73,6 +80,28 @@ COMPOSITOR.process.once("shell", {
     // Where the shell asks for Aero Peek and the show-desktop toggle.
     SHOJIWM_WIN7_SOCKET: SHELL_SOCKET,
   },
+});
+
+// The launcher, kept running so Super+D shows it at once.
+//
+// It reads ~/.config/shojiwm/vicinae.json, written once here if it is
+// missing. That file imports assets/vicinae/aero.json, so what Vicinae's own
+// settings write lands in it and the theme stays underneath. The Aero theme
+// is found through XDG_DATA_DIRS, in assets/vicinae/vicinae/themes.
+//
+// Vicinae's welcome window sets a theme, a hotkey and a start at login, all
+// three of which this configuration already does; it could also replace the
+// Aero theme. It is marked as seen, the first time only, in the state file
+// Vicinae itself writes when the window is finished.
+COMPOSITOR.process.once("launcher", {
+  command:
+    `config="$HOME/.config/shojiwm/vicinae.json"; ` +
+    `[ -e "$config" ] || printf '{\\n  "imports": ["assets/vicinae/aero.json"]\\n}\\n' >"$config"; ` +
+    `state="\${XDG_STATE_HOME:-$HOME/.local/state}/vicinae"; mkdir -p "$state"; ` +
+    `[ -e "$state/onboarding.json" ] || printf '{"version":1,"completedAt":""}\\n' >"$state/onboarding.json"; ` +
+    `XDG_DATA_DIRS="$HOME/.config/shojiwm/assets/vicinae:\${XDG_DATA_DIRS:-/usr/local/share:/usr/share}" ` +
+    `exec ${VICINAE} server --config "$config"`,
+  runPolicy: "once-per-session",
 });
 
 // ---------------------------------------------------------------------------
@@ -190,7 +219,12 @@ COMPOSITOR.key.bind(
   "Super+Right",
   withFocused((window) => WINDOWS.snap(window, "right")),
 );
-COMPOSITOR.key.bind("show-desktop", "Super+D", () =>
+COMPOSITOR.key.bind("launcher", "Super+D", () => {
+  COMPOSITOR.process.spawn({ command: `${VICINAE} toggle` });
+});
+// Super+D is the launcher, so showing the desktop moves to Super+M, the key
+// Windows 7 minimises everything with.
+COMPOSITOR.key.bind("show-desktop", "Super+M", () =>
   WINDOWS.toggleShowDesktop(),
 );
 

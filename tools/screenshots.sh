@@ -29,6 +29,7 @@ if [ "${1:-}" != "--inner" ]; then
     "nixpkgs#foot" \
     "nixpkgs#dbus" \
     "nixpkgs#copyq" \
+    "$repo#vicinae" \
     -c bash "${BASH_SOURCE[0]}" --inner
 fi
 
@@ -70,8 +71,12 @@ icons="$(nix build --no-link --print-out-paths \
   "nixpkgs#adwaita-icon-theme" "nixpkgs#hicolor-icon-theme")"
 foot_share="$(nix build --no-link --print-out-paths "nixpkgs#foot")/share"
 
-# A UTF-8 locale, or foot opens with a warning in every window.
-export LANG=C.UTF-8
+# A real locale, so the clock and the calendar read as they would on a
+# desktop (the C locale writes the date as "7 11 2026"), and foot opens with
+# no warning.
+LOCALE_ARCHIVE="$(nix build --no-link --print-out-paths "nixpkgs#glibcLocales")/lib/locale/locale-archive"
+export LOCALE_ARCHIVE
+export LANG=en_GB.UTF-8
 export HOME="$work"
 export XDG_CONFIG_HOME="$work/.config"
 export XDG_STATE_HOME="$work/.local/state"
@@ -265,6 +270,11 @@ sleep 3
 alive "menu open"
 shot "start-menu"
 
+say "a place under the pointer, in the user's tile"
+xdotool mousemove --window "$window" 380 $((HEIGHT - 40 - 2 - 560 + 92))
+sleep 2
+shot "start-menu-place"
+
 # The menu stands on the taskbar at the left: 490 x 560, 2 px from both.
 menu_left=2
 menu_bottom=$((HEIGHT - 40 - 2))
@@ -331,6 +341,29 @@ xdotool mousemove --window "$window" $((WIDTH / 2)) $((HEIGHT / 2))
 sleep 1
 xdotool click 1
 sleep 1
+
+say "the calendar"
+xdotool mousemove --window "$window" $((WIDTH - 55)) "$bar_y"
+sleep 1
+xdotool click 1
+sleep 2
+shot "calendar"
+alive "calendar"
+xdotool click 1
+xdotool mousemove --window "$window" $((WIDTH / 2)) $((HEIGHT / 2))
+sleep 2
+
+say "the launcher, Super+D"
+xdotool windowfocus "$window"
+xdotool key super+d
+sleep 4
+shot "launcher"
+alive "launcher"
+xdotool type --delay 80 "foo"
+sleep 2
+shot "launcher-search"
+xdotool key Escape
+sleep 2
 
 say "Aero Peek"
 xdotool mousemove --window "$window" $((WIDTH - 4)) "$bar_y"

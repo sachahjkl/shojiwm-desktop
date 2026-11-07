@@ -111,7 +111,7 @@ PopupWindow {
 
                 width: column.width
                 label: modelData ? modelData.name : ""
-                icon: Quickshell.iconPath("text-x-generic", true)
+                icon: modelData ? Apps.fileIcon(modelData.name) : ""
                 onActivated: {
                     Apps.openWith(popup.entry, modelData.path);
                     popup.dismissed();

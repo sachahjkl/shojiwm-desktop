@@ -8,8 +8,9 @@ caption buttons at the top right, and a thin glossy border. A
 [Quickshell](https://quickshell.org) shell draws the rest of the desktop: the
 taskbar, the Start menu and the wallpaper.
 
-All artwork is original. No file from Windows is copied, embedded or
-required.
+No file from Windows is copied, embedded or required. The artwork is
+original, except the colour icons of the Start menu and the jump lists, which
+are Icons8's MIT-licensed "Flat Color Icons" (see "Licence").
 
 ## What you get
 
@@ -28,6 +29,8 @@ required.
 | **Window thumbnails**   | Rest on a taskbar button and its windows are listed with their titles. A click raises one, a middle click closes it. The live picture of each window is written but off; see "Real limits".                                                                                                                                                                                   |
 | **Jump lists**          | Right click a taskbar button for the files the program opened last (from `recently-used.xbel`), the tasks of its `.desktop` file, a second instance, and close.                                                                                                                                                                                                               |
 | **Notification area**   | A tray item's own menu, drawn in the same style, with its submenus, check boxes and radio buttons.                                                                                                                                                                                                                                                                            |
+| **Launcher**            | `Super`+`D` opens [Vicinae](https://github.com/vicinaehq/vicinae), a fast search for programs, files and commands, in an Aero theme that matches the Start menu. The Nix package brings Vicinae with it, from nixpkgs unstable.                                                                                                                                               |
+| **Calendar**            | Click the clock for the long date and a month, today framed, with arrows to the months around it.                                                                                                                                                                                                                                                                             |
 | **Aero Peek**           | Rest on the show-desktop strip at the far right and every window turns into a glass outline over the desktop. Click it to put the windows away; click again to bring them back.                                                                                                                                                                                               |
 | **Start menu**          | Pinned programs, then the ones you start most, and **All Programs** with every program in folders. Type to search; the arrow keys and Return pick a result, and Return with nothing found runs what you typed. On the right: your full name, your folders (as `xdg-user-dirs` names them), and a power button whose arrow offers log off, lock, restart, sleep and hibernate. |
 
@@ -98,6 +101,21 @@ Dragging a window against the left edge draws the rectangle it would take.
 Aero Peek: the pointer rests on the show-desktop strip, and the two windows
 are left as glass outlines over the wallpaper.
 
+![The launcher](assets/site/launcher-search.png)
+
+`Super`+`D`: Vicinae in the Aero theme, searching as you type.
+
+![The calendar](assets/site/calendar.png)
+
+The calendar over the clock. The short date under the clock reads "7 11
+2026" in these pictures because the test machine's system locale is
+`C.UTF-8`; ShojiWM starts the shell through a login shell, which takes the
+system's locale.
+
+![A place in the user's tile](assets/site/start-menu-place.png)
+
+Resting on a place shows its icon in the user's tile, as Windows 7 does.
+
 ![Alt+Tab](assets/site/alt-tab.png)
 
 Alt+Tab: a panel of live thumbnails, the selected window lit.
@@ -144,6 +162,10 @@ the resting gradient.
   then DejaVu Sans.
 - **An icon theme** with an `application-x-executable` icon, such as
   **Adwaita** or **Papirus**. Window and taskbar icons come from it.
+- **Vicinae**, the launcher `Super`+`D` opens. The Nix package of this
+  configuration depends on it (the latest, from nixpkgs unstable) and writes
+  its path into `src/index.tsx`; without Nix, install it and keep `vicinae`
+  in `PATH`.
 - The programs the keys start: **kitty**, **Thunar** and **Chromium**. Change
   them in `src/index.tsx` and `shell/Apps.qml` if you use others.
 
@@ -204,7 +226,8 @@ running one.
 | `Super`+`Up`                      | Maximise                                       |
 | `Super`+`Down`                    | Restore                                        |
 | `Super`+`Left` / `Super`+`Right`  | Put the window against that side               |
-| `Super`+`D`                       | Show the desktop, then put the windows back    |
+| `Super`+`D`                       | The launcher (Vicinae)                         |
+| `Super`+`M`                       | Show the desktop, then put the windows back    |
 | `Super`+drag                      | Move a window from anywhere on it              |
 | `Super`+`Shift`+`R`               | Reload this configuration (built into ShojiWM) |
 | `Super`+`Shift`+`Q`               | Quit the session (built into ShojiWM)          |
@@ -242,6 +265,9 @@ running one.
 | `shell/components/MenuItemRow.qml`                                                           | One line of either menu.                                                                                                                                                  |
 | `shell/components/StartMenu.qml`, `StartOrb.qml`, `Clock.qml`, `TrayArea.qml`, `MenuRow.qml` | The Start menu, the orb, the clock, the notification area, and one menu line.                                                                                             |
 | `shell/components/PowerMenu.qml`, `PowerPart.qml`                                            | The menu behind the power button's arrow, and the two halves of that button.                                                                                              |
+| `shell/components/CalendarPopup.qml`, `CalendarArrow.qml`                                    | The calendar over the clock.                                                                                                                                              |
+| `shell/assets/icons/`                                                                        | The colour icons (Icons8, MIT), fetched by `tools/fetch-icons.sh`.                                                                                                        |
+| `assets/vicinae/`                                                                            | Vicinae's settings (`aero.json`) and its Aero theme (`vicinae/themes/aero.toml`).                                                                                         |
 | `shell/assets/*.svg`                                                                         | The orb, the place icons, the account tile and the wallpaper. Drawn by hand.                                                                                              |
 | `tools/screenshots.sh`                                                                       | Runs the whole desktop on a machine with no display and takes the pictures in this file.                                                                                  |
 | `flake.nix`                                                                                  | The package, the install command, and the checks.                                                                                                                         |
@@ -374,5 +400,10 @@ Not run:
 MIT. See [LICENSE](./LICENSE).
 
 The artwork in `assets/` and `shell/assets/` is original SVG, written by hand
-for this repository. It imitates a visual style; it copies no file, no icon
-and no font from Microsoft.
+for this repository, except `shell/assets/icons/`. It imitates a visual
+style; it copies no file, no icon and no font from Microsoft.
+
+`shell/assets/icons/` holds icons from Icons8's
+[Flat Color Icons](https://github.com/icons8/flat-color-icons), MIT,
+fetched through [Iconify](https://iconify.design) by `tools/fetch-icons.sh`.
+Their licence is next to them.

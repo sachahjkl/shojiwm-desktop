@@ -24,16 +24,19 @@ Item {
     // menus close on their own once the pointer is away from both.
     property bool pointerOnButton: false
     property bool pointerOnTray: false
+    property bool pointerOnClock: false
 
     // What each popup is showing, or null.
     property var previewGroup: null
     property var jumpListGroup: null
     property var trayMenuItem: null
+    property bool calendarOpen: false
 
     function closePopups() {
         bar.previewGroup = null;
         bar.jumpListGroup = null;
         bar.trayMenuItem = null;
+        bar.calendarOpen = false;
     }
 
     // ----- glass ------------------------------------------------------------
@@ -109,7 +112,16 @@ Item {
         }
 
         Clock {
+            id: clock
+
             anchors.verticalCenter: parent.verticalCenter
+            active: bar.calendarOpen
+            onClicked: {
+                var open = !bar.calendarOpen;
+                bar.closePopups();
+                bar.calendarOpen = open;
+            }
+            onHoveredChanged: bar.pointerOnClock = clock.hovered
         }
 
         // Show desktop: the strip Windows puts past the clock.
@@ -267,6 +279,7 @@ Item {
         id: hideMenus
         interval: 900
         running: bar.jumpListGroup !== null || bar.trayMenuItem !== null
+            || bar.calendarOpen
         repeat: true
         onTriggered: {
             if (bar.jumpListGroup !== null
@@ -275,6 +288,9 @@ Item {
             if (bar.trayMenuItem !== null
                 && !trayMenu.pointerInside && !bar.pointerOnTray)
                 bar.trayMenuItem = null;
+            if (bar.calendarOpen
+                && !calendar.pointerInside && !bar.pointerOnClock)
+                bar.calendarOpen = false;
         }
     }
 
@@ -292,6 +308,13 @@ Item {
         anchorWindow: bar.window
         group: bar.jumpListGroup
         onDismissed: bar.jumpListGroup = null
+    }
+
+    CalendarPopup {
+        id: calendar
+
+        anchorItem: clock
+        open: bar.calendarOpen
     }
 
     TrayMenu {

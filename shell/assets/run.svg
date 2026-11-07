@@ -1,9 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
-  <!-- Original glyph: a prompt in a window. -->
-  <rect x="3" y="4.5" width="18" height="15" rx="1.5" fill="#1d3a52" stroke="#0f2233"/>
-  <rect x="3" y="4.5" width="18" height="3" rx="1.5" fill="#6d9cc4"/>
-  <g fill="none" stroke="#eaf4ff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M7 11l3 2.5L7 16"/>
-    <path d="M12 16h5"/>
-  </g>
-</svg>

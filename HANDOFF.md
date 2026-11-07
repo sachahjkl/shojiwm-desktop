@@ -102,6 +102,30 @@ button did one thing only.
 Captured in the headless session (`start-menu*.png`); none of the power
 actions or a typed command was actually run.
 
+## Fourth pass: launcher and polish
+
+1. **Vicinae on `Super`+`D`.** `src/index.tsx` starts `vicinae server` once
+   per session with `~/.config/shojiwm/vicinae.json` (written if missing; it
+   imports `assets/vicinae/aero.json`, so Vicinae's own settings window writes
+   there and the theme stays underneath). The Aero theme is
+   `assets/vicinae/vicinae/themes/aero.toml`, found through `XDG_DATA_DIRS`.
+   Vicinae's welcome window is marked as seen the first time: it would set a
+   theme, a hotkey and a start at login, which this configuration does.
+2. **Vicinae is a dependency.** `flake.nix` has a `nixpkgs-unstable` input
+   (FlakeHub's rolling unstable), and the package writes that Vicinae's path
+   into `src/index.tsx`. `packages.vicinae` exposes it; the capture script
+   uses it too. Showing the desktop moved to `Super`+`M`.
+3. **Colour icons** from Icons8's Flat Color Icons (MIT) through Iconify,
+   `tools/fetch-icons.sh`: the user's tile shows the place under the pointer,
+   the All Programs folders, the Run line, and the recent files of a jump list
+   by kind.
+4. **A calendar** on a click of the clock. The clock and the calendar follow
+   the locale.
+5. Captured: `launcher*.png`, `calendar.png`, `start-menu-place.png`. The date
+   under the clock reads "7 11 2026" there: ShojiWM starts processes with
+   `sh -lc`, which takes the test machine's `/etc/default/locale`
+   (`C.UTF-8`).
+
 ## What remains, in priority order
 
 1. **Look at all of it on a real GPU.** Colours, blur, animation speed and

@@ -16,6 +16,7 @@ Rectangle {
     property bool heading: false
     /// Extra room on the left, for the programs inside a folder.
     property int indent: 0
+    readonly property bool hovered: area.containsMouse
     signal activated
 
     height: Theme.menuRowHeight

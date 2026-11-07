@@ -128,6 +128,12 @@ var textOnGlass = "#f2f8ff";
 var textMuted = "#c3d6e6";
 var textOnMenu = "#10283c";
 var menuHeading = "#1e3287";
+
+// The calendar over the clock.
+var calendarLink = "#0066cc";
+var calendarToday = "#3f82b4";
+var calendarHover = "#33cfe4f7";
+var calendarOtherMonth = "#93a6b6";
 var textOnPlaces = "#eaf4ff";
 var selection = "#669ad0f7";
 var selectionBorder = "#b3cfe9ff";

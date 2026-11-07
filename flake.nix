@@ -4,6 +4,11 @@
   inputs = {
     nixpkgs.url = "https://flakehub.com/f/NixOS/nixpkgs/0.2605";
 
+    # The rolling unstable branch, for the programs that move fast and are
+    # best taken at their latest: Vicinae. Make it follow your own unstable
+    # nixpkgs with `inputs.nixpkgs-unstable.follows`.
+    nixpkgs-unstable.url = "https://flakehub.com/f/NixOS/nixpkgs/0.1";
+
     git-hooks = {
       url = "https://flakehub.com/f/cachix/git-hooks.nix/0.1";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -20,6 +25,7 @@
   outputs = {
     self,
     nixpkgs,
+    nixpkgs-unstable,
     git-hooks,
     shojiwm-src,
   }: let
@@ -47,6 +53,9 @@
     packages = forAllSystems (system: let
       pkgs = pkgsFor system;
 
+      # Taken from unstable: see the input.
+      inherit (nixpkgs-unstable.legacyPackages.${system}) vicinae;
+
       config = pkgs.stdenvNoCC.mkDerivation {
         pname = "shojiwm-win7";
         inherit version;
@@ -59,6 +68,11 @@
           runHook preInstall
           mkdir -p "$out"
           cp -R src assets shell package.json tsconfig.json "$out/"
+          # Vicinae is the launcher Super+D opens: point the config at this
+          # one, so installing the configuration installs it too.
+          substituteInPlace "$out/src/index.tsx" \
+            --replace-fail 'const VICINAE = "vicinae";' \
+              'const VICINAE = "${vicinae}/bin/vicinae";'
           runHook postInstall
         '';
 
@@ -90,7 +104,7 @@
       };
     in {
       default = config;
-      inherit config install;
+      inherit config install vicinae;
     });
 
     apps = forAllSystems (system: {

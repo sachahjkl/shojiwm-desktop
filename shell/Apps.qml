@@ -610,6 +610,22 @@ Singleton {
         return list;
     }
 
+    /// The colour icon of a file, from its extension.
+    function fileIcon(name) {
+        var dot = String(name).lastIndexOf(".");
+        var extension = dot > 0 ? String(name).substring(dot + 1).toLowerCase() : "";
+        var kinds = {
+            "file-image": ["png", "jpg", "jpeg", "gif", "webp", "svg", "bmp", "tif", "tiff", "avif", "heic"],
+            "file-audio": ["mp3", "flac", "ogg", "opus", "wav", "m4a", "aac"],
+            "file-video": ["mp4", "mkv", "webm", "avi", "mov", "m4v"]
+        };
+        for (var kind in kinds) {
+            if (kinds[kind].indexOf(extension) >= 0)
+                return Qt.resolvedUrl("assets/icons/" + kind + ".svg");
+        }
+        return Qt.resolvedUrl("assets/icons/file.svg");
+    }
+
     /// Open a file with a program, as its .desktop file says to start it.
     function openWith(entry, path) {
         if (!entry || !entry.command || entry.command.length === 0)

@@ -23,6 +23,9 @@ Item {
     /// The folder open in All Programs, by name, or "".
     property string openFolder: ""
     property bool powerMenuOpen: false
+    /// The colour icon of the place under the pointer, shown in the user's
+    /// tile as Windows 7 does, or "" for the user's picture.
+    property string hoveredPlace: ""
 
     /// Cleared by the window every time the menu is opened.
     function reset() {
@@ -30,6 +33,7 @@ Item {
         menu.page = "home";
         menu.openFolder = "";
         menu.powerMenuOpen = false;
+        menu.hoveredPlace = "";
         results.currentIndex = 0;
         search.forceActiveFocus();
     }
@@ -102,16 +106,49 @@ Item {
                 width: parent.width
                 height: 64
 
-                Image {
+                // The user's picture, or the place the pointer is on.
+                Item {
                     id: avatar
                     anchors.left: parent.left
                     anchors.verticalCenter: parent.verticalCenter
                     width: 44
                     height: 44
-                    source: "../assets/user.svg"
-                    sourceSize.width: 88
-                    sourceSize.height: 88
-                    smooth: true
+
+                    Image {
+                        anchors.fill: parent
+                        source: "../assets/user.svg"
+                        sourceSize.width: 88
+                        sourceSize.height: 88
+                        smooth: true
+                        opacity: menu.hoveredPlace.length > 0 ? 0 : 1
+                        Behavior on opacity {
+                            NumberAnimation { duration: Theme.fade }
+                        }
+                    }
+
+                    // A framed tile, as the user's picture is.
+                    Rectangle {
+                        anchors.fill: parent
+                        radius: 4
+                        color: "#33ffffff"
+                        border.width: 1
+                        border.color: "#99ffffff"
+                        opacity: menu.hoveredPlace.length > 0 ? 1 : 0
+                        Behavior on opacity {
+                            NumberAnimation { duration: Theme.fade }
+                        }
+
+                        Image {
+                            anchors.centerIn: parent
+                            width: 34
+                            height: 34
+                            source: menu.hoveredPlace.length > 0
+                                ? "../assets/icons/" + menu.hoveredPlace + ".svg" : ""
+                            sourceSize.width: 68
+                            sourceSize.height: 68
+                            smooth: true
+                        }
+                    }
                 }
 
                 // Cut short with an ellipsis, and kept off the right edge.
@@ -138,19 +175,20 @@ Item {
 
             Repeater {
                 model: [
-                    { label: "Documents", icon: "place-documents.svg",
+                    { label: "Documents", icon: "place-documents.svg", tile: "documents",
                       path: Apps.userDir("DOCUMENTS", "Documents") },
-                    { label: "Downloads", icon: "place-downloads.svg",
+                    { label: "Downloads", icon: "place-downloads.svg", tile: "downloads",
                       path: Apps.userDir("DOWNLOAD", "Downloads") },
-                    { label: "Pictures", icon: "place-pictures.svg",
+                    { label: "Pictures", icon: "place-pictures.svg", tile: "pictures",
                       path: Apps.userDir("PICTURES", "Pictures") },
-                    { label: "Music", icon: "place-music.svg",
+                    { label: "Music", icon: "place-music.svg", tile: "music",
                       path: Apps.userDir("MUSIC", "Music") },
-                    { label: "Videos", icon: "place-videos.svg",
+                    { label: "Videos", icon: "place-videos.svg", tile: "videos",
                       path: Apps.userDir("VIDEOS", "Videos") },
                     { separator: true },
-                    { label: "Computer", icon: "place-computer.svg", path: "/" },
-                    { label: "Control Panel", icon: "place-settings.svg",
+                    { label: "Computer", icon: "place-computer.svg", tile: "computer",
+                      path: "/" },
+                    { label: "Control Panel", icon: "place-settings.svg", tile: "control-panel",
                       command: Apps.controlPanel }
                 ]
 
@@ -177,6 +215,12 @@ Item {
                         icon: place.modelData.icon
                             ? Qt.resolvedUrl("../assets/" + place.modelData.icon) : ""
                         labelColor: Theme.textOnPlaces
+                        onHoveredChanged: {
+                            if (hovered)
+                                menu.hoveredPlace = place.modelData.tile || "";
+                            else if (menu.hoveredPlace === place.modelData.tile)
+                                menu.hoveredPlace = "";
+                        }
                         onActivated: {
                             if (place.modelData.command)
                                 Apps.run(place.modelData.command);
@@ -386,7 +430,8 @@ Item {
                 MenuRow {
                     width: folder.width
                     label: folder.modelData.name
-                    icon: Qt.resolvedUrl("../assets/folder.svg")
+                    icon: Qt.resolvedUrl(folder.expanded
+                        ? "../assets/icons/folder-open.svg" : "../assets/icons/folder.svg")
                     selected: folder.expanded
                     onActivated: menu.openFolder =
                         folder.expanded ? "" : folder.modelData.name
@@ -445,7 +490,7 @@ Item {
                 visible: menu.found.length === 0
                 height: visible ? Theme.menuRowHeight : 0
                 label: "Run “" + search.text.trim() + "”"
-                icon: Qt.resolvedUrl("../assets/run.svg")
+                icon: Qt.resolvedUrl("../assets/icons/run.svg")
                 selected: true
                 onActivated: menu.accept()
             }
