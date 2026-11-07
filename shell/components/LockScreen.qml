@@ -168,58 +168,33 @@ Item {
             }
         }
 
-        // The round arrow: a pale glass bead with a blue arrow in it.
+        // The round arrow: a glass bead, pale over its top half and blue
+        // below, with a solid white arrow. Drawn in arrow-bead.svg.
         Item {
             id: go
 
             anchors.left: field.right
-            anchors.leftMargin: 6
+            anchors.leftMargin: 5
             anchors.verticalCenter: parent.verticalCenter
             width: 28
             height: 28
 
-            Rectangle {
+            Image {
                 anchors.fill: parent
-                radius: width / 2
-                border.width: 1
-                border.color: goArea.containsMouse ? "#2c6aa0" : "#3d6f96"
-                gradient: Gradient {
-                    GradientStop {
-                        position: 0.0
-                        color: goArea.pressed ? "#bcdcf2" : goArea.containsMouse ? "#ffffff" : "#f4fbff"
-                    }
-                    GradientStop {
-                        position: 0.5
-                        color: goArea.pressed ? "#8cc0e6" : goArea.containsMouse ? "#cdeafd" : "#bfe0f6"
-                    }
-                    GradientStop {
-                        position: 0.51
-                        color: goArea.pressed ? "#6aaadb" : goArea.containsMouse ? "#94cff5" : "#86c2ea"
-                    }
-                    GradientStop {
-                        position: 1.0
-                        color: goArea.pressed ? "#4f95cf" : goArea.containsMouse ? "#6ab9ef" : "#5fa6da"
-                    }
-                }
+                source: "../assets/arrow-bead.svg"
+                sourceSize.width: 56
+                sourceSize.height: 56
+                smooth: true
+                opacity: goArea.pressed ? 0.85 : 1
             }
 
-            // A bright rim inside the dark one.
+            // Lit under the pointer.
             Rectangle {
                 anchors.fill: parent
                 anchors.margins: 1
                 radius: width / 2
-                color: "transparent"
-                border.width: 1
-                border.color: "#99ffffff"
-            }
-
-            Image {
-                anchors.centerIn: parent
-                width: 16
-                height: 16
-                source: "../assets/arrow-bead.svg"
-                sourceSize.width: 32
-                sourceSize.height: 32
+                color: "#ffffff"
+                opacity: goArea.pressed ? 0 : goArea.containsMouse ? 0.22 : 0
             }
 
             MouseArea {

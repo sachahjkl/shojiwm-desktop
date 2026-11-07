@@ -169,6 +169,14 @@ hibernate and shut down above it. A wrong password now swaps the field for
 (`LogonButton.qml`, the dark glass of the log-on buttons), as Windows 7
 does; Return, Escape or Space is OK.
 
+A second look, zoomed against the reference: the frame is one stack of
+rounded rectangles (outer line, highlight, glass band, light line, dark
+line) with a single corner, and the picture fills its square. The double
+white corners came from `assets/user.svg`, which drew its own rounded
+frame; it is now full bleed. The arrow is `assets/arrow-bead.svg`: a dark
+ring, pale glass above and blue below, and a broad solid white arrow. The
+Start menu frames the account picture with the same `UserTile`, small.
+
 Light and dark no longer forces Adwaita on GTK 3: `shell/gtk-switch.sh`
 moves the theme in use to its installed light or dark variant, or leaves
 it.

@@ -114,12 +114,9 @@ Item {
                     width: 44
                     height: 44
 
-                    Image {
+                    UserTile {
                         anchors.fill: parent
                         source: Settings.userPictureSource
-                        sourceSize.width: 88
-                        sourceSize.height: 88
-                        smooth: true
                         opacity: menu.hoveredPlace.length > 0 ? 0 : 1
                         Behavior on opacity {
                             NumberAnimation { duration: Theme.fade }
