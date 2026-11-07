@@ -20,6 +20,30 @@ ShellRoot {
     // The Start menu is reached from a keybinding, so its IPC entry point has
     // to exist before anything asks for it.
     property var ipc: StartMenuIpc
+    // Likewise the lock (its IPC, logind and the idle timer) and the Control
+    // Panel's IPC: singletons are only built when something names them.
+    property var lockState: LockState
+    property var controlPanel: ControlPanelState
+
+    // ----- lock screen ------------------------------------------------------
+
+    // ext-session-lock: while locked, the compositor shows these surfaces and
+    // nothing else, and sends them every key. If the shell dies, the session
+    // stays locked.
+    WlSessionLock {
+        locked: LockState.locked
+
+        WlSessionLockSurface {
+            color: "#0e3a63"
+
+            LockScreen {
+                anchors.fill: parent
+            }
+        }
+    }
+
+    // The Control Panel, a normal window with the Aero frame.
+    ControlPanel {}
 
     // ----- wallpaper --------------------------------------------------------
 
@@ -45,7 +69,7 @@ ShellRoot {
 
             Image {
                 anchors.fill: parent
-                source: "assets/wallpaper.svg"
+                source: Settings.wallpaperSource
                 sourceSize.width: parent.width * 1.0
                 sourceSize.height: parent.height * 1.0
                 fillMode: Image.PreserveAspectCrop

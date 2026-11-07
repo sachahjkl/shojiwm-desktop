@@ -1,4 +1,5 @@
 import QtQuick
+import ".."
 import "../theme.js" as Theme
 
 // A month arrow of the calendar.
@@ -11,14 +12,14 @@ Rectangle {
     width: 24
     height: 22
     radius: 3
-    color: area.containsMouse ? Theme.calendarHover : "transparent"
+    color: area.containsMouse ? Scheme.hover : "transparent"
     border.width: area.containsMouse ? 1 : 0
-    border.color: Theme.selectionBorder
+    border.color: Scheme.selectionBorder
 
     Text {
         anchors.centerIn: parent
         text: arrow.glyph
-        color: Theme.textOnMenu
+        color: Scheme.text
         font.family: Theme.fontFamily
         font.pixelSize: Theme.fontSize
     }

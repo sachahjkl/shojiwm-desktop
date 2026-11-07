@@ -1,5 +1,6 @@
 import QtQuick
 import Quickshell
+import ".."
 import "../theme.js" as Theme
 
 // The clock at the right end of the taskbar: the time over the date. A click
@@ -36,7 +37,11 @@ Item {
 
         Text {
             anchors.horizontalCenter: parent.horizontalCenter
-            text: source.date.toLocaleTimeString(Qt.locale(), Locale.ShortFormat)
+            text: Settings.clockFormat === "24h"
+                ? Qt.formatTime(source.date, "HH:mm")
+                : Settings.clockFormat === "12h"
+                    ? Qt.formatTime(source.date, "h:mm AP")
+                    : source.date.toLocaleTimeString(Qt.locale(), Locale.ShortFormat)
             color: Theme.textOnGlass
             font.family: Theme.fontFamily
             font.pixelSize: Theme.fontSize
@@ -44,6 +49,7 @@ Item {
 
         Text {
             anchors.horizontalCenter: parent.horizontalCenter
+            visible: Settings.showDate
             text: source.date.toLocaleDateString(Qt.locale(), Locale.ShortFormat)
             color: Theme.textMuted
             font.family: Theme.fontFamily

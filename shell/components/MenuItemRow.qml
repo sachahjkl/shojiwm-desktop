@@ -1,5 +1,6 @@
 import QtQuick
 import Quickshell.Widgets
+import ".."
 import "../theme.js" as Theme
 
 // One line of a popup menu, in the manner of a Windows 7 menu: a pale blue
@@ -39,7 +40,7 @@ Item {
         anchors.leftMargin: Theme.popupPadX / 2
         anchors.rightMargin: Theme.popupPadX / 2
         height: 1
-        color: Theme.menuDivider
+        color: Scheme.menuDivider
         visible: row.separator
     }
 
@@ -50,9 +51,9 @@ Item {
         radius: 3
         visible: !row.separator && !row.heading && row.itemEnabled
             && (area.containsMouse || row.highlighted)
-        color: Theme.selection
+        color: Scheme.selection
         border.width: 1
-        border.color: Theme.selectionBorder
+        border.color: Scheme.selectionBorder
     }
 
     Row {
@@ -71,7 +72,7 @@ Item {
             horizontalAlignment: Text.AlignHCenter
             visible: row.checkable && row.icon.length === 0
             text: row.checked ? "\u2714" : ""
-            color: Theme.textOnMenu
+            color: Scheme.text
             font.family: Theme.fontFamily
             font.pixelSize: Theme.fontSizeSmall
         }
@@ -90,7 +91,7 @@ Item {
             width: Math.max(0, content.width
                 - (iconImage.visible || row.checkable ? 16 + content.spacing : 0))
             text: row.label
-            color: row.heading ? Theme.menuHeading : Theme.textOnMenu
+            color: row.heading ? Scheme.menuHeading : Scheme.text
             opacity: row.itemEnabled ? 1 : 0.45
             font.family: Theme.fontFamily
             font.pixelSize: row.heading ? Theme.fontSizeSmall : Theme.fontSize
@@ -106,7 +107,7 @@ Item {
         anchors.rightMargin: Theme.popupPadX
         visible: row.hasChildren && !row.separator
         text: "\u25B8"
-        color: Theme.textOnMenu
+        color: Scheme.text
         opacity: row.itemEnabled ? 1 : 0.45
         font.family: Theme.fontFamily
         font.pixelSize: Theme.fontSize

@@ -43,10 +43,10 @@ PopupWindow {
         anchors.fill: parent
         radius: 4
         border.width: 1
-        border.color: Theme.popupOutline
+        border.color: Scheme.popupOutline
         gradient: Gradient {
-            GradientStop { position: 0.0; color: Theme.popupTop }
-            GradientStop { position: 1.0; color: Theme.popupBottom }
+            GradientStop { position: 0.0; color: Scheme.popupTop }
+            GradientStop { position: 1.0; color: Scheme.popupBottom }
         }
     }
 
@@ -83,7 +83,7 @@ PopupWindow {
                     width: parent.width
                     height: Theme.thumbTitleHeight
                     text: Apps.titleOf(card.modelData)
-                    color: Theme.textOnMenu
+                    color: Scheme.text
                     font.family: Theme.fontFamily
                     font.pixelSize: Theme.fontSizeSmall
                     elide: Text.ElideRight
@@ -97,7 +97,7 @@ PopupWindow {
                     color: Theme.thumbFrame
                     border.width: 1
                     border.color: cardArea.containsMouse
-                        ? Theme.selectionBorder : Theme.popupOutline
+                        ? Scheme.selectionBorder : Scheme.popupOutline
 
                     // The live picture, when the compositor can hand one over.
                     Loader {

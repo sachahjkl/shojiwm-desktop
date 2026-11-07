@@ -30,6 +30,8 @@ if [ "${1:-}" != "--inner" ]; then
     "nixpkgs#dbus" \
     "nixpkgs#copyq" \
     "$repo#vicinae" \
+    "nixpkgs#dconf" \
+    "nixpkgs#glib" \
     -c bash "${BASH_SOURCE[0]}" --inner
 fi
 
@@ -396,6 +398,54 @@ shot "alt-tab"
 alive "alt-tab"
 xdotool keyup alt
 sleep 2
+
+say "the Control Panel"
+qs() { quickshell -p "$XDG_CONFIG_HOME/shojiwm/shell" ipc call "$@" || true; }
+qs controlpanel open
+sleep 4
+shot "control-panel"
+alive "control panel"
+
+say "the Control Panel, dark"
+qs controlpanel openPage appearance
+sleep 2
+# The Control Panel opens centred; its "Dark" tile is the second of two.
+panel_x=$(( (WIDTH - 860) / 2 ))
+panel_y=$(( (HEIGHT - 600) / 2 ))
+xdotool mousemove --window "$window" $((panel_x + 250 + 300)) $((panel_y + 40 + 160))
+xdotool click 1
+sleep 2
+shot "control-panel-dark"
+alive "dark"
+qs controlpanel close
+sleep 1
+qs startmenu toggle
+sleep 3
+shot "start-menu-dark"
+qs startmenu toggle
+sleep 1
+qs controlpanel openPage appearance
+sleep 2
+xdotool mousemove --window "$window" $((panel_x + 250 + 80)) $((panel_y + 40 + 160))
+xdotool click 1
+sleep 1
+qs controlpanel openPage lockscreen
+sleep 2
+shot "control-panel-lock"
+qs controlpanel close
+sleep 1
+
+say "the lock screen"
+# Last: the test session has no password to unlock it with.
+qs lock lock
+sleep 4
+shot "lock-screen"
+alive "locked"
+xdotool type --delay 60 "not my password"
+xdotool key Return
+sleep 5
+shot "lock-screen-wrong"
+alive "wrong password"
 
 # ---------------------------------------------------------------------------
 # The same pictures, cut up and blown up, so the finish can be checked

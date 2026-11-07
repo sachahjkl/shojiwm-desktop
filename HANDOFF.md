@@ -126,6 +126,33 @@ actions or a typed command was actually run.
    `sh -lc`, which takes the test machine's `/etc/default/locale`
    (`C.UTF-8`).
 
+## Fifth pass: lock screen, Control Panel, light and dark
+
+1. **Lock screen.** `WlSessionLock` in `shell/shell.qml`, one
+   `components/LockScreen.qml` per screen, the PAM check once in
+   `LockState.qml` (service `login`). Locks on: the Start menu's Lock,
+   `Super`+`L` (IPC `lock lock`), logind's `Lock` signal for this session
+   (`gdbus monitor` on the session's object path, so `loginctl lock-session`
+   works), `PrepareForSleep` when the setting says so, and `IdleMonitor`
+   after the chosen delay. Tested: a wrong password is refused by PAM and
+   the field empties. Not tested: a right one (the test session has no
+   password), a real idle timeout, a real suspend.
+2. **Control Panel.** `ControlPanel.qml`, a `FloatingWindow`, so it is a
+   real window with the Aero frame and its own taskbar button. Opened from
+   the Start menu's Control Panel place, or IPC `controlpanel open` /
+   `openPage <page>`.
+3. **Settings.** `Settings.qml`, a `JsonAdapter` on
+   `~/.config/shojiwm/settings.json` (outside what `install` replaces, and
+   watched). `combineWindows` left `theme.js` for it.
+4. **Light and dark.** Not in that file: it is
+   `org.gnome.desktop.interface color-scheme` in dconf, read at start and
+   watched, written with `gtk-theme` (Adwaita / Adwaita-dark for GTK 3).
+   xdg-desktop-portal-gtk passes it to programs. The shell's colours that
+   change are in `Scheme.qml` (not `Palette`: QtQuick has a `Palette` type,
+   which hides a singleton of that name). Vicinae has `aero-dark.toml`.
+5. **`shell/tools.js`** holds `dconf` and `gdbus`; the Nix package writes
+   their store paths there.
+
 ## What remains, in priority order
 
 1. **Look at all of it on a real GPU.** Colours, blur, animation speed and

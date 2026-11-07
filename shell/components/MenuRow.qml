@@ -1,5 +1,6 @@
 import QtQuick
 import Quickshell.Widgets
+import ".."
 import "../theme.js" as Theme
 
 // One line of the Start menu: an icon and a label, lit under the pointer.
@@ -8,7 +9,7 @@ Rectangle {
 
     property string label: ""
     property string icon: ""
-    property color labelColor: Theme.textOnMenu
+    property color labelColor: Scheme.text
     property bool selected: false
     /// Pinned programs and "All Programs" are set in bold, as on Windows.
     property bool bold: false
@@ -22,9 +23,9 @@ Rectangle {
     height: Theme.menuRowHeight
     radius: 3
     readonly property bool lit: !heading && (selected || area.containsMouse)
-    color: lit ? Theme.selection : "transparent"
+    color: lit ? Scheme.selection : "transparent"
     border.width: lit ? 1 : 0
-    border.color: Theme.selectionBorder
+    border.color: Scheme.selectionBorder
 
     Row {
         anchors.left: parent.left
@@ -45,7 +46,7 @@ Rectangle {
             anchors.verticalCenter: parent.verticalCenter
             width: parent.width - (row.icon.length > 0 ? 20 + 8 : 0)
             text: row.label
-            color: row.heading ? Theme.menuHeading : row.labelColor
+            color: row.heading ? Scheme.menuHeading : row.labelColor
             font.family: Theme.fontFamily
             font.pixelSize: row.heading ? Theme.fontSizeSmall : Theme.fontSize
             font.bold: row.bold || row.heading

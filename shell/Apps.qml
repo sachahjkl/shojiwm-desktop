@@ -21,8 +21,6 @@ Singleton {
     readonly property string terminal: "kitty"
     readonly property string fileManager: "thunar"
     readonly property string browser: "chromium"
-    /// What the "Control Panel" place starts. Change it to your own.
-    readonly property var controlPanel: ["xfce4-settings-manager"]
     readonly property var pinnedIds: ["kitty.desktop", "thunar.desktop", "chromium.desktop"]
     /// The programs that keep a button on the taskbar while they are closed,
     /// left to right.
@@ -39,7 +37,7 @@ Singleton {
     // ----- grouping ---------------------------------------------------------
 
     /// Combine the windows of one program into one button.
-    readonly property bool combine: Theme.combineWindows
+    readonly property bool combine: Settings.combineWindows
 
     /// The row of the taskbar, left to right. Each entry is
     /// `{ key, name, icon, entry, pinned, windows }`: the pinned programs
@@ -48,8 +46,15 @@ Singleton {
     /// has an empty `windows`.
     property var groups: []
 
+    function isControlPanel(toplevel) {
+        return toplevel && toplevel.title === "Control Panel"
+            && String(toplevel.appId).toLowerCase().indexOf("quickshell") >= 0;
+    }
+
     /// The key of the program a window belongs to, whatever `combine` says.
     function programKey(toplevel) {
+        if (isControlPanel(toplevel))
+            return "controlpanel";
         var appId = toplevel ? toplevel.appId : "";
         var entry = entryFor(appId);
         if (entry)
@@ -106,11 +111,15 @@ Singleton {
 
             if (!group) {
                 var entry = entryFor(toplevel.appId);
+                // The shell's own window: the Control Panel.
+                var ours = isControlPanel(toplevel);
                 group = {
                     key: root.combine ? key : "window:" + i,
                     entry: entry,
-                    name: entry && entry.name ? entry.name : titleOf(toplevel),
-                    icon: iconFor(toplevel.appId),
+                    name: ours ? "Control Panel"
+                        : entry && entry.name ? entry.name : titleOf(toplevel),
+                    icon: ours ? Qt.resolvedUrl("assets/icons/control-panel.svg")
+                        : iconFor(toplevel.appId),
                     pinned: false,
                     windows: []
                 };
@@ -460,15 +469,17 @@ Singleton {
           command: Quickshell.env("XDG_SESSION_ID")
               ? ["loginctl", "terminate-session", Quickshell.env("XDG_SESSION_ID")]
               : ["loginctl", "terminate-user", root.loginName] },
-        { id: "lock", label: "Lock", command: ["loginctl", "lock-session"] },
+        // The shell's own lock screen.
+        { id: "lock", label: "Lock" },
         { id: "separator" },
         { id: "restart", label: "Restart", command: ["systemctl", "reboot"] },
         { id: "sleep", label: "Sleep", command: ["systemctl", "suspend"] },
         { id: "hibernate", label: "Hibernate", command: ["systemctl", "hibernate"] },
         { id: "shutdown", label: "Shut down", command: ["systemctl", "poweroff"] }
     ]
-    /// The action the button itself runs, by id.
-    readonly property string powerButtonAction: "shutdown"
+    /// The action the button itself runs, by id. Set in the Control Panel.
+    readonly property string powerButtonAction: powerAction(Settings.powerButtonAction)
+        ? Settings.powerButtonAction : "shutdown"
 
     function powerAction(id) {
         for (var i = 0; i < powerActions.length; i++) {
@@ -479,6 +490,13 @@ Singleton {
     }
 
     function runPower(id) {
+        if (id === "lock") {
+            LockState.lock();
+            return;
+        }
+        // Lock first, so the machine wakes up locked, as Windows does.
+        if ((id === "sleep" || id === "hibernate") && Settings.lockOnSuspend)
+            LockState.lock();
         var action = powerAction(id);
         if (action && action.command)
             Quickshell.execDetached(action.command);

@@ -219,6 +219,11 @@ COMPOSITOR.key.bind(
   "Super+Right",
   withFocused((window) => WINDOWS.snap(window, "right")),
 );
+COMPOSITOR.key.bind("lock", "Super+L", () => {
+  COMPOSITOR.process.spawn({
+    command: `quickshell -p ${SHELL_PATH} ipc call lock lock`,
+  });
+});
 COMPOSITOR.key.bind("launcher", "Super+D", () => {
   COMPOSITOR.process.spawn({ command: `${VICINAE} toggle` });
 });

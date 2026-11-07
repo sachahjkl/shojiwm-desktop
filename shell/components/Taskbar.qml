@@ -158,7 +158,10 @@ Item {
                 id: showDesktopArea
                 anchors.fill: parent
                 hoverEnabled: true
-                onEntered: peekTimer.restart()
+                onEntered: {
+                    if (Settings.peek)
+                        peekTimer.restart();
+                }
                 onExited: {
                     peekTimer.stop();
                     CompositorIpc.peek(false);

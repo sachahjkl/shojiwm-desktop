@@ -28,10 +28,6 @@ var showDesktopWidth = 10;
 // How long the pointer rests on the show-desktop strip before Aero Peek.
 var peekDelay = 500;
 
-// Combine every window of one program into one button, as Windows 7 does by
-// default. Set this to false for one button per window ("never combine").
-var combineWindows = true;
-
 // ---------------------------------------------------------------------------
 // Thumbnails, over a taskbar button
 // ---------------------------------------------------------------------------

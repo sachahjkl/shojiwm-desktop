@@ -31,6 +31,9 @@ are Icons8's MIT-licensed "Flat Color Icons" (see "Licence").
 | **Notification area**   | A tray item's own menu, drawn in the same style, with its submenus, check boxes and radio buttons.                                                                                                                                                                                                                                                                            |
 | **Launcher**            | `Super`+`D` opens [Vicinae](https://github.com/vicinaehq/vicinae), a fast search for programs, files and commands, in an Aero theme that matches the Start menu. The Nix package brings Vicinae with it, from nixpkgs unstable.                                                                                                                                               |
 | **Calendar**            | Click the clock for the long date and a month, today framed, with arrows to the months around it.                                                                                                                                                                                                                                                                             |
+| **Lock screen**         | The Windows 7 log-on screen: your picture behind (or the desktop's), the time, your account picture in its glass frame, your name, and the password field with the round blue arrow. `Super`+`L`, the Start menu, `loginctl lock-session`, going to sleep and a delay of inactivity lock it; PAM checks the password.                                                         |
+| **Control Panel**       | A window laid out as the Windows 7 one: light or dark, desktop background, lock screen picture and delay, account picture, taskbar and Start menu, clock format. Every change applies at once.                                                                                                                                                                                |
+| **Light and dark**      | The system's own preference (`color-scheme`, which the settings portal passes to GTK, libadwaita, Qt, Firefox, Chromium and Vicinae). The menus, the Start menu and the Control Panel follow it too.                                                                                                                                                                          |
 | **Aero Peek**           | Rest on the show-desktop strip at the far right and every window turns into a glass outline over the desktop. Click it to put the windows away; click again to bring them back.                                                                                                                                                                                               |
 | **Start menu**          | Pinned programs, then the ones you start most, and **All Programs** with every program in folders. Type to search; the arrow keys and Return pick a result, and Return with nothing found runs what you typed. On the right: your full name, your folders (as `xdg-user-dirs` names them), and a power button whose arrow offers log off, lock, restart, sleep and hibernate. |
 
@@ -116,6 +119,29 @@ system's locale.
 
 Resting on a place shows its icon in the user's tile, as Windows 7 does.
 
+![The lock screen](assets/site/lock-screen-wrong.png)
+
+The lock screen, after a wrong password. The name is the test machine's;
+yours comes from your account.
+
+![The Control Panel](assets/site/control-panel.png)
+
+The Control Panel's home page.
+
+![The Control Panel in dark](assets/site/control-panel-dark.png)
+
+Light or dark: the system's preference. The Control Panel, the menus and the
+Start menu follow it.
+
+![The Start menu in dark](assets/site/start-menu-dark.png)
+
+The Start menu in dark.
+
+![The lock screen settings](assets/site/control-panel-lock.png)
+
+The lock screen's page: its picture, the delay of inactivity, locking on
+sleep.
+
 ![Alt+Tab](assets/site/alt-tab.png)
 
 Alt+Tab: a panel of live thumbnails, the selected window lit.
@@ -168,6 +194,14 @@ the resting gradient.
   in `PATH`.
 - The programs the keys start: **kitty**, **Thunar** and **Chromium**. Change
   them in `src/index.tsx` and `shell/Apps.qml` if you use others.
+
+- **The lock screen** checks the password with the `login` PAM service
+  (`/etc/pam.d/login`), and needs the compositor's `ext-session-lock`, which
+  ShojiWM has.
+- **Light and dark** for programs needs **dconf** (on NixOS
+  `programs.dconf.enable = true`) and a settings portal that reads it,
+  such as **xdg-desktop-portal-gtk**, which ShojiWM's NixOS module installs.
+  The Nix package brings the `dconf` and `gdbus` commands itself.
 
 Optional: `systemd` for the shut-down button, and any status-notifier
 application for the notification area.
@@ -228,65 +262,74 @@ running one.
 | `Super`+`Left` / `Super`+`Right`  | Put the window against that side               |
 | `Super`+`D`                       | The launcher (Vicinae)                         |
 | `Super`+`M`                       | Show the desktop, then put the windows back    |
+| `Super`+`L`                       | Lock                                           |
 | `Super`+drag                      | Move a window from anywhere on it              |
 | `Super`+`Shift`+`R`               | Reload this configuration (built into ShojiWM) |
 | `Super`+`Shift`+`Q`               | Quit the session (built into ShojiWM)          |
 
 ## The files
 
-| File                                                                                         | What it holds                                                                                                                                                             |
-| -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `src/index.tsx`                                                                              | The entry point: environment, keys, the programs that start with the session, the blur, the snap preview, and the composition of every window.                            |
-| `src/theme.ts`                                                                               | Every size and colour of the window frame.                                                                                                                                |
-| `src/decoration.tsx`                                                                         | The frame itself: the painted glass, the caption, the title with its glow, the caption buttons and their labels.                                                          |
-| `src/window-manager.ts`                                                                      | The floating window manager: placement, move, resize, maximise, minimise, fullscreen, double click, and Aero Snap.                                                        |
-| `src/alt-tab.tsx`                                                                            | The Alt+Tab panel, built from render textures and an input grab.                                                                                                          |
-| `src/peek.tsx`                                                                               | Aero Peek, and the socket the shell asks for it and for the show-desktop toggle through.                                                                                  |
-| `assets/frame.frag`                                                                          | The paint shader that draws the frame: the dark outer line, the light line, the glass, the two lines around the client, and the corner radii that a style cannot express. |
-| `assets/caption/*.svg`                                                                       | The three caption buttons, one file per state, drawn at their exact pixel size.                                                                                           |
-| `assets/title-glow.svg`                                                                      | The soft light behind the caption text.                                                                                                                                   |
-| `docs/aero-measurements.md`                                                                  | Every measured number, and the reference screenshot each came from.                                                                                                       |
-| `tools/make-caption-svgs.py`                                                                 | Draws `assets/caption/*.svg` from those numbers.                                                                                                                          |
-| `tools/details.py`                                                                           | Finds the windows in a capture and cuts the zoomed details out of it.                                                                                                     |
-| `tools/compare.py`                                                                           | Puts a reference and a capture side by side and measures the difference.                                                                                                  |
-| `assets/layer-mask.frag`                                                                     | Clips the blur behind a panel to the shape the panel draws.                                                                                                               |
-| `assets/*.svg`                                                                               | The caption glyphs and the two sheens. Drawn by hand.                                                                                                                     |
-| `shell/shell.qml`                                                                            | The Quickshell root: the wallpaper, the taskbar and the Start menu, one of each per screen.                                                                               |
-| `shell/theme.js`                                                                             | Every size and colour of the shell, and the combine setting.                                                                                                              |
-| `shell/Apps.qml`                                                                             | The window list, the grouping, the pinned programs, the recent files, the program list, and what a click does. The programs the places open are named here.               |
-| `shell/StartMenuState.qml`                                                                   | Which screen shows the Start menu.                                                                                                                                        |
-| `shell/StartMenuIpc.qml`                                                                     | The IPC entry point the compositor calls to open the menu.                                                                                                                |
-| `shell/CompositorIpc.qml`                                                                    | The other way round: the socket the shell uses to ask the compositor for Aero Peek and the show-desktop toggle.                                                           |
-| `shell/components/Taskbar.qml`                                                               | The bar, and the three popups its buttons ask for.                                                                                                                        |
-| `shell/components/TaskButton.qml`                                                            | One program: its stack, its states, its clicks.                                                                                                                           |
-| `shell/components/ThumbnailPopup.qml`                                                        | The live pictures over a button.                                                                                                                                          |
-| `shell/components/JumpList.qml`                                                              | The recent files and the tasks of a program, on a right click.                                                                                                            |
-| `shell/components/TrayMenu.qml`                                                              | A notification-area item's own menu, and each of its submenus.                                                                                                            |
-| `shell/components/MenuItemRow.qml`                                                           | One line of either menu.                                                                                                                                                  |
-| `shell/components/StartMenu.qml`, `StartOrb.qml`, `Clock.qml`, `TrayArea.qml`, `MenuRow.qml` | The Start menu, the orb, the clock, the notification area, and one menu line.                                                                                             |
-| `shell/components/PowerMenu.qml`, `PowerPart.qml`                                            | The menu behind the power button's arrow, and the two halves of that button.                                                                                              |
-| `shell/components/CalendarPopup.qml`, `CalendarArrow.qml`                                    | The calendar over the clock.                                                                                                                                              |
-| `shell/assets/icons/`                                                                        | The colour icons (Icons8, MIT), fetched by `tools/fetch-icons.sh`.                                                                                                        |
-| `assets/vicinae/`                                                                            | Vicinae's settings (`aero.json`) and its Aero theme (`vicinae/themes/aero.toml`).                                                                                         |
-| `shell/assets/*.svg`                                                                         | The orb, the place icons, the account tile and the wallpaper. Drawn by hand.                                                                                              |
-| `tools/screenshots.sh`                                                                       | Runs the whole desktop on a machine with no display and takes the pictures in this file.                                                                                  |
-| `flake.nix`                                                                                  | The package, the install command, and the checks.                                                                                                                         |
+| File                                                                                                | What it holds                                                                                                                                                             |
+| --------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/index.tsx`                                                                                     | The entry point: environment, keys, the programs that start with the session, the blur, the snap preview, and the composition of every window.                            |
+| `src/theme.ts`                                                                                      | Every size and colour of the window frame.                                                                                                                                |
+| `src/decoration.tsx`                                                                                | The frame itself: the painted glass, the caption, the title with its glow, the caption buttons and their labels.                                                          |
+| `src/window-manager.ts`                                                                             | The floating window manager: placement, move, resize, maximise, minimise, fullscreen, double click, and Aero Snap.                                                        |
+| `src/alt-tab.tsx`                                                                                   | The Alt+Tab panel, built from render textures and an input grab.                                                                                                          |
+| `src/peek.tsx`                                                                                      | Aero Peek, and the socket the shell asks for it and for the show-desktop toggle through.                                                                                  |
+| `assets/frame.frag`                                                                                 | The paint shader that draws the frame: the dark outer line, the light line, the glass, the two lines around the client, and the corner radii that a style cannot express. |
+| `assets/caption/*.svg`                                                                              | The three caption buttons, one file per state, drawn at their exact pixel size.                                                                                           |
+| `assets/title-glow.svg`                                                                             | The soft light behind the caption text.                                                                                                                                   |
+| `docs/aero-measurements.md`                                                                         | Every measured number, and the reference screenshot each came from.                                                                                                       |
+| `tools/make-caption-svgs.py`                                                                        | Draws `assets/caption/*.svg` from those numbers.                                                                                                                          |
+| `tools/details.py`                                                                                  | Finds the windows in a capture and cuts the zoomed details out of it.                                                                                                     |
+| `tools/compare.py`                                                                                  | Puts a reference and a capture side by side and measures the difference.                                                                                                  |
+| `assets/layer-mask.frag`                                                                            | Clips the blur behind a panel to the shape the panel draws.                                                                                                               |
+| `assets/*.svg`                                                                                      | The caption glyphs and the two sheens. Drawn by hand.                                                                                                                     |
+| `shell/shell.qml`                                                                                   | The Quickshell root: the wallpaper, the taskbar and the Start menu, one of each per screen.                                                                               |
+| `shell/theme.js`                                                                                    | Every size and colour of the shell, and the combine setting.                                                                                                              |
+| `shell/Apps.qml`                                                                                    | The window list, the grouping, the pinned programs, the recent files, the program list, and what a click does. The programs the places open are named here.               |
+| `shell/StartMenuState.qml`                                                                          | Which screen shows the Start menu.                                                                                                                                        |
+| `shell/StartMenuIpc.qml`                                                                            | The IPC entry point the compositor calls to open the menu.                                                                                                                |
+| `shell/Settings.qml`                                                                                | What the Control Panel changes, kept in `~/.config/shojiwm/settings.json`, and the system's light or dark preference.                                                     |
+| `shell/Scheme.qml`                                                                                  | The colours that change between light and dark.                                                                                                                           |
+| `shell/LockState.qml`, `shell/components/LockScreen.qml`                                            | Everything that locks the session, the PAM check, and the lock screen itself.                                                                                             |
+| `shell/ControlPanelState.qml`, `shell/components/ControlPanel.qml`, `Cp*.qml`, `PictureChooser.qml` | The Control Panel window, its pages and its controls.                                                                                                                     |
+| `shell/tools.js`                                                                                    | The paths of `dconf` and `gdbus`, which the Nix package fills in.                                                                                                         |
+| `shell/CompositorIpc.qml`                                                                           | The other way round: the socket the shell uses to ask the compositor for Aero Peek and the show-desktop toggle.                                                           |
+| `shell/components/Taskbar.qml`                                                                      | The bar, and the three popups its buttons ask for.                                                                                                                        |
+| `shell/components/TaskButton.qml`                                                                   | One program: its stack, its states, its clicks.                                                                                                                           |
+| `shell/components/ThumbnailPopup.qml`                                                               | The live pictures over a button.                                                                                                                                          |
+| `shell/components/JumpList.qml`                                                                     | The recent files and the tasks of a program, on a right click.                                                                                                            |
+| `shell/components/TrayMenu.qml`                                                                     | A notification-area item's own menu, and each of its submenus.                                                                                                            |
+| `shell/components/MenuItemRow.qml`                                                                  | One line of either menu.                                                                                                                                                  |
+| `shell/components/StartMenu.qml`, `StartOrb.qml`, `Clock.qml`, `TrayArea.qml`, `MenuRow.qml`        | The Start menu, the orb, the clock, the notification area, and one menu line.                                                                                             |
+| `shell/components/PowerMenu.qml`, `PowerPart.qml`                                                   | The menu behind the power button's arrow, and the two halves of that button.                                                                                              |
+| `shell/components/CalendarPopup.qml`, `CalendarArrow.qml`                                           | The calendar over the clock.                                                                                                                                              |
+| `shell/assets/icons/`                                                                               | The colour icons (Icons8, MIT), fetched by `tools/fetch-icons.sh`.                                                                                                        |
+| `assets/vicinae/`                                                                                   | Vicinae's settings (`aero.json`) and its Aero theme (`vicinae/themes/aero.toml`).                                                                                         |
+| `shell/assets/*.svg`                                                                                | The orb, the place icons, the account tile and the wallpaper. Drawn by hand.                                                                                              |
+| `tools/screenshots.sh`                                                                              | Runs the whole desktop on a machine with no display and takes the pictures in this file.                                                                                  |
+| `flake.nix`                                                                                         | The package, the install command, and the checks.                                                                                                                         |
 
 ## Changing it
 
 - **Programs:** `TERMINAL`, `FILE_MANAGER` and `BROWSER` at the top of
-  `src/index.tsx`, and `terminal`, `fileManager`, `browser`, `controlPanel`
-  at the top of `shell/Apps.qml`. `pinnedIds` there is the Start menu's
+  `src/index.tsx`, and `terminal`, `fileManager` and `browser` at the top of
+  `shell/Apps.qml`. `pinnedIds` there is the Start menu's
   pinned list and `taskbarPinnedIds` the taskbar's, both as `.desktop` file
   names.
+- **Most things:** the **Control Panel** (Start menu → Control Panel). It
+  writes `~/.config/shojiwm/settings.json`, which an update of the
+  configuration leaves alone and which can be edited by hand.
 - **Power:** `powerActions` in `shell/Apps.qml` holds each command (`loginctl`
-  and `systemctl` by default), and `powerButtonAction` which one the button
+  and `systemctl` by default); the Control Panel picks which one the button
   itself runs.
 - **Frame colours and sizes:** `src/theme.ts`.
-- **Shell colours and sizes:** `shell/theme.js`. Set `combineWindows` to
-  `false` there for one taskbar button per window.
-- **Wallpaper:** replace `shell/assets/wallpaper.svg`, or point the `Image` in
-  `shell/shell.qml` at your own file.
+- **Shell colours and sizes:** `shell/theme.js`, and `shell/Scheme.qml` for
+  the colours that change between light and dark.
+- **Wallpaper, lock screen picture, account picture:** the Control Panel, or
+  `~/.face` for the account picture.
 
 Press `Super`+`Shift`+`R` after a change to `src`. The shell reloads itself
 when a QML file changes.

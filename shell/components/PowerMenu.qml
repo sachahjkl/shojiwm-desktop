@@ -59,10 +59,10 @@ PopupWindow {
         anchors.fill: parent
         radius: 4
         border.width: 1
-        border.color: Theme.popupOutline
+        border.color: Scheme.popupOutline
         gradient: Gradient {
-            GradientStop { position: 0.0; color: Theme.popupTop }
-            GradientStop { position: 1.0; color: Theme.popupBottom }
+            GradientStop { position: 0.0; color: Scheme.popupTop }
+            GradientStop { position: 1.0; color: Scheme.popupBottom }
         }
     }
 

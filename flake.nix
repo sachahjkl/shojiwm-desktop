@@ -73,6 +73,10 @@
           substituteInPlace "$out/src/index.tsx" \
             --replace-fail 'const VICINAE = "vicinae";' \
               'const VICINAE = "${vicinae}/bin/vicinae";'
+          # dconf for the light or dark preference, gdbus for logind's Lock.
+          substituteInPlace "$out/shell/tools.js" \
+            --replace-fail 'var dconf = "dconf";' 'var dconf = "${nixpkgs.lib.getExe' pkgs.dconf "dconf"}";' \
+            --replace-fail 'var gdbus = "gdbus";' 'var gdbus = "${nixpkgs.lib.getExe' pkgs.glib "gdbus"}";'
           runHook postInstall
         '';
 
@@ -161,6 +165,10 @@
           singleton StartMenuState 1.0 StartMenuState.qml
           singleton StartMenuIpc 1.0 StartMenuIpc.qml
           singleton CompositorIpc 1.0 CompositorIpc.qml
+          singleton Settings 1.0 Settings.qml
+          singleton Scheme 1.0 Scheme.qml
+          singleton LockState 1.0 LockState.qml
+          singleton ControlPanelState 1.0 ControlPanelState.qml
           EOF
           cd ./shell
           qmllint \

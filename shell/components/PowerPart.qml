@@ -1,4 +1,5 @@
 import QtQuick
+import ".."
 import "../theme.js" as Theme
 
 // One half of the Start menu's power button: the button itself, or the
@@ -14,10 +15,10 @@ Item {
 
     height: parent ? parent.height : 28
 
-    readonly property color fillTop: part.pressed ? "#c6dcef"
-        : part.hot ? "#ffffff" : "#eef6ff"
-    readonly property color fillBottom: part.pressed ? "#9fc0dc"
-        : part.hot ? "#d4e6f5" : "#c3d7e8"
+    readonly property color fillTop: part.pressed ? Scheme.buttonPressedTop
+        : part.hot ? Scheme.buttonHotTop : Scheme.buttonTop
+    readonly property color fillBottom: part.pressed ? Scheme.buttonPressedBottom
+        : part.hot ? Scheme.buttonHotBottom : Scheme.buttonBottom
 
     // Rounded all round, then squared off on the inner side by a second
     // rectangle that covers those corners.
@@ -25,7 +26,7 @@ Item {
         anchors.fill: parent
         radius: 3
         border.width: 1
-        border.color: Theme.menuOutline
+        border.color: Scheme.menuOutline
         gradient: Gradient {
             GradientStop { position: 0.0; color: part.fillTop }
             GradientStop { position: 1.0; color: part.fillBottom }
@@ -45,8 +46,8 @@ Item {
         }
 
         // The outline along the top and the bottom of the squared side.
-        Rectangle { anchors.top: parent.top; width: parent.width; height: 1; color: Theme.menuOutline }
-        Rectangle { anchors.bottom: parent.bottom; width: parent.width; height: 1; color: Theme.menuOutline }
+        Rectangle { anchors.top: parent.top; width: parent.width; height: 1; color: Scheme.menuOutline }
+        Rectangle { anchors.bottom: parent.bottom; width: parent.width; height: 1; color: Scheme.menuOutline }
     }
 
     // The line between the two halves: on the arrow's left edge.
@@ -55,6 +56,6 @@ Item {
         anchors.top: parent.top
         anchors.bottom: parent.bottom
         width: 1
-        color: Theme.menuOutline
+        color: Scheme.menuOutline
     }
 }

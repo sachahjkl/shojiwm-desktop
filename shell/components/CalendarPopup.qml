@@ -2,6 +2,7 @@ pragma ComponentBehavior: Bound
 
 import QtQuick
 import Quickshell
+import ".."
 import "../theme.js" as Theme
 
 // The calendar a click on the clock opens, as Windows 7 shows it: the long
@@ -93,10 +94,10 @@ PopupWindow {
         anchors.fill: parent
         radius: 5
         border.width: 1
-        border.color: Theme.popupOutline
+        border.color: Scheme.popupOutline
         gradient: Gradient {
-            GradientStop { position: 0.0; color: Theme.popupTop }
-            GradientStop { position: 1.0; color: Theme.popupBottom }
+            GradientStop { position: 0.0; color: Scheme.popupTop }
+            GradientStop { position: 1.0; color: Scheme.popupBottom }
         }
     }
 
@@ -122,7 +123,7 @@ PopupWindow {
             width: parent.width
             horizontalAlignment: Text.AlignHCenter
             text: popup.today.toLocaleDateString(popup.locale, Locale.LongFormat)
-            color: Theme.calendarLink
+            color: Scheme.link
             font.family: Theme.fontFamily
             font.pixelSize: Theme.fontSize
             elide: Text.ElideRight
@@ -131,7 +132,7 @@ PopupWindow {
         Rectangle {
             width: parent.width
             height: 1
-            color: Theme.menuDivider
+            color: Scheme.menuDivider
         }
 
         // The month, between its arrows.
@@ -149,7 +150,7 @@ PopupWindow {
             Text {
                 anchors.centerIn: parent
                 text: popup.month.toLocaleDateString(popup.locale, "MMMM yyyy")
-                color: Theme.textOnMenu
+                color: Scheme.text
                 font.family: Theme.fontFamily
                 font.pixelSize: Theme.fontSize + 1
                 font.bold: true
@@ -175,7 +176,7 @@ PopupWindow {
                     height: 20
                     horizontalAlignment: Text.AlignHCenter
                     text: modelData
-                    color: Theme.menuHeading
+                    color: Scheme.menuHeading
                     font.family: Theme.fontFamily
                     font.pixelSize: Theme.fontSizeSmall
                 }
@@ -199,17 +200,17 @@ PopupWindow {
                         anchors.fill: parent
                         anchors.margins: 1
                         radius: 2
-                        color: day.isToday ? Theme.selection
-                            : dayArea.containsMouse ? Theme.calendarHover : "transparent"
+                        color: day.isToday ? Scheme.selection
+                            : dayArea.containsMouse ? Scheme.hover : "transparent"
                         border.width: day.isToday || dayArea.containsMouse ? 1 : 0
-                        border.color: day.isToday ? Theme.calendarToday
-                            : Theme.selectionBorder
+                        border.color: day.isToday ? Scheme.today
+                            : Scheme.selectionBorder
                     }
 
                     Text {
                         anchors.centerIn: parent
                         text: day.modelData.getDate()
-                        color: day.inMonth ? Theme.textOnMenu : Theme.calendarOtherMonth
+                        color: day.inMonth ? Scheme.text : Scheme.otherMonth
                         font.family: Theme.fontFamily
                         font.pixelSize: Theme.fontSize
                         font.bold: day.isToday
@@ -236,7 +237,7 @@ PopupWindow {
             horizontalAlignment: Text.AlignHCenter
             visible: !popup.sameDay(popup.month, popup.firstOfMonth(popup.today))
             text: "Today"
-            color: Theme.calendarLink
+            color: Scheme.link
             font.family: Theme.fontFamily
             font.pixelSize: Theme.fontSize
             font.underline: todayArea.containsMouse

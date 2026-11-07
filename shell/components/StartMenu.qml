@@ -71,10 +71,10 @@ Item {
         anchors.fill: parent
         radius: 5
         border.width: 1
-        border.color: Theme.menuOutline
+        border.color: Scheme.menuOutline
         gradient: Gradient {
-            GradientStop { position: 0.0; color: Theme.menuTop }
-            GradientStop { position: 1.0; color: Theme.menuBottom }
+            GradientStop { position: 0.0; color: Scheme.menuTop }
+            GradientStop { position: 1.0; color: Scheme.menuBottom }
         }
     }
 
@@ -116,7 +116,7 @@ Item {
 
                     Image {
                         anchors.fill: parent
-                        source: "../assets/user.svg"
+                        source: Settings.userPictureSource
                         sourceSize.width: 88
                         sourceSize.height: 88
                         smooth: true
@@ -170,7 +170,7 @@ Item {
             Rectangle {
                 width: parent.width
                 height: 1
-                color: Theme.menuDivider
+                color: Scheme.menuDivider
             }
 
             Repeater {
@@ -189,7 +189,7 @@ Item {
                     { label: "Computer", icon: "place-computer.svg", tile: "computer",
                       path: "/" },
                     { label: "Control Panel", icon: "place-settings.svg", tile: "control-panel",
-                      command: Apps.controlPanel }
+                      panel: true }
                 ]
 
                 delegate: Item {
@@ -204,7 +204,7 @@ Item {
                         anchors.verticalCenter: parent.verticalCenter
                         width: parent.width
                         height: 1
-                        color: Theme.menuDivider
+                        color: Scheme.menuDivider
                         visible: place.modelData.separator === true
                     }
 
@@ -222,7 +222,9 @@ Item {
                                 menu.hoveredPlace = "";
                         }
                         onActivated: {
-                            if (place.modelData.command)
+                            if (place.modelData.panel)
+                                ControlPanelState.open("");
+                            else if (place.modelData.command)
                                 Apps.run(place.modelData.command);
                             else
                                 Apps.openPath(place.modelData.path);
@@ -268,7 +270,7 @@ Item {
                     Text {
                         anchors.verticalCenter: parent.verticalCenter
                         text: power.action ? power.action.label : ""
-                        color: Theme.textOnMenu
+                        color: Scheme.text
                         font.family: Theme.fontFamily
                         font.pixelSize: Theme.fontSize
                     }
@@ -296,7 +298,7 @@ Item {
                 Text {
                     anchors.centerIn: parent
                     text: "▸"
-                    color: Theme.textOnMenu
+                    color: Scheme.text
                     font.family: Theme.fontFamily
                     font.pixelSize: Theme.fontSize
                 }
@@ -380,17 +382,18 @@ Item {
                     width: homeColumn.width
                     height: 9
                     visible: Apps.pinned.length > 0 && Apps.frequent.length > 0
+                        && Settings.showFrequent
 
                     Rectangle {
                         anchors.verticalCenter: parent.verticalCenter
                         width: parent.width
                         height: 1
-                        color: Theme.menuDivider
+                        color: Scheme.menuDivider
                     }
                 }
 
                 Repeater {
-                    model: Apps.frequent
+                    model: Settings.showFrequent ? Apps.frequent : []
 
                     delegate: MenuRow {
                         required property var modelData
@@ -515,7 +518,7 @@ Item {
                 anchors.topMargin: 4
                 width: parent.width
                 height: 1
-                color: Theme.menuDivider
+                color: Scheme.menuDivider
             }
 
             MenuRow {
@@ -542,9 +545,9 @@ Item {
             anchors.margins: Theme.menuPadding
             height: Theme.menuSearchHeight
             radius: 3
-            color: "#ffffff"
+            color: Scheme.field
             border.width: 1
-            border.color: search.activeFocus ? "#3f82b4" : "#8fa9bf"
+            border.color: search.activeFocus ? Scheme.fieldFocus : Scheme.fieldBorder
 
             Image {
                 id: searchIcon
@@ -567,7 +570,7 @@ Item {
                 anchors.right: parent.right
                 anchors.rightMargin: 6
                 anchors.verticalCenter: parent.verticalCenter
-                color: Theme.textOnMenu
+                color: Scheme.text
                 font.family: Theme.fontFamily
                 font.pixelSize: Theme.fontSize
                 selectByMouse: true
@@ -580,7 +583,7 @@ Item {
                     anchors.fill: parent
                     verticalAlignment: Text.AlignVCenter
                     text: "Search programs, or type a command"
-                    color: "#7d95a9"
+                    color: Scheme.placeholder
                     font: search.font
                     elide: Text.ElideRight
                     visible: search.text.length === 0

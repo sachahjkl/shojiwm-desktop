@@ -4,7 +4,7 @@
   // change in Vicinae's own settings goes there and wins over this.
   "theme": {
     "light": { "name": "aero", "icon_theme": "auto" },
-    "dark": { "name": "aero", "icon_theme": "auto" }
+    "dark": { "name": "aero-dark", "icon_theme": "auto" }
   },
   "launcher_window": {
     // Translucent, so the compositor's blur shows through, as it does
