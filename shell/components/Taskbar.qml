@@ -39,19 +39,32 @@ Item {
 
     Rectangle {
         anchors.fill: parent
+        // Light at the top, darkest a little under half way, a slight lift
+        // in the lower third: the shape a Windows 7 taskbar has.
         gradient: Gradient {
             GradientStop { position: 0.0; color: Theme.barTop }
-            GradientStop { position: 0.12; color: Theme.barMiddle }
-            GradientStop { position: 0.92; color: Theme.barMiddle }
+            GradientStop { position: 0.1; color: Theme.barUpper }
+            GradientStop { position: 0.45; color: Theme.barMiddle }
+            GradientStop { position: 0.78; color: Theme.barLower }
             GradientStop { position: 1.0; color: Theme.barBottom }
         }
     }
 
-    // The lit top edge, and the hairline at the bottom.
+    // The top edge of a Windows 7 taskbar is a dark hairline with a lit one
+    // under it, in that order (measured on the reference desktop: #313030
+    // then #a6a7a4).
     Rectangle {
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.top: parent.top
+        height: 1
+        color: Theme.barEdge
+    }
+    Rectangle {
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.top: parent.top
+        anchors.topMargin: 1
         height: 1
         color: Theme.barHighlight
     }
@@ -60,7 +73,7 @@ Item {
         anchors.right: parent.right
         anchors.bottom: parent.bottom
         height: 1
-        color: Theme.barEdge
+        color: Theme.barBottomEdge
     }
 
     // ----- the right hand end -----------------------------------------------
@@ -137,7 +150,7 @@ Item {
         id: orb
 
         anchors.left: parent.left
-        anchors.leftMargin: Theme.taskbarPadding
+        anchors.leftMargin: Theme.orbLeft
         anchors.verticalCenter: parent.verticalCenter
         menuOpen: bar.menuOpen
         onActivated: {

@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="28" height="18" viewBox="0 0 28 18" shape-rendering="crispEdges">
+<!-- Drawn by tools/make-caption-svgs.py from docs/aero-measurements.md. -->
+<defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0.0000" stop-color="#cfe3f2" stop-opacity="0.85"/><stop offset="0.2353" stop-color="#b9d6ea" stop-opacity="0.85"/><stop offset="0.4118" stop-color="#a4c8e0" stop-opacity="0.85"/><stop offset="0.4706" stop-color="#a4c8e0" stop-opacity="0.85"/><stop offset="0.4706" stop-color="#255a84" stop-opacity="0.9"/><stop offset="0.5882" stop-color="#24597f" stop-opacity="0.92"/><stop offset="0.7647" stop-color="#36708f" stop-opacity="0.85"/><stop offset="0.8824" stop-color="#6fa6c6" stop-opacity="0.6"/><stop offset="0.9412" stop-color="#6fa6c6" stop-opacity="0.6"/><stop offset="0.9412" stop-color="#cfe3f2" stop-opacity="0.6"/><stop offset="1" stop-color="#cfe3f2" stop-opacity="0.6"/></linearGradient></defs>
+<rect x="1" y="0" width="27" height="17" fill="url(#g)"/>
+<rect x="1" y="0" width="1" height="17" fill="#ffffff" fill-opacity="0.45"/>
+<rect x="27" y="0" width="1" height="17" fill="#ffffff" fill-opacity="0.45"/>
+<rect x="0" y="0" width="1" height="18" fill="#242c35"/>
+<rect x="0" y="17" width="28" height="1" fill="#242c35"/>
+<g shape-rendering="auto"><rect x="9" y="8" width="12" height="5" fill="#535666"/><rect x="10" y="9" width="10" height="3" fill="#ffffff"/></g>
+</svg>

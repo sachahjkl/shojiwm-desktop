@@ -1,80 +1,99 @@
 /**
- * Every size and colour the window frame is drawn from.
- *
- * The frame is built like the Aero frame of Windows 7: a thin dark outline, a
- * translucent glass body, a bright inner line, then the client surface.
+ * Every size and colour of the window frame, measured off real Windows 7
+ * screenshots. The readings and their sources are in
+ * `docs/aero-measurements.md`; change a number here only with a measurement
+ * to back it.
  */
 
-/** Frame metrics, in logical pixels. */
+/** Frame metrics, in logical pixels at 100%. */
 export const FRAME = {
-  /** The dark outline around the whole window. */
-  outline: 1,
-  /** The glass body on the left, right and bottom edges. */
-  glass: 5,
-  /** The bright line between the glass and the client surface. */
-  clientEdge: 1,
-  /** Height of the caption bar, outline excluded. */
-  caption: 28,
-  /** Corner radius of the frame. */
-  radius: 6,
+  /** Window top to client top. */
+  caption: 30,
+  /**
+   * The same, maximised. Windows pushes the frame off the screen then, so
+   * only the two lines around the client are left of the border.
+   */
+  captionMaximized: 22,
+  /** Left, right and bottom. */
+  border: 8,
+  borderMaximized: 2,
+  /** The two top corners. */
+  radiusTop: 6,
+  /** The two bottom corners. */
+  radiusBottom: 5,
+  /**
+   * The caption button group hangs from the top edge of the window: it
+   * starts on the first glass row, right under the two lines of the frame,
+   * and has no top border of its own. Maximised, it starts at the very top.
+   */
+  buttonHeight: 18,
+  buttonTop: 2,
+  buttonTopMaximized: 0,
+  /** Distance from the group's right edge to the window's right edge. */
+  buttonRight: 7,
+  buttonRightMaximized: 1,
+  /** The icon, and the space around it. */
+  iconSize: 16,
+  iconLeft: 11,
+  iconGap: 3,
+  /** Caption text: Segoe UI 9 pt is 12 px at 96 DPI. */
+  fontSize: 12,
+  /** The box the title and its glow live in. */
+  titleHeight: 16,
+  /** How far the glow reaches past the text. */
+  glowMargin: 9,
 } as const;
 
 /** Width the frame adds to the client surface. */
-export const FRAME_WIDTH_EXTRA =
-  2 * (FRAME.outline + FRAME.glass + FRAME.clientEdge);
+export const FRAME_WIDTH_EXTRA = 2 * FRAME.border;
 
 /** Height the frame adds to the client surface. */
-export const FRAME_HEIGHT_EXTRA =
-  FRAME.outline +
-  FRAME.caption +
-  2 * FRAME.clientEdge +
-  FRAME.glass +
-  FRAME.outline;
+export const FRAME_HEIGHT_EXTRA = FRAME.caption + FRAME.border;
 
-/** Caption button sizes, in logical pixels. */
+/** Widths of the three caption buttons, dark separators included. */
 export const CAPTION_BUTTON = {
-  width: 29,
-  closeWidth: 45,
-  height: 20,
-  /** Distance from the button group to the right edge of the caption. */
-  inset: 2,
+  minimize: 28,
+  maximize: 27,
+  close: 48,
 } as const;
 
 /**
- * Colours. Every value is `#rrggbbaa`. The glass colours are tints: the
- * compositor blurs the desktop behind them, and these are painted on top.
+ * Colours. Every value is `#rrggbbaa`, the order ShojiWM reads.
+ *
+ * The glass is a tint over the compositor's blur, so its alpha matters: the
+ * numbers below reproduce both a window over a black desktop and one over a
+ * pale sky, which is how they were solved.
  */
 export const COLOR = {
-  /** Caption and frame tint of the focused window. */
-  glassActive: "#5b86ad6b",
-  /** Caption and frame tint of every other window. */
-  glassInactive: "#8ea3b566",
-  /** The dark outline of the focused window. */
-  outlineActive: "#15314dcc",
-  /** The dark outline of every other window. */
-  outlineInactive: "#5c6c7a99",
-  /** The bright line around the client surface. */
-  clientEdgeActive: "#ffffff73",
-  clientEdgeInactive: "#ffffff40",
+  /** The glass of an active window. */
+  glassActive: "#538ebe7a",
+  /**
+   * The glass of every other window. Windows drains the colour out of it and
+   * makes it heavier, so the caption stays legible over any wallpaper.
+   */
+  glassInactive: "#c2ced79e",
+  /** The 1 px line around the outside. */
+  outlineActive: "#000000cc",
+  outlineInactive: "#243039b3",
+  /** The 1 px light line just inside it. */
+  highlightActive: "#ffffffeb",
+  highlightInactive: "#ffffffb3",
+  /** The two lines around the client area. */
+  clientLightActive: "#ffffffb3",
+  clientLightInactive: "#ffffff80",
+  clientDarkActive: "#0b1b2abf",
+  clientDarkInactive: "#55656fb3",
   /** Caption text. */
-  titleActive: "#ffffff",
-  titleInactive: "#e8f0f7cc",
-  /** The pale copies drawn under the title of the focused window. */
-  titleGlow: "#eaf6ff",
-  /** Caption button, at rest and under the pointer. */
-  buttonRest: "#ffffff1a",
-  buttonHover: "#bfe4ff73",
-  buttonPress: "#8fc8ef8c",
-  buttonBorder: "#ffffff4d",
-  /** The close button: red at rest, bright red under the pointer. */
-  closeRest: "#c3493599",
-  closeHover: "#e85a42e6",
-  closePress: "#b63c29f2",
-  closeGlow: "#ff5a3aa6",
+  titleActive: "#000000",
+  titleInactive: "#46545e",
 } as const;
 
-/** Text. Inter is a free face; the fallbacks cover a system without it. */
-export const FONT = ["Inter", "Noto Sans", "DejaVu Sans"];
+/**
+ * The faces to ask for, in order. Selawik is Microsoft's own metric match
+ * for Segoe UI under the MIT licence; Open Sans is the closest thing in
+ * nixpkgs.
+ */
+export const FONT = ["Selawik", "Open Sans", "Noto Sans", "DejaVu Sans"];
 
 /** Animation lengths, in milliseconds. Short, as on Windows 7. */
 export const TIMING = {

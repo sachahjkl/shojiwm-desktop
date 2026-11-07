@@ -6,14 +6,14 @@
   -->
   <defs>
     <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#030b16"/>
-      <stop offset=".45" stop-color="#07243f"/>
-      <stop offset=".78" stop-color="#0d4a72"/>
-      <stop offset="1" stop-color="#06243b"/>
+      <stop offset="0" stop-color="#0d3a63"/>
+      <stop offset=".42" stop-color="#1b5e97"/>
+      <stop offset=".74" stop-color="#2f8cc4"/>
+      <stop offset="1" stop-color="#12527f"/>
     </linearGradient>
     <radialGradient id="glow" cx=".5" cy=".86" r=".62">
-      <stop offset="0" stop-color="#7fd8ff" stop-opacity=".55"/>
-      <stop offset=".35" stop-color="#2f9ad6" stop-opacity=".25"/>
+      <stop offset="0" stop-color="#bdeeff" stop-opacity=".75"/>
+      <stop offset=".35" stop-color="#5fc0ee" stop-opacity=".35"/>
       <stop offset="1" stop-color="#2f9ad6" stop-opacity="0"/>
     </radialGradient>
     <linearGradient id="ribbonA" x1="0" y1="0" x2="1" y2="0">

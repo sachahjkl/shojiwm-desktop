@@ -1,0 +1,153 @@
+# Handoff
+
+This branch, `wip-aero-polish`, carries work that was done on a server with
+no display. `main` is untouched and still holds the previous state.
+
+Everything below was checked with a nested compositor inside an X server with
+no screen, Mesa in software, at 1280x800 and scale 1. Nothing was ever run on
+a real GPU.
+
+## Validated by the owner — do not change
+
+- **The top-right corner of a window and the three caption buttons.** The
+  owner looked at the zoomed capture and called it right. The geometry, the
+  colours and the placement of `assets/caption/*.svg`, of the group in
+  `src/decoration.tsx`, and of the numbers in `src/theme.ts` that drive them
+  must stay as they are. Change them only if a measurement proves a bug, and
+  say why.
+- **The title text.** The old version drew ten offset copies of the label as
+  a fake glow, which put a hard white outline around every letter. It is now
+  crisp dark text over one soft shape (`assets/title-glow.svg`). The owner
+  asked for that and has seen the result.
+
+## Done, not reviewed
+
+1. The whole frame is painted by `assets/frame.frag`: 1 px dark outer line,
+   1 px light line, the glass, 1 px light line, 1 px dark line, then the
+   client. Top corners 6 px, bottom corners 5 px, square when maximised.
+2. Maximised windows use the measured metrics: 22 px caption, 2 px border,
+   the button group flush with the top and 1 px from the right.
+3. The shell draws its text with grey antialiasing
+   (`QSG_DISTANCEFIELD_ANTIALIASING=gray` in `shell/shell.qml`). Before that,
+   every glyph of the bar and the menus had red and blue fringes.
+4. The taskbar's top edge is a dark hairline with a lit one under it, and the
+   body follows the Windows gradient shape.
+5. The start orb is 36 px, 8 px from the left edge.
+6. The wallpaper is brighter, so the glass reads like Aero rather than like
+   smoked glass.
+
+## What remains, in priority order
+
+1. **Look at all of it on a real GPU.** Colours, blur, animation speed and
+   input have never been seen outside llvmpipe.
+2. **The inactive window.** `COLOR.glassInactive` in `src/theme.ts:74` is very
+   pale. Windows keeps more colour in it. No 1:1 reference of an inactive
+   window could be downloaded, so it is a guess.
+3. **The hover and pressed caption buttons.** `tools/make-caption-svgs.py:52`
+   and `:72` hold them. They are invented: no screenshot catches a caption
+   button under the pointer. Check them against a running Windows 7 if you
+   have one.
+4. **The Start menu, Alt+Tab and the menus.** They are in the Aero spirit but
+   were never measured: Wikimedia rate-limited the downloads before a 1:1
+   Start menu or Alt+Tab could be fetched.
+5. **The taskbar glass alpha.** Only one wallpaper was available behind a
+   reference taskbar, so colour and alpha could not be separated. The
+   gradient is right over a dark wallpaper and too dark over a light one.
+6. **Live taskbar thumbnails.** `shell/theme.js:45` turns them on. See the
+   defect below.
+7. **Aero Peek, jump-list recent files, pinned taskbar programs.** Not
+   written; the README lists them.
+
+## Known defects
+
+| Defect                                                                                                                                 | Where                                                      | Why                                                                                                                                                                                                       |
+| -------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| The glow behind the title is a soft box, not the shape of the letters. It lights the space between two words as much as the words.     | `src/decoration.tsx:165`, `assets/title-glow.svg`          | `SSDStyle` has no shadow and no blur for a `<Label/>`. There is no way to blur a text shape in the config API.                                                                                            |
+| The Alt+Tab panel has no window title and square corners.                                                                              | `src/alt-tab.tsx:309`                                      | An output composition has no label node and `<Solid>` has no radius.                                                                                                                                      |
+| Live window thumbnails end the shell's Wayland connection.                                                                             | `shell/theme.js:45`, `shell/components/ThumbnailPopup.qml` | With Quickshell 0.3.0 and 0.3.2 against ShojiWM `9e778dc`, asking for a capture kills the client: "fatal error: Invalid argument". Try again on the real session; it may be a software-rendering problem. |
+| The caption button group is 103 px wide. The reference also has a 1 px light bevel outside its left and right dark borders, so 105 px. | `tools/make-caption-svgs.py`                               | Measured late, after the owner validated the corner. Left alone on purpose.                                                                                                                               |
+| A menu closes 900 ms after the pointer leaves it.                                                                                      | `shell/components/Taskbar.qml`                             | A layer-shell popup is told nothing about a press outside itself.                                                                                                                                         |
+| `tools/details.py` needs the frame sizes.                                                                                              | `tools/details.py:119`                                     | It finds a window by its close button, then uses the size the capture asked for. If `tools/screenshots.sh` changes the `foot` window size, change it there too.                                           |
+
+## The measurements
+
+`docs/aero-measurements.md` holds every number and the image it came from:
+frame layers and radii, the caption button group and its gradients row by
+row, the four glyphs pixel by pixel, the title metrics, the maximised
+metrics, and the taskbar. Change a number there and in
+`tools/make-caption-svgs.py` together, then run:
+
+```sh
+python3 -I tools/make-caption-svgs.py
+```
+
+The reference images are **not** in the repository and must not be committed.
+
+## Running it on a real session
+
+```sh
+# once, to put the configuration in ~/.config/shojiwm
+nix run github:sachahjkl/shojiwm-win7/wip-aero-polish#install
+
+# the compositor itself, if it is not installed yet
+nix run github:bea4dev/ShojiWM#init-config     # links node_modules/shoji_wm
+```
+
+Then log out and pick **ShojiWM** in the login manager, or run `shoji_wm
+--tty` from a console. `Super`+`Shift`+`R` reloads the configuration without
+restarting the session; `Super`+`Shift`+`Q` quits it.
+
+Logs are in `~/.local/state/shoji_wm/logs/latest.log`. A shader that fails to
+compile is reported there and the component falls back to its built-in look,
+so grep for `shader` after a change to `assets/*.frag`.
+
+The shell needs `quickshell` in `PATH`, a font (Selawik, else Open Sans) and
+an icon theme. `src/index.tsx` starts it.
+
+## Taking captures there, and comparing
+
+On a real session, `grim` or the portal screenshot is enough. To keep using
+the scripts:
+
+```sh
+# the whole headless session again, which also works on a GPU machine
+tools/screenshots.sh
+
+# the zoomed crops of one capture
+python3 -I tools/details.py assets/site/desktop.png assets/site/details \
+  front=770x569 back=616x398
+
+# a reference next to one of our captures, with the error per region
+python3 -I tools/compare.py REFERENCE.png 12,12 CAPTURE.png 355,215
+```
+
+`tools/compare.py` writes its side-by-side to `/tmp`: it contains reference
+pixels and must never be committed. Open a window of exactly 770 x 569 to
+compare with the Notepad++ reference; `tools/screenshots.sh` already does.
+
+## Not tested on a real GPU
+
+- Every colour and the blur: llvmpipe only.
+- Fractional scale (125%) and a second monitor.
+- The animations, and anything that depends on frame timing.
+- kitty, Thunar and Chromium: the captures use `foot`.
+- Real input devices; everything was driven by xdotool.
+- The caption-button tooltips, the double click on the caption bar, and the
+  minimise animation.
+
+## Reference images used
+
+Downloaded to a temporary directory for measuring, never committed.
+
+- <https://commons.wikimedia.org/wiki/File:Clementine_0.6_in_Windows.png>
+- <https://commons.wikimedia.org/wiki/File:Notepad%2B%2B_screenshot2.png>
+- <https://commons.wikimedia.org/wiki/File:Aoo_calc_3.4.png>
+- <https://commons.wikimedia.org/wiki/File:PaintDotNET_Screenshot_zh-hans.png>
+- <https://commons.wikimedia.org/wiki/File:Qt_Creator_3.1.1_editing_a_sample_UI_file_from_Qt_5.3_using_Designer.png>
+- <https://commons.wikimedia.org/wiki/File:Clase_de_computaci%C3%B3n,_Carrera_Fisioterapia.png>
+- <https://commons.wikimedia.org/wiki/File:7-Zip_9.20_DE.png>
+
+## Checks
+
+`nix flake check` passes on this branch: the TypeScript against the pinned
+ShojiWM package, the QML against the Quickshell types, and the formatters.

@@ -74,6 +74,39 @@ Dragging a window against the left edge draws the rectangle it would take.
 
 Alt+Tab: a panel of live thumbnails, the selected window lit.
 
+### Close up
+
+The same captures, cut up and blown up eight times with no smoothing, so
+every pixel of the finish can be checked. `assets/site/details/` holds the
+whole set; `tools/details.py` makes them.
+
+|                                                               |                                                             |
+| ------------------------------------------------------------- | ----------------------------------------------------------- |
+| ![Top right corner](assets/site/details/corner-top-right.png) | ![Top left corner](assets/site/details/corner-top-left.png) |
+| The caption buttons hanging from the frame's own outline.     | The rounded top corner: dark line, light line, glass.       |
+| ![The title](assets/site/details/caption-title.png)           | ![The start orb](assets/site/details/taskbar-orb.png)       |
+| Crisp dark text over a soft light shape, with no outline.     | The orb in its seat on the taskbar.                         |
+
+## Where the numbers come from
+
+The frame, the caption buttons and the title are not drawn by eye. Real
+Windows 7 screenshots at 1:1 were read pixel by pixel with Pillow, and every
+size, colour and alpha is written down in
+[docs/aero-measurements.md](docs/aero-measurements.md) with the image it came
+from. The references themselves are not in this repository; the document
+links them.
+
+| Tool                         | What it does                                                                                                                                    |
+| ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `tools/make-caption-svgs.py` | Draws the sixteen caption-button files from the measured gradients and glyph boxes.                                                             |
+| `tools/screenshots.sh`       | Runs the whole desktop headless and captures it.                                                                                                |
+| `tools/details.py`           | Finds each window in a capture and cuts the zoomed crops in `assets/site/details/`.                                                             |
+| `tools/compare.py`           | Puts a reference next to one of our captures and prints the error per part of the frame. Its output stays in `/tmp`: it holds reference pixels. |
+
+Two states are **not** measured, because no screenshot catches them: a
+caption button under the pointer, and one being pressed. They are drawn from
+the resting gradient.
+
 ## Requirements
 
 - **ShojiWM**, installed and registered as a session.
@@ -150,31 +183,37 @@ running one.
 
 ## The files
 
-| File                                                                                         | What it holds                                                                                                                                  |
-| -------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| `src/index.tsx`                                                                              | The entry point: environment, keys, the programs that start with the session, the blur, the snap preview, and the composition of every window. |
-| `src/theme.ts`                                                                               | Every size and colour of the window frame.                                                                                                     |
-| `src/decoration.tsx`                                                                         | The frame itself: the caption bar, the sheen, the title with its glow, the caption buttons and their labels.                                   |
-| `src/window-manager.ts`                                                                      | The floating window manager: placement, move, resize, maximise, minimise, fullscreen, double click, and Aero Snap.                             |
-| `src/alt-tab.tsx`                                                                            | The Alt+Tab panel, built from render textures and an input grab.                                                                               |
-| `assets/frame.frag`                                                                          | The paint shader that rounds the top corners of the frame and leaves the bottom two square.                                                    |
-| `assets/layer-mask.frag`                                                                     | Clips the blur behind a panel to the shape the panel draws.                                                                                    |
-| `assets/*.svg`                                                                               | The caption glyphs and the two sheens. Drawn by hand.                                                                                          |
-| `shell/shell.qml`                                                                            | The Quickshell root: the wallpaper, the taskbar and the Start menu, one of each per screen.                                                    |
-| `shell/theme.js`                                                                             | Every size and colour of the shell, and the combine setting.                                                                                   |
-| `shell/Apps.qml`                                                                             | The window list, the grouping, the program list, and what a click does. The programs the places open are named here.                           |
-| `shell/StartMenuState.qml`                                                                   | Which screen shows the Start menu.                                                                                                             |
-| `shell/StartMenuIpc.qml`                                                                     | The IPC entry point the compositor calls to open the menu.                                                                                     |
-| `shell/components/Taskbar.qml`                                                               | The bar, and the three popups its buttons ask for.                                                                                             |
-| `shell/components/TaskButton.qml`                                                            | One program: its stack, its states, its clicks.                                                                                                |
-| `shell/components/ThumbnailPopup.qml`                                                        | The live pictures over a button.                                                                                                               |
-| `shell/components/JumpList.qml`                                                              | The tasks of a program, on a right click.                                                                                                      |
-| `shell/components/TrayMenu.qml`                                                              | A notification-area item's own menu.                                                                                                           |
-| `shell/components/MenuItemRow.qml`                                                           | One line of either menu.                                                                                                                       |
-| `shell/components/StartMenu.qml`, `StartOrb.qml`, `Clock.qml`, `TrayArea.qml`, `MenuRow.qml` | The Start menu, the orb, the clock, the notification area, and one menu line.                                                                  |
-| `shell/assets/*.svg`                                                                         | The orb, the place icons, the account tile and the wallpaper. Drawn by hand.                                                                   |
-| `tools/screenshots.sh`                                                                       | Runs the whole desktop on a machine with no display and takes the pictures in this file.                                                       |
-| `flake.nix`                                                                                  | The package, the install command, and the checks.                                                                                              |
+| File                                                                                         | What it holds                                                                                                                                                             |
+| -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/index.tsx`                                                                              | The entry point: environment, keys, the programs that start with the session, the blur, the snap preview, and the composition of every window.                            |
+| `src/theme.ts`                                                                               | Every size and colour of the window frame.                                                                                                                                |
+| `src/decoration.tsx`                                                                         | The frame itself: the painted glass, the caption, the title with its glow, the caption buttons and their labels.                                                          |
+| `src/window-manager.ts`                                                                      | The floating window manager: placement, move, resize, maximise, minimise, fullscreen, double click, and Aero Snap.                                                        |
+| `src/alt-tab.tsx`                                                                            | The Alt+Tab panel, built from render textures and an input grab.                                                                                                          |
+| `assets/frame.frag`                                                                          | The paint shader that draws the frame: the dark outer line, the light line, the glass, the two lines around the client, and the corner radii that a style cannot express. |
+| `assets/caption/*.svg`                                                                       | The three caption buttons, one file per state, drawn at their exact pixel size.                                                                                           |
+| `assets/title-glow.svg`                                                                      | The soft light behind the caption text.                                                                                                                                   |
+| `docs/aero-measurements.md`                                                                  | Every measured number, and the reference screenshot each came from.                                                                                                       |
+| `tools/make-caption-svgs.py`                                                                 | Draws `assets/caption/*.svg` from those numbers.                                                                                                                          |
+| `tools/details.py`                                                                           | Finds the windows in a capture and cuts the zoomed details out of it.                                                                                                     |
+| `tools/compare.py`                                                                           | Puts a reference and a capture side by side and measures the difference.                                                                                                  |
+| `assets/layer-mask.frag`                                                                     | Clips the blur behind a panel to the shape the panel draws.                                                                                                               |
+| `assets/*.svg`                                                                               | The caption glyphs and the two sheens. Drawn by hand.                                                                                                                     |
+| `shell/shell.qml`                                                                            | The Quickshell root: the wallpaper, the taskbar and the Start menu, one of each per screen.                                                                               |
+| `shell/theme.js`                                                                             | Every size and colour of the shell, and the combine setting.                                                                                                              |
+| `shell/Apps.qml`                                                                             | The window list, the grouping, the program list, and what a click does. The programs the places open are named here.                                                      |
+| `shell/StartMenuState.qml`                                                                   | Which screen shows the Start menu.                                                                                                                                        |
+| `shell/StartMenuIpc.qml`                                                                     | The IPC entry point the compositor calls to open the menu.                                                                                                                |
+| `shell/components/Taskbar.qml`                                                               | The bar, and the three popups its buttons ask for.                                                                                                                        |
+| `shell/components/TaskButton.qml`                                                            | One program: its stack, its states, its clicks.                                                                                                                           |
+| `shell/components/ThumbnailPopup.qml`                                                        | The live pictures over a button.                                                                                                                                          |
+| `shell/components/JumpList.qml`                                                              | The tasks of a program, on a right click.                                                                                                                                 |
+| `shell/components/TrayMenu.qml`                                                              | A notification-area item's own menu.                                                                                                                                      |
+| `shell/components/MenuItemRow.qml`                                                           | One line of either menu.                                                                                                                                                  |
+| `shell/components/StartMenu.qml`, `StartOrb.qml`, `Clock.qml`, `TrayArea.qml`, `MenuRow.qml` | The Start menu, the orb, the clock, the notification area, and one menu line.                                                                                             |
+| `shell/assets/*.svg`                                                                         | The orb, the place icons, the account tile and the wallpaper. Drawn by hand.                                                                                              |
+| `tools/screenshots.sh`                                                                       | Runs the whole desktop on a machine with no display and takes the pictures in this file.                                                                                  |
+| `flake.nix`                                                                                  | The package, the install command, and the checks.                                                                                                                         |
 
 ## Changing it
 
@@ -217,9 +256,11 @@ Four things that do not work, each with the file that shows why.
 
 - **A label has no shadow and no blur.** `SSDStyle` carries `boxShadow`,
   which is the shape of a box, and nothing for text
-  (`packages/shoji_wm/src/types.ts`). The glow under the caption text is
-  therefore ten offset copies of the label at low opacity, not a blurred one.
-  It reads as a glow at 12 px; it is not the real thing.
+  (`packages/shoji_wm/src/types.ts`). Windows blurs the text itself and lays
+  the blur under it. Here the light behind the title is one soft shape,
+  `assets/title-glow.svg`, stretched over the box the text occupies: no hard
+  edge anywhere, but it does not follow the letters, so it lights the gaps
+  between words as much as the words.
 - **The Alt+Tab panel has no text.** An output composition is built from
   `<Layers>`, `<Windows>`, `<LayerPopups>`, `<TextureView>`, `<Solid>`,
   `<Scene3D>` and `<Plane>`; there is no label node
@@ -270,6 +311,12 @@ Run, on a server with no display and no GPU:
 - `tools/screenshots.sh` — the whole session: the compositor in its nested
   backend inside Xvfb with Mesa's software renderer, the shell, two `foot`
   windows and a tray item. Every picture above comes from that run.
+- The capture pipeline itself was checked before any tuning: Xvfb reports
+  96x96 DPI, the nested window is 1280x800 at 0,0, and the capture is
+  1280x800, so nothing is scaled. `fc-match` in that session resolves the
+  faces that are asked for and reports grey antialiasing. A plain Wayland
+  client's text comes out crisp in the same pipeline, which is what ruled
+  the pipeline out as the cause of the title text defect.
 - In that session, through xdotool: moving a window by its caption bar,
   opening and closing the Start menu, the thumbnails of a taskbar button, a
   jump list, the menu of a tray item, Aero Snap by dragging a window to the

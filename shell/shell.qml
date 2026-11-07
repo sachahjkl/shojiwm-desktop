@@ -1,4 +1,8 @@
 //@ pragma Env QSG_RENDER_LOOP=threaded
+//@ pragma Env QSG_DISTANCEFIELD_ANTIALIASING=gray
+
+// Grey antialiasing, not subpixel: subpixel put red and blue fringes on
+// every glyph of the bar and the menus, and a screenshot keeps them.
 
 import QtQuick
 import Quickshell

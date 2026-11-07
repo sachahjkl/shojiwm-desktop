@@ -155,16 +155,30 @@ alive() {
 shot() {
   local name="$1"
   mkdir -p "$out"
-  import -window "$window" "$out/$name.png"
+  import -window "$window" "$work/$name-full.png"
+  cp "$work/$name-full.png" "$out/$name.png"
   magick "$out/$name.png" -strip -define png:compression-level=9 "$out/$name.png"
   say "wrote assets/site/$name.png"
 }
 
+# A piece of a capture, blown up with no smoothing so every pixel shows.
+#   detail <source shot> <name> <x> <y> <w> <h> [zoom]
+detail() {
+  local src="$1" name="$2" x="$3" y="$4" w="$5" h="$6" zoom="${7:-8}"
+  mkdir -p "$out/details"
+  magick "$work/$src-full.png" -crop "${w}x${h}+${x}+${y}" +repage \
+    -filter point -resize "${zoom}00%" \
+    -strip -define png:compression-level=9 "$out/details/$name.png"
+  say "wrote assets/site/details/$name.png"
+}
+
 # A client window. foot is small, Wayland native and needs no GPU.
+# The size is fixed so the detail crops know where every edge is: the frame
+# is the client plus 16 px across and 38 px down.
 term() {
-  local title="$1" command="$2"
+  local title="$1" size="$2" command="$3"
   foot --title "$title" --font "DejaVu Sans Mono:size=10" \
-    sh -c "$command" >/dev/null 2>&1 &
+    --window-size-pixels="$size" sh -c "$command" >/dev/null 2>&1 &
   pids+=("$!")
   sleep 3
 }
@@ -172,8 +186,8 @@ term() {
 say "waiting for the shell"
 sleep 8
 
-term "Documents" "printf 'C:\\\\Users\\\\sacha> dir\\n\\n  Documents\\n  Pictures\\n  Music\\n\\n'; sleep 3600"
-term "Notes" "printf 'The quick brown fox jumps over the lazy dog.\\n'; sleep 3600"
+term "Documents" 600x360 "printf 'C:\\\\Users\\\\sacha> dir\\n\\n  Documents\\n  Pictures\\n  Music\\n\\n'; sleep 3600"
+term "Notes" 754x531 "printf 'The quick brown fox jumps over the lazy dog.\\n'; sleep 3600"
 sleep 2
 
 # An item for the notification area, if one can be had.
@@ -187,10 +201,11 @@ geometry="$(xdotool getwindowgeometry --shell "$window")"
 eval "$geometry"
 bar_y=$((HEIGHT - 20))
 
-# Move the front window clear of the one behind it, so both frames show.
-xdotool mousemove --window "$window" 500 42
+# Move the front window clear of the one behind it, so both frames show and
+# its bottom edge stays above the taskbar.
+xdotool mousemove --window "$window" 500 25
 xdotool mousedown 1
-xdotool mousemove --window "$window" 620 230
+xdotool mousemove --window "$window" 575 118
 sleep 1
 xdotool mouseup 1
 sleep 2
@@ -248,7 +263,7 @@ sleep 1
 say "Aero Snap, while dragging to an edge"
 # Press on the caption bar of the front window, where the move above put
 # it, and drag to the left edge.
-xdotool mousemove --window "$window" 620 230
+xdotool mousemove --window "$window" 575 118
 xdotool mousedown 1
 xdotool mousemove --window "$window" 300 300
 sleep 1
@@ -268,5 +283,33 @@ shot "alt-tab"
 alive "alt-tab"
 xdotool keyup alt
 sleep 2
+
+# ---------------------------------------------------------------------------
+# The same pictures, cut up and blown up, so the finish can be checked
+# ---------------------------------------------------------------------------
+
+say "details"
+# Pillow, for the script that finds the windows in a capture and cuts them up.
+python_env="$(nix build --no-link --print-out-paths --impure --expr \
+  'let p = builtins.getFlake "nixpkgs"; pkgs = p.legacyPackages.x86_64-linux;
+   in pkgs.python3.withPackages (ps: [ ps.pillow ])')"
+py="$python_env/bin/python3"
+
+# The window parts: the script finds each frame by its close button.
+"$py" -I "$repo/tools/details.py" "$work/desktop-full.png" "$out/details" \
+  front=770x569 back=616x398
+
+# The shell parts, at fixed places.
+detail start-menu start-menu-top-left 0 188 28 28
+detail start-menu start-menu-search 8 718 170 28 6
+detail start-menu start-menu-shutdown 350 718 142 30 6
+detail start-menu start-menu-divider 294 300 24 24
+detail taskbar-thumbnail taskbar-orb 0 756 56 44 7
+detail taskbar-thumbnail taskbar-button 40 758 190 42 5
+detail taskbar-thumbnail taskbar-right $((WIDTH - 190)) 756 190 44 5
+detail taskbar-thumbnail thumbnail-corner 2 616 40 40
+detail alt-tab alt-tab-corner 448 316 48 48
+detail jump-list jump-list-corner 40 688 60 40 7
+detail tray-menu tray-menu-corner $((WIDTH - 220)) 608 60 40 7
 
 say "done. Pictures are in assets/site"

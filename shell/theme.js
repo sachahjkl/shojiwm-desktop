@@ -11,8 +11,9 @@
 // ---------------------------------------------------------------------------
 
 var taskbarHeight = 40;
-var taskbarPadding = 3;
-var orbSize = 34;
+var taskbarPadding = 2;
+var orbSize = 36;
+var orbLeft = 8;
 var taskButtonHeight = 30;
 var taskButtonMaxWidth = 168;
 var taskButtonMinWidth = 44;
@@ -77,11 +78,14 @@ var menuFooterHeight = 42;
 // ---------------------------------------------------------------------------
 
 // Taskbar glass: dark blue-grey over the blur, lit along the top edge.
-var barTop = "#a84c6881";
-var barMiddle = "#c41b2c3c";
-var barBottom = "#cc16222e";
+var barTop = "#b84a6b8a";
+var barUpper = "#c7203247";
+var barMiddle = "#d10d1621";
+var barLower = "#cc1a2a38";
+var barBottom = "#d6090e13";
 var barHighlight = "#73bfd8ef";
 var barEdge = "#cc0a131b";
+var barBottomEdge = "#d9070d12";
 
 // Task buttons.
 var buttonRest = "#1cffffff";

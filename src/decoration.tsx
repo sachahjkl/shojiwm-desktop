@@ -1,9 +1,14 @@
 /**
- * The window frame: a Windows 7 Aero caption drawn with ShojiWM components.
+ * The window frame of Windows 7 Aero, rebuilt from measured pixels.
  *
- * The glass is the compositor's own blur of whatever is behind the window,
- * tinted blue-grey and covered with a drawn sheen. The caption buttons sit at
- * the right, the icon and the title at the left.
+ * The lines, the glass and the rounded top corners are painted by
+ * `assets/frame.frag` over the compositor's blur. The three caption buttons
+ * are one joined group of 103 x 18 px, each button an SVG drawn at its exact
+ * size by `tools/make-caption-svgs.py`. The title is crisp dark text over a
+ * soft light shape, not an outline.
+ *
+ * Every number comes from `src/theme.ts`, and every number there from
+ * `docs/aero-measurements.md`.
  */
 
 import {
@@ -21,6 +26,7 @@ import {
   useState,
   type CompiledEffectHandle,
   type ReadonlySignal,
+  type ShaderUniformVec4,
   type SSDStyle,
   type WaylandWindow,
 } from "shoji_wm";
@@ -28,19 +34,15 @@ import type { CompositionRenderable } from "shoji_wm/types";
 import { CAPTION_BUTTON, COLOR, FONT, FRAME } from "./theme";
 import { WIN_MAXIMIZED } from "./window-manager";
 
-type ButtonTone = "normal" | "close";
+/** Which picture a caption button shows. */
+type ButtonState = "" | "-hover" | "-press" | "-inactive";
 
-/**
- * The frame is painted by a shader so that only its top corners are rounded.
- * A style has one radius for all four corners; a paint shader has one per
- * corner.
- */
-const FRAME_PAINT = paintShader("./assets/frame.frag", {
-  uniforms: { top_radius: FRAME.radius },
-});
+function buttonSrc(kind: string, state: ButtonState): string {
+  return `./assets/caption/${kind}${state}.svg`;
+}
 
 /** The pale label Windows shows under a caption button you rest on. */
-const Tooltip = ({ text }: { text: string }) => (
+const Tooltip = ({ text }: { text: string | ReadonlySignal<string> }) => (
   <Popup
     trigger="hover"
     openDelay={600}
@@ -68,23 +70,24 @@ const Tooltip = ({ text }: { text: string }) => (
 );
 
 interface CaptionButtonProps {
+  /** `min`, `max`, `restore` or `close`, or a signal picking between them. */
+  kind: string | ReadonlySignal<string>;
   width: number;
-  glyph: string | ReadonlySignal<string>;
-  tone: ButtonTone;
   label: string;
+  focused: ReadonlySignal<boolean>;
   enabled?: ReadonlySignal<boolean>;
   onClick: () => void;
 }
 
 /**
- * One caption button: a glass pill, a drawn gloss, and a glyph. Under the
- * pointer it lights up and glows; the close button glows red.
+ * One caption button: its picture, and a transparent button over it that
+ * takes the clicks and reports hover and press.
  */
 const CaptionButton = ({
+  kind,
   width,
-  glyph,
-  tone,
   label,
+  focused,
   enabled,
   onClick,
 }: CaptionButtonProps) => {
@@ -92,32 +95,40 @@ const CaptionButton = ({
   const [pressed, setPressed] = useState(false);
 
   const usable = computed(() => enabled?.() ?? true);
-  const background = computed(() => {
+  const src = computed(() => {
+    const name = typeof kind === "string" ? kind : kind();
+    if (!focused()) {
+      return buttonSrc(name, "-inactive");
+    }
     if (!usable()) {
-      return "#ffffff0f";
+      return buttonSrc(name, "-inactive");
     }
     if (pressed()) {
-      return tone === "close" ? COLOR.closePress : COLOR.buttonPress;
+      return buttonSrc(name, "-press");
     }
-    if (hover()) {
-      return tone === "close" ? COLOR.closeHover : COLOR.buttonHover;
-    }
-    return tone === "close" ? COLOR.closeRest : COLOR.buttonRest;
+    return buttonSrc(name, hover() ? "-hover" : "");
   });
-  const glow = computed(() =>
-    hover() && usable()
-      ? [
-          {
-            blur: 9,
-            spread: 1,
-            color: tone === "close" ? COLOR.closeGlow : "#bfe4ff8c",
-          },
-        ]
-      : [],
-  );
 
   return (
-    <Box style={{ position: "relative", flexShrink: 0 }}>
+    <Box
+      style={{
+        position: "relative",
+        width,
+        height: FRAME.buttonHeight,
+        flexShrink: 0,
+      }}
+    >
+      <Image
+        src={src}
+        fit="fill"
+        style={{
+          position: "absolute",
+          inset: 0,
+          width,
+          height: FRAME.buttonHeight,
+          pointerEvents: "none",
+        }}
+      />
       <Button
         onHoverChange={setHover}
         onActiveChange={setPressed}
@@ -127,198 +138,64 @@ const CaptionButton = ({
           }
         }}
         style={{
+          position: "absolute",
+          inset: 0,
           width,
-          height: CAPTION_BUTTON.height,
-          borderRadius: 3,
-          background,
-          border: { px: 1, color: COLOR.buttonBorder },
-          boxShadow: glow,
+          height: FRAME.buttonHeight,
+          background: "#00000000",
         }}
       >
         <Tooltip text={label} />
       </Button>
-      <Image
-        src="./assets/caption-button-gloss.svg"
-        fit="fill"
-        style={{
-          width,
-          height: CAPTION_BUTTON.height,
-          position: "absolute",
-          inset: 0,
-          zIndex: 1,
-          borderRadius: 3,
-          pointerEvents: "none",
-        }}
-      />
-      <Image
-        src={glyph}
-        fit="fill"
-        style={{
-          width,
-          height: CAPTION_BUTTON.height,
-          position: "absolute",
-          inset: 0,
-          zIndex: 2,
-          opacity: computed(() => (usable() ? 1 : 0.45)),
-          pointerEvents: "none",
-        }}
-      />
     </Box>
   );
 };
 
-/** Minimise, maximise or restore, and close. */
-const CaptionButtons = ({
-  window,
-  onMinimize,
-  onToggleMaximize,
-}: {
-  window: WaylandWindow;
-  onMinimize: () => void;
-  onToggleMaximize: () => void;
-}) => (
+/** The caption title: crisp text over a soft light shape. */
+const CaptionTitle = ({ window }: { window: WaylandWindow }) => (
   <Box
-    direction="row"
-    style={{ gap: 2, alignItems: "center", flexShrink: 0, paddingLeft: 6 }}
+    style={{
+      position: "relative",
+      height: FRAME.titleHeight,
+      flexShrink: 1,
+      minWidth: 0,
+    }}
   >
-    <CaptionButton
-      width={CAPTION_BUTTON.width}
-      glyph="./assets/caption-minimize.svg"
-      tone="normal"
-      label="Minimize"
-      onClick={onMinimize}
-    />
-    <CaptionButton
-      width={CAPTION_BUTTON.width}
-      glyph={window.state[WIN_MAXIMIZED]((maximized: boolean) =>
-        maximized
-          ? "./assets/caption-restore.svg"
-          : "./assets/caption-maximize.svg",
-      )}
-      tone="normal"
-      label="Maximize"
-      enabled={window.isResizable}
-      onClick={onToggleMaximize}
-    />
-    <CaptionButton
-      width={CAPTION_BUTTON.closeWidth}
-      glyph="./assets/caption-close.svg"
-      tone="close"
-      label="Close"
-      onClick={() => window.close()}
-    />
-  </Box>
-);
-
-/**
- * Where the pale copies of the title go, in logical pixels. Windows 7 puts a
- * blurred light copy behind the caption text. ShojiWM draws no text shadow
- * (SSDStyle has no shadow for `<Label/>`), so the glow is several offset
- * copies of the same label under the real one.
- */
-const TITLE_GLOW_OFFSETS: Array<[number, number]> = [
-  [-1, 0],
-  [1, 0],
-  [0, -1],
-  [0, 1],
-  [-1, -1],
-  [1, 1],
-  [1, -1],
-  [-1, 1],
-  [-2, 0],
-  [2, 0],
-];
-
-/** Height of the title box. Every copy fills it, so they all line up. */
-const TITLE_HEIGHT = 16;
-
-const CaptionTitle = ({ window }: { window: WaylandWindow }) => {
-  const titleStyle: SSDStyle = {
-    position: "absolute",
-    inset: 0,
-    fontFamily: FONT,
-    fontSize: 12,
-    fontWeight: "medium",
-    textOverflow: "ellipsis",
-    lineHeight: TITLE_HEIGHT,
-    pointerEvents: "none",
-  };
-  const glowOpacity = window.isFocused((focused: boolean) =>
-    focused ? 0.16 : 0,
-  );
-
-  const copies: CompositionRenderable[] = TITLE_GLOW_OFFSETS.map(([x, y]) => (
-    <Label
-      text={window.title}
+    <Image
+      src="./assets/title-glow.svg"
+      fit="fill"
       style={{
-        ...titleStyle,
-        color: COLOR.titleGlow,
-        opacity: glowOpacity,
-        transform: { translateX: x, translateY: y },
+        position: "absolute",
+        top: -FRAME.glowMargin,
+        right: -FRAME.glowMargin,
+        bottom: -FRAME.glowMargin,
+        left: -FRAME.glowMargin,
+        zIndex: 0,
+        pointerEvents: "none",
+        opacity: window.isFocused((focused: boolean) => (focused ? 1 : 0.45)),
       }}
     />
-  ));
-  copies.push(
     <Label
       text={window.title}
       style={{
-        ...titleStyle,
         zIndex: 1,
         color: window.isFocused((focused: boolean) =>
           focused ? COLOR.titleActive : COLOR.titleInactive,
         ),
-      }}
-    />,
-  );
-
-  return (
-    <Box
-      style={{
-        position: "relative",
-        height: TITLE_HEIGHT,
-        flexGrow: 1,
+        fontFamily: FONT,
+        fontSize: FRAME.fontSize,
+        fontWeight: "normal",
+        lineHeight: FRAME.titleHeight,
+        textOverflow: "ellipsis",
         flexShrink: 1,
         minWidth: 0,
       }}
-    >
-      {copies}
-    </Box>
-  );
-};
-
-/** The icon, the title and the buttons, laid out across the caption. */
-function captionContent(
-  window: WaylandWindow,
-  onMinimize: () => void,
-  onToggleMaximize: () => void,
-): CompositionRenderable[] {
-  return [
-    <Image
-      src="./assets/caption-gloss.svg"
-      fit="fill"
-      style={{
-        position: "absolute",
-        inset: 0,
-        zIndex: 0,
-        pointerEvents: "none",
-        opacity: window.isFocused((focused: boolean) => (focused ? 1 : 0.55)),
-      }}
-    />,
-    <AppIcon
-      icon={window.icon}
-      style={{ width: 16, height: 16, flexShrink: 0 }}
-    />,
-    <CaptionTitle window={window} />,
-    <CaptionButtons
-      window={window}
-      onMinimize={onMinimize}
-      onToggleMaximize={onToggleMaximize}
-    />,
-  ];
-}
+    />
+  </Box>
+);
 
 export interface FrameOptions {
-  /** The compiled blur used behind the caption glass. */
+  /** The compiled blur that stands behind the glass. */
   glass: CompiledEffectHandle;
   /** `true` while the blur must be left out (the Alt+Tab panel is open). */
   glassSuspended: boolean;
@@ -326,93 +203,213 @@ export interface FrameOptions {
   onToggleMaximize: () => void;
 }
 
+/** `#rrggbbaa` to the four numbers a shader uniform takes. */
+function colour(hex: string): [number, number, number, number] {
+  const value = hex.replace("#", "");
+  const part = (at: number) => parseInt(value.slice(at, at + 2), 16) / 255;
+  return [part(0), part(2), part(4), value.length >= 8 ? part(6) : 1];
+}
+
 /**
- * The whole frame of one window: outline, glass caption, glass edges and the
- * client surface inside a bright inner line.
+ * A colour uniform that follows the window's focus. A paint shader itself
+ * cannot be swapped for another while the window lives — `paint` takes a
+ * handle, not a signal — but each component of a uniform may be a signal.
+ */
+function focusColour(
+  focused: ReadonlySignal<boolean>,
+  activeHex: string,
+  inactiveHex: string,
+): ShaderUniformVec4 {
+  const on = colour(activeHex);
+  const off = colour(inactiveHex);
+  return [
+    computed(() => (focused() ? on[0] : off[0])),
+    computed(() => (focused() ? on[1] : off[1])),
+    computed(() => (focused() ? on[2] : off[2])),
+    computed(() => (focused() ? on[3] : off[3])),
+  ];
+}
+
+/**
+ * The whole frame of one window: the painted glass and lines, the caption,
+ * and the client surface in the middle.
  */
 export function aeroFrame(
   window: WaylandWindow,
   options: FrameOptions,
 ): CompositionRenderable {
-  const tint = window.isFocused((focused: boolean) =>
-    focused ? COLOR.glassActive : COLOR.glassInactive,
+  const focused = window.isFocused;
+  const maximized = window.state[WIN_MAXIMIZED];
+
+  // Maximised, Windows pushes the frame off the screen: square corners, no
+  // outer lines, a shorter caption and only the two lines around the client.
+  const captionHeight = computed(() =>
+    maximized() ? FRAME.captionMaximized : FRAME.caption,
   );
-  const outline = window.isFocused((focused: boolean) =>
-    focused ? COLOR.outlineActive : COLOR.outlineInactive,
+  const borderWidth = computed(() =>
+    maximized() ? FRAME.borderMaximized : FRAME.border,
   );
-  const clientEdge = window.isFocused((focused: boolean) =>
-    focused ? COLOR.clientEdgeActive : COLOR.clientEdgeInactive,
+  const buttonTop = computed(() =>
+    maximized() ? FRAME.buttonTopMaximized : FRAME.buttonTop,
   );
-  const shadow = window.isFocused((focused: boolean) =>
-    focused
-      ? [{ y: 8, blur: 26, spread: -4, color: "#000000a6" }]
-      : [{ y: 3, blur: 14, spread: -4, color: "#00000073" }],
+  const buttonRight = computed(() =>
+    maximized() ? FRAME.buttonRightMaximized : FRAME.buttonRight,
+  );
+
+  const paint = paintShader("./assets/frame.frag", {
+    uniforms: {
+      radius_top: computed(() => (maximized() ? 0 : FRAME.radiusTop)),
+      radius_bottom: computed(() => (maximized() ? 0 : FRAME.radiusBottom)),
+      outer_lines: computed(() => (maximized() ? 0 : 1)),
+      caption_h: captionHeight,
+      border_w: borderWidth,
+      tint: focusColour(focused, COLOR.glassActive, COLOR.glassInactive),
+      line_outer: focusColour(
+        focused,
+        COLOR.outlineActive,
+        COLOR.outlineInactive,
+      ),
+      line_inner: focusColour(
+        focused,
+        COLOR.highlightActive,
+        COLOR.highlightInactive,
+      ),
+      edge_light: focusColour(
+        focused,
+        COLOR.clientLightActive,
+        COLOR.clientLightInactive,
+      ),
+      edge_dark: focusColour(
+        focused,
+        COLOR.clientDarkActive,
+        COLOR.clientDarkInactive,
+      ),
+    },
+  });
+
+  const shadow = focused((on: boolean) =>
+    on
+      ? [{ y: 6, blur: 20, spread: -3, color: "#0000008c" }]
+      : [{ y: 3, blur: 12, spread: -3, color: "#00000059" }],
   );
 
   const captionStyle: SSDStyle = {
     position: "relative",
-    height: FRAME.caption,
-    paddingLeft: 7,
-    paddingRight: CAPTION_BUTTON.inset,
-    gap: 6,
+    height: captionHeight,
+    paddingTop: buttonTop,
+    paddingLeft: FRAME.iconLeft,
+    paddingRight: buttonRight,
+    gap: FRAME.iconGap,
     alignItems: "center",
-    background: tint,
+    flexShrink: 0,
   };
 
-  const content = captionContent(
-    window,
-    options.onMinimize,
-    options.onToggleMaximize,
-  );
-  const caption = options.glassSuspended ? (
-    <Box direction="row" style={{ ...captionStyle, background: "#41678ce6" }}>
-      {content}
-    </Box>
-  ) : (
-    <ShaderEffect shader={options.glass} direction="row" style={captionStyle}>
-      {content}
-    </ShaderEffect>
-  );
+  const caption = [
+    <AppIcon
+      icon={window.icon}
+      style={{
+        width: FRAME.iconSize,
+        height: FRAME.iconSize,
+        flexShrink: 0,
+      }}
+    />,
+    <CaptionTitle window={window} />,
+    <Box style={{ flexGrow: 1, minWidth: 0 }} />,
+    // The group hangs from the top of the caption. The wrapper fills the
+    // caption's content box so that `alignItems: center` above cannot push
+    // the buttons down; inside it they sit at the top, as Windows draws
+    // them, with the frame's own lines as their top edge.
+    <Box
+      direction="column"
+      style={{
+        height: computed(() => captionHeight() - buttonTop()),
+        flexShrink: 0,
+        alignItems: "start",
+        justifyContent: "start",
+      }}
+    >
+      <Box
+        direction="row"
+        style={{ height: FRAME.buttonHeight, flexShrink: 0 }}
+      >
+        <CaptionButton
+          kind="min"
+          width={CAPTION_BUTTON.minimize}
+          label="Minimize"
+          focused={focused}
+          onClick={options.onMinimize}
+        />
+        <CaptionButton
+          kind={maximized((on: boolean) => (on ? "restore" : "max"))}
+          width={CAPTION_BUTTON.maximize}
+          label={"Maximize"}
+          focused={focused}
+          enabled={window.isResizable}
+          onClick={options.onToggleMaximize}
+        />
+        <CaptionButton
+          kind="close"
+          width={CAPTION_BUTTON.close}
+          label="Close"
+          focused={focused}
+          onClick={() => window.close()}
+        />
+      </Box>
+    </Box>,
+  ];
+
+  const body = [
+    <Box direction="row" style={captionStyle}>
+      {caption}
+    </Box>,
+    <Box
+      direction="column"
+      style={{
+        flexGrow: 1,
+        paddingLeft: borderWidth,
+        paddingRight: borderWidth,
+        paddingBottom: borderWidth,
+      }}
+    >
+      <Box direction="column" style={{ flexGrow: 1 }}>
+        <ClientWindow />
+      </Box>
+    </Box>,
+  ];
 
   return (
     <WindowBorder
-      paint={FRAME_PAINT}
       style={{
-        border: { px: FRAME.outline, color: outline },
-        borderRadius: FRAME.radius,
-        background: tint,
+        borderRadius: computed(() => (maximized() ? 0 : FRAME.radiusTop)),
         boxShadow: shadow,
+        background: "#00000000",
       }}
       interaction={{
         resizeHitArea: {
           edgePx: 6,
-          cornerPx: 14,
-          insetPx: FRAME.glass,
+          cornerPx: 16,
+          insetPx: 6,
         },
       }}
     >
-      <Box direction="column">
-        {caption}
+      {options.glassSuspended ? (
         <Box
           direction="column"
-          style={{
-            flexGrow: 1,
-            paddingLeft: FRAME.glass,
-            paddingRight: FRAME.glass,
-            paddingBottom: FRAME.glass,
-          }}
+          paint={paint}
+          style={{ flexGrow: 1, background: "#00000000" }}
         >
-          <Box
-            direction="column"
-            style={{
-              flexGrow: 1,
-              border: { px: FRAME.clientEdge, color: clientEdge },
-            }}
-          >
-            <ClientWindow />
-          </Box>
+          {body}
         </Box>
-      </Box>
+      ) : (
+        <ShaderEffect
+          shader={options.glass}
+          paint={paint}
+          direction="column"
+          style={{ flexGrow: 1 }}
+        >
+          {body}
+        </ShaderEffect>
+      )}
     </WindowBorder>
   );
 }
