@@ -239,6 +239,18 @@ removed. What is left:
   their rows, which lost the hover to the rows; it is now a HoverHandler in
   every popup.
 
+## Ninth pass: clearer glass
+
+The owner compared with the ShojiWM author's own Windows 7 setup (not
+published): there the frames and the taskbar are clear glass, the
+wallpaper plainly visible through them. The window tint went from about
+48 % to 24 % (`glassActive`), the blur from 3 passes to 2, and the
+taskbar's alphas down by about a third.
+
+Tried and dropped: a `<ShaderEffect/>` blurring a white copy of the title
+for a glow that follows the letters. `backdropSource()` in a decoration
+does not see the decoration's own nodes, so the copy came out sharp.
+
 ## What remains, in priority order
 
 1. **Look at all of it on a real GPU.** Colours, blur, animation speed and

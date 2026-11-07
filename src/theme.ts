@@ -70,12 +70,12 @@ export const CAPTION_BUTTON = {
  */
 export const COLOR = {
   /** The glass of an active window. */
-  glassActive: "#538ebe7a",
+  glassActive: "#6f9fcc3d",
   /**
    * The glass of every other window. Windows drains the colour out of it and
    * makes it heavier, so the caption stays legible over any wallpaper.
    */
-  glassInactive: "#c2ced79e",
+  glassInactive: "#c2ced766",
   /** The 1 px line around the outside. */
   outlineActive: "#15212ead",
   outlineInactive: "#2a36408c",

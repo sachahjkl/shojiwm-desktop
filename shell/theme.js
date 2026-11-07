@@ -83,11 +83,11 @@ var menuFooterHeight = 42;
 // Taskbar glass: a blue-grey tint over the blur, translucent enough that the
 // wallpaper's colour comes through, lit along the top edge and darkest a
 // little under half way, as the Windows 7 bar is.
-var barTop = "#8c7aa6c8";
-var barUpper = "#73416685";
-var barMiddle = "#801c3049";
-var barLower = "#73284460";
-var barBottom = "#8c142233";
+var barTop = "#667aa6c8";
+var barUpper = "#4d416685";
+var barMiddle = "#591c3049";
+var barLower = "#4d284460";
+var barBottom = "#66142233";
 var barHighlight = "#80c9e2f5";
 var barEdge = "#cc0a131b";
 var barBottomEdge = "#b3070d12";

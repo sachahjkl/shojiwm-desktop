@@ -243,7 +243,7 @@ const WINDOW_GLASS = compileEffect({
   input: backdropSource(),
   capturePadding: 24,
   invalidate: { kind: "on-source-damage-box", damagePadding: 8 },
-  pipeline: [dualKawaseBlur({ radius: 5, passes: 3 })],
+  pipeline: [dualKawaseBlur({ radius: 4, passes: 2 })],
 });
 
 /**
@@ -258,7 +258,7 @@ const LAYER_GLASS = compileLayerEffect({
   invalidate: { kind: "on-source-damage-box", damagePadding: 8 },
   alpha: "preserve",
   pipeline: [
-    dualKawaseBlur({ radius: 5, passes: 3 }),
+    dualKawaseBlur({ radius: 4, passes: 2 }),
     shaderStage(loadShader("./assets/layer-mask.frag"), {
       textures: { layer_mask: layerSource() },
       uniforms: {
