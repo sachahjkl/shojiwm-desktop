@@ -1,42 +1,41 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
   <!--
-    Original artwork. A glass orb carrying a shoji screen: a frame with one
-    mullion down the middle and two across, which is where ShojiWM gets its
-    name. Nothing here is taken from any other desktop.
+    Original artwork: a plain glass orb with nothing on it. A dark bezel, a
+    blue body lit from below, a gloss across the top half. start-orb-hot.svg is the same orb under the pointer.
+    No clip paths: QtSvg ignores them, so every shape stays inside the body.
   -->
   <defs>
-    <radialGradient id="body" cx=".36" cy=".3" r=".78">
-      <stop offset="0" stop-color="#9fdcff"/>
-      <stop offset=".45" stop-color="#2f8fd6"/>
-      <stop offset=".82" stop-color="#14456f"/>
-      <stop offset="1" stop-color="#0b2a46"/>
+    <radialGradient id="bezel" cx=".5" cy=".35" r=".65">
+      <stop offset="0" stop-color="#3a5568"/>
+      <stop offset=".7" stop-color="#16293a"/>
+      <stop offset="1" stop-color="#0a141e"/>
     </radialGradient>
-    <linearGradient id="top" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#ffffff" stop-opacity=".85"/>
-      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    <linearGradient id="bezelLight" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity=".55"/>
+      <stop offset=".5" stop-color="#ffffff" stop-opacity=".08"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity=".3"/>
     </linearGradient>
-    <linearGradient id="bottom" x1="0" y1="1" x2="0" y2="0">
-      <stop offset="0" stop-color="#7fd4ff" stop-opacity=".55"/>
-      <stop offset="1" stop-color="#7fd4ff" stop-opacity="0"/>
-    </linearGradient>
-    <radialGradient id="halo" cx=".5" cy=".5" r=".5">
-      <stop offset=".72" stop-color="#8fd8ff" stop-opacity="0"/>
-      <stop offset=".9" stop-color="#8fd8ff" stop-opacity=".35"/>
-      <stop offset="1" stop-color="#8fd8ff" stop-opacity="0"/>
+    <radialGradient id="body" cx=".5" cy=".98" r=".95">
+      <stop offset="0" stop-color="#9ff0ff"/>
+      <stop offset=".3" stop-color="#2390db"/>
+      <stop offset=".68" stop-color="#0e4f8f"/>
+      <stop offset="1" stop-color="#082a52"/>
     </radialGradient>
+    <radialGradient id="glow" cx=".5" cy=".5" r=".5">
+      <stop offset="0" stop-color="#9ff0ff" stop-opacity="0.75"/>
+      <stop offset="1" stop-color="#9ff0ff" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="gloss" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity=".92"/>
+      <stop offset=".55" stop-color="#ffffff" stop-opacity=".35"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity=".06"/>
+    </linearGradient>
   </defs>
 
-  <circle cx="32" cy="32" r="31" fill="url(#halo)"/>
-  <circle cx="32" cy="32" r="27" fill="#07243c"/>
-  <circle cx="32" cy="32" r="26" fill="url(#body)"/>
-  <ellipse cx="32" cy="18" rx="19" ry="11" fill="url(#top)" opacity=".55"/>
-  <ellipse cx="32" cy="48" rx="17" ry="9" fill="url(#bottom)"/>
-
-  <g fill="#ffffff" opacity=".95">
-    <path d="M21 19h22a2 2 0 0 1 2 2v22a2 2 0 0 1-2 2H21a2 2 0 0 1-2-2V21a2 2 0 0 1 2-2zm1.6 3.4v19.2h18.8V22.4H22.6z"/>
-    <rect x="30.9" y="22.4" width="2.2" height="19.2"/>
-    <rect x="22.6" y="28.4" width="18.8" height="2"/>
-    <rect x="22.6" y="35" width="18.8" height="2"/>
-  </g>
-  <circle cx="32" cy="32" r="26" fill="none" stroke="#ffffff" stroke-opacity=".45"/>
+  <circle cx="32" cy="32" r="30" fill="url(#bezel)" stroke="#000000" stroke-opacity=".55"/>
+  <circle cx="32" cy="32" r="29" fill="none" stroke="url(#bezelLight)"/>
+  <circle cx="32" cy="32" r="27" fill="url(#body)" stroke="#000000" stroke-opacity=".6"/>
+  <ellipse cx="32" cy="51" rx="18.5" ry="9" fill="url(#glow)"/>
+  <ellipse cx="32" cy="18.5" rx="20.5" ry="12.5" fill="url(#gloss)"/>
+  <circle cx="32" cy="32" r="26" fill="none" stroke="#ffffff" stroke-opacity=".3"/>
 </svg>

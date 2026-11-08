@@ -21,18 +21,28 @@ Item {
         smooth: true
     }
 
-    // The highlight: a pale wash over the orb, kept inside its circle.
-    Rectangle {
-        anchors.centerIn: parent
-        width: Theme.orbSize - 6
-        height: width
-        radius: width / 2
-        color: "#ffffff"
-        opacity: orb.menuOpen ? 0.3 : area.containsMouse ? 0.18 : 0
+    // Lit: the same orb brighter, with a halo, faded in over the first.
+    Image {
+        anchors.fill: parent
+        source: "../assets/start-orb-hot.svg"
+        sourceSize.width: Theme.orbSize * 2
+        sourceSize.height: Theme.orbSize * 2
+        smooth: true
+        opacity: orb.menuOpen || area.containsMouse ? 1 : 0
 
         Behavior on opacity {
-            NumberAnimation { duration: Theme.fade }
+            NumberAnimation { duration: Theme.fade * 2 }
         }
+    }
+
+    // Pressed: a little darker, as if pushed in.
+    Rectangle {
+        anchors.centerIn: parent
+        width: parent.width * 0.8
+        height: width
+        radius: width / 2
+        color: "#000000"
+        opacity: area.pressed ? 0.18 : 0
     }
 
     MouseArea {

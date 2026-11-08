@@ -439,3 +439,11 @@ ShojiWM package, the QML against the Quickshell types, and the formatters.
   wallpaper would be drawn over a window and give it its clicks. The
   overlay also closes the menu on a click anywhere else, and on Escape.
 - Settings: `desktopIconSize`, `showDesktopIcons`, `desktopSort`.
+
+### Fourteenth pass: the orb
+
+- `shell/assets/start-orb.svg` is a plain glass orb with nothing on it: a
+  dark bezel, a blue body lit from below, a gloss over the top half.
+  `start-orb-hot.svg` is the same, brighter and with a halo; `StartOrb.qml`
+  fades it in under the pointer and while the menu is open. No clip paths
+  (QtSvg ignores them).
