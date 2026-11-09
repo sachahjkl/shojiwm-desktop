@@ -174,6 +174,7 @@
           singleton ShutdownState 1.0 ShutdownState.qml
           singleton DragState 1.0 DragState.qml
           singleton Audio 1.0 Audio.qml
+          singleton Startup 1.0 Startup.qml
           EOF
           cd ./shell
           qmllint \

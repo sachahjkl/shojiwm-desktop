@@ -44,6 +44,7 @@ FloatingWindow {
         "notifications": { title: "Notification Area Icons", category: "Appearance and Personalization" },
         "clock": { title: "Date and Time", category: "Clock and Region" },
         "ease": { title: "Ease of Access", category: "Ease of Access" },
+        "startup": { title: "Startup Programs", category: "System" },
         "about": { title: "System", category: "System" }
     })
 
@@ -70,6 +71,7 @@ FloatingWindow {
         { text: "See the time zone and time synchronization", page: "clock", words: "time zone timezone ntp synchronization sync server internet" },
         { text: "Turn off all unnecessary animations", page: "ease", words: "animations motion reduce reduced effects ease access accessibility" },
         { text: "Change the animation speed", page: "ease", words: "animation speed fast faster slow slower motion duration" },
+        { text: "Choose the programs that start when you log on", page: "startup", words: "startup start log on login boot autostart programs run session" },
         { text: "About this desktop", page: "about", words: "about system version information" }
     ]
 
@@ -295,7 +297,7 @@ FloatingWindow {
 
             Repeater {
                 model: ["appearance", "background", "lockscreen", "account",
-                        "taskbar", "notifications", "clock", "ease", "about"]
+                        "taskbar", "notifications", "clock", "ease", "startup", "about"]
 
                 delegate: CpLink {
                     required property string modelData
@@ -347,6 +349,7 @@ FloatingWindow {
                 case "notifications": return notificationsPage;
                 case "clock": return clockPage;
                 case "ease": return easePage;
+                case "startup": return startupPage;
                 case "about": return aboutPage;
                 default: return homePage;
                 }
@@ -591,6 +594,208 @@ FloatingWindow {
     }
 
     Component {
+        id: startupPage
+
+        Column {
+            id: startup
+
+            /// The list of programs to add one from is open.
+            property bool adding: false
+            property string filter: ""
+
+            spacing: 10
+
+            Component.onCompleted: Startup.refresh()
+
+            Heading { text: "Choose the programs that start when you log on" }
+
+            Note {
+                width: parent.width
+                text: "These are the XDG autostart entries of the system and your own, "
+                    + "in " + Startup.userDir + ". A change applies the next time you log on."
+            }
+
+            Item { width: 1; height: 4 }
+
+            Repeater {
+                model: Startup.entries
+
+                delegate: Row {
+                    id: startupRow
+
+                    required property var modelData
+
+                    spacing: 12
+                    opacity: startupRow.modelData.here ? 1 : 0.55
+
+                    CpCheck {
+                        anchors.verticalCenter: parent.verticalCenter
+                        label: ""
+                        checked: startupRow.modelData.enabled
+                        onToggled: function (on) { Startup.setEnabled(startupRow.modelData, on); }
+                    }
+
+                    IconImage {
+                        anchors.verticalCenter: parent.verticalCenter
+                        implicitSize: 24
+                        source: Quickshell.iconPath(startupRow.modelData.icon, "application-x-executable")
+                    }
+
+                    Column {
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: 330
+
+                        Text {
+                            width: parent.width
+                            text: startupRow.modelData.name
+                                + (startupRow.modelData.here ? "" : " (not in this desktop)")
+                            color: Scheme.text
+                            font.family: Theme.fontFamily
+                            font.pixelSize: Theme.fontSize
+                            elide: Text.ElideRight
+                        }
+
+                        Text {
+                            width: parent.width
+                            text: startupRow.modelData.exec
+                            color: Scheme.textMuted
+                            font.family: Theme.fontFamily
+                            font.pixelSize: Theme.fontSizeSmall
+                            elide: Text.ElideMiddle
+                        }
+                    }
+
+                    Text {
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: 70
+                        text: startupRow.modelData.systemPath.length > 0 ? "System" : "Yours"
+                        color: Scheme.textMuted
+                        font.family: Theme.fontFamily
+                        font.pixelSize: Theme.fontSizeSmall
+                    }
+
+                    // An entry you added goes; a system entry you changed
+                    // goes back to the system's.
+                    CpLink {
+                        anchors.verticalCenter: parent.verticalCenter
+                        visible: startupRow.modelData.userPath.length > 0
+                        text: startupRow.modelData.systemPath.length > 0 ? "Restore" : "Remove"
+                        onClicked: Startup.removeUserFile(startupRow.modelData)
+                    }
+                }
+            }
+
+            Note {
+                width: parent.width
+                visible: Startup.entries.length === 0
+                text: "No program starts when you log on."
+            }
+
+            Row {
+                spacing: 10
+                topPadding: 8
+
+                CpButton {
+                    label: startup.adding ? "Done" : "Add a program…"
+                    onClicked: {
+                        startup.adding = !startup.adding;
+                        startup.filter = "";
+                    }
+                }
+            }
+
+            // The installed programs, to pick one that starts at log-on.
+            Column {
+                width: parent.width
+                visible: startup.adding
+                spacing: 6
+
+                Rectangle {
+                    width: 260
+                    height: 24
+                    radius: Scheme.fieldRadius
+                    color: Scheme.field
+                    border.width: 1
+                    border.color: filterField.activeFocus ? Scheme.fieldFocus : Scheme.fieldBorder
+
+                    TextInput {
+                        id: filterField
+                        anchors.fill: parent
+                        anchors.leftMargin: 6
+                        anchors.rightMargin: 6
+                        verticalAlignment: TextInput.AlignVCenter
+                        color: Scheme.text
+                        font.family: Theme.fontFamily
+                        font.pixelSize: Theme.fontSize
+                        selectByMouse: true
+                        clip: true
+                        onTextChanged: startup.filter = text.toLowerCase()
+
+                        Text {
+                            anchors.fill: parent
+                            verticalAlignment: Text.AlignVCenter
+                            visible: filterField.text.length === 0
+                            text: "Find a program"
+                            color: Scheme.placeholder
+                            font: filterField.font
+                        }
+                    }
+                }
+
+                Repeater {
+                    model: startup.adding ? Apps.applications.filter(function (entry) {
+                        var id = Apps.entryFileId(entry);
+                        return Startup.entries.every(function (item) { return item.id !== id; })
+                            && (startup.filter.length === 0
+                                || String(entry.name).toLowerCase().indexOf(startup.filter) >= 0);
+                    }).slice(0, 12) : []
+
+                    delegate: Rectangle {
+                        id: candidate
+
+                        required property var modelData
+
+                        width: 360
+                        height: 28
+                        radius: Scheme.itemRadius
+                        color: candidateArea.containsMouse ? Scheme.hover : "transparent"
+                        border.width: candidateArea.containsMouse ? 1 : 0
+                        border.color: Scheme.selectionBorder
+
+                        Row {
+                            anchors.left: parent.left
+                            anchors.leftMargin: 6
+                            anchors.verticalCenter: parent.verticalCenter
+                            spacing: 8
+
+                            IconImage {
+                                anchors.verticalCenter: parent.verticalCenter
+                                implicitSize: 20
+                                source: Quickshell.iconPath(candidate.modelData.icon, "application-x-executable")
+                            }
+
+                            Text {
+                                anchors.verticalCenter: parent.verticalCenter
+                                text: candidate.modelData.name
+                                color: Scheme.text
+                                font.family: Theme.fontFamily
+                                font.pixelSize: Theme.fontSize
+                            }
+                        }
+
+                        MouseArea {
+                            id: candidateArea
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            onClicked: Startup.add(Apps.entryFileId(candidate.modelData))
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    Component {
         id: homePage
 
         Column {
@@ -648,6 +853,7 @@ FloatingWindow {
                     name: "System"
                     target: "about"
                     links: [
+                        { text: "Choose the programs that start when you log on", page: "startup" },
                         { text: "About this desktop", page: "about" }
                     ]
                 }
