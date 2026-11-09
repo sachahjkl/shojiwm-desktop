@@ -4,8 +4,8 @@
  * The lines, the glass and the rounded top corners are painted by
  * `assets/frame.frag` over the compositor's blur. The three caption buttons
  * are one joined group of 103 x 18 px, each button an SVG drawn at its exact
- * size by `tools/make-caption-svgs.py`. The title is crisp white text with a
- * dark text shadow under it, not an outline.
+ * size by `tools/make-caption-svgs.py`. The title is crisp black text on a
+ * soft white glow (a text shadow), not an outline.
  *
  * Every number comes from `src/theme.ts`, and every number there from
  * `docs/aero-measurements.md`.
@@ -153,9 +153,9 @@ const CaptionButton = ({
 };
 
 /**
- * The caption title: white text with a dark line under it (a text shadow
- * one pixel down), so it reads as set into the glass, as the Start menu's
- * power button label is.
+ * The caption title: black text on a soft white glow, as Windows 7 draws
+ * it: a text shadow with no offset, spread then blurred, which the label
+ * draws past its box.
  */
 const CaptionTitle = ({ window }: { window: WaylandWindow }) => (
   <Label
@@ -165,9 +165,10 @@ const CaptionTitle = ({ window }: { window: WaylandWindow }) => (
         focused ? COLOR.titleActive : COLOR.titleInactive,
       ),
       textShadow: {
-        y: 1,
+        blur: 8,
+        spread: 2,
         color: window.isFocused((focused: boolean) =>
-          focused ? COLOR.titleShadowActive : COLOR.titleShadowInactive,
+          focused ? COLOR.titleGlowActive : COLOR.titleGlowInactive,
         ),
       },
       fontFamily: FONT,
