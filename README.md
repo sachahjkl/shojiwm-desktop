@@ -353,6 +353,11 @@ running one.
 - **More keys:** set `SHOJIWM_WIN7_KEYS` to a JSON object of shortcut to
   shell command, for example `{"Ctrl+Shift+Space": "hex dictation toggle"}`,
   for programs that would register a global shortcut through a portal.
+- **Notifications:** `assets/hokum/aero.kdl` is a Windows 7 balloon theme
+  for [Hokum](https://hokum.app). Point Hokum at it in
+  `~/.config/hokum/config.kdl` with
+  `theme "~/.config/shojiwm/assets/hokum/aero.kdl"`, and put the cards over
+  the notification area with `behaviour { position "bottom-right" }`.
 - **Frame colours and sizes:** `src/theme.ts`.
 - **Shell colours and sizes:** `shell/theme.js`, and `shell/Scheme.qml` for
   the colours that change between light and dark.
