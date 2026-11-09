@@ -609,7 +609,21 @@ export class FloatingWindowManager {
 
   // ----- window states ----------------------------------------------------
 
+  // `window.maximize()` and the other client actions come back as a request
+  // event with the source "api". The request handlers below only apply the
+  // state and ignore a request for the state the window already has: calling
+  // the action again from the handler loops until the compositor aborts.
+
   public setMaximized(window: WaylandWindow, maximized: boolean): void {
+    this.applyMaximized(window, maximized);
+    if (maximized) {
+      window.maximize();
+    } else {
+      window.unmaximize();
+    }
+  }
+
+  private applyMaximized(window: WaylandWindow, maximized: boolean): void {
     if (maximized) {
       if (!window.state[WIN_MAXIMIZED]()) {
         window.state[WIN_RESTORE_RECT].set(
@@ -621,7 +635,6 @@ export class FloatingWindowManager {
         window.state[WIN_RECT].set(area);
       }
       window.state[WIN_MAXIMIZED].set(true);
-      window.maximize();
       return;
     }
 
@@ -630,7 +643,6 @@ export class FloatingWindowManager {
       window.state[WIN_RECT].set(snapshotRect(restore));
     }
     window.state[WIN_MAXIMIZED].set(false);
-    window.unmaximize();
   }
 
   public toggleMaximized(window: WaylandWindow): void {
@@ -638,6 +650,19 @@ export class FloatingWindowManager {
   }
 
   public setFullscreen(
+    window: WaylandWindow,
+    fullscreen: boolean,
+    outputName?: string,
+  ): void {
+    this.applyFullscreen(window, fullscreen, outputName);
+    if (fullscreen) {
+      window.fullscreen();
+    } else {
+      window.unfullscreen();
+    }
+  }
+
+  private applyFullscreen(
     window: WaylandWindow,
     fullscreen: boolean,
     outputName?: string,
@@ -653,7 +678,6 @@ export class FloatingWindowManager {
         window.state[WIN_RECT].set(rect);
       }
       window.state[WIN_FULLSCREEN].set(true);
-      window.fullscreen();
       return;
     }
 
@@ -662,7 +686,6 @@ export class FloatingWindowManager {
       window.state[WIN_RECT].set(snapshotRect(restore));
     }
     window.state[WIN_FULLSCREEN].set(false);
-    window.unfullscreen();
   }
 
   public toggleFullscreen(window: WaylandWindow): void {
@@ -799,7 +822,10 @@ export class FloatingWindowManager {
   // ----- client requests --------------------------------------------------
 
   public onMaximizeRequest(event: WindowMaximizeRequestEvent): void {
-    this.setMaximized(event.window, event.maximized);
+    if (event.window.state[WIN_MAXIMIZED]() === event.maximized) {
+      return;
+    }
+    this.applyMaximized(event.window, event.maximized);
   }
 
   public onMinimizeRequest(event: WindowMinimizeRequestEvent): void {
@@ -807,7 +833,10 @@ export class FloatingWindowManager {
   }
 
   public onFullscreenRequest(event: WindowFullscreenRequestEvent): void {
-    this.setFullscreen(event.window, event.fullscreen, event.outputName);
+    if (event.window.state[WIN_FULLSCREEN]() === event.fullscreen) {
+      return;
+    }
+    this.applyFullscreen(event.window, event.fullscreen, event.outputName);
   }
 
   public onActivateRequest(event: WindowActivateRequestEvent): void {
