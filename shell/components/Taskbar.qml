@@ -39,6 +39,13 @@ Item {
     property bool networkOpen: false
     property bool notificationsOpen: false
     property bool actionCenterOpen: false
+    /// A menu, a panel or the thumbnails of the bar are open: an auto-hidden
+    /// bar stays up meanwhile.
+    readonly property bool busy: bar.menuOpen || bar.previewGroup !== null
+        || bar.jumpListGroup !== null || bar.trayMenuItem !== null
+        || bar.calendarOpen || bar.clockMenuOpen || bar.trayOverflowOpen
+        || bar.volumeOpen || bar.networkOpen || bar.notificationsOpen
+        || bar.actionCenterOpen
     property bool clockMenuOpen: false
     property bool trayOverflowOpen: false
 

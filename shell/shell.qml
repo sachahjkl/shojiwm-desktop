@@ -256,15 +256,44 @@ ShellRoot {
             anchors.right: true
             implicitHeight: Theme.taskbarHeight
 
+            // Auto-hide, as Windows 7's: the bar slides down to a 2 px
+            // line and comes back when the pointer reaches it; windows then
+            // have the whole screen.
+            readonly property bool autoHide: Settings.taskbarAutoHide
+            readonly property bool raised: !barWindow.autoHide || barHover.hovered
+                || taskbar.busy || stayUp.running
+
             exclusionMode: ExclusionMode.Normal
-            exclusiveZone: Theme.taskbarHeight
+            exclusiveZone: barWindow.autoHide ? 0 : Theme.taskbarHeight
 
             WlrLayershell.layer: WlrLayer.Top
             WlrLayershell.namespace: "shojiwm-win7-taskbar"
             WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
 
+            // Only the part of the bar on screen takes the pointer.
+            mask: Region { item: taskbar }
+
+            HoverHandler {
+                id: barHover
+                onHoveredChanged: {
+                    if (!hovered)
+                        stayUp.restart();
+                }
+            }
+
+            Timer {
+                id: stayUp
+                interval: 700
+            }
+
             Taskbar {
-                anchors.fill: parent
+                id: taskbar
+                width: parent.width
+                height: parent.height
+                y: barWindow.raised ? 0 : parent.height - 2
+                Behavior on y {
+                    NumberAnimation { duration: Settings.motion(160); easing.type: Easing.OutCubic }
+                }
                 window: barWindow
                 menuOpen: StartMenuState.openOn === barWindow.modelData.name
                 onStartRequested: StartMenuState.toggle(barWindow.modelData.name)

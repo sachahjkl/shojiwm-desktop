@@ -2142,6 +2142,12 @@ FloatingWindow {
             }
 
             CpCheck {
+                label: "Auto-hide the taskbar"
+                checked: Settings.taskbarAutoHide
+                onToggled: function (on) { Settings.taskbarAutoHide = on; }
+            }
+
+            CpCheck {
                 label: "Use Aero Peek to preview the desktop"
                 checked: Settings.peek
                 onToggled: function (on) { Settings.peek = on; }

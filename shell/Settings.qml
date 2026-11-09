@@ -37,6 +37,7 @@ Singleton {
     property alias glassColor: adapter.glassColor
     property alias wallpaperPosition: adapter.wallpaperPosition
     property alias screensaver: adapter.screensaver
+    property alias taskbarAutoHide: adapter.taskbarAutoHide
     property alias screensaverMinutes: adapter.screensaverMinutes
     /// The screen saver shows now, for the Control Panel's Preview; not kept.
     property bool screensaverPreview: false
@@ -229,6 +230,8 @@ Singleton {
             /// The screen saver: "none" or "mystify", and the minutes
             /// without input before it starts.
             property string screensaver: "none"
+            /// The taskbar slides away, leaving a line to bring it back.
+            property bool taskbarAutoHide: false
             property int screensaverMinutes: 5
             property real glassColorStrength: 0.35
             property var cpuMeterPlace: ({ right: 24, top: 24 })
