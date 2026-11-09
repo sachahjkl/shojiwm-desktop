@@ -18,16 +18,25 @@ Item {
 
     height: parent ? parent.height : 28
 
-    readonly property color outline: part.glass ? "#a6000000" : Scheme.menuOutline
+    readonly property color outline: part.danger ? "#5c0f05"
+        : part.glass ? "#a6000000" : Scheme.menuOutline
 
-    readonly property color fillTop: part.glass
-        ? (part.pressed ? "#26ffffff" : part.hot ? "#66ffffff" : "#40ffffff")
-        : part.pressed ? Scheme.buttonPressedTop
-            : part.hot ? Scheme.buttonHotTop : Scheme.buttonTop
-    readonly property color fillBottom: part.glass
-        ? (part.pressed ? "#14ffffff" : part.hot ? "#38ffffff" : "#1fffffff")
-        : part.pressed ? Scheme.buttonPressedBottom
-            : part.hot ? Scheme.buttonHotBottom : Scheme.buttonBottom
+    /// Red glass, in the colours of a window's close button: for the power
+    /// button.
+    property bool danger: false
+
+    readonly property color fillTop: part.danger
+        ? (part.pressed ? "#c0746a" : part.hot ? "#f58573" : "#d57361")
+        : part.glass
+            ? (part.pressed ? "#26ffffff" : part.hot ? "#66ffffff" : "#40ffffff")
+            : part.pressed ? Scheme.buttonPressedTop
+                : part.hot ? Scheme.buttonHotTop : Scheme.buttonTop
+    readonly property color fillBottom: part.danger
+        ? (part.pressed ? "#8b1f0e" : part.hot ? "#d62d16" : "#b43622")
+        : part.glass
+            ? (part.pressed ? "#14ffffff" : part.hot ? "#38ffffff" : "#1fffffff")
+            : part.pressed ? Scheme.buttonPressedBottom
+                : part.hot ? Scheme.buttonHotBottom : Scheme.buttonBottom
 
     // A rectangle rounded all round, wider than the half on its inner side
     // and clipped there: the inner corners fall outside, and the glass, which
@@ -63,7 +72,7 @@ Item {
         color: part.outline
     }
     Rectangle {
-        visible: part.glass && part.rightRounded && !part.leftRounded
+        visible: (part.glass || part.danger) && part.rightRounded && !part.leftRounded
         x: 1
         anchors.top: parent.top
         anchors.bottom: parent.bottom

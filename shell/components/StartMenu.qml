@@ -244,7 +244,7 @@ Item {
             PowerPart {
                 width: 104
                 leftRounded: true
-                glass: true
+                danger: true
                 hot: buttonArea.containsMouse
                 pressed: buttonArea.pressed
 
@@ -273,7 +273,7 @@ Item {
 
                 width: 24
                 rightRounded: true
-                glass: true
+                danger: true
                 hot: arrowArea.containsMouse || menu.powerMenuOpen
                 pressed: arrowArea.pressed || menu.powerMenuOpen
 
