@@ -33,6 +33,10 @@ ShellRoot {
     property var run: RunState
     // The desktop slide show changes the wallpaper on its own.
     property var slideshow: Slideshow
+    // The line to the compositor sends the glass, the corners, the
+    // animations and the screens' modes as soon as it connects, so it must
+    // exist from the start, not from the first Aero Peek.
+    property var compositor: CompositorIpc
 
     // ----- lock screen ------------------------------------------------------
 
