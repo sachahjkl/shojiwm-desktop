@@ -61,13 +61,42 @@ const VICINAE = "vicinae";
 /** Where the Quickshell shell lives, as a shell word. */
 const SHELL_PATH = "~/.config/shojiwm/shell";
 
-// The outputs: their mode, position and scale, as a JSON `DisplayConfigDraft`
-// in SHOJIWM_WIN7_OUTPUTS, for example
-// {"DP-2": {"resolution": {"width": 2560, "height": 1440}, "scale": 1.25}}.
-// Without it, ShojiWM picks the best mode at scale 1.
+/**
+ * The outputs, from SHOJIWM_WIN7_OUTPUTS: Hyprland monitor rules
+ * `name,mode,position,scale` separated by `;`, for example
+ * `DP-2,2560x1440@180,0x0,1.25;HDMI-A-1,preferred,auto,1.875`.
+ * The value has no quotes, which session environment files do not escape.
+ * Without it, ShojiWM picks the best mode of each output at scale 1.
+ */
+function parseOutputs(rules: string): DisplayConfigDraft {
+  const layout: DisplayConfigDraft = {};
+  for (const rule of rules.split(";")) {
+    const [name, mode, position, scale] = rule.split(",");
+    if (!name || !mode || !position || !scale) {
+      throw new Error(`SHOJIWM_WIN7_OUTPUTS: invalid rule "${rule}"`);
+    }
+    const [size, refresh] = mode.split("@");
+    const [width, height] = (size ?? "").split("x").map(Number);
+    const [x, y] = position.split("x").map(Number);
+    layout[name] = {
+      resolution:
+        mode === "preferred"
+          ? "best"
+          : {
+              width: width ?? 0,
+              height: height ?? 0,
+              ...(refresh ? { refreshRate: Number(refresh) } : {}),
+            },
+      position: position === "auto" ? "auto" : { x: x ?? 0, y: y ?? 0 },
+      scale: Number(scale),
+    };
+  }
+  return layout;
+}
+
 const OUTPUTS = COMPOSITOR.env.get("SHOJIWM_WIN7_OUTPUTS");
 if (OUTPUTS) {
-  const layout = JSON.parse(OUTPUTS) as DisplayConfigDraft;
+  const layout = parseOutputs(OUTPUTS);
   COMPOSITOR.output.configure(() => layout);
 }
 

@@ -339,9 +339,9 @@ running one.
 - **Power:** `powerActions` in `shell/Apps.qml` holds each command (`loginctl`
   and `systemctl` by default); the Control Panel picks which one the button
   itself runs.
-- **Screens:** set `SHOJIWM_WIN7_OUTPUTS` in the session environment to a
-  JSON map of output name to mode, position and scale, for example
-  `{"DP-2": {"resolution": {"width": 2560, "height": 1440, "refreshRate": 180}, "position": {"x": 0, "y": 0}, "scale": 1.25}}`.
+- **Screens:** set `SHOJIWM_WIN7_OUTPUTS` in the session environment to
+  Hyprland monitor rules `name,mode,position,scale` separated by `;`, for
+  example `DP-2,2560x1440@180,0x0,1.25;HDMI-A-1,preferred,auto,1.875`.
   Without it, ShojiWM uses the best mode of each screen at scale 1.
 - **Frame colours and sizes:** `src/theme.ts`.
 - **Shell colours and sizes:** `shell/theme.js`, and `shell/Scheme.qml` for
