@@ -2,6 +2,7 @@ pragma ComponentBehavior: Bound
 
 import QtQuick
 import Quickshell
+import Quickshell.Services.Mpris
 import Quickshell.Wayland
 import Quickshell.Widgets
 import ".."
@@ -23,6 +24,24 @@ PopupWindow {
 
     readonly property int count: windows.length
 
+    /// The media player of these windows' program, for the thumbnail
+    /// toolbar Windows 7 gives media players: the one whose .desktop file
+    /// is the program's.
+    readonly property MprisPlayer player: {
+        if (popup.count === 0 || !Mpris.players)
+            return null;
+        var appId = String(popup.windows[0].appId || "").toLowerCase();
+        var players = Mpris.players.values;
+        for (var i = 0; i < players.length; i++) {
+            var entry = String(players[i].desktopEntry || "").toLowerCase();
+            if (entry.length > 0 && (appId === entry || appId.indexOf(entry) >= 0
+                                     || entry.indexOf(appId) >= 0))
+                return players[i];
+        }
+        return null;
+    }
+    readonly property int toolbarHeight: popup.player ? 34 : 0
+
     color: "transparent"
     visible: count > 0
 
@@ -37,7 +56,7 @@ PopupWindow {
         + count * Theme.thumbWidth
         + Math.max(0, count - 1) * Theme.thumbGap
     implicitHeight: Theme.thumbPadding * 2
-        + Theme.thumbHeight + Theme.thumbTitleHeight
+        + Theme.thumbHeight + Theme.thumbTitleHeight + popup.toolbarHeight
 
     Rectangle {
         anchors.fill: parent
@@ -70,8 +89,81 @@ PopupWindow {
         id: hoverArea
     }
 
+    // The thumbnail toolbar: previous, play or pause, and next.
     Row {
-        anchors.centerIn: parent
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.bottom: parent.bottom
+        anchors.bottomMargin: Theme.thumbPadding
+        spacing: 6
+        visible: popup.player !== null
+
+        component ToolButton: Rectangle {
+            id: tool
+
+            property string glyph: ""
+            property bool available: true
+            signal activated
+
+            width: 34
+            height: 26
+            radius: Scheme.buttonRadius
+            opacity: tool.available ? 1 : 0.4
+            border.width: 1
+            border.color: toolArea.containsMouse ? Scheme.selectionBorder : Scheme.fieldBorder
+            gradient: Gradient {
+                GradientStop {
+                    position: 0.0
+                    color: toolArea.pressed ? Scheme.buttonPressedTop
+                        : toolArea.containsMouse ? Scheme.buttonHotTop : Scheme.buttonTop
+                }
+                GradientStop {
+                    position: 1.0
+                    color: toolArea.pressed ? Scheme.buttonPressedBottom
+                        : toolArea.containsMouse ? Scheme.buttonHotBottom : Scheme.buttonBottom
+                }
+            }
+
+            Image {
+                anchors.centerIn: parent
+                width: 14
+                height: 14
+                sourceSize: Qt.size(28, 28)
+                source: Qt.resolvedUrl("../assets/" + (Scheme.dark ? "" : "ink-")
+                    + "media-" + tool.glyph + ".svg")
+            }
+
+            MouseArea {
+                id: toolArea
+                anchors.fill: parent
+                hoverEnabled: true
+                enabled: tool.available
+                onClicked: tool.activated()
+            }
+        }
+
+        ToolButton {
+            glyph: "previous"
+            available: popup.player !== null && popup.player.canGoPrevious
+            onActivated: popup.player.previous()
+        }
+
+        ToolButton {
+            glyph: popup.player && popup.player.isPlaying ? "pause" : "play"
+            available: popup.player !== null && popup.player.canTogglePlaying
+            onActivated: popup.player.togglePlaying()
+        }
+
+        ToolButton {
+            glyph: "next"
+            available: popup.player !== null && popup.player.canGoNext
+            onActivated: popup.player.next()
+        }
+    }
+
+    Row {
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.top: parent.top
+        anchors.topMargin: Theme.thumbPadding
         spacing: Theme.thumbGap
 
         Repeater {
