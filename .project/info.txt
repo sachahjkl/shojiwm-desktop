@@ -1,0 +1,2 @@
+name=shojiwm-win7
+description=A Windows 7 Aero desktop for the ShojiWM Wayland compositor: glass window frames, a taskbar, a Start menu and a Control Panel. All artwork original.
