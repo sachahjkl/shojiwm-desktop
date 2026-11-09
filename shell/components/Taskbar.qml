@@ -26,6 +26,7 @@ Item {
     property bool pointerOnTray: false
     property bool pointerOnClock: false
     property bool pointerOnVolume: false
+    property bool pointerOnNetwork: false
 
     // What each popup is showing, or null.
     property var previewGroup: null
@@ -33,6 +34,7 @@ Item {
     property var trayMenuItem: null
     property bool calendarOpen: false
     property bool volumeOpen: false
+    property bool networkOpen: false
     property bool clockMenuOpen: false
     property bool trayOverflowOpen: false
 
@@ -79,6 +81,7 @@ Item {
         bar.trayMenuItem = null;
         bar.calendarOpen = false;
         bar.volumeOpen = false;
+        bar.networkOpen = false;
         bar.clockMenuOpen = false;
         bar.trayOverflowOpen = false;
     }
@@ -155,6 +158,19 @@ Item {
             onHoverChanged: function (inside) {
                 bar.pointerOnTray = inside;
             }
+        }
+
+        NetworkIcon {
+            id: networkIcon
+
+            anchors.verticalCenter: parent.verticalCenter
+            active: bar.networkOpen
+            onClicked: {
+                var open = !bar.networkOpen;
+                bar.closePopups();
+                bar.networkOpen = open;
+            }
+            onHoveredChanged: bar.pointerOnNetwork = networkIcon.hovered
         }
 
         VolumeIcon {
@@ -451,7 +467,7 @@ Item {
         interval: 900
         running: bar.jumpListGroup !== null || bar.trayMenuItem !== null
             || bar.calendarOpen || bar.clockMenuOpen || bar.trayOverflowOpen
-            || bar.volumeOpen
+            || bar.volumeOpen || bar.networkOpen
         repeat: true
         onTriggered: {
             if (bar.jumpListGroup !== null
@@ -463,6 +479,9 @@ Item {
             if (bar.calendarOpen
                 && !calendar.pointerInside && !bar.pointerOnClock)
                 bar.calendarOpen = false;
+            if (bar.networkOpen
+                && !networkPopup.pointerInside && !bar.pointerOnNetwork)
+                bar.networkOpen = false;
             if (bar.volumeOpen
                 && !volumePopup.pointerInside && !bar.pointerOnVolume)
                 bar.volumeOpen = false;
@@ -515,6 +534,14 @@ Item {
             trayMenu.anchorWindow = trayOverflow;
             trayMenu.anchorRect = at;
         }
+    }
+
+    NetworkPopup {
+        id: networkPopup
+
+        anchorItem: networkIcon
+        open: bar.networkOpen
+        onDismissed: bar.networkOpen = false
     }
 
     VolumePopup {
