@@ -46,11 +46,12 @@ var thumbGap = 6;
 var thumbPadding = 8;
 // Show the window itself in a thumbnail, rather than the program's icon.
 //
-// Off, because it does not work here: asking Quickshell 0.3.0 or 0.3.2 to
-// capture a ShojiWM window ends the shell's Wayland connection ("fatal
-// error: Invalid argument") and the whole bar disappears. The code is in
-// ThumbnailPopup.qml; turn this on to try it on your own pair.
-var liveThumbnails = false;
+// It works on ShojiWM's own (TTY) session. Nested in another compositor,
+// ShojiWM offers linux-dmabuf version 3 only, and Quickshell 0.3.0 then
+// sends get_default_feedback, a version 4 request: libwayland ends the
+// shell's connection ("invalid version for zwp_linux_dmabuf_v1"). Turn
+// this off to test the shell nested.
+var liveThumbnails = true;
 
 // How long the pointer rests on a button before the thumbnails come up.
 var thumbDelay = 350;
