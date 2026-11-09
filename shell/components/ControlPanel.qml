@@ -589,7 +589,8 @@ FloatingWindow {
             Note {
                 width: parent.width
                 text: "Shown in the Start menu and on the lock screen. With none "
-                    + "chosen here, ~/.face is used, the picture log-in screens read."
+                    + "chosen here, the system's is used, as log-in screens read it: "
+                    + "AccountsService's icon, ~/.face, then ~/.face.icon."
             }
 
             Row {

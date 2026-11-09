@@ -35,6 +35,23 @@ Singleton {
     property alias lockOnSuspend: adapter.lockOnSuspend
     property alias trayShowAll: adapter.trayShowAll
     property alias trayShown: adapter.trayShown
+    property alias startPinned: adapter.startPinned
+    property alias taskbarPinned: adapter.taskbarPinned
+
+    /// `list` without `id`, and with it at the end when `on`.
+    function withMember(list, id, on) {
+        var next = [];
+        for (var i = 0; i < list.length; i++) {
+            if (list[i] !== String(id))
+                next.push(list[i]);
+        }
+        if (on)
+            next.push(String(id));
+        return next;
+    }
+
+    /// The MIME type of a notification-area icon being dragged: its item id.
+    readonly property string trayDragType: "application/x-shojiwm-win7-tray-item"
 
     /// Whether a notification-area item shows on the taskbar, or only in the
     /// popover of hidden icons. New items are hidden, as on Windows 7.
@@ -43,14 +60,7 @@ Singleton {
     }
 
     function setTrayVisible(id, on) {
-        var list = [];
-        for (var i = 0; i < adapter.trayShown.length; i++) {
-            if (adapter.trayShown[i] !== String(id))
-                list.push(adapter.trayShown[i]);
-        }
-        if (on)
-            list.push(String(id));
-        adapter.trayShown = list;
+        adapter.trayShown = withMember(adapter.trayShown, id, on);
     }
 
     // ----- pictures -----------------------------------------------------------
@@ -74,20 +84,27 @@ Singleton {
         : adapter.lockBackground.length > 0
             ? fileUrl(adapter.lockBackground) : wallpaperSource
 
-    /// The account picture: the one chosen here, else ~/.face, the file
-    /// display managers read, else the drawn one.
+    /// The account picture: the one chosen here, else the system's, else the
+    /// drawn one.
     readonly property url userPictureSource: adapter.userPicture.length > 0
         ? fileUrl(adapter.userPicture)
-        : faceExists ? fileUrl(home + "/.face") : Qt.resolvedUrl("assets/user.svg")
+        : systemPicture.length > 0 ? fileUrl(systemPicture) : Qt.resolvedUrl("assets/user.svg")
 
-    property bool faceExists: false
+    /// The first readable of the places display managers and desktops read
+    /// the account picture from: AccountsService's icon, ~/.face, then
+    /// ~/.face.icon. "" when there is none.
+    property string systemPicture: ""
 
-    FileView {
-        path: root.home + "/.face"
-        printErrors: false
-        blockLoading: false
-        onLoaded: root.faceExists = true
-        onLoadFailed: root.faceExists = false
+    Process {
+        command: ["sh", "-c",
+            "for f in \"$@\"; do [ -r \"$f\" ] && [ -s \"$f\" ] && { echo \"$f\"; exit; }; done", "sh",
+            "/var/lib/AccountsService/icons/" + (Quickshell.env("USER") || ""),
+            root.home + "/.face",
+            root.home + "/.face.icon"]
+        running: true
+        stdout: StdioCollector {
+            onStreamFinished: root.systemPicture = String(text).trim()
+        }
     }
 
     // ----- the file -----------------------------------------------------------
@@ -144,6 +161,11 @@ Singleton {
             /// The ids of the icons shown on the taskbar; the rest wait in
             /// the popover of hidden icons.
             property list<string> trayShown: []
+
+            /// The programs pinned to the Start menu and to the taskbar, as
+            /// .desktop file names, in order.
+            property list<string> startPinned: ["kitty.desktop", "thunar.desktop", "chromium.desktop"]
+            property list<string> taskbarPinned: ["thunar.desktop", "chromium.desktop", "kitty.desktop"]
         }
     }
 

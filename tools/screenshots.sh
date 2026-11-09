@@ -110,14 +110,16 @@ chmod -R u+w "$XDG_CONFIG_HOME/shojiwm"
 
 # The programs pinned by default (Thunar, Chromium, kitty) are not installed
 # here. Pin two that are, so the taskbar shows one pinned program with
-# windows open and one with none, and the Start menu has a pinned list.
-sed -i 's|taskbarPinnedIds: \[.*\]|taskbarPinnedIds: ["foot.desktop", "footclient.desktop"]|' \
-  "$XDG_CONFIG_HOME/shojiwm/shell/Apps.qml"
-grep -q '"footclient.desktop"' "$XDG_CONFIG_HOME/shojiwm/shell/Apps.qml"
-# The Start menu's pinned list, likewise.
-sed -i 's|readonly property var pinnedIds: \[.*\]|readonly property var pinnedIds: ["foot.desktop", "footclient.desktop"]|' \
-  "$XDG_CONFIG_HOME/shojiwm/shell/Apps.qml"
-grep -q 'pinnedIds: \["foot.desktop"' "$XDG_CONFIG_HOME/shojiwm/shell/Apps.qml"
+# windows open and one with none, and the Start menu has a pinned list. The
+# shell reads the rest of its settings from their defaults. taskbarCompact is
+# written out for the step that switches it with sed.
+cat >"$XDG_CONFIG_HOME/shojiwm/settings.json" <<'JSON'
+{
+  "startPinned": ["foot.desktop", "footclient.desktop"],
+  "taskbarPinned": ["foot.desktop", "footclient.desktop"],
+  "taskbarCompact": true
+}
+JSON
 
 # Two dozen pictures in ~/Pictures, for the Control Panel's background chooser
 # to show (and to need its scroll bar for).

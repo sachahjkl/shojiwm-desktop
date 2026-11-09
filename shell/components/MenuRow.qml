@@ -19,6 +19,8 @@ Rectangle {
     property int indent: 0
     readonly property bool hovered: area.containsMouse
     signal activated
+    /// A right click, at this point of the row.
+    signal menuRequested(real x, real y)
 
     height: Theme.menuRowHeight
     radius: Scheme.itemRadius
@@ -59,6 +61,12 @@ Rectangle {
         anchors.fill: parent
         hoverEnabled: !row.heading
         enabled: !row.heading
-        onClicked: row.activated()
+        acceptedButtons: Qt.LeftButton | Qt.RightButton
+        onClicked: function (event) {
+            if (event.button === Qt.RightButton)
+                row.menuRequested(event.x, event.y);
+            else
+                row.activated();
+        }
     }
 }

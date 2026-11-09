@@ -13,6 +13,8 @@ PopupWindow {
 
     property var items: []
     property bool open: false
+    /// One of the icons here is being dragged.
+    property bool dragging: false
     property var anchorWindow: null
     property rect anchorRect: Qt.rect(0, 0, 1, 1)
 
@@ -66,6 +68,21 @@ PopupWindow {
         id: hoverArea
     }
 
+    // An icon dragged here from the taskbar is hidden.
+    DropArea {
+        anchors.fill: parent
+        keys: [Settings.trayDragType]
+
+        onDropped: function (event) {
+            var id = String(event.getDataAsString(Settings.trayDragType));
+            if (id.length === 0)
+                return;
+            event.acceptProposedAction();
+            // After the drag has ended: the change can remove its source.
+            Qt.callLater(function () { Settings.setTrayVisible(id, false); });
+        }
+    }
+
     Column {
         id: column
 
@@ -95,6 +112,7 @@ PopupWindow {
                         hoverColor: Scheme.selection
                         onMenuRequested: function (item, at) { popup.menuRequested(item, at); }
                         onUsed: popup.dismissed()
+                        onDraggingChanged: popup.dragging = dragging
                     }
                 }
             }

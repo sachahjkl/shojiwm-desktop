@@ -5,7 +5,9 @@ import "../theme.js" as Theme
 
 // One notification-area icon: on the taskbar, or in the popover of hidden
 // icons. A left click activates the item, a right click asks for its menu.
-// An item that offers nothing but a menu opens it on either button.
+// An item that offers nothing but a menu opens it on either button. Dragged,
+// it carries its item id to the taskbar or the popover, which show or hide
+// it.
 Item {
     id: icon
 
@@ -19,6 +21,8 @@ Item {
     signal hoverChanged(bool inside)
     /// The item was activated, so a popover holding it can close.
     signal used
+    /// The icon is being dragged; a popover holding it stays open meanwhile.
+    readonly property bool dragging: area.drag.active
 
     width: Theme.trayIconSize + 8
     height: Theme.trayIconSize + 8
@@ -44,11 +48,37 @@ Item {
         source: icon.item && icon.item.icon ? icon.item.icon : ""
     }
 
+    // What the pointer drags: invisible, the drag shows a picture of the
+    // icon. A platform drag, so it reaches the other surfaces of the shell.
+    Item {
+        id: dragProxy
+
+        width: icon.width
+        height: icon.height
+        Drag.active: area.drag.active
+        Drag.dragType: Drag.Automatic
+        Drag.supportedActions: Qt.MoveAction
+        Drag.hotSpot.x: width / 2
+        Drag.hotSpot.y: height / 2
+        Drag.mimeData: ({ [Settings.trayDragType]: icon.item ? String(icon.item.id) : "" })
+    }
+
     MouseArea {
         id: area
         anchors.fill: parent
         hoverEnabled: true
         acceptedButtons: Qt.LeftButton | Qt.RightButton
+        drag.target: dragProxy
+
+        onPressed: function (event) {
+            if (event.button === Qt.LeftButton)
+                icon.grabToImage(function (result) { dragProxy.Drag.imageSource = result.url; },
+                                  Qt.size(icon.width, icon.height));
+        }
+        onReleased: {
+            dragProxy.x = 0;
+            dragProxy.y = 0;
+        }
 
         onEntered: icon.hoverChanged(true)
         onExited: icon.hoverChanged(false)

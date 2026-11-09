@@ -16,15 +16,38 @@ import "theme.js" as Theme
 Singleton {
     id: root
 
-    // The programs the Start menu pins and the places open. Change these to
-    // the programs you use.
+    // The programs the places open. Change these to the programs you use.
     readonly property string terminal: "kitty"
     readonly property string fileManager: "thunar"
     readonly property string browser: "chromium"
-    readonly property var pinnedIds: ["kitty.desktop", "thunar.desktop", "chromium.desktop"]
-    /// The programs that keep a button on the taskbar while they are closed,
-    /// left to right.
-    readonly property var taskbarPinnedIds: ["thunar.desktop", "chromium.desktop", "kitty.desktop"]
+    /// The programs pinned to the Start menu, and the ones that keep a button
+    /// on the taskbar while they are closed, left to right. Kept in
+    /// settings.json; "Pin to ..." in the menus changes them.
+    readonly property var pinnedIds: Settings.startPinned
+    readonly property var taskbarPinnedIds: Settings.taskbarPinned
+
+    /// The .desktop file name of an entry, as the pinned lists keep it.
+    function entryFileId(entry) {
+        return entry ? String(entry.id) + ".desktop" : "";
+    }
+
+    function isPinned(entry) {
+        return pinnedIds.indexOf(entryFileId(entry)) >= 0;
+    }
+
+    function isTaskbarPinned(entry) {
+        return taskbarPinnedIds.indexOf(entryFileId(entry)) >= 0;
+    }
+
+    function setPinned(entry, on) {
+        if (entry)
+            Settings.startPinned = Settings.withMember(Settings.startPinned, entryFileId(entry), on);
+    }
+
+    function setTaskbarPinned(entry, on) {
+        if (entry)
+            Settings.taskbarPinned = Settings.withMember(Settings.taskbarPinned, entryFileId(entry), on);
+    }
 
     // ----- windows ----------------------------------------------------------
 

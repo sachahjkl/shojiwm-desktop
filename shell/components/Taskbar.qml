@@ -309,7 +309,8 @@ Item {
                 && !calendar.pointerInside && !bar.pointerOnClock)
                 bar.calendarOpen = false;
             if (bar.trayOverflowOpen && bar.trayMenuItem === null
-                && !trayOverflow.pointerInside && !bar.pointerOnTray)
+                && !trayOverflow.pointerInside && !bar.pointerOnTray
+                && !trayOverflow.dragging && !trayArea.dragging)
                 bar.trayOverflowOpen = false;
         }
     }

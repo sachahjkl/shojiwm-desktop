@@ -346,8 +346,9 @@ running one.
 - **Frame colours and sizes:** `src/theme.ts`.
 - **Shell colours and sizes:** `shell/theme.js`, and `shell/Scheme.qml` for
   the colours that change between light and dark.
-- **Wallpaper, lock screen picture, account picture:** the Control Panel, or
-  `~/.face` for the account picture.
+- **Wallpaper, lock screen picture, account picture:** the Control Panel. With
+  no account picture chosen there, the system's is used, from the first of
+  `/var/lib/AccountsService/icons/$USER`, `~/.face` and `~/.face.icon`.
 
 Press `Super`+`Shift`+`R` after a change to `src`. The shell reloads itself
 when a QML file changes.

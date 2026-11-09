@@ -30,6 +30,7 @@ Item {
 
     /// Cleared by the window every time the menu is opened.
     function reset() {
+        menu.programMenu = [];
         search.text = "";
         menu.page = "home";
         menu.openFolder = "";
@@ -40,8 +41,33 @@ Item {
     }
 
     onVisibleChanged: {
-        if (!visible)
+        if (!visible) {
             menu.powerMenuOpen = false;
+            menu.programMenu = [];
+        }
+    }
+
+    // ----- the menu of a program, on a right click ------------------------------
+
+    /// Its lines, or [] while it is closed, and where it hangs from.
+    property var programMenu: []
+    property point programMenuAt: Qt.point(0, 0)
+
+    function showProgramMenu(row, entry, x, y) {
+        if (!entry)
+            return;
+        var at = row.mapToItem(menu, x, y);
+        menu.programMenuAt = Qt.point(at.x, at.y);
+        var pinned = Apps.isPinned(entry);
+        var onTaskbar = Apps.isTaskbarPinned(entry);
+        menu.programMenu = [
+            { label: "Open", run: function () { menu.launch(entry); } },
+            { separator: true },
+            { label: onTaskbar ? "Unpin from Taskbar" : "Pin to Taskbar",
+              run: function () { Apps.setTaskbarPinned(entry, !onTaskbar); } },
+            { label: pinned ? "Unpin from Start Menu" : "Pin to Start Menu",
+              run: function () { Apps.setPinned(entry, !pinned); } }
+        ];
     }
 
     readonly property var found: Apps.search(search.text)
@@ -362,12 +388,14 @@ Item {
                     model: Apps.pinned
 
                     delegate: MenuRow {
+                        id: pinnedRow
                         required property var modelData
                         width: homeColumn.width
                         label: modelData ? modelData.name : ""
                         icon: Apps.entryIcon(modelData)
                         bold: true
                         onActivated: menu.launch(modelData)
+                        onMenuRequested: (x, y) => menu.showProgramMenu(pinnedRow, modelData, x, y)
                     }
                 }
 
@@ -389,11 +417,13 @@ Item {
                     model: Settings.showFrequent ? Apps.frequent : []
 
                     delegate: MenuRow {
+                        id: frequentRow
                         required property var modelData
                         width: homeColumn.width
                         label: modelData ? modelData.name : ""
                         icon: Apps.entryIcon(modelData)
                         onActivated: menu.launch(modelData)
+                        onMenuRequested: (x, y) => menu.showProgramMenu(frequentRow, modelData, x, y)
                     }
                 }
             }
@@ -438,12 +468,14 @@ Item {
                     model: folder.expanded ? folder.modelData.entries : []
 
                     delegate: MenuRow {
+                        id: folderRow
                         required property var modelData
                         width: folder.width
                         indent: 22
                         label: modelData ? modelData.name : ""
                         icon: Apps.entryIcon(modelData)
                         onActivated: menu.launch(modelData)
+                        onMenuRequested: (x, y) => menu.showProgramMenu(folderRow, modelData, x, y)
                     }
                 }
             }
@@ -474,6 +506,7 @@ Item {
             }
 
             delegate: MenuRow {
+                id: resultRow
                 required property var modelData
                 required property int index
                 width: results.rowWidth
@@ -481,6 +514,7 @@ Item {
                 icon: Apps.entryIcon(modelData)
                 selected: index === results.currentIndex
                 onActivated: menu.launch(modelData)
+                onMenuRequested: (x, y) => menu.showProgramMenu(resultRow, modelData, x, y)
             }
 
             // With nothing found, Return runs the text, as Run... does.
@@ -586,7 +620,9 @@ Item {
                 }
 
                 Keys.onEscapePressed: {
-                    if (search.text.length > 0)
+                    if (menu.programMenu.length > 0)
+                        menu.programMenu = [];
+                    else if (search.text.length > 0)
                         search.text = "";
                     else
                         menu.dismissed();
@@ -637,5 +673,24 @@ Item {
                 NumberAnimation { duration: Theme.fade }
             }
         }
+    }
+
+    // A press outside the program menu closes it.
+    MouseArea {
+        anchors.fill: parent
+        z: 10
+        visible: menu.programMenu.length > 0
+        acceptedButtons: Qt.LeftButton | Qt.RightButton
+        onPressed: menu.programMenu = []
+    }
+
+    DesktopMenu {
+        z: 11
+        entries: menu.programMenu
+        atX: menu.programMenuAt.x
+        atY: menu.programMenuAt.y
+        boundsWidth: menu.width
+        boundsHeight: menu.height
+        onDismissed: menu.programMenu = []
     }
 }

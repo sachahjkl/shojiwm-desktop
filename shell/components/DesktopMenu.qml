@@ -185,9 +185,12 @@ Item {
                         popup.openFrom(modelData, line);
                         return;
                     }
+                    // Read before closing: closing empties the list and
+                    // destroys this line.
+                    var run = modelData.run;
                     popup.dismissed();
-                    if (modelData.run)
-                        modelData.run();
+                    if (run)
+                        run();
                 }
             }
         }

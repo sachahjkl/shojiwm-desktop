@@ -47,7 +47,7 @@ PopupWindow {
     }
 
     readonly property real widest: {
-        var texts = [popup.closeLabel, popup.openLabel];
+        var texts = [popup.closeLabel, popup.openLabel, "Unpin this program from taskbar"];
         for (var i = 0; i < actions.length; i++)
             texts.push(String(actions[i].name));
         for (var k = 0; k < recent.length; k++)
@@ -165,6 +165,17 @@ PopupWindow {
             itemEnabled: popup.entry !== null
             onActivated: {
                 Apps.launch(popup.entry);
+                popup.dismissed();
+            }
+        }
+
+        MenuItemRow {
+            width: column.width
+            label: Apps.isTaskbarPinned(popup.entry)
+                ? "Unpin this program from taskbar" : "Pin this program to taskbar"
+            visible: popup.entry !== null
+            onActivated: {
+                Apps.setTaskbarPinned(popup.entry, !Apps.isTaskbarPinned(popup.entry));
                 popup.dismissed();
             }
         }

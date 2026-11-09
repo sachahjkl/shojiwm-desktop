@@ -69,9 +69,10 @@ ShellRoot {
                 exclusionMode: ExclusionMode.Ignore
                 WlrLayershell.layer: WlrLayer.Background
                 WlrLayershell.namespace: "no_blur"
-                // The desktop takes the keyboard only to rename an icon.
+                // The desktop takes the keyboard when clicked, for Delete, F2,
+                // Return and Ctrl+A, and holds it while an icon is renamed.
                 WlrLayershell.keyboardFocus: desktopIcons.renaming
-                    ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
+                    ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.OnDemand
 
                 Image {
                     anchors.fill: parent
