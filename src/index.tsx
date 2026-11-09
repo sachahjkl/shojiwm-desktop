@@ -358,7 +358,7 @@ const MENU_GLASS = layerGlass(backdropSource());
 const TASKBAR_GLASS = layerGlass(xrayBackdropSource());
 
 COMPOSITOR.effect.layer = (layer) => {
-  const namespace = layer.namespace();
+  const namespace = layer.namespace() ?? "";
   if (namespace === "shojiwm-win7-taskbar") {
     return { behind: TASKBAR_GLASS };
   }
