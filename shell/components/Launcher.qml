@@ -13,7 +13,8 @@ import "../theme.js" as Theme
 // Under the field, a list: before anything is typed, the programs started
 // last (Search.recent), then every program; while typing, the results. The
 // sides and the bottom edge resize the panel, and the size is kept
-// (Settings.launcherWidth, launcherHeight: the list's height). A list of
+// (Settings.launcherWidth, launcherHeight: the list's height), written
+// when the edge is let go. A list of
 // height 0 is the field alone: then the results show under it while typing,
 // only as tall as they are.
 Item {
@@ -38,8 +39,16 @@ Item {
     property int pick: 0
 
     readonly property int headerHeight: Theme.menuSearchHeight + 8 + Theme.menuPadding * 2
+
+    /// While an edge is dragged, the size it gives, -1 otherwise: the
+    /// settings are written once, when it is let go.
+    property int dragWidth: -1
+    property int dragListHeight: -1
+
     /// The list's height: 0 for the field alone.
-    readonly property int listHeight: Math.max(0, Math.min(Settings.launcherHeight, launcher.maxListHeight))
+    readonly property int listHeight: Math.max(0, Math.min(
+        launcher.dragListHeight >= 0 ? launcher.dragListHeight : Settings.launcherHeight,
+        launcher.maxListHeight))
     readonly property bool compact: launcher.listHeight === 0
     /// The panel ends above the taskbar: it never runs off the screen.
     readonly property int maxListHeight: Math.max(0, Math.round(launcher.screenHeight * 0.82)
@@ -47,12 +56,16 @@ Item {
     /// The most rows the compact panel grows to while typing.
     readonly property int compactRows: 14
 
-    readonly property int panelWidth: Math.max(360, Math.min(Settings.launcherWidth,
-        Math.round(launcher.screenWidth * 0.9)))
-    /// The window's height: the tallest the panel gets, so the window is not
-    /// resized at each key.
-    readonly property int panelHeight: launcher.headerHeight + Theme.menuPadding
-        + (launcher.compact ? launcher.compactRows * StartMenuState.rowHeight : launcher.listHeight)
+    readonly property int maxPanelWidth: Math.round(launcher.screenWidth * 0.9)
+    readonly property int panelWidth: Math.max(360, Math.min(
+        launcher.dragWidth >= 0 ? launcher.dragWidth : Settings.launcherWidth,
+        launcher.maxPanelWidth))
+    /// The window's size: the largest the panel gets on this screen. The
+    /// panel is drawn inside it, so neither a key nor a drag resizes the
+    /// window; the rest of it is clear, without glass.
+    readonly property int windowWidth: launcher.maxPanelWidth
+    readonly property int windowHeight: launcher.headerHeight + Theme.menuPadding
+        + Math.max(launcher.maxListHeight, launcher.compactRows * StartMenuState.rowHeight)
 
     function accept() {
         if (Search.accept(launcher.pick))
@@ -253,6 +266,14 @@ Item {
                 return mapToItem(launcher, mouse.x, mouse.y);
             }
             hoverEnabled: true
+            onReleased: {
+                if (launcher.dragWidth >= 0)
+                    Settings.launcherWidth = launcher.panelWidth;
+                if (launcher.dragListHeight >= 0)
+                    Settings.launcherHeight = launcher.listHeight;
+                launcher.dragWidth = -1;
+                launcher.dragListHeight = -1;
+            }
         }
 
         Edge {
@@ -263,7 +284,7 @@ Item {
             cursorShape: Qt.SizeHorCursor
             onPositionChanged: function (mouse) {
                 if (pressed)
-                    Settings.launcherWidth = Math.round(2 * (launcher.width / 2 - at(mouse).x));
+                    launcher.dragWidth = Math.round(2 * (launcher.width / 2 - at(mouse).x));
             }
         }
 
@@ -275,7 +296,7 @@ Item {
             cursorShape: Qt.SizeHorCursor
             onPositionChanged: function (mouse) {
                 if (pressed)
-                    Settings.launcherWidth = Math.round(2 * (at(mouse).x - launcher.width / 2));
+                    launcher.dragWidth = Math.round(2 * (at(mouse).x - launcher.width / 2));
             }
         }
 
@@ -289,7 +310,7 @@ Item {
             cursorShape: Qt.SizeVerCursor
             onPositionChanged: function (mouse) {
                 if (pressed)
-                    Settings.launcherHeight = Math.max(0, Math.min(launcher.maxListHeight,
+                    launcher.dragListHeight = Math.max(0, Math.min(launcher.maxListHeight,
                         Math.round(at(mouse).y - launcher.headerHeight - Theme.menuPadding)));
             }
         }

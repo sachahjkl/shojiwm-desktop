@@ -120,8 +120,8 @@ ShellRoot {
         color: "transparent"
         anchors.top: true
         margins.top: Math.round((launcherWindow.screen ? launcherWindow.screen.height : 1080) * 0.18)
-        implicitWidth: launcher.panelWidth
-        implicitHeight: launcher.panelHeight
+        implicitWidth: launcher.windowWidth
+        implicitHeight: launcher.windowHeight
         exclusionMode: ExclusionMode.Ignore
         WlrLayershell.layer: WlrLayer.Overlay
         WlrLayershell.namespace: "shojiwm-win7-launcher"
