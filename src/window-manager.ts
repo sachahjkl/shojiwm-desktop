@@ -185,6 +185,19 @@ export class FloatingWindowManager {
    */
   private afterClose: string | null = null;
   private cascade = 0;
+  /**
+   * Where each program's last window was when it closed, by app id, with
+   * the screen it was on. The next window of that program opens there when
+   * none of its windows is open, as programs reopen where they were on
+   * Windows. Programs that make a new window each time they show (Papier)
+   * stay in place instead of walking along the cascade.
+   */
+  private lastPlace = new Map<string, { output: string; rect: Rect }>();
+  /**
+   * Each window's app id, read while it lives: a window whose client has
+   * gone has none any more when it closes.
+   */
+  private appIds = new Map<string, string>();
   private currentOutput: string | undefined;
   /** Windows that "show desktop" minimised, so the next call restores them. */
   private hiddenByShowDesktop: string[] = [];
@@ -289,6 +302,10 @@ export class FloatingWindowManager {
    */
   private initialRect(window: WaylandWindow): Rect {
     const natural = naturalRect(window);
+    const remembered = this.rememberedRect(window, natural);
+    if (remembered) {
+      return remembered;
+    }
     const area = this.workArea(this.outputOf(window));
     if (!area) {
       return natural;
@@ -317,6 +334,52 @@ export class FloatingWindowManager {
     };
   }
 
+  /**
+   * The place the program's last window had, at this window's own size and
+   * kept inside the work area of its screen; null when there is none, or
+   * when another window of the program is open (that one keeps the place).
+   */
+  private rememberedRect(window: WaylandWindow, natural: Rect): Rect | null {
+    const appId = window.appId();
+    const place = appId ? this.lastPlace.get(appId) : undefined;
+    if (!appId || !place) {
+      return null;
+    }
+    for (const other of this.windowsById.values()) {
+      if (other.id !== window.id && other.appId() === appId) {
+        return null;
+      }
+    }
+    const area =
+      this.workArea(place.output) ?? this.workArea(this.outputOf(window));
+    if (!area) {
+      return null;
+    }
+    const width = Math.min(natural.width, area.width);
+    const height = Math.min(natural.height, area.height);
+    return {
+      x: Math.round(clamp(place.rect.x, area.x, area.x + area.width - width)),
+      y: Math.round(clamp(place.rect.y, area.y, area.y + area.height - height)),
+      width: Math.round(width),
+      height: Math.round(height),
+    };
+  }
+
+  /** Remembers where a closing window is, for the program's next window. */
+  private rememberPlace(window: WaylandWindow): void {
+    const appId = window.appId() ?? this.appIds.get(window.id);
+    const output = this.outputOf(window);
+    if (!appId || !output || window.state[WIN_FULLSCREEN]()) {
+      return;
+    }
+    const rect = window.state[WIN_MAXIMIZED]()
+      ? window.state[WIN_RESTORE_RECT]()
+      : window.state[WIN_RECT]();
+    if (rect) {
+      this.lastPlace.set(appId, { output, rect: snapshotRect(rect) });
+    }
+  }
+
   // ----- lifecycle --------------------------------------------------------
 
   public onOpen(window: WaylandWindow): void {
@@ -326,6 +389,10 @@ export class FloatingWindowManager {
   }
 
   public onFirstCommit(window: WaylandWindow): void {
+    const appId = window.appId();
+    if (appId) {
+      this.appIds.set(window.id, appId);
+    }
     if (window.state[WIN_PLACED]()) {
       return;
     }
@@ -360,6 +427,7 @@ export class FloatingWindowManager {
   }
 
   public onStartClose(window: WaylandWindow): void {
+    this.rememberPlace(window);
     // The next window takes the keyboard now, as on Windows, from the most
     // recently used ones, before anything else can.
     this.mru = this.mru.filter((id) => id !== window.id);
@@ -390,6 +458,9 @@ export class FloatingWindowManager {
   }
 
   public onClose(window: WaylandWindow): void {
+    // A window can also go without the close animation (onStartClose).
+    this.rememberPlace(window);
+    this.appIds.delete(window.id);
     this.stack.remove(window);
     this.windowsById.delete(window.id);
     this.mru = this.mru.filter((id) => id !== window.id);
