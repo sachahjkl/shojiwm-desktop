@@ -448,7 +448,7 @@ Item {
                     required property var modelData
 
                     width: placesColumn.width
-                    height: modelData.separator ? 11 : Theme.menuRowHeight
+                    height: modelData.separator ? 11 : StartMenuState.rowHeight
 
                     // An etched line: dark over light, short of both edges.
                     Column {
@@ -824,7 +824,7 @@ Item {
             footer: MenuRow {
                 width: results.rowWidth
                 visible: menu.pickCount === 0
-                height: visible ? Theme.menuRowHeight : 0
+                height: visible ? StartMenuState.rowHeight : 0
                 label: "Run “" + search.text.trim() + "”"
                 icon: Qt.resolvedUrl("../assets/icons/run.png")
                 selected: true
@@ -843,7 +843,7 @@ Item {
             anchors.leftMargin: Theme.menuPadding
             anchors.rightMargin: Theme.menuPadding
             anchors.bottomMargin: 4
-            height: menu.searching ? 0 : Theme.menuRowHeight + 9
+            height: menu.searching ? 0 : StartMenuState.rowHeight + 9
             visible: !menu.searching
 
             Rectangle {

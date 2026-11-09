@@ -623,7 +623,10 @@ Singleton {
     ]
     /// The action the button itself runs, by id. Set in the Control Panel.
     readonly property string powerButtonAction: powerAction(Settings.powerButtonAction)
-        ? Settings.powerButtonAction : "logoff"
+        ? Settings.powerButtonAction : "shutdown"
+    /// The action the Shut Down dialog selects, by id. Set in the Control Panel.
+    readonly property string shutdownDialogAction: powerAction(Settings.shutdownDialogAction)
+        ? Settings.shutdownDialogAction : "logoff"
 
     function powerAction(id) {
         for (var i = 0; i < powerActions.length; i++) {

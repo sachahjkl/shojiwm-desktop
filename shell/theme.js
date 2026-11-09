@@ -78,6 +78,12 @@ var menuHeight = 560;
 var menuMargin = 2;
 var menuProgramsWidth = 300;
 var menuRowHeight = 32;
+var menuIconSize = 20;
+// Without "Use large icons": smaller icons and rows, and a menu shorter by
+// its ten rows of places.
+var menuRowHeightSmall = 24;
+var menuIconSizeSmall = 16;
+var menuHeightSmall = menuHeight - 10 * (menuRowHeight - menuRowHeightSmall);
 var menuPadding = 8;
 var menuSearchHeight = 26;
 var menuFooterHeight = 42;

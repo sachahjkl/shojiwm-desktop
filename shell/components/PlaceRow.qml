@@ -12,7 +12,7 @@ Item {
     readonly property bool hovered: area.containsMouse
     signal activated
 
-    implicitHeight: Theme.menuRowHeight
+    implicitHeight: StartMenuState.rowHeight
 
     Rectangle {
         anchors.fill: parent

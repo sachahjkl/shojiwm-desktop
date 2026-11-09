@@ -2,6 +2,7 @@ pragma Singleton
 
 import QtQuick
 import Quickshell
+import "theme.js" as Theme
 
 // Which screen shows the Start menu. The empty string means none of them.
 //
@@ -11,6 +12,11 @@ Singleton {
     id: root
 
     property string openOn: ""
+
+    /// The sizes of the menu, large or compact (Settings.startMenuLargeIcons).
+    readonly property int rowHeight: Settings.startMenuLargeIcons ? Theme.menuRowHeight : Theme.menuRowHeightSmall
+    readonly property int iconSize: Settings.startMenuLargeIcons ? Theme.menuIconSize : Theme.menuIconSizeSmall
+    readonly property int menuHeight: Settings.startMenuLargeIcons ? Theme.menuHeight : Theme.menuHeightSmall
 
     function firstScreen() {
         var screens = Quickshell.screens;

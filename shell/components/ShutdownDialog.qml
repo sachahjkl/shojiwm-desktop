@@ -13,14 +13,14 @@ Item {
 
     signal dismissed
 
-    /// The power actions, without the separator; the power button's own
-    /// action first, as Windows 7 picks it.
+    /// The power actions, without the separator; the one the dialog selects
+    /// first (Apps.shutdownDialogAction).
     readonly property var actions: {
         var list = Apps.powerActions.filter(function (action) {
             return action.id !== "separator";
         });
         list.sort(function (a, b) {
-            return (a.id === Apps.powerButtonAction ? 0 : 1) - (b.id === Apps.powerButtonAction ? 0 : 1);
+            return (a.id === Apps.shutdownDialogAction ? 0 : 1) - (b.id === Apps.shutdownDialogAction ? 0 : 1);
         });
         return list;
     }

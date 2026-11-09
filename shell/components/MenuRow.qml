@@ -52,7 +52,7 @@ Rectangle {
         }
     }
 
-    height: Theme.menuRowHeight
+    height: StartMenuState.rowHeight
     radius: Scheme.itemRadius
     readonly property bool lit: !heading && (selected || area.containsMouse)
     color: lit ? Scheme.selection : "transparent"
@@ -69,14 +69,14 @@ Rectangle {
 
         IconImage {
             anchors.verticalCenter: parent.verticalCenter
-            implicitSize: 20
+            implicitSize: StartMenuState.iconSize
             source: row.icon
             visible: row.icon.length > 0
         }
 
         Text {
             anchors.verticalCenter: parent.verticalCenter
-            width: parent.width - (row.icon.length > 0 ? 20 + 8 : 0) - (row.hasArrow ? 14 : 0)
+            width: parent.width - (row.icon.length > 0 ? StartMenuState.iconSize + 8 : 0) - (row.hasArrow ? 14 : 0)
             text: row.label
             color: row.heading ? Scheme.menuHeading : row.labelColor
             font.family: Theme.fontFamily

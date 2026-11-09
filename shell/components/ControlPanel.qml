@@ -2182,6 +2182,12 @@ FloatingWindow {
             SubHeading { text: "Start menu" }
 
             CpCheck {
+                label: "Use large icons"
+                checked: Settings.startMenuLargeIcons
+                onToggled: function (on) { Settings.startMenuLargeIcons = on; }
+            }
+
+            CpCheck {
                 label: "Show the programs used most"
                 checked: Settings.showFrequent
                 onToggled: function (on) { Settings.showFrequent = on; }
@@ -2203,6 +2209,26 @@ FloatingWindow {
                         label: modelData.label
                         checked: Apps.powerButtonAction === modelData.id
                         onClicked: Settings.powerButtonAction = modelData.id
+                    }
+                }
+            }
+
+            Note { text: "What the Shut Down dialog (Super+Shift+E) selects:" }
+
+            Flow {
+                width: parent.width
+                spacing: 16
+
+                Repeater {
+                    model: Apps.powerActions.filter(function (action) {
+                        return action.id !== "separator";
+                    })
+
+                    delegate: CpRadio {
+                        required property var modelData
+                        label: modelData.label
+                        checked: Apps.shutdownDialogAction === modelData.id
+                        onClicked: Settings.shutdownDialogAction = modelData.id
                     }
                 }
             }

@@ -323,7 +323,7 @@ ShellRoot {
             implicitWidth: Theme.menuWidth
             // Room above the glass for the account picture, which stands
             // over the menu's top edge.
-            implicitHeight: Theme.menuHeight + Theme.menuTileOverhang
+            implicitHeight: StartMenuState.menuHeight + Theme.menuTileOverhang
 
             exclusionMode: ExclusionMode.Ignore
             WlrLayershell.layer: WlrLayer.Top

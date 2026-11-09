@@ -38,6 +38,7 @@ Singleton {
     property alias wallpaperPosition: adapter.wallpaperPosition
     property alias screensaver: adapter.screensaver
     property alias taskbarAutoHide: adapter.taskbarAutoHide
+    property alias startMenuLargeIcons: adapter.startMenuLargeIcons
     property alias screensaverMinutes: adapter.screensaverMinutes
     /// The screen saver shows now, for the Control Panel's Preview; not kept.
     property bool screensaverPreview: false
@@ -53,6 +54,7 @@ Singleton {
     property alias desktopPlaces: adapter.desktopPlaces
     property alias showFrequent: adapter.showFrequent
     property alias powerButtonAction: adapter.powerButtonAction
+    property alias shutdownDialogAction: adapter.shutdownDialogAction
     property alias peek: adapter.peek
     property alias clockFormat: adapter.clockFormat
     property alias showDate: adapter.showDate
@@ -235,6 +237,8 @@ Singleton {
             property string screensaver: "none"
             /// The taskbar slides away, leaving a line to bring it back.
             property bool taskbarAutoHide: false
+            /// The Start menu's "Use large icons"; off, it is compact.
+            property bool startMenuLargeIcons: false
             property int screensaverMinutes: 5
             property real glassColorStrength: 0.35
             property var cpuMeterPlace: ({ right: 24, top: 24 })
@@ -257,10 +261,11 @@ Singleton {
             /// like): { screen, x, y }, the top left of its cell on that screen.
             property var desktopPlaces: ({})
             /// "shutdown", "restart", "sleep", "hibernate", "lock" or "logoff".
-            /// Log off by default: the Shut Down dialog (Super+Shift+E, Alt+F4
-            /// on the desktop) selects this action, and Return there must not
+            property string powerButtonAction: "shutdown"
+            /// The action the Shut Down dialog (Super+Shift+E, Alt+F4 on the
+            /// desktop) selects. Log off by default: Return there must not
             /// turn the computer off by accident.
-            property string powerButtonAction: "logoff"
+            property string shutdownDialogAction: "logoff"
             property bool peek: true
 
             /// "locale", "24h" or "12h".
