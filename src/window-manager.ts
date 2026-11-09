@@ -463,9 +463,9 @@ export class FloatingWindowManager {
       this.moveDrag = null;
 
       // A click that did not move the window can be the first half of a
-      // double click.
+      // double click: on the caption bar, or anywhere with Super held.
       if (
-        event.source === "ssd" &&
+        (event.source === "ssd" || event.source === "modifier") &&
         Math.abs(event.delta.x) <= CLICK_SLACK_PX &&
         Math.abs(event.delta.y) <= CLICK_SLACK_PX
       ) {
@@ -487,7 +487,7 @@ export class FloatingWindowManager {
   private isDoubleClick(event: WindowMoveEvent): boolean {
     const previous = this.lastCaptionClick;
     return (
-      event.source === "ssd" &&
+      (event.source === "ssd" || event.source === "modifier") &&
       previous !== null &&
       previous.id === event.window.id &&
       event.timestamp - previous.at <= DOUBLE_CLICK_MS &&
@@ -766,6 +766,100 @@ export class FloatingWindowManager {
       width,
       height: area.height,
     });
+  }
+
+  /**
+   * Super+Down, as Windows 7: a maximised window is restored, any other is
+   * minimised.
+   */
+  public restoreOrMinimize(window: WaylandWindow): void {
+    if (window.state[WIN_MAXIMIZED]()) {
+      this.setMaximized(window, false);
+      return;
+    }
+    this.setMinimized(window, true);
+  }
+
+  /**
+   * Super+Shift+Left or Right: the window goes to the next output that way,
+   * at the same place in its work area. A maximised window stays maximised.
+   */
+  public moveToOutput(window: WaylandWindow, step: 1 | -1): void {
+    const outputs = [...COMPOSITOR.output.outputs].sort(
+      (a, b) => a.position.x - b.position.x || a.position.y - b.position.y,
+    );
+    const from = outputs.findIndex(
+      (output) => output.name === this.outputOf(window),
+    );
+    const to = outputs[from + step];
+    if (from < 0 || !to) {
+      return;
+    }
+    const source = this.workArea(outputs[from].name);
+    const target = this.workArea(to.name);
+    if (!source || !target) {
+      return;
+    }
+    const place = (rect: Rect): Rect => {
+      const width = Math.min(rect.width, target.width);
+      const height = Math.min(rect.height, target.height);
+      const fx =
+        source.width > rect.width
+          ? (rect.x - source.x) / (source.width - rect.width)
+          : 0;
+      const fy =
+        source.height > rect.height
+          ? (rect.y - source.y) / (source.height - rect.height)
+          : 0;
+      return {
+        x: Math.round(
+          target.x + Math.max(0, Math.min(1, fx)) * (target.width - width),
+        ),
+        y: Math.round(
+          target.y + Math.max(0, Math.min(1, fy)) * (target.height - height),
+        ),
+        width,
+        height,
+      };
+    };
+    const restore = window.state[WIN_RESTORE_RECT]();
+    if (window.state[WIN_MAXIMIZED]()) {
+      if (restore) {
+        window.state[WIN_RESTORE_RECT].set(place(snapshotRect(restore)));
+      }
+      window.state[WIN_RECT].set(target);
+    } else {
+      window.state[WIN_RECT].set(place(snapshotRect(window.state[WIN_RECT]())));
+    }
+    this.currentOutput = to.name;
+  }
+
+  /** The windows Super+Home minimised, to bring back on the next press. */
+  private hiddenByFocus: string[] = [];
+
+  /**
+   * Super+Home, as Windows 7: minimise every window but the focused one, or
+   * bring them back.
+   */
+  public toggleOthers(window: WaylandWindow): void {
+    if (this.hiddenByFocus.length > 0) {
+      for (const id of this.hiddenByFocus) {
+        const other = this.windowsById.get(id);
+        if (other) {
+          this.setMinimized(other, false);
+        }
+      }
+      this.hiddenByFocus = [];
+      window.focus();
+      return;
+    }
+    for (const other of this.recentWindows()) {
+      if (other.id !== window.id && !other.state[WIN_MINIMIZED]()) {
+        this.hiddenByFocus.push(other.id);
+        this.setMinimized(other, true);
+      }
+    }
+    window.focus();
   }
 
   /** Put the window back where it was before a snap or a maximise. */

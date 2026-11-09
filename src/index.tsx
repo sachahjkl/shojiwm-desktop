@@ -248,7 +248,22 @@ COMPOSITOR.key.bind(
 COMPOSITOR.key.bind(
   "restore-window",
   "Super+Down",
-  withFocused((window) => WINDOWS.restore(window)),
+  withFocused((window) => WINDOWS.restoreOrMinimize(window)),
+);
+COMPOSITOR.key.bind(
+  "window-to-left-output",
+  "Super+Shift+Left",
+  withFocused((window) => WINDOWS.moveToOutput(window, -1)),
+);
+COMPOSITOR.key.bind(
+  "window-to-right-output",
+  "Super+Shift+Right",
+  withFocused((window) => WINDOWS.moveToOutput(window, 1)),
+);
+COMPOSITOR.key.bind(
+  "minimize-others",
+  "Super+Home",
+  withFocused((window) => WINDOWS.toggleOthers(window)),
 );
 COMPOSITOR.key.bind(
   "snap-left",
