@@ -178,6 +178,7 @@
           singleton DisplaySettings 1.0 DisplaySettings.qml
           singleton LauncherEntries 1.0 LauncherEntries.qml
           singleton Network 1.0 Network.qml
+          singleton NotificationHistory 1.0 NotificationHistory.qml
           EOF
           cd ./shell
           qmllint \
