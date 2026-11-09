@@ -295,7 +295,7 @@ Item {
     }
 
     function openTerminal() {
-        Quickshell.execDetached({ command: [Apps.terminal], workingDirectory: folder });
+        Quickshell.execDetached({ command: ["sh", "-c", Apps.terminal], workingDirectory: folder });
     }
 
     function refresh() {

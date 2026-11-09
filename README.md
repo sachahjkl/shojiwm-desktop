@@ -348,6 +348,11 @@ running one.
   Hyprland monitor rules `name,mode,position,scale` separated by `;`, for
   example `DP-2,2560x1440@180,0x0,1.25;HDMI-A-1,preferred,auto,1.875`.
   Without it, ShojiWM uses the best mode of each screen at scale 1.
+- **Terminal:** set `SHOJIWM_WIN7_TERMINAL` to the command that opens one;
+  kitty without it.
+- **More keys:** set `SHOJIWM_WIN7_KEYS` to a JSON object of shortcut to
+  shell command, for example `{"Ctrl+Shift+Space": "hex dictation toggle"}`,
+  for programs that would register a global shortcut through a portal.
 - **Frame colours and sizes:** `src/theme.ts`.
 - **Shell colours and sizes:** `shell/theme.js`, and `shell/Scheme.qml` for
   the colours that change between light and dark.

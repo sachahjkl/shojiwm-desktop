@@ -17,7 +17,9 @@ Singleton {
     id: root
 
     // The programs the places open. Change these to the programs you use.
-    readonly property string terminal: "kitty"
+    /// The terminal: the command in SHOJIWM_WIN7_TERMINAL, run by a shell,
+    /// else kitty.
+    readonly property string terminal: Quickshell.env("SHOJIWM_WIN7_TERMINAL") || "kitty"
     readonly property string fileManager: "thunar"
     readonly property string browser: "chromium"
     /// The programs pinned to the Start menu, and the ones that keep a button

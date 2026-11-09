@@ -46,8 +46,12 @@ import {
 // Programs
 // ---------------------------------------------------------------------------
 
-/** The terminal, the file manager and the browser the keys start. */
-const TERMINAL = ["kitty"];
+/**
+ * The terminal, the file manager and the browser the keys start. The
+ * terminal is the command in SHOJIWM_WIN7_TERMINAL, run by a shell, else
+ * kitty.
+ */
+const TERMINAL = COMPOSITOR.env.get("SHOJIWM_WIN7_TERMINAL") ?? "kitty";
 const FILE_MANAGER = ["thunar"];
 const BROWSER = ["chromium", "--ozone-platform-hint=auto"];
 
@@ -218,19 +222,40 @@ function toggleStartMenu(): void {
   });
 }
 
+/**
+ * Keys that start or close something act when the key is let go: a held key,
+ * or a keyboard that sends its press again, acts once.
+ */
+const ONCE = { on: "release" } as const;
+
 COMPOSITOR.key.bind("start-menu", "Super", toggleStartMenu, {
   on: "release",
   within: 300,
 });
-COMPOSITOR.key.bind("terminal", "Super+Return", () => {
-  COMPOSITOR.process.spawn({ command: TERMINAL });
-});
-COMPOSITOR.key.bind("files", "Super+E", () => {
-  COMPOSITOR.process.spawn({ command: FILE_MANAGER });
-});
-COMPOSITOR.key.bind("browser", "Super+B", () => {
-  COMPOSITOR.process.spawn({ command: BROWSER });
-});
+COMPOSITOR.key.bind(
+  "terminal",
+  "Super+Return",
+  () => {
+    COMPOSITOR.process.spawn({ command: TERMINAL });
+  },
+  ONCE,
+);
+COMPOSITOR.key.bind(
+  "files",
+  "Super+E",
+  () => {
+    COMPOSITOR.process.spawn({ command: FILE_MANAGER });
+  },
+  ONCE,
+);
+COMPOSITOR.key.bind(
+  "browser",
+  "Super+B",
+  () => {
+    COMPOSITOR.process.spawn({ command: BROWSER });
+  },
+  ONCE,
+);
 /** Ask the shell for "Shut Down Windows" on the current monitor. */
 function openShutdownDialog(): void {
   const monitor = WINDOWS.outputName() ?? "";
@@ -241,22 +266,33 @@ function openShutdownDialog(): void {
 
 // Alt+F4 closes the focused window; with none, as on the desktop, it asks
 // what the computer should do, as Windows 7 does.
-COMPOSITOR.key.bind("close-window", "Alt+F4", () => {
-  const window = WINDOWS.focusedWindow();
-  if (window) {
-    window.close();
-  } else {
-    openShutdownDialog();
-  }
-});
+COMPOSITOR.key.bind(
+  "close-window",
+  "Alt+F4",
+  () => {
+    const window = WINDOWS.focusedWindow();
+    if (window) {
+      window.close();
+    } else {
+      openShutdownDialog();
+    }
+  },
+  ONCE,
+);
 // ShojiWM quits on Super+Shift+Q unless the configuration binds it: here it
 // closes the focused window, and the session ends from the power menu.
 COMPOSITOR.key.bind(
   "close-window-super",
   "Super+Shift+Q",
   withFocused((window) => window.close()),
+  ONCE,
 );
-COMPOSITOR.key.bind("shutdown-dialog", "Super+Shift+E", openShutdownDialog);
+COMPOSITOR.key.bind(
+  "shutdown-dialog",
+  "Super+Shift+E",
+  openShutdownDialog,
+  ONCE,
+);
 COMPOSITOR.key.bind("switch-window", "Alt+Tab", () => ALT_TAB.open(1));
 COMPOSITOR.key.bind("switch-window-back", "Alt+Shift+Tab", () =>
   ALT_TAB.open(-1),
@@ -311,13 +347,42 @@ for (const [id, key] of [
   ["screenshot", "Print"],
   ["screenshot-ctrl", "Ctrl+Print"],
 ] as const) {
-  COMPOSITOR.key.bind(id, key, () => {
-    COMPOSITOR.process.spawn({ command: SCREENSHOT });
-  });
+  COMPOSITOR.key.bind(
+    id,
+    key,
+    () => {
+      COMPOSITOR.process.spawn({ command: SCREENSHOT });
+    },
+    ONCE,
+  );
 }
-COMPOSITOR.key.bind("launcher", "Super+D", () => {
-  COMPOSITOR.process.spawn({ command: `${VICINAE} toggle` });
-});
+COMPOSITOR.key.bind(
+  "launcher",
+  "Super+D",
+  () => {
+    COMPOSITOR.process.spawn({ command: `${VICINAE} toggle` });
+  },
+  ONCE,
+);
+// More keys from SHOJIWM_WIN7_KEYS: a JSON object of shortcut to shell
+// command, for programs that would register a global shortcut through a
+// portal ShojiWM does not have, for example
+// {"Ctrl+Shift+Space": "hex dictation toggle"}.
+const EXTRA_KEYS = COMPOSITOR.env.get("SHOJIWM_WIN7_KEYS");
+if (EXTRA_KEYS) {
+  const keys = JSON.parse(EXTRA_KEYS) as Record<string, string>;
+  for (const [shortcut, command] of Object.entries(keys)) {
+    COMPOSITOR.key.bind(
+      `extra:${shortcut}`,
+      shortcut,
+      () => {
+        COMPOSITOR.process.spawn({ command });
+      },
+      ONCE,
+    );
+  }
+}
+
 // Super+D is the launcher, so showing the desktop moves to Super+M, the key
 // Windows 7 minimises everything with.
 COMPOSITOR.key.bind("show-desktop", "Super+M", () =>
