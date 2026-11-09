@@ -4,7 +4,7 @@ import ".."
 import "../theme.js" as Theme
 
 // The clock at the right end of the taskbar: the time over the date. A click
-// opens the calendar, which the taskbar owns.
+// opens the calendar, a right click the clock's menu; the taskbar owns both.
 Item {
     id: clock
 
@@ -12,6 +12,8 @@ Item {
     property bool active: false
     readonly property bool hovered: area.containsMouse
     signal clicked
+    /// A right click; `at` is where the clock is in its window.
+    signal menuRequested(rect at)
 
     implicitWidth: Theme.clockWidth
     implicitHeight: Theme.taskbarHeight - Theme.taskbarPadding * 2
@@ -67,6 +69,14 @@ Item {
         id: area
         anchors.fill: parent
         hoverEnabled: true
-        onClicked: clock.clicked()
+        acceptedButtons: Qt.LeftButton | Qt.RightButton
+        onClicked: function (event) {
+            if (event.button === Qt.RightButton) {
+                var point = clock.mapToItem(null, 0, 0);
+                clock.menuRequested(Qt.rect(point.x, point.y, clock.width, clock.height));
+            } else {
+                clock.clicked();
+            }
+        }
     }
 }

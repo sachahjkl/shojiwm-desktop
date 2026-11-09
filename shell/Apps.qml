@@ -49,18 +49,6 @@ Singleton {
             Settings.taskbarPinned = Settings.withMember(Settings.taskbarPinned, entryFileId(entry), on);
     }
 
-    /// Pin a program to the taskbar at `index` among the pinned ones, or move
-    /// it there if it is pinned already. `id` is a .desktop file name; one
-    /// that is not installed is ignored.
-    function pinToTaskbarAt(id, index) {
-        if (!entryById(id))
-            return;
-        var list = Settings.withMember(Settings.taskbarPinned, id, false);
-        index = Math.max(0, Math.min(list.length, index));
-        list.splice(index, 0, String(id));
-        Settings.taskbarPinned = list;
-    }
-
     /// The .desktop file name a drop carries: a program dragged from the
     /// shell, or a .desktop file from the desktop or a file manager. "" for
     /// anything else.
@@ -96,6 +84,10 @@ Singleton {
     /// order their first window opened. A pinned program with no window open
     /// has an empty `windows`.
     property var groups: []
+
+    /// The order the buttons were dragged into, as group keys, for this
+    /// session. Buttons not in it keep their place after the ones that are.
+    property var buttonOrder: []
 
     function isControlPanel(toplevel) {
         return toplevel && toplevel.title === "Control Panel"
@@ -180,7 +172,49 @@ Singleton {
             group.windows.push(toplevel);
         }
 
-        groups = list;
+        var order = root.buttonOrder;
+        var ranked = list.map(function (group, natural) {
+            var at = order.indexOf(group.key);
+            return { group: group, rank: at >= 0 ? at : order.length + natural };
+        });
+        ranked.sort(function (a, b) { return a.rank - b.rank; });
+        groups = ranked.map(function (item) { return item.group; });
+    }
+
+    /// Put the button of `key` before the button now at `index`, or last for
+    /// `groups.length`. The pinned programs keep that order in settings.json.
+    function moveButton(key, index) {
+        var keys = groups.map(function (group) { return group.key; });
+        var from = keys.indexOf(key);
+        if (from < 0)
+            return;
+        keys.splice(from, 1);
+        keys.splice(from < index ? index - 1 : index, 0, key);
+        root.buttonOrder = keys;
+        var pins = [];
+        for (var i = 0; i < keys.length; i++) {
+            var group = groups.filter(function (g) { return g.key === keys[i]; })[0];
+            if (group && group.pinned && group.entry)
+                pins.push(entryFileId(group.entry));
+        }
+        Settings.taskbarPinned = pins;
+        rebuildGroups();
+    }
+
+    /// Pin a program dropped on the taskbar before the button now at `index`.
+    function pinDroppedAt(id, index) {
+        var entry = entryById(id);
+        if (!entry)
+            return;
+        var key = "entry:" + entry.id;
+        var keys = groups.map(function (group) { return group.key; }).filter(function (k) {
+            return k !== key;
+        });
+        keys.splice(Math.max(0, Math.min(keys.length, index)), 0, key);
+        root.buttonOrder = keys;
+        if (!isTaskbarPinned(entry))
+            setTaskbarPinned(entry, true);
+        rebuildGroups();
     }
 
     onWindowsChanged: rebuildGroups()

@@ -31,6 +31,7 @@ Item {
     property var jumpListGroup: null
     property var trayMenuItem: null
     property bool calendarOpen: false
+    property bool clockMenuOpen: false
     property bool trayOverflowOpen: false
 
     function closePopups() {
@@ -38,6 +39,7 @@ Item {
         bar.jumpListGroup = null;
         bar.trayMenuItem = null;
         bar.calendarOpen = false;
+        bar.clockMenuOpen = false;
         bar.trayOverflowOpen = false;
     }
 
@@ -126,6 +128,12 @@ Item {
                 bar.calendarOpen = open;
             }
             onHoveredChanged: bar.pointerOnClock = clock.hovered
+            onMenuRequested: function (at) {
+                var open = !bar.clockMenuOpen;
+                bar.closePopups();
+                bar.clockMenuOpen = open;
+                clockMenu.anchorRect = at;
+            }
         }
 
         // Show desktop: the glass strip Windows puts past the clock, a
@@ -248,8 +256,16 @@ Item {
 
             delegate: TaskButton {
                 required property var modelData
+                required property int index
 
                 group: modelData
+                shift: bar.shiftOf(index)
+                lifted: bar.dragFrom === index && bar.dropBefore >= 0
+                onDragChanged: function (active) {
+                    bar.dragFrom = active ? index : -1;
+                    if (!active)
+                        bar.dropBefore = -1;
+                }
                 width: Settings.taskbarCompact ? Theme.compactButtonWidth
                     : modelData.windows.length === 0
                         ? Theme.pinnedButtonWidth : bar.buttonWidth
@@ -277,33 +293,49 @@ Item {
         }
     }
 
-    // A program dropped on the buttons is pinned there: a pinned button moved
-    // to a new place, a program from the Start menu, or a .desktop file. A
-    // line shows where it goes.
+    // Dragging on the buttons: a button moved to a new place, or a program
+    // from the Start menu or a .desktop file, pinned where it is dropped. The
+    // other buttons stand aside while it is dragged, as Windows 7 shows it.
+
+    /// The index of the button being dragged, or -1.
+    property int dragFrom: -1
+    /// The button the drop goes before (the count of buttons for the end),
+    /// or -1 while nothing is dragged over the buttons.
+    property int dropBefore: -1
+    /// The room a dragged button takes.
+    readonly property real dragSlot: (bar.dragFrom >= 0 && buttonsRepeater.itemAt(bar.dragFrom)
+        ? buttonsRepeater.itemAt(bar.dragFrom).width : Theme.pinnedButtonWidth) + Theme.taskButtonGap
+
+    /// How far the button at `index` stands aside.
+    function shiftOf(index) {
+        var to = bar.dropBefore;
+        var from = bar.dragFrom;
+        if (to < 0)
+            return 0;
+        if (from < 0)
+            return index >= to ? bar.dragSlot : 0;
+        if (from < to && index > from && index < to)
+            return -bar.dragSlot;
+        if (to <= index && index < from)
+            return bar.dragSlot;
+        return 0;
+    }
+
     DropArea {
         id: programDrop
 
-        /// Where among the pinned programs the drop goes, or -1.
-        property int insertIndex: -1
-        property real insertX: 0
-
+        /// The button the pointer is before: the first whose middle is right
+        /// of it, from the places the buttons had before anything moved.
         function place(x) {
-            var before = 0;
-            var edge = 0;
+            var before = buttonsRepeater.count;
             for (var i = 0; i < buttonsRepeater.count; i++) {
-                var group = Apps.groups[i];
                 var item = buttonsRepeater.itemAt(i);
-                if (!group || !group.pinned || !item)
-                    continue;
-                if (item.x + item.width / 2 < x) {
-                    before++;
-                    edge = item.x + item.width + Theme.taskButtonGap / 2;
-                } else if (before === 0) {
-                    edge = item.x - Theme.taskButtonGap / 2;
+                if (item && x < item.x + item.width / 2) {
+                    before = i;
+                    break;
                 }
             }
-            programDrop.insertIndex = before;
-            programDrop.insertX = edge;
+            bar.dropBefore = before;
         }
 
         anchors.fill: buttons
@@ -311,27 +343,24 @@ Item {
 
         onEntered: function (event) { programDrop.place(event.x); }
         onPositionChanged: function (event) { programDrop.place(event.x); }
-        onExited: programDrop.insertIndex = -1
+        onExited: bar.dropBefore = -1
         onDropped: function (event) {
-            var index = programDrop.insertIndex;
-            programDrop.insertIndex = -1;
+            var before = bar.dropBefore;
+            var from = bar.dragFrom;
+            bar.dropBefore = -1;
+            if (from >= 0) {
+                var key = Apps.groups[from] ? Apps.groups[from].key : "";
+                event.accept(Qt.MoveAction);
+                // After the drag has ended: the change rebuilds its source.
+                Qt.callLater(function () { Apps.moveButton(key, before); });
+                return;
+            }
             var id = Apps.droppedProgramId(event);
             if (id.length === 0)
                 return;
             event.accept(Qt.CopyAction);
-            // After the drag has ended: the change rebuilds its source.
-            Qt.callLater(function () { Apps.pinToTaskbarAt(id, index); });
+            Qt.callLater(function () { Apps.pinDroppedAt(id, before); });
         }
-    }
-
-    Rectangle {
-        visible: programDrop.insertIndex >= 0
-        x: buttons.x + programDrop.insertX - 1
-        y: buttons.y + 2
-        width: 2
-        height: buttons.height - 4
-        radius: 1
-        color: "#e6ffffff"
     }
 
     // ----- popups -----------------------------------------------------------
@@ -355,7 +384,7 @@ Item {
         id: hideMenus
         interval: 900
         running: bar.jumpListGroup !== null || bar.trayMenuItem !== null
-            || bar.calendarOpen || bar.trayOverflowOpen
+            || bar.calendarOpen || bar.clockMenuOpen || bar.trayOverflowOpen
         repeat: true
         onTriggered: {
             if (bar.jumpListGroup !== null
@@ -367,6 +396,9 @@ Item {
             if (bar.calendarOpen
                 && !calendar.pointerInside && !bar.pointerOnClock)
                 bar.calendarOpen = false;
+            if (bar.clockMenuOpen
+                && !clockMenu.pointerInside && !bar.pointerOnClock)
+                bar.clockMenuOpen = false;
             if (bar.trayOverflowOpen && bar.trayMenuItem === null
                 && !trayOverflow.pointerInside && !bar.pointerOnTray
                 && !trayOverflow.dragging && !trayArea.dragging)
@@ -388,6 +420,15 @@ Item {
         anchorWindow: bar.window
         group: bar.jumpListGroup
         onDismissed: bar.jumpListGroup = null
+    }
+
+    ClockMenu {
+        id: clockMenu
+
+        anchorWindow: bar.window
+        open: bar.clockMenuOpen
+        onDismissed: bar.clockMenuOpen = false
+        onCalendarRequested: bar.calendarOpen = true
     }
 
     TrayOverflow {

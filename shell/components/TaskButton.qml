@@ -189,10 +189,23 @@ Item {
         onTriggered: button.previewRequested(button.buttonRect())
     }
 
-    /// The button can be dragged to another place on the taskbar: a pinned
-    /// program.
-    readonly property bool draggable: button.group !== null && button.group.pinned === true
-        && button.group.entry !== null
+    /// Every button can be dragged to another place on the taskbar.
+    readonly property bool draggable: button.group !== null
+
+    /// How far the button stands aside while another one is dragged over the
+    /// taskbar, and whether it is the one being dragged, which leaves its
+    /// place empty.
+    property real shift: 0
+    property bool lifted: false
+    signal dragChanged(bool active)
+
+    opacity: button.lifted ? 0 : 1
+    transform: Translate {
+        x: button.shift
+        Behavior on x {
+            NumberAnimation { duration: Settings.motion(Theme.hoverIn); easing.type: Easing.OutCubic }
+        }
+    }
 
     // What the pointer drags: invisible, the drag shows a picture of the
     // button and carries the program's .desktop file name.
@@ -208,9 +221,11 @@ Item {
         Drag.hotSpot.y: height / 2
         Drag.keys: [Settings.programDragType]
         Drag.mimeData: ({ [Settings.programDragType]: Apps.entryFileId(button.group ? button.group.entry : null) })
+        Drag.onDragStarted: button.dragChanged(true)
         Drag.onDragFinished: {
             dragProxy.x = 0;
             dragProxy.y = 0;
+            button.dragChanged(false);
         }
     }
 
