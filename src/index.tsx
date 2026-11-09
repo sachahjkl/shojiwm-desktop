@@ -281,12 +281,11 @@ COMPOSITOR.key.bind("lock", "Super+L", () => {
   });
 });
 // Print Screen and Ctrl+Print Screen: the command in SHOJIWM_WIN7_SCREENSHOT,
-// else the whole screen to the clipboard, as Windows 7 does. A string command
-// runs in a login shell, which reads the session environment afresh, so a
-// new value applies without logging in again.
+// else the whole screen to the clipboard, as Windows 7 does. The variable is
+// read from the session's environment, so a new value needs a new session.
 const SCREENSHOT =
-  'if [ -n "$SHOJIWM_WIN7_SCREENSHOT" ]; then exec "$SHOJIWM_WIN7_SCREENSHOT"; ' +
-  "else grim - | wl-copy --type image/png; fi";
+  COMPOSITOR.env.get("SHOJIWM_WIN7_SCREENSHOT") ??
+  "grim - | wl-copy --type image/png";
 for (const [id, key] of [
   ["screenshot", "Print"],
   ["screenshot-ctrl", "Ctrl+Print"],
