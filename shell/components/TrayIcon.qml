@@ -25,6 +25,9 @@ Item {
     /// Set from the drag itself: once the platform drag starts, the pointer
     /// belongs to it and the mouse area no longer sees it.
     property bool dragging: false
+    /// The icon is on the taskbar: dragged off it and dropped where nothing
+    /// takes it, it goes to the popover of hidden icons.
+    property bool inTaskbar: false
 
     width: Theme.trayIconSize + 8
     height: Theme.trayIconSize + 8
@@ -65,8 +68,13 @@ Item {
         Drag.keys: [Settings.trayDragType]
         Drag.mimeData: ({ [Settings.trayDragType]: icon.item ? String(icon.item.id) : "" })
         Drag.onDragStarted: icon.dragging = true
-        Drag.onDragFinished: {
+        Drag.onDragFinished: function (dropAction) {
             icon.dragging = false;
+            if (icon.inTaskbar && dropAction === Qt.IgnoreAction && icon.item) {
+                var id = String(icon.item.id);
+                // After the drag has ended: the change removes this icon.
+                Qt.callLater(function () { Settings.setTrayVisible(id, false); });
+            }
             dragProxy.x = 0;
             dragProxy.y = 0;
         }

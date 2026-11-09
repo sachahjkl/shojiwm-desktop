@@ -53,6 +53,8 @@ Singleton {
 
     /// The MIME type of a notification-area icon being dragged: its item id.
     readonly property string trayDragType: "application/x-shojiwm-win7-tray-item"
+    /// The MIME type of a program being dragged: its .desktop file name.
+    readonly property string programDragType: "application/x-shojiwm-win7-program"
 
     /// Up to this many notification-area items, the ones with no choice made
     /// show on the taskbar; beyond it they wait in the popover.

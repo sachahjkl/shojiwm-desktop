@@ -8,8 +8,8 @@ import "../theme.js" as Theme
 // The notification area, as Windows 7 has it: the icons chosen to show on
 // the taskbar, and left of them the arrow that opens the popover of the
 // hidden ones. Which is which is set in the Control Panel, or by dragging an
-// icon: onto the taskbar to show it, onto the arrow or into the popover to
-// hide it. An icon with no choice made shows while there are three icons or
+// icon: onto the taskbar to show it, onto the arrow, into the popover or off
+// the taskbar to hide it. An icon with no choice made shows while there are three icons or
 // fewer, and waits in the popover beyond.
 Item {
     id: tray
@@ -93,6 +93,7 @@ Item {
 
                 anchors.verticalCenter: parent ? parent.verticalCenter : undefined
                 item: modelData
+                inTaskbar: true
                 onMenuRequested: function (item, at) { tray.menuRequested(item, at); }
                 onHoverChanged: function (inside) { tray.hoverChanged(inside); }
                 onDraggingChanged: tray.dragging = dragging

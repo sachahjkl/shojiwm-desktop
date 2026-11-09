@@ -242,6 +242,8 @@ Item {
         spacing: Theme.taskButtonGap
 
         Repeater {
+            id: buttonsRepeater
+
             model: Apps.groups
 
             delegate: TaskButton {
@@ -273,6 +275,63 @@ Item {
                 }
             }
         }
+    }
+
+    // A program dropped on the buttons is pinned there: a pinned button moved
+    // to a new place, a program from the Start menu, or a .desktop file. A
+    // line shows where it goes.
+    DropArea {
+        id: programDrop
+
+        /// Where among the pinned programs the drop goes, or -1.
+        property int insertIndex: -1
+        property real insertX: 0
+
+        function place(x) {
+            var before = 0;
+            var edge = 0;
+            for (var i = 0; i < buttonsRepeater.count; i++) {
+                var group = Apps.groups[i];
+                var item = buttonsRepeater.itemAt(i);
+                if (!group || !group.pinned || !item)
+                    continue;
+                if (item.x + item.width / 2 < x) {
+                    before++;
+                    edge = item.x + item.width + Theme.taskButtonGap / 2;
+                } else if (before === 0) {
+                    edge = item.x - Theme.taskButtonGap / 2;
+                }
+            }
+            programDrop.insertIndex = before;
+            programDrop.insertX = edge;
+        }
+
+        anchors.fill: buttons
+        keys: [Settings.programDragType, "text/uri-list"]
+
+        onEntered: function (event) { programDrop.place(event.x); }
+        onPositionChanged: function (event) { programDrop.place(event.x); }
+        onExited: programDrop.insertIndex = -1
+        onDropped: function (event) {
+            var index = programDrop.insertIndex;
+            programDrop.insertIndex = -1;
+            var id = Apps.droppedProgramId(event);
+            if (id.length === 0)
+                return;
+            event.accept(Qt.CopyAction);
+            // After the drag has ended: the change rebuilds its source.
+            Qt.callLater(function () { Apps.pinToTaskbarAt(id, index); });
+        }
+    }
+
+    Rectangle {
+        visible: programDrop.insertIndex >= 0
+        x: buttons.x + programDrop.insertX - 1
+        y: buttons.y + 2
+        width: 2
+        height: buttons.height - 4
+        radius: 1
+        color: "#e6ffffff"
     }
 
     // ----- popups -----------------------------------------------------------

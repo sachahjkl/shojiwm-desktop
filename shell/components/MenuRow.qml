@@ -21,6 +21,28 @@ Rectangle {
     signal activated
     /// A right click, at this point of the row.
     signal menuRequested(real x, real y)
+    /// The .desktop file name of the program on this row, which a drag
+    /// carries to the taskbar; "" for a row that does not drag.
+    property string dragId: ""
+
+    // What the pointer drags: invisible, the drag shows a picture of the row.
+    Item {
+        id: dragProxy
+
+        width: row.width
+        height: row.height
+        Drag.active: area.drag.active
+        Drag.dragType: Drag.Automatic
+        Drag.supportedActions: Qt.CopyAction
+        Drag.hotSpot.x: 16
+        Drag.hotSpot.y: height / 2
+        Drag.keys: [Settings.programDragType]
+        Drag.mimeData: ({ [Settings.programDragType]: row.dragId })
+        Drag.onDragFinished: {
+            dragProxy.x = 0;
+            dragProxy.y = 0;
+        }
+    }
 
     height: Theme.menuRowHeight
     radius: Scheme.itemRadius
@@ -62,6 +84,13 @@ Rectangle {
         hoverEnabled: !row.heading
         enabled: !row.heading
         acceptedButtons: Qt.LeftButton | Qt.RightButton
+        drag.target: row.dragId.length > 0 ? dragProxy : null
+
+        onPressed: function (event) {
+            if (event.button === Qt.LeftButton && row.dragId.length > 0)
+                row.grabToImage(function (result) { dragProxy.Drag.imageSource = result.url; },
+                                Qt.size(row.width, row.height));
+        }
         onClicked: function (event) {
             if (event.button === Qt.RightButton)
                 row.menuRequested(event.x, event.y);

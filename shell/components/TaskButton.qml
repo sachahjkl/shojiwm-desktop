@@ -70,10 +70,6 @@ Item {
     Rectangle {
         id: body
 
-        readonly property string look: area.pressed ? "Pressed"
-            : button.current ? "Active"
-            : button.hovered ? "Hover" : "Rest"
-
         width: button.width - Theme.stackRoom
         height: Theme.taskButtonHeight
         anchors.bottom: parent.bottom
@@ -88,16 +84,21 @@ Item {
             NumberAnimation { duration: Settings.motion(Theme.fade) }
         }
 
-        // One plate per look, cross-faded as Windows 7 does: quick in, slow
-        // out.
+        // The looks are layers, as Windows 7 paints them: the resting glass,
+        // the active plate over it, the pointer's glow over that, and the
+        // pressed plate on top. Each fades in quickly and out slowly, so the
+        // glow is added to an active button rather than replacing it.
         Repeater {
-            model: ["Rest", "Hover", "Active", "Pressed"]
+            model: ["Rest", "Active", "Hover", "Pressed"]
 
             delegate: Rectangle {
                 id: plate
 
                 required property string modelData
-                readonly property bool shown: body.look === modelData
+                readonly property bool shown: modelData === "Rest" ? true
+                    : modelData === "Active" ? button.current
+                    : modelData === "Hover" ? button.hovered && !area.pressed
+                    : area.pressed
 
                 anchors.fill: parent
                 anchors.margins: 1
@@ -188,12 +189,44 @@ Item {
         onTriggered: button.previewRequested(button.buttonRect())
     }
 
+    /// The button can be dragged to another place on the taskbar: a pinned
+    /// program.
+    readonly property bool draggable: button.group !== null && button.group.pinned === true
+        && button.group.entry !== null
+
+    // What the pointer drags: invisible, the drag shows a picture of the
+    // button and carries the program's .desktop file name.
+    Item {
+        id: dragProxy
+
+        width: body.width
+        height: body.height
+        Drag.active: area.drag.active
+        Drag.dragType: Drag.Automatic
+        Drag.supportedActions: Qt.MoveAction
+        Drag.hotSpot.x: width / 2
+        Drag.hotSpot.y: height / 2
+        Drag.keys: [Settings.programDragType]
+        Drag.mimeData: ({ [Settings.programDragType]: Apps.entryFileId(button.group ? button.group.entry : null) })
+        Drag.onDragFinished: {
+            dragProxy.x = 0;
+            dragProxy.y = 0;
+        }
+    }
+
     MouseArea {
         id: area
 
         anchors.fill: parent
         hoverEnabled: true
         acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
+        drag.target: button.draggable ? dragProxy : null
+
+        onPressed: function (event) {
+            if (event.button === Qt.LeftButton && button.draggable)
+                body.grabToImage(function (result) { dragProxy.Drag.imageSource = result.url; },
+                                 Qt.size(body.width, body.height));
+        }
 
         onEntered: {
             if (!button.idle)

@@ -49,6 +49,34 @@ Singleton {
             Settings.taskbarPinned = Settings.withMember(Settings.taskbarPinned, entryFileId(entry), on);
     }
 
+    /// Pin a program to the taskbar at `index` among the pinned ones, or move
+    /// it there if it is pinned already. `id` is a .desktop file name; one
+    /// that is not installed is ignored.
+    function pinToTaskbarAt(id, index) {
+        if (!entryById(id))
+            return;
+        var list = Settings.withMember(Settings.taskbarPinned, id, false);
+        index = Math.max(0, Math.min(list.length, index));
+        list.splice(index, 0, String(id));
+        Settings.taskbarPinned = list;
+    }
+
+    /// The .desktop file name a drop carries: a program dragged from the
+    /// shell, or a .desktop file from the desktop or a file manager. "" for
+    /// anything else.
+    function droppedProgramId(event) {
+        if (event.formats.indexOf(Settings.programDragType) >= 0)
+            return String(event.getDataAsString(Settings.programDragType));
+        if (!event.hasUrls)
+            return "";
+        for (var i = 0; i < event.urls.length; i++) {
+            var name = decodeURIComponent(String(event.urls[i])).split("/").pop();
+            if (name.endsWith(".desktop"))
+                return name;
+        }
+        return "";
+    }
+
     // ----- windows ----------------------------------------------------------
 
     /// Every open window, oldest first.

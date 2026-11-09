@@ -396,6 +396,7 @@ Item {
                         bold: true
                         onActivated: menu.launch(modelData)
                         onMenuRequested: (x, y) => menu.showProgramMenu(pinnedRow, modelData, x, y)
+                        dragId: Apps.entryFileId(modelData)
                     }
                 }
 
@@ -424,6 +425,7 @@ Item {
                         icon: Apps.entryIcon(modelData)
                         onActivated: menu.launch(modelData)
                         onMenuRequested: (x, y) => menu.showProgramMenu(frequentRow, modelData, x, y)
+                        dragId: Apps.entryFileId(modelData)
                     }
                 }
             }
@@ -476,6 +478,7 @@ Item {
                         icon: Apps.entryIcon(modelData)
                         onActivated: menu.launch(modelData)
                         onMenuRequested: (x, y) => menu.showProgramMenu(folderRow, modelData, x, y)
+                        dragId: Apps.entryFileId(modelData)
                     }
                 }
             }
@@ -515,6 +518,7 @@ Item {
                 selected: index === results.currentIndex
                 onActivated: menu.launch(modelData)
                 onMenuRequested: (x, y) => menu.showProgramMenu(resultRow, modelData, x, y)
+                dragId: Apps.entryFileId(modelData)
             }
 
             // With nothing found, Return runs the text, as Run... does.
