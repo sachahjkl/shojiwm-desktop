@@ -3,6 +3,7 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Controls.Basic
 import Quickshell
+import Quickshell.Io
 import Quickshell.Services.SystemTray
 import Quickshell.Widgets
 import ".."
@@ -65,6 +66,7 @@ FloatingWindow {
         { text: "Change what the power button does", page: "taskbar", words: "power button shut down shutdown restart sleep hibernate log off lock" },
         { text: "Select which icons appear on the taskbar", page: "notifications", words: "notification area tray icons hidden show" },
         { text: "Change the clock format", page: "clock", words: "clock time date format 24 12 hour" },
+        { text: "See the time zone and time synchronization", page: "clock", words: "time zone timezone ntp synchronization sync server internet" },
         { text: "Turn off all unnecessary animations", page: "ease", words: "animations motion reduce reduced effects ease access accessibility" },
         { text: "About this desktop", page: "about", words: "about system version information" }
     ]
@@ -981,6 +983,60 @@ FloatingWindow {
                 width: parent.width
                 text: "The language and the date format follow the system locale "
                     + "(LANG, i18n.defaultLocale on NixOS)."
+            }
+
+            SubHeading { text: "Time zone and synchronization" }
+
+            // What systemd reports. The system's configuration sets these
+            // (time.timeZone and the time servers on NixOS), so they are shown,
+            // not changed, here.
+            Process {
+                id: timedate
+                command: ["timedatectl", "show"]
+                running: true
+                stdout: StdioCollector {
+                    onStreamFinished: {
+                        var values = {};
+                        String(text).split("\n").forEach(function (line) {
+                            var at = line.indexOf("=");
+                            if (at > 0)
+                                values[line.substring(0, at)] = line.substring(at + 1);
+                        });
+                        timeInfo.values = values;
+                    }
+                }
+            }
+
+            Item {
+                id: timeInfo
+                property var values: ({})
+                width: 1
+                height: 1
+            }
+
+            Repeater {
+                model: [
+                    { label: "Time zone", value: timeInfo.values.Timezone || "unknown" },
+                    { label: "Synchronized with an Internet time server",
+                      value: timeInfo.values.NTPSynchronized === "yes" ? "Yes"
+                          : timeInfo.values.NTPSynchronized === "no" ? "No" : "unknown" },
+                    { label: "Network time", value: timeInfo.values.NTP === "yes" ? "On"
+                          : timeInfo.values.NTP === "no" ? "Off" : "unknown" }
+                ]
+
+                delegate: Text {
+                    required property var modelData
+                    text: modelData.label + ":  " + modelData.value
+                    color: Scheme.text
+                    font.family: Theme.fontFamily
+                    font.pixelSize: Theme.fontSize
+                }
+            }
+
+            Note {
+                width: parent.width
+                text: "Set by the system's configuration (time.timeZone on NixOS), "
+                    + "so it is shown here and changed there."
             }
         }
     }
