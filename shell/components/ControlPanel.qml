@@ -387,13 +387,18 @@ FloatingWindow {
             sourceSize.height: 96
         }
 
+        // The links take the rest of the category's width and wrap, so a
+        // long one is never cut off.
         Column {
+            width: category.width - 48 - category.spacing
             spacing: 4
 
             CpLink {
+                width: parent.width
                 text: category.name
                 large: true
                 font.bold: true
+                wrapMode: Text.Wrap
                 onClicked: window.go(category.target)
             }
 
@@ -402,7 +407,9 @@ FloatingWindow {
 
                 delegate: CpLink {
                     required property var modelData
+                    width: parent.width
                     text: modelData.text
+                    wrapMode: Text.Wrap
                     onClicked: window.go(modelData.page)
                 }
             }
@@ -1492,12 +1499,19 @@ FloatingWindow {
 
             Heading { text: "Adjust your computer's settings" }
 
+            // Two columns, each half the page; one in a narrow window.
             Grid {
-                columns: 2
+                id: categories
+
+                readonly property real cell: (width - columnSpacing * (columns - 1)) / columns
+
+                width: parent.width
+                columns: width >= 640 ? 2 : 1
                 columnSpacing: 40
                 rowSpacing: 26
 
                 Category {
+                    width: categories.cell
                     icon: "pictures"
                     name: "Appearance and Personalization"
                     target: "appearance"
@@ -1510,6 +1524,7 @@ FloatingWindow {
                 }
 
                 Category {
+                    width: categories.cell
                     icon: "control-panel"
                     name: "User Accounts"
                     target: "account"
@@ -1520,6 +1535,7 @@ FloatingWindow {
                 }
 
                 Category {
+                    width: categories.cell
                     icon: "calendar"
                     name: "Clock and Region"
                     target: "clock"
@@ -1529,6 +1545,7 @@ FloatingWindow {
                 }
 
                 Category {
+                    width: categories.cell
                     icon: "run"
                     name: "Ease of Access"
                     target: "ease"
@@ -1538,6 +1555,7 @@ FloatingWindow {
                 }
 
                 Category {
+                    width: categories.cell
                     icon: "computer"
                     name: "System"
                     target: "about"

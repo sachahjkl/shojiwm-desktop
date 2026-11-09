@@ -15,9 +15,11 @@ Text {
     font.underline: area.containsMouse
     elide: Text.ElideRight
 
+    // The text only, not the empty width beside a short link.
     MouseArea {
         id: area
-        anchors.fill: parent
+        width: link.contentWidth
+        height: link.contentHeight
         hoverEnabled: true
         cursorShape: Qt.PointingHandCursor
         onClicked: link.clicked()
