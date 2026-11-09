@@ -24,6 +24,9 @@ Rectangle {
     /// The .desktop file name of the program on this row, which a drag
     /// carries to the taskbar; "" for a row that does not drag.
     property string dragId: ""
+    /// The program has a jump list: an arrow at the right end, as Windows 7
+    /// draws one.
+    property bool hasArrow: false
 
     // What the pointer drags: invisible, the drag shows a picture of the row.
     Item {
@@ -70,7 +73,7 @@ Rectangle {
 
         Text {
             anchors.verticalCenter: parent.verticalCenter
-            width: parent.width - (row.icon.length > 0 ? 20 + 8 : 0)
+            width: parent.width - (row.icon.length > 0 ? 20 + 8 : 0) - (row.hasArrow ? 14 : 0)
             text: row.label
             color: row.heading ? Scheme.menuHeading : row.labelColor
             font.family: Theme.fontFamily
@@ -78,6 +81,16 @@ Rectangle {
             font.bold: row.bold || row.heading
             elide: Text.ElideRight
         }
+    }
+
+    Text {
+        anchors.right: parent.right
+        anchors.rightMargin: 6
+        anchors.verticalCenter: parent.verticalCenter
+        visible: row.hasArrow
+        text: "▸"
+        color: Scheme.textMuted
+        font.pixelSize: Theme.fontSize
     }
 
     MouseArea {

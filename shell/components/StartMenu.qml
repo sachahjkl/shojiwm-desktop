@@ -40,6 +40,7 @@ Item {
         menu.hoveredPlace = "";
         menu.pick = 0;
         menu.filesFound = [];
+        menu.jumpEntry = null;
         search.forceActiveFocus();
     }
 
@@ -71,6 +72,35 @@ Item {
             { label: pinned ? "Unpin from Start Menu" : "Pin to Start Menu",
               run: function () { Apps.setPinned(entry, !pinned); } }
         ];
+    }
+
+    // ----- the jump list of a program, in the right column ----------------------
+    //
+    // As Windows 7 does: resting on a program that has recent files shows
+    // them in place of the places column; a click opens one with the program.
+
+    property var jumpEntry: null
+    readonly property var jumpRecent: menu.jumpEntry ? Apps.recentFor(menu.jumpEntry) : []
+
+    Timer {
+        id: jumpDelay
+        property var entry: null
+        interval: 350
+        onTriggered: menu.jumpEntry = jumpDelay.entry
+    }
+
+    function hoverProgram(entry, inside) {
+        if (!inside) {
+            jumpDelay.stop();
+            return;
+        }
+        if (Apps.recentFor(entry).length > 0) {
+            jumpDelay.entry = entry;
+            jumpDelay.restart();
+        } else {
+            jumpDelay.stop();
+            menu.jumpEntry = null;
+        }
     }
 
     readonly property var found: Apps.search(search.text)
@@ -217,6 +247,41 @@ Item {
         width: menu.width - Theme.menuProgramsWidth - 2
         color: "transparent"
 
+        // The jump list of the program under the pointer, in place of the
+        // places.
+        Column {
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.top: parent.top
+            anchors.margins: Theme.menuPadding
+            anchors.topMargin: Theme.menuPadding + Theme.menuTileSize - Theme.menuTileOverhang
+            spacing: 1
+            visible: menu.jumpEntry !== null && !menu.searching
+
+            MenuRow {
+                width: parent.width
+                heading: true
+                label: "Recent"
+                labelColor: Scheme.placesText
+            }
+
+            Repeater {
+                model: menu.jumpRecent
+
+                delegate: MenuRow {
+                    required property var modelData
+                    width: parent.width
+                    label: modelData.name
+                    icon: Apps.fileIcon(modelData.name)
+                    labelColor: Scheme.placesText
+                    onActivated: {
+                        Apps.openWith(menu.jumpEntry, modelData.path);
+                        menu.dismissed();
+                    }
+                }
+            }
+        }
+
         Column {
             id: placesColumn
 
@@ -225,6 +290,7 @@ Item {
             anchors.top: parent.top
             anchors.margins: Theme.menuPadding
             spacing: 2
+            visible: menu.jumpEntry === null || menu.searching
 
             // Room under the picture, which hangs over this corner.
             Item {
@@ -475,6 +541,9 @@ Item {
                         onActivated: menu.launch(modelData)
                         onMenuRequested: (x, y) => menu.showProgramMenu(pinnedRow, modelData, x, y)
                         dragId: Apps.entryFileId(modelData)
+                        hasArrow: Apps.recentFor(modelData).length > 0
+                        selected: menu.jumpEntry === modelData
+                        onHoveredChanged: menu.hoverProgram(modelData, hovered)
                     }
                 }
 
@@ -504,6 +573,9 @@ Item {
                         onActivated: menu.launch(modelData)
                         onMenuRequested: (x, y) => menu.showProgramMenu(frequentRow, modelData, x, y)
                         dragId: Apps.entryFileId(modelData)
+                        hasArrow: Apps.recentFor(modelData).length > 0
+                        selected: menu.jumpEntry === modelData
+                        onHoveredChanged: menu.hoverProgram(modelData, hovered)
                     }
                 }
             }
@@ -694,6 +766,7 @@ Item {
 
                 onTextChanged: {
                     menu.pick = 0;
+                    menu.jumpEntry = null;
                     findFiles.restart();
                 }
 
@@ -717,6 +790,13 @@ Item {
                 }
                 Keys.onReturnPressed: menu.accept()
                 Keys.onEnterPressed: menu.accept()
+                // Ctrl+A picks the whole text, as in any Windows field.
+                Keys.onPressed: function (event) {
+                    if (event.key === Qt.Key_A && (event.modifiers & Qt.ControlModifier)) {
+                        search.selectAll();
+                        event.accepted = true;
+                    }
+                }
                 Keys.onUpPressed: {
                     if (menu.searching && menu.pick > 0)
                         menu.pick -= 1;
