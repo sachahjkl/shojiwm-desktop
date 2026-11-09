@@ -422,10 +422,11 @@ Item {
         }
     }
 
-    // A right click on the bar where nothing else is: its menu. Declared
-    // before the orb, the buttons and the notification area, so they are
-    // over it and keep their own clicks.
+    // A right click on the bar where nothing else is: its menu. Under
+    // everything else on the bar (z), so the orb, the buttons and the
+    // notification area keep their own clicks.
     MouseArea {
+        z: -1
         anchors.fill: parent
         acceptedButtons: Qt.RightButton
         onClicked: function (event) {
