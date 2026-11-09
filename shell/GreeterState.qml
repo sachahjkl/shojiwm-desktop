@@ -196,9 +196,12 @@ Singleton {
             lastSession.setText(session.id + "\n");
             var desktops = session.desktopNames.length > 0
                 ? session.desktopNames.join(":") : session.id;
-            // greetd runs the command as is: the shell splits Exec as the
-            // .desktop file writes it.
-            Greetd.launch(["/bin/sh", "-c", session.exec], [
+            // greetd joins the command's words with spaces and gives the
+            // line to a shell, after /etc/profile (the system's PATH and
+            // XDG_DATA_DIRS). So Exec goes as one word: the shell splits it
+            // as the .desktop file writes it. ["/bin/sh", "-c", exec] would
+            // be split again, and run the first word of Exec alone.
+            Greetd.launch([session.exec], [
                 "XDG_SESSION_TYPE=wayland",
                 "XDG_SESSION_DESKTOP=" + session.id,
                 "XDG_CURRENT_DESKTOP=" + desktops
