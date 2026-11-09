@@ -165,6 +165,12 @@ ShellRoot {
                 // keeps its distance from the right and top edges.
                 GadgetFrame {
                     placeSetting: "cpuMeterPlace"
+                    actions: [{
+                        icon: "utilities-system-monitor",
+                        run: function () {
+                            Quickshell.execDetached(["sh", "-c", Apps.systemMonitor]);
+                        }
+                    }]
                     active: Settings.showCpuMeter
                         && Screens.isPrimary(desktopScope.modelData)
                     sourceComponent: CpuMeter {}

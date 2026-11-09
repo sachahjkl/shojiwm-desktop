@@ -2675,7 +2675,7 @@ FloatingWindow {
             InfoRow { label: "Desktop"; value: "shojiwm-win7" }
             InfoRow { label: "Compositor"; value: "ShojiWM" }
             InfoRow { label: "Shell"; value: "Quickshell" }
-            InfoRow { label: "Launcher"; value: "Vicinae (Super+D)" }
+            InfoRow { label: "Launcher"; value: "Vicinae (Super+Shift+D)" }
             InfoRow { label: "User"; value: Apps.userName + " (" + Apps.loginName + ")" }
             InfoRow { label: "Settings file"; value: Settings.configHome + "/shojiwm/settings.json" }
         }

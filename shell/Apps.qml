@@ -23,6 +23,9 @@ Singleton {
     /// The task manager: the command in SHOJIWM_WIN7_TASK_MANAGER, run by a
     /// shell, else Mission Center. Ctrl+Shift+Escape opens the same one.
     readonly property string taskManager: Quickshell.env("SHOJIWM_WIN7_TASK_MANAGER") || "missioncenter"
+    /// The system monitor the CPU Meter's button opens: the command in
+    /// SHOJIWM_WIN7_SYSTEM_MONITOR, run by a shell, else btop in kitty.
+    readonly property string systemMonitor: Quickshell.env("SHOJIWM_WIN7_SYSTEM_MONITOR") || "kitty btop"
     readonly property string fileManager: "thunar"
     readonly property string browser: "chromium"
     /// The programs pinned to the Start menu, and the ones that keep a button

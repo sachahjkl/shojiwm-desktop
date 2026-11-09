@@ -54,7 +54,7 @@ const FILE_MANAGER = ["thunar"];
 const BROWSER = ["chromium", "--ozone-platform-hint=auto"];
 
 /**
- * The launcher Super+D opens: Vicinae, a fast search for programs, files and
+ * The launcher Super+Shift+D opens: Vicinae, a fast search for programs, files and
  * commands. The Nix package of this configuration writes the path of its own
  * Vicinae here, so it is a dependency rather than something to install.
  */
@@ -86,7 +86,7 @@ COMPOSITOR.process.once("shell", {
   },
 });
 
-// The launcher, kept running so Super+D shows it at once.
+// The launcher, kept running so Super+Shift+D shows it at once.
 //
 // It reads ~/.config/shojiwm/vicinae.json, written once here if it is
 // missing. That file imports assets/vicinae/aero.json, so what Vicinae's own
@@ -341,15 +341,14 @@ for (const [id, key] of [
 }
 COMPOSITOR.key.bind(
   "launcher",
-  "Super+D",
+  "Super+Shift+D",
   once(() => {
     COMPOSITOR.process.spawn({ command: `${VICINAE} toggle` });
   }),
 );
 // More keys from SHOJIWM_WIN7_KEYS: a JSON object of shortcut to shell
 // command, for programs that would register a global shortcut through a
-// portal ShojiWM does not have, for example
-// {"Ctrl+Shift+Space": "hex dictation toggle"}.
+// portal, for example {"Ctrl+Shift+ugrave": "papier toggle"}.
 const EXTRA_KEYS = COMPOSITOR.env.get("SHOJIWM_WIN7_KEYS");
 if (EXTRA_KEYS) {
   const keys = JSON.parse(EXTRA_KEYS) as Record<string, string>;
@@ -464,11 +463,13 @@ for (const [key, command] of Object.entries(MEDIA_KEYS)) {
   );
 }
 
-// Super+D is the launcher, so showing the desktop moves to Super+M, the key
-// Windows 7 minimises everything with.
-COMPOSITOR.key.bind("show-desktop", "Super+M", () =>
-  WINDOWS.toggleShowDesktop(),
-);
+// Super+D shows the desktop and then puts the windows back, as on Windows 7;
+// Super+M, Windows 7's key to minimise everything, does the same.
+for (const key of ["D", "M"]) {
+  COMPOSITOR.key.bind(`show-desktop-${key}`, `Super+${key}`, () =>
+    WINDOWS.toggleShowDesktop(),
+  );
+}
 
 // ---------------------------------------------------------------------------
 // Glass
