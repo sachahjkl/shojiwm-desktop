@@ -128,7 +128,7 @@ are left as glass outlines over the wallpaper.
 
 ![The launcher](assets/site/launcher-search.png)
 
-`Super`+`Shift`+`D`: the launcher, the Start menu's search in the middle of the screen.
+`Super`+`Shift`+`D`: the launcher, the Start menu's search on the focused screen, here while typing.
 
 ![The calendar](assets/site/calendar.png)
 

@@ -413,13 +413,13 @@ xdotool click 1
 xdotool mousemove --window "$window" $((WIDTH / 2)) $((HEIGHT / 2))
 sleep 2
 
-say "the launcher, Super+D"
+say "the launcher, Super+Shift+D"
 xdotool windowfocus "$window"
-xdotool key super+d
-sleep 4
+quickshell -p "$XDG_CONFIG_HOME/shojiwm/shell" ipc call launcher toggle || true
+sleep 2
 shot "launcher"
 alive "launcher"
-xdotool type --delay 80 "foo"
+xdotool type --delay 80 "fi"
 sleep 2
 shot "launcher-search"
 xdotool key Escape
