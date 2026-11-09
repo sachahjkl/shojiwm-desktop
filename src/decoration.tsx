@@ -383,7 +383,10 @@ export function aeroFrame(
         paddingBottom: borderWidth,
       }}
     >
-      <Box direction="column" style={{ flexGrow: 1 }}>
+      {/* Cropped to its place: while the window shrinks, the client's last
+          picture is still the old, larger size until it draws the new one,
+          and would otherwise spill over the frame. */}
+      <Box direction="column" style={{ flexGrow: 1, overflow: "hidden" }}>
         <ClientWindow />
       </Box>
     </Box>,
