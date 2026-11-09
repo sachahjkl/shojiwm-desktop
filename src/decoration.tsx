@@ -33,6 +33,7 @@ import {
 import type { CompositionRenderable } from "shoji_wm/types";
 import { CAPTION_BUTTON, COLOR, FONT, FRAME } from "./theme";
 import { WIN_MAXIMIZED } from "./window-manager";
+import { glassColour } from "./glass";
 
 /** Which picture a caption button shows. */
 type ButtonState = "" | "-hover" | "-press" | "-inactive";
@@ -190,6 +191,37 @@ function colour(hex: string): [number, number, number, number] {
 }
 
 /**
+ * The caption bar's tint: the theme's glass, with the colour the Control
+ * Panel chose mixed in. The colour also makes the glass more opaque, as
+ * Windows 7's intensity does; an unfocused window takes half of it.
+ */
+function glassTint(focused: ReadonlySignal<boolean>): ShaderUniformVec4 {
+  const on = colour(COLOR.glassActive);
+  const off = colour(COLOR.glassInactive);
+  const mixed = computed(() => {
+    const base = focused() ? on : off;
+    const choice = glassColour();
+    if (choice.colour.length === 0) {
+      return base;
+    }
+    const chosen = colour(choice.colour);
+    const amount = choice.strength * (focused() ? 1 : 0.5);
+    return [
+      base[0] + (chosen[0] - base[0]) * amount,
+      base[1] + (chosen[1] - base[1]) * amount,
+      base[2] + (chosen[2] - base[2]) * amount,
+      base[3] + (0.6 - base[3]) * amount,
+    ];
+  });
+  return [
+    computed(() => mixed()[0]),
+    computed(() => mixed()[1]),
+    computed(() => mixed()[2]),
+    computed(() => mixed()[3]),
+  ];
+}
+
+/**
  * A colour uniform that follows the window's focus. A paint shader itself
  * cannot be swapped for another while the window lives — `paint` takes a
  * handle, not a signal — but each component of a uniform may be a signal.
@@ -243,7 +275,7 @@ export function aeroFrame(
       sheen: computed(() => (focused() ? 1 : 0.55)),
       caption_h: captionHeight,
       border_w: borderWidth,
-      tint: focusColour(focused, COLOR.glassActive, COLOR.glassInactive),
+      tint: glassTint(focused),
       line_outer: focusColour(
         focused,
         COLOR.outlineActive,

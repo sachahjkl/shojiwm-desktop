@@ -34,7 +34,7 @@ import {
   WIN_RECT,
 } from "./window-manager";
 import { setAnimationSpeed, setAnimations } from "./motion";
-import { setGlassLevel } from "./glass";
+import { setGlassColour, setGlassLevel } from "./glass";
 import { type DisplayChoice, screens, setDisplayChoices } from "./display";
 
 /** The colours of a window while it is peeked through. */
@@ -95,6 +95,10 @@ export function createPeek(manager: FloatingWindowManager): Peek {
         ? Number((params as { level?: unknown }).level)
         : NaN;
     setGlassLevel(value);
+    if (typeof params === "object" && params !== null) {
+      const choice = params as { colour?: unknown; strength?: unknown };
+      setGlassColour(choice.colour, choice.strength);
+    }
     return true;
   });
   server.handle("screens", () => screens());

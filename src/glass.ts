@@ -28,6 +28,29 @@ const LEVELS: readonly { radius: number; passes: number }[] = [
   { radius: 5, passes: 4 },
 ];
 
+/**
+ * The colour of the glass the Control Panel sets, as Windows 7's Window
+ * Color: "" for the plain glass, else a colour mixed into the caption bars'
+ * tint at a strength from 0 to 1.
+ */
+const colourChoice = signal({ colour: "", strength: 0 });
+
+export function glassColour(): { colour: string; strength: number } {
+  return colourChoice();
+}
+
+export function setGlassColour(colour: unknown, strength: unknown): void {
+  const hex =
+    typeof colour === "string" && /^#[0-9a-fA-F]{6}$/.test(colour)
+      ? colour
+      : "";
+  const amount = Number(strength);
+  colourChoice.set({
+    colour: hex,
+    strength: Number.isFinite(amount) ? Math.max(0, Math.min(1, amount)) : 0,
+  });
+}
+
 export const DEFAULT_GLASS_LEVEL = 2;
 const level = signal(DEFAULT_GLASS_LEVEL);
 

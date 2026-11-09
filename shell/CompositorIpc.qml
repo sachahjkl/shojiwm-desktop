@@ -77,7 +77,11 @@ Singleton {
     }
 
     function sendGlass() {
-        return send("glass", { level: Settings.glassBlur });
+        return send("glass", {
+            level: Settings.glassBlur,
+            colour: Settings.glassColor,
+            strength: Settings.glassColorStrength
+        });
     }
 
     Connections {
@@ -85,6 +89,8 @@ Singleton {
         function onAnimationsChanged() { root.sendAnimations(); }
         function onAnimationSpeedChanged() { root.sendAnimations(); }
         function onGlassBlurChanged() { root.sendGlass(); }
+        function onGlassColorChanged() { root.sendGlass(); }
+        function onGlassColorStrengthChanged() { root.sendGlass(); }
         function onDisplayChoicesChanged() { root.sendDisplay(); }
     }
 
