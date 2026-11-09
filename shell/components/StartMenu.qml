@@ -457,7 +457,7 @@ Item {
                     width: folder.width
                     label: folder.modelData.name
                     icon: Qt.resolvedUrl(folder.expanded
-                        ? "../assets/icons/folder-open.svg" : "../assets/icons/folder.svg")
+                        ? "../assets/icons/folder-open.png" : "../assets/icons/folder.png")
                     selected: folder.expanded
                     onActivated: menu.openFolder =
                         folder.expanded ? "" : folder.modelData.name
@@ -524,7 +524,7 @@ Item {
                 visible: menu.found.length === 0
                 height: visible ? Theme.menuRowHeight : 0
                 label: "Run “" + search.text.trim() + "”"
-                icon: Qt.resolvedUrl("../assets/icons/run.svg")
+                icon: Qt.resolvedUrl("../assets/icons/run.png")
                 selected: true
                 onActivated: menu.accept()
             }
@@ -667,7 +667,7 @@ Item {
         UserTile {
             anchors.fill: parent
             source: menu.hoveredPlace.length > 0
-                ? Qt.resolvedUrl("../assets/icons/" + menu.hoveredPlace + ".svg") : ""
+                ? Qt.resolvedUrl("../assets/icons/" + menu.hoveredPlace + ".png") : ""
             dark: Settings.dark
             opacity: menu.hoveredPlace.length > 0 ? 1 : 0
             Behavior on opacity {

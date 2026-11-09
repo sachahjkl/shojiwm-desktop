@@ -9,8 +9,8 @@ caption buttons at the top right, and a thin glossy border. A
 taskbar, the Start menu and the wallpaper.
 
 No file from Windows is copied, embedded or required. The artwork is
-original, except the colour icons of the Start menu and the jump lists, which
-are Icons8's MIT-licensed "Flat Color Icons" (see "Licence").
+original, except the colour icons of the desktop, the Start menu and the jump
+lists, which are built from KDE's LGPL-licensed Oxygen icons (see "Licence").
 
 ## What you get
 
@@ -335,7 +335,7 @@ running one.
 | `shell/components/AeroScrollBar.qml`                                                                | The Windows 7 scroll bar of the Start menu and the Control Panel.                                                                                                         |
 | `shell/components/PowerMenu.qml`, `PowerPart.qml`                                                   | The menu behind the power button's arrow, and the two halves of that button.                                                                                              |
 | `shell/components/CalendarPopup.qml`, `CalendarArrow.qml`                                           | The calendar over the clock.                                                                                                                                              |
-| `shell/assets/icons/`                                                                               | The colour icons (Icons8, MIT), fetched by `tools/fetch-icons.sh`.                                                                                                        |
+| `shell/assets/icons/`                                                                               | The colour icons (Oxygen, LGPL-3.0), built by `tools/fetch-icons.sh`.                                                                                                     |
 | `assets/vicinae/`                                                                                   | Vicinae's settings (`aero.json`) and its Aero theme (`vicinae/themes/aero.toml`).                                                                                         |
 | `shell/assets/*.svg`                                                                                | The orb, the place icons, the account tile and the wallpaper. Drawn by hand.                                                                                              |
 | `tools/screenshots.sh`                                                                              | Runs the whole desktop on a machine with no display and takes the pictures in this file.                                                                                  |
@@ -488,7 +488,7 @@ The artwork in `assets/` and `shell/assets/` is original SVG, written by hand
 for this repository, except `shell/assets/icons/`. It imitates a visual
 style; it copies no file, no icon and no font from Microsoft.
 
-`shell/assets/icons/` holds icons from Icons8's
-[Flat Color Icons](https://github.com/icons8/flat-color-icons), MIT,
-fetched through [Iconify](https://iconify.design) by `tools/fetch-icons.sh`.
-Their licence is next to them.
+`shell/assets/icons/` holds icons built by `tools/fetch-icons.sh` from
+KDE's [Oxygen icons](https://invent.kde.org/frameworks/oxygen-icons),
+LGPL-3.0-or-later: glossy icons of the Windows 7 era, with Oxygen's yellow
+folder and emblems over it for the libraries. Their licence is next to them.

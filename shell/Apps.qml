@@ -169,7 +169,7 @@ Singleton {
                     entry: entry,
                     name: ours ? "Control Panel"
                         : entry && entry.name ? entry.name : titleOf(toplevel),
-                    icon: ours ? Qt.resolvedUrl("assets/icons/control-panel.svg")
+                    icon: ours ? Qt.resolvedUrl("assets/icons/control-panel.png")
                         : iconFor(toplevel.appId),
                     pinned: false,
                     windows: []
@@ -780,9 +780,9 @@ Singleton {
         };
         for (var kind in kinds) {
             if (kinds[kind].indexOf(extension) >= 0)
-                return Qt.resolvedUrl("assets/icons/" + kind + ".svg");
+                return Qt.resolvedUrl("assets/icons/" + kind + ".png");
         }
-        return Qt.resolvedUrl("assets/icons/file.svg");
+        return Qt.resolvedUrl("assets/icons/file.png");
     }
 
     /// Open a file with a program, as its .desktop file says to start it.

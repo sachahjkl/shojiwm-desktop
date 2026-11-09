@@ -315,7 +315,7 @@ Item {
         var command = exec ? String(exec).trim().split(/\s+/)[0] : "";
         var entry = command ? DesktopEntries.heuristicLookup(command.split("/").pop()) : null;
         path = entry && entry.icon ? Quickshell.iconPath(entry.icon, true) : "";
-        return path || Qt.resolvedUrl("../assets/icons/run.svg");
+        return path || Qt.resolvedUrl("../assets/icons/run.png");
     }
 
     // ----- the menus ------------------------------------------------------------
@@ -347,18 +347,18 @@ Item {
             { label: "Refresh", run: desktop.refresh },
             { separator: true },
             { label: "New", children: [
-                { label: "Folder", icon: Qt.resolvedUrl("../assets/icons/folder.svg"),
+                { label: "Folder", icon: Qt.resolvedUrl("../assets/icons/folder.png"),
                   run: desktop.newFolder },
                 { separator: true },
-                { label: "Text Document", icon: Qt.resolvedUrl("../assets/icons/file.svg"),
+                { label: "Text Document", icon: Qt.resolvedUrl("../assets/icons/file.png"),
                   run: desktop.newTextDocument }
             ] },
-            { label: "Open in Terminal", icon: Qt.resolvedUrl("../assets/icons/run.svg"),
+            { label: "Open in Terminal", icon: Qt.resolvedUrl("../assets/icons/run.png"),
               run: desktop.openTerminal },
             { separator: true },
-            { label: "Screen resolution", icon: Qt.resolvedUrl("../assets/icons/computer.svg"),
+            { label: "Screen resolution", icon: Qt.resolvedUrl("../assets/icons/computer.png"),
               run: function () { ControlPanelState.open("about"); } },
-            { label: "Personalize", icon: Qt.resolvedUrl("../assets/icons/control-panel.svg"),
+            { label: "Personalize", icon: Qt.resolvedUrl("../assets/icons/control-panel.png"),
               run: function () { ControlPanelState.open("background"); } }
         ];
     }
@@ -540,10 +540,10 @@ Item {
                 var item = cell.item;
                 if (item.kind === "trash")
                     return Qt.resolvedUrl(desktop.trashFull
-                        ? "../assets/icons/recycle-bin-full.svg"
-                        : "../assets/icons/recycle-bin.svg");
+                        ? "../assets/icons/recycle-bin-full.png"
+                        : "../assets/icons/recycle-bin.png");
                 if (item.kind === "folder")
-                    return Qt.resolvedUrl("../assets/icons/folder.svg");
+                    return Qt.resolvedUrl("../assets/icons/folder.png");
                 if (item.kind === "shortcut")
                     return shortcutIcon;
                 if (["png", "jpg", "jpeg", "gif", "webp", "bmp", "svg"].indexOf(item.suffix) >= 0)
@@ -553,7 +553,7 @@ Item {
 
             // The name and the icon of a shortcut, read from its .desktop file.
             property string shortcutName: ""
-            property string shortcutIcon: Qt.resolvedUrl("../assets/icons/run.svg")
+            property string shortcutIcon: Qt.resolvedUrl("../assets/icons/run.png")
 
             FileView {
                 path: cell.item.kind === "shortcut" ? cell.item.path : ""

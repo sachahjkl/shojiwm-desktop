@@ -242,7 +242,7 @@ FloatingWindow {
                     anchors.verticalCenter: parent.verticalCenter
                     width: 16
                     height: 16
-                    source: "../assets/icons/control-panel.svg"
+                    source: "../assets/icons/control-panel.png"
                     sourceSize.width: 32
                     sourceSize.height: 32
                 }
@@ -397,7 +397,7 @@ FloatingWindow {
         Image {
             width: 48
             height: 48
-            source: "../assets/icons/" + category.icon + ".svg"
+            source: "../assets/icons/" + category.icon + ".png"
             sourceSize.width: 96
             sourceSize.height: 96
         }

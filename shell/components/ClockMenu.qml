@@ -81,7 +81,7 @@ PopupWindow {
         MenuItemRow {
             width: column.width
             label: "Open the calendar"
-            icon: Qt.resolvedUrl("../assets/icons/calendar.svg")
+            icon: Qt.resolvedUrl("../assets/icons/calendar.png")
             onActivated: {
                 popup.dismissed();
                 popup.calendarRequested();

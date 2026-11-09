@@ -115,7 +115,7 @@ actions or a typed command was actually run.
    (FlakeHub's rolling unstable), and the package writes that Vicinae's path
    into `src/index.tsx`. `packages.vicinae` exposes it; the capture script
    uses it too. Showing the desktop moved to `Super`+`M`.
-3. **Colour icons** from Icons8's Flat Color Icons (MIT) through Iconify,
+3. **Colour icons** built from KDE's Oxygen icons (LGPL-3.0-or-later),
    `tools/fetch-icons.sh`: the user's tile shows the place under the pointer,
    the All Programs folders, the Run line, and the recent files of a jump list
    by kind.
