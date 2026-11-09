@@ -45,6 +45,7 @@ FloatingWindow {
         "clock": { title: "Date and Time", category: "Clock and Region" },
         "ease": { title: "Ease of Access", category: "Ease of Access" },
         "startup": { title: "Startup Programs", category: "System" },
+        "defaults": { title: "Default Programs", category: "Programs" },
         "display": { title: "Screen Resolution", category: "Appearance and Personalization" },
         "about": { title: "System", category: "System" }
     })
@@ -278,7 +279,7 @@ FloatingWindow {
 
             Repeater {
                 model: ["appearance", "background", "display", "lockscreen", "account",
-                        "taskbar", "notifications", "clock", "ease", "startup", "about"]
+                        "taskbar", "notifications", "clock", "ease", "defaults", "startup", "about"]
 
                 delegate: CpLink {
                     required property string modelData
@@ -331,6 +332,7 @@ FloatingWindow {
                 case "clock": return clockPage;
                 case "ease": return easePage;
                 case "startup": return startupPage;
+                case "defaults": return defaultsPage;
                 case "display": return displayPage;
                 case "about": return aboutPage;
                 default: return homePage;
@@ -858,6 +860,92 @@ FloatingWindow {
     }
 
     Component {
+        id: defaultsPage
+
+        Column {
+            spacing: 12
+
+            Component.onCompleted: DefaultApps.refresh()
+
+            Heading { text: "Choose the programs that open your files and links" }
+
+            Note {
+                width: parent.width
+                text: "The choice applies to every program that opens files through "
+                    + "the desktop's standard (xdg-open), and is kept in ~/.config/mimeapps.list."
+            }
+
+            Repeater {
+                model: DefaultApps.kinds
+
+                delegate: Row {
+                    id: kindRow
+
+                    required property var modelData
+                    required property int index
+
+                    readonly property var info: DefaultApps.state[kindRow.modelData.types[0]]
+                        || { current: "", candidates: [] }
+                    /// The programs to choose from, the current one first.
+                    readonly property var choices: {
+                        var list = kindRow.info.candidates.slice();
+                        if (kindRow.info.current.length > 0 && list.indexOf(kindRow.info.current) < 0)
+                            list.unshift(kindRow.info.current);
+                        return list;
+                    }
+
+                    function nameOf(id) {
+                        var entry = Apps.entryById(id);
+                        return entry ? String(entry.name) : id.replace(/\.desktop$/, "");
+                    }
+
+                    spacing: 12
+                    // The open lists draw over the rows below.
+                    z: 100 - kindRow.index
+
+                    Text {
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: 120
+                        text: kindRow.modelData.label
+                        color: Scheme.text
+                        font.family: Theme.fontFamily
+                        font.pixelSize: Theme.fontSize
+                    }
+
+                    IconImage {
+                        anchors.verticalCenter: parent.verticalCenter
+                        implicitSize: 24
+                        source: kindRow.info.current.length > 0
+                            ? Apps.entryIcon(Apps.entryById(kindRow.info.current)) : ""
+                    }
+
+                    CpCombo {
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: 280
+                        model: kindRow.choices.length > 0
+                            ? kindRow.choices.map(function (id) { return kindRow.nameOf(id); })
+                            : ["No program says it can"]
+                        currentIndex: Math.max(0, kindRow.choices.indexOf(kindRow.info.current))
+                        onActivated: function (index) {
+                            if (kindRow.choices[index])
+                                DefaultApps.setDefault(kindRow.modelData, kindRow.choices[index]);
+                        }
+                    }
+
+                    Text {
+                        anchors.verticalCenter: parent.verticalCenter
+                        visible: kindRow.info.current.length === 0
+                        text: "Not set"
+                        color: Scheme.textMuted
+                        font.family: Theme.fontFamily
+                        font.pixelSize: Theme.fontSizeSmall
+                    }
+                }
+            }
+        }
+    }
+
+    Component {
         id: startupPage
 
         Column {
@@ -1117,6 +1205,7 @@ FloatingWindow {
                     name: "System"
                     target: "about"
                     links: [
+                        { text: "Choose the programs that open your files and links", page: "defaults" },
                         { text: "Choose the programs that start when you log on", page: "startup" },
                         { text: "About this desktop", page: "about" }
                     ]
