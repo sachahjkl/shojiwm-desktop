@@ -1,5 +1,4 @@
 import QtQuick
-import Quickshell.Widgets
 import ".."
 import "../theme.js" as Theme
 
@@ -60,7 +59,7 @@ Item {
         }
     }
 
-    IconImage {
+    ShellIcon {
         anchors.centerIn: parent
         implicitSize: Theme.trayIconSize
         source: icon.item && icon.item.icon ? icon.item.icon : ""

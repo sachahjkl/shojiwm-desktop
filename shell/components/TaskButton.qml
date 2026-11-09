@@ -1,7 +1,6 @@
 pragma ComponentBehavior: Bound
 
 import QtQuick
-import Quickshell.Widgets
 import ".."
 import "../theme.js" as Theme
 
@@ -155,7 +154,7 @@ Item {
     }
 
     // The icon alone, for a pinned program that is not running.
-    IconImage {
+    ShellIcon {
         anchors.centerIn: body
         anchors.verticalCenterOffset: area.pressed ? 1 : 0
         implicitSize: Theme.taskIconSize
@@ -173,7 +172,7 @@ Item {
             anchors.rightMargin: 6
             spacing: 6
 
-            IconImage {
+            ShellIcon {
                 anchors.verticalCenter: parent.verticalCenter
                 implicitSize: Theme.taskIconSize
                 source: button.group ? button.group.icon : ""

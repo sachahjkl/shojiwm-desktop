@@ -9,13 +9,16 @@ Rectangle {
     id: button
 
     property string label: ""
+    /// It has the keyboard: a dotted line inside, as Windows draws a focused
+    /// button.
+    property bool focused: false
     signal clicked
 
     implicitWidth: Math.max(86, text.implicitWidth + 24)
     implicitHeight: 24
     radius: Scheme.buttonRadius
     border.width: 1
-    border.color: area.containsMouse ? (Scheme.dark ? Scheme.selectionBorder : "#3c7fb1")
+    border.color: area.containsMouse || button.focused ? (Scheme.dark ? Scheme.selectionBorder : "#3c7fb1")
         : (Scheme.dark ? Scheme.fieldBorder : "#707070")
     gradient: Gradient {
         GradientStop {
@@ -42,6 +45,16 @@ Rectangle {
         color: area.containsMouse && !Scheme.dark ? "#10283c" : Scheme.text
         font.family: Theme.fontFamily
         font.pixelSize: Theme.fontSize
+    }
+
+    Rectangle {
+        anchors.fill: parent
+        anchors.margins: 3
+        visible: button.focused
+        color: "transparent"
+        radius: 1
+        border.width: 1
+        border.color: Scheme.dark ? "#99ffffff" : "#99000000"
     }
 
     MouseArea {

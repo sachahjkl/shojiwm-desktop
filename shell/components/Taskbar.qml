@@ -41,6 +41,12 @@ Item {
     property bool actionCenterOpen: false
     /// A menu, a panel or the thumbnails of the bar are open: an auto-hidden
     /// bar stays up meanwhile.
+    /// One of the bar's menus or panels is open: a click outside closes it
+    /// (shell.qml).
+    readonly property bool popupOpen: bar.jumpListGroup !== null || bar.trayMenuItem !== null
+        || bar.calendarOpen || bar.clockMenuOpen || bar.trayOverflowOpen
+        || bar.volumeOpen || bar.networkOpen || bar.notificationsOpen
+        || bar.actionCenterOpen
     readonly property bool busy: bar.menuOpen || bar.previewGroup !== null
         || bar.jumpListGroup !== null || bar.trayMenuItem !== null
         || bar.calendarOpen || bar.clockMenuOpen || bar.trayOverflowOpen

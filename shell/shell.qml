@@ -339,6 +339,31 @@ ShellRoot {
                 interval: 700
             }
 
+            // A layer-shell popup gets no press from outside itself: while one
+            // of the bar's menus or panels is open, a clear window over this
+            // screen takes the next click outside and closes them, as Windows
+            // does.
+            PanelWindow {
+                screen: barWindow.modelData
+                visible: taskbar.popupOpen
+
+                color: "transparent"
+                anchors.top: true
+                anchors.bottom: true
+                anchors.left: true
+                anchors.right: true
+                exclusionMode: ExclusionMode.Ignore
+                WlrLayershell.layer: WlrLayer.Top
+                WlrLayershell.namespace: "no_blur"
+                WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
+
+                MouseArea {
+                    anchors.fill: parent
+                    acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
+                    onPressed: taskbar.closePopups()
+                }
+            }
+
             Taskbar {
                 id: taskbar
                 width: parent.width

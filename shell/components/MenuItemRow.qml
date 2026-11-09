@@ -1,5 +1,4 @@
 import QtQuick
-import Quickshell.Widgets
 import ".."
 import "../theme.js" as Theme
 
@@ -80,7 +79,7 @@ Item {
             font.pixelSize: Theme.fontSizeSmall
         }
 
-        IconImage {
+        ShellIcon {
             id: iconImage
 
             anchors.verticalCenter: parent.verticalCenter

@@ -1,6 +1,5 @@
 import QtQuick
 import Quickshell
-import Quickshell.Widgets
 import ".."
 
 // A desktop gadget's place: it holds one gadget, keeps its distance from the
@@ -66,7 +65,7 @@ Loader {
                 border.width: 1
                 border.color: "#80ffffff"
 
-                IconImage {
+                ShellIcon {
                     anchors.centerIn: parent
                     implicitSize: 14
                     source: Quickshell.iconPath(button.modelData.icon, true)

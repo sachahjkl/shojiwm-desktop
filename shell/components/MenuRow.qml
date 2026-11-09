@@ -1,5 +1,4 @@
 import QtQuick
-import Quickshell.Widgets
 import ".."
 import "../theme.js" as Theme
 
@@ -67,7 +66,7 @@ Rectangle {
         anchors.verticalCenter: parent.verticalCenter
         spacing: 8
 
-        IconImage {
+        ShellIcon {
             anchors.verticalCenter: parent.verticalCenter
             implicitSize: StartMenuState.iconSize
             source: row.icon

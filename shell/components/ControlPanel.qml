@@ -6,7 +6,6 @@ import Quickshell
 import Quickshell.Io
 import Quickshell.Services.Pipewire
 import Quickshell.Services.SystemTray
-import Quickshell.Widgets
 import ".."
 import "../theme.js" as Theme
 
@@ -958,7 +957,7 @@ FloatingWindow {
                     width: parent.width
                     height: 52
 
-                    IconImage {
+                    ShellIcon {
                         anchors.centerIn: parent
                         implicitSize: 48
                         source: tile.iconSource
@@ -1250,7 +1249,7 @@ FloatingWindow {
                         font.pixelSize: Theme.fontSize
                     }
 
-                    IconImage {
+                    ShellIcon {
                         anchors.verticalCenter: parent.verticalCenter
                         implicitSize: 24
                         source: kindRow.info.current.length > 0
@@ -1325,7 +1324,7 @@ FloatingWindow {
                         onToggled: function (on) { Startup.setEnabled(startupRow.modelData, on); }
                     }
 
-                    IconImage {
+                    ShellIcon {
                         anchors.verticalCenter: parent.verticalCenter
                         implicitSize: 24
                         source: Quickshell.iconPath(startupRow.modelData.icon, "application-x-executable")
@@ -1458,7 +1457,7 @@ FloatingWindow {
                             anchors.verticalCenter: parent.verticalCenter
                             spacing: 8
 
-                            IconImage {
+                            ShellIcon {
                                 anchors.verticalCenter: parent.verticalCenter
                                 implicitSize: 20
                                 source: Quickshell.iconPath(candidate.modelData.icon, "application-x-executable")
@@ -2280,7 +2279,7 @@ FloatingWindow {
                     spacing: 12
                     opacity: Settings.trayShowAll ? 0.5 : 1
 
-                    IconImage {
+                    ShellIcon {
                         anchors.verticalCenter: parent.verticalCenter
                         implicitSize: 20
                         source: trayRow.modelData && trayRow.modelData.icon

@@ -4,7 +4,6 @@ import QtQuick
 import Quickshell
 import Quickshell.Services.Mpris
 import Quickshell.Wayland
-import Quickshell.Widgets
 import ".."
 import "../theme.js" as Theme
 
@@ -253,7 +252,7 @@ PopupWindow {
                     }
 
                     // Otherwise the program's icon, in the middle of the card.
-                    IconImage {
+                    ShellIcon {
                         anchors.centerIn: parent
                         implicitSize: 32
                         visible: !Theme.liveThumbnails

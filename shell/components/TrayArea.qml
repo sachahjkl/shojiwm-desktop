@@ -2,7 +2,6 @@ pragma ComponentBehavior: Bound
 
 import QtQuick
 import Quickshell.Services.SystemTray
-import Quickshell.Widgets
 import ".."
 import "../theme.js" as Theme
 
@@ -94,7 +93,7 @@ Item {
 
     // The faint copy of an icon dragged in from the popover, in the gap the
     // others leave.
-    IconImage {
+    ShellIcon {
         visible: tray.previewItem !== null
         opacity: 0.45
         implicitSize: Theme.trayIconSize

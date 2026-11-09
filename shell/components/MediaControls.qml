@@ -3,7 +3,6 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import Quickshell
 import Quickshell.Services.Mpris
-import Quickshell.Widgets
 import ".."
 import "../theme.js" as Theme
 
@@ -51,7 +50,7 @@ Column {
                 visible: status === Image.Ready
             }
 
-            IconImage {
+            ShellIcon {
                 anchors.centerIn: parent
                 implicitSize: 24
                 visible: !cover.visible

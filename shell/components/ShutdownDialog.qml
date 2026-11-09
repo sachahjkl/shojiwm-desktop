@@ -38,11 +38,14 @@ Item {
     property int current: 0
     /// The list of actions is open under the field.
     property bool listOpen: false
+    /// What has the keyboard: 0 the list, 1 OK, 2 Cancel. Tab moves it.
+    property int focusAt: 0
 
     /// Cleared each time the dialog opens.
     function reset() {
         dialog.current = 0;
         dialog.listOpen = false;
+        dialog.focusAt = 0;
         keys.forceActiveFocus();
     }
 
@@ -53,26 +56,43 @@ Item {
             Apps.runPower(action.id);
     }
 
-    /// Return: picks in the open list, else confirms.
+    /// Return: picks in the open list, else does what has the keyboard:
+    /// the list and OK confirm, Cancel closes.
     function confirm() {
         if (dialog.listOpen)
             dialog.listOpen = false;
+        else if (dialog.focusAt === 2)
+            dialog.dismissed();
         else
             dialog.accept();
+    }
+
+    function tab(by) {
+        dialog.listOpen = false;
+        dialog.focusAt = (dialog.focusAt + by + 3) % 3;
     }
 
     function move(by) {
         dialog.current = Math.max(0, Math.min(dialog.actions.length - 1, dialog.current + by));
     }
 
-    // The keys: Up and Down change the choice, Return confirms (or picks
-    // in the open list), Escape closes the list, then the dialog. Alt+Down,
-    // F4 and Space open the list, as in a Windows combo box.
+    // The keys: Tab and Shift+Tab move between the list, OK and Cancel.
+    // On the list, Up and Down change the choice, and Alt+Down, F4 and Space
+    // open it, as in a Windows combo box. Return does what has the keyboard
+    // (or picks in the open list); Space presses a button. Escape closes the
+    // list, then the dialog.
     Item {
         id: keys
         focus: true
-        Keys.onUpPressed: dialog.move(-1)
+        Keys.onTabPressed: dialog.tab(1)
+        Keys.onBacktabPressed: dialog.tab(-1)
+        Keys.onUpPressed: {
+            if (dialog.focusAt === 0)
+                dialog.move(-1);
+        }
         Keys.onDownPressed: function (event) {
+            if (dialog.focusAt !== 0)
+                return;
             if (event.modifiers & Qt.AltModifier)
                 dialog.listOpen = !dialog.listOpen;
             else
@@ -80,9 +100,14 @@ Item {
         }
         Keys.onReturnPressed: dialog.confirm()
         Keys.onEnterPressed: dialog.confirm()
-        Keys.onSpacePressed: dialog.listOpen = !dialog.listOpen
+        Keys.onSpacePressed: {
+            if (dialog.focusAt === 0)
+                dialog.listOpen = !dialog.listOpen;
+            else
+                dialog.confirm();
+        }
         Keys.onPressed: function (event) {
-            if (event.key === Qt.Key_F4 && !(event.modifiers & Qt.AltModifier)) {
+            if (dialog.focusAt === 0 && event.key === Qt.Key_F4 && !(event.modifiers & Qt.AltModifier)) {
                 dialog.listOpen = !dialog.listOpen;
                 event.accepted = true;
             }
@@ -254,7 +279,7 @@ Item {
                         width: parent.width - dropButton.width - 8
                         height: parent.height - 6
                         radius: 1
-                        color: dialog.listOpen ? "transparent" : "#3399ff"
+                        color: dialog.listOpen || dialog.focusAt !== 0 ? "transparent" : "#3399ff"
 
                         Text {
                             anchors.left: parent.left
@@ -264,7 +289,7 @@ Item {
                                 var action = dialog.actions[dialog.current];
                                 return action ? action.label : "";
                             }
-                            color: dialog.listOpen ? Scheme.text : "#ffffff"
+                            color: dialog.listOpen || dialog.focusAt !== 0 ? Scheme.text : "#ffffff"
                             font.family: Theme.fontFamily
                             font.pixelSize: Theme.fontSize
                         }
@@ -355,11 +380,13 @@ Item {
 
                     CpButton {
                         label: "OK"
+                        focused: dialog.focusAt === 1
                         onClicked: dialog.accept()
                     }
 
                     CpButton {
                         label: "Cancel"
+                        focused: dialog.focusAt === 2
                         onClicked: dialog.dismissed()
                     }
                 }

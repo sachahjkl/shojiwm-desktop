@@ -2,7 +2,6 @@ pragma ComponentBehavior: Bound
 
 import QtQuick
 import Quickshell
-import Quickshell.Widgets
 import ".."
 import "../theme.js" as Theme
 
@@ -165,7 +164,7 @@ PopupWindow {
                 hoverEnabled: true
             }
 
-            IconImage {
+            ShellIcon {
                 x: 8
                 y: 8
                 implicitSize: 24
