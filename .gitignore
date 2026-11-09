@@ -2,3 +2,4 @@ node_modules/
 result
 result-*
 __pycache__/
+portal/target/

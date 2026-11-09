@@ -1,0 +1,4 @@
+[D-BUS Service]
+Name=org.freedesktop.impl.portal.desktop.shojiwm-win7
+Exec=@out@/libexec/xdg-desktop-portal-shojiwm-win7
+SystemdService=xdg-desktop-portal-shojiwm-win7.service

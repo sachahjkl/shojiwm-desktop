@@ -236,6 +236,25 @@ the resting gradient.
 Optional: `systemd` for the shut-down button, and any status-notifier
 application for the notification area.
 
+### Global shortcuts
+
+Programs such as Hex, OBS or Discord bind their keys through the
+GlobalShortcuts portal, which ShojiWM does not have. `packages.<system>.portal`
+(`portal/`, xdg-desktop-portal-shojiwm-win7) provides it. It takes each
+program's preferred keys, asks the configuration to bind them, and sends the
+program `Activated` when they go down and `Deactivated` when any of them goes
+up. Hold-to-talk shortcuts therefore work. There is no dialog to choose other
+keys: change them in the program.
+
+On NixOS:
+
+```nix
+xdg.portal = {
+  extraPortals = [inputs.shojiwm-win7.packages.${system}.portal];
+  config.ShojiWM."org.freedesktop.impl.portal.GlobalShortcuts" = "shojiwm-win7";
+};
+```
+
 ## Install
 
 ### With Nix
@@ -319,6 +338,8 @@ running one.
 | `src/window-manager.ts`                                                                             | The floating window manager: placement, move, resize, maximise, minimise, fullscreen, double click, and Aero Snap.                                                        |
 | `src/alt-tab.tsx`                                                                                   | The Alt+Tab panel, built from render textures and an input grab.                                                                                                          |
 | `src/peek.tsx`                                                                                      | Aero Peek, and the socket the shell asks for it and for the show-desktop toggle through.                                                                                  |
+| `src/shortcuts.ts`                                                                                  | The keys the GlobalShortcuts portal binds, over the same socket.                                                                                                          |
+| `portal/`                                                                                           | The GlobalShortcuts portal service (Rust), with its D-Bus and systemd files in `portal/data`.                                                                             |
 | `assets/frame.frag`                                                                                 | The paint shader that draws the frame: the dark outer line, the light line, the glass, the two lines around the client, and the corner radii that a style cannot express. |
 | `assets/caption/*.svg`                                                                              | The three caption buttons, one file per state, drawn at their exact pixel size.                                                                                           |
 | `docs/aero-measurements.md`                                                                         | Every measured number, and the reference screenshot each came from.                                                                                                       |
@@ -374,8 +395,8 @@ running one.
 - **Terminal:** set `SHOJIWM_WIN7_TERMINAL` to the command that opens one;
   kitty without it.
 - **More keys:** set `SHOJIWM_WIN7_KEYS` to a JSON object of shortcut to
-  shell command, for example `{"Ctrl+Shift+Space": "hex dictation toggle"}`,
-  for programs that would register a global shortcut through a portal.
+  shell command, for example `{"Ctrl+Shift+u": "papier toggle"}`, for
+  programs that do not use the GlobalShortcuts portal.
 - **Notifications:** `assets/hokum/aero.kdl` is a Windows 7 balloon theme
   for [Hokum](https://hokum.app). Point Hokum at it in
   `~/.config/hokum/config.kdl` with
@@ -405,8 +426,10 @@ Title bar**.
 nix flake check
 ```
 
-runs three checks:
+runs five checks:
 
+- `portal` — the portal builds and passes its tests.
+- `portal-lint` — `clippy` without warnings and `rustfmt` over `portal`.
 - `typecheck` — `tsc` over `src`, against the ShojiWM TypeScript package
   pinned in `flake.lock`.
 - `qmllint` — `qmllint` over `shell`, against the Quickshell QML types.

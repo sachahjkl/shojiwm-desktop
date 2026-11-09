@@ -1,0 +1,10 @@
+[Unit]
+Description=Portal service (ShojiWM Windows 7: global shortcuts)
+PartOf=graphical-session.target
+After=graphical-session.target
+
+[Service]
+Type=dbus
+BusName=org.freedesktop.impl.portal.desktop.shojiwm-win7
+ExecStart=@out@/libexec/xdg-desktop-portal-shojiwm-win7
+Restart=on-failure

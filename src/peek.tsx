@@ -12,6 +12,8 @@
  *
  *   { "method": "peek", "params": { "on": true } }
  *   { "method": "show-desktop" }
+ *
+ * The GlobalShortcuts portal service uses the same socket: see shortcuts.ts.
  */
 
 import {
@@ -36,6 +38,7 @@ import {
 import { setAnimationSpeed, setAnimations } from "./motion";
 import { setGlassColour, setGlassLevel } from "./glass";
 import { type DisplayChoice, screens, setDisplayChoices } from "./display";
+import { serveShortcuts } from "./shortcuts";
 
 /** The colours of a window while it is peeked through. */
 const PEEK = {
@@ -69,6 +72,8 @@ export function createPeek(manager: FloatingWindowManager): Peek {
   const peeking = signal(false);
 
   const server = createIpcServer(SHELL_SOCKET);
+  // The GlobalShortcuts portal service binds its keys over this socket too.
+  serveShortcuts(server);
   server.handle("peek", (params) => {
     const on =
       typeof params === "object" &&

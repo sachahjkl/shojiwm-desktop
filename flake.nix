@@ -108,9 +108,47 @@
           echo "log out and start the ShojiWM session, or press Super+Shift+R"
         '';
       };
+
+      # The GlobalShortcuts portal: programs such as Hex bind their keys
+      # through it (see portal/ and src/shortcuts.ts).
+      portal = pkgs.rustPlatform.buildRustPackage {
+        pname = "xdg-desktop-portal-shojiwm-win7";
+        inherit version;
+        src = nixpkgs.lib.fileset.toSource {
+          root = ./portal;
+          fileset = nixpkgs.lib.fileset.unions [
+            ./portal/Cargo.toml
+            ./portal/Cargo.lock
+            ./portal/src
+            ./portal/data
+          ];
+        };
+        cargoLock.lockFile = ./portal/Cargo.lock;
+
+        postInstall = ''
+          mkdir -p "$out/libexec" "$out/share/dbus-1/services" "$out/share/systemd/user"
+          mv "$out/bin/xdg-desktop-portal-shojiwm-win7" "$out/libexec/"
+          rmdir "$out/bin"
+          install -Dm644 data/shojiwm-win7.portal \
+            "$out/share/xdg-desktop-portal/portals/shojiwm-win7.portal"
+          substitute data/dbus.service \
+            "$out/share/dbus-1/services/org.freedesktop.impl.portal.desktop.shojiwm-win7.service" \
+            --subst-var out
+          substitute data/systemd.service \
+            "$out/share/systemd/user/xdg-desktop-portal-shojiwm-win7.service" \
+            --subst-var out
+        '';
+
+        meta = {
+          description = "The GlobalShortcuts portal for the Windows 7 configuration of ShojiWM";
+          homepage = "https://github.com/sachahjkl/shojiwm-win7";
+          license = nixpkgs.lib.licenses.mit;
+          platforms = nixpkgs.lib.platforms.linux;
+        };
+      };
     in {
       default = config;
-      inherit config install vicinae;
+      inherit config install portal vicinae;
     });
 
     apps = forAllSystems (system: {
@@ -136,8 +174,27 @@
           };
         };
       };
+      inherit (self.packages.${system}) portal;
     in {
       pre-commit = preCommitCheck;
+
+      # The portal builds and passes its tests.
+      inherit portal;
+
+      # The portal's Rust: clippy without warnings, and rustfmt's layout.
+      portal-lint = portal.overrideAttrs (old: {
+        pname = "xdg-desktop-portal-shojiwm-win7-lint";
+        nativeBuildInputs = old.nativeBuildInputs ++ [pkgs.clippy pkgs.rustfmt];
+        buildPhase = ''
+          runHook preBuild
+          cargo fmt --check
+          cargo clippy --all-targets --offline -- -D warnings
+          runHook postBuild
+        '';
+        doCheck = false;
+        installPhase = "touch $out";
+        postInstall = "";
+      });
 
       # The TSX is type checked against the ShojiWM TypeScript package, the
       # way the compositor's own `npm run typecheck` does it.
@@ -213,6 +270,10 @@
             pkgs.prettier
             pkgs.quickshell
             pkgs.qt6.qtdeclarative
+            pkgs.cargo
+            pkgs.rustc
+            pkgs.clippy
+            pkgs.rustfmt
           ]
           ++ self.checks.${system}.pre-commit.enabledPackages;
 
