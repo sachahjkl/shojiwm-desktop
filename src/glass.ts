@@ -11,9 +11,11 @@ import {
   backdropSource,
   compileEffect,
   compileLayerEffect,
+  compilePopupEffect,
   dualKawaseBlur,
   layerSource,
   loadShader,
+  popupSource,
   shaderStage,
   signal,
   xrayBackdropSource,
@@ -108,12 +110,39 @@ function layerGlass(
   });
 }
 
+/**
+ * The blur behind the shell's popups (the panels of the notification area,
+ * the calendar, the jump lists): the taskbar's glass, masked by the popup's
+ * own pixels in the same way.
+ */
+function popupGlass(blur: { radius: number; passes: number }) {
+  return compilePopupEffect({
+    input: backdropSource(),
+    capturePadding: 24,
+    invalidate: { kind: "on-source-damage-box", damagePadding: 8 },
+    alpha: "preserve",
+    pipeline: [
+      dualKawaseBlur(blur),
+      shaderStage(loadShader("./assets/layer-mask.frag"), {
+        textures: { layer_mask: popupSource() },
+        uniforms: {
+          opacity_threshold: 0.03,
+          mask_feather: 0.02,
+        },
+      }),
+    ],
+  });
+}
+
 // Level 0 has no blur, so nothing is compiled for it.
 const WINDOW = LEVELS.map((blur, index) =>
   index === 0 ? null : windowGlass(blur),
 );
 const LAYER = LEVELS.map((blur, index) =>
   index === 0 ? null : layerGlass(backdropSource(), blur),
+);
+const POPUP = LEVELS.map((blur, index) =>
+  index === 0 ? null : popupGlass(blur),
 );
 
 /** The blur behind caption bars at the current level, or null for none. */
@@ -128,4 +157,9 @@ export function windowGlassEffect() {
  */
 export function layerGlassEffect() {
   return LAYER[level()] ?? null;
+}
+
+/** The blur behind the shell's popups at the current level, or null. */
+export function popupGlassEffect() {
+  return POPUP[level()] ?? null;
 }

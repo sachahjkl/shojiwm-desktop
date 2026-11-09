@@ -28,7 +28,7 @@ import { SHELL_SOCKET, createPeek } from "./peek";
 import { createZoom } from "./zoom";
 // The screens: SHOJIWM_WIN7_OUTPUTS and the Control Panel's choices.
 import "./display";
-import { layerGlassEffect, windowGlassEffect } from "./glass";
+import { layerGlassEffect, popupGlassEffect, windowGlassEffect } from "./glass";
 import {
   FloatingWindowManager,
   WIN_FULLSCREEN,
@@ -464,6 +464,17 @@ COMPOSITOR.effect.layer = (layer) => {
     return glass ? { behind: glass } : {};
   }
   return {};
+};
+
+// The popups of layer surfaces are the shell's own panels and menus (the
+// notification area's, the calendar, the jump lists): the same glass. A
+// window's popups (a program's menus) draw their own background.
+COMPOSITOR.effect.popup = (popup) => {
+  if (popup.parentKind !== "layer") {
+    return {};
+  }
+  const glass = popupGlassEffect();
+  return glass ? { behind: glass } : {};
 };
 
 /**
