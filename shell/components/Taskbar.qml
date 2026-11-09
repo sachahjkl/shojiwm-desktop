@@ -340,10 +340,18 @@ Item {
         /// The button the pointer is before: the first whose middle is right
         /// of it, from the places the buttons had before anything moved.
         function place(x) {
+            // A button dragged left goes before a button whose middle it
+            // reaches; dragged right, after it. At the ends of the bar the
+            // middles meet exactly, so the tie decides.
+            var from = bar.dragFrom >= 0 ? buttonsRepeater.itemAt(bar.dragFrom) : null;
+            var leftward = from !== null && x < from.x + from.width / 2;
             var before = buttonsRepeater.count;
             for (var i = 0; i < buttonsRepeater.count; i++) {
                 var item = buttonsRepeater.itemAt(i);
-                if (item && x < item.x + item.width / 2) {
+                if (!item)
+                    continue;
+                var middle = item.x + item.width / 2;
+                if (leftward ? x <= middle : x < middle) {
                     before = i;
                     break;
                 }
