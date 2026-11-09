@@ -17,6 +17,7 @@
  */
 
 import {
+  COMPOSITOR,
   LayerPopups,
   Layers,
   Solid,
@@ -73,6 +74,10 @@ export function createPeek(manager: FloatingWindowManager): Peek {
   const peeking = signal(false);
 
   const server = createIpcServer(SHELL_SOCKET);
+  // On a reload, close the socket and the shell's connection: the shell
+  // then connects to the new configuration's socket and sends its settings
+  // again. Left open, the old connection was read by no one.
+  COMPOSITOR.onDisable(() => server.close());
   // The GlobalShortcuts portal service binds its keys over this socket too.
   serveShortcuts(server);
   server.handle("peek", (params) => {
