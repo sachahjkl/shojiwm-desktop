@@ -351,7 +351,13 @@ Item {
                   run: desktop.newFolder },
                 { separator: true },
                 { label: "Text Document", icon: Qt.resolvedUrl("../assets/icons/file.png"),
-                  run: desktop.newTextDocument }
+                  run: desktop.newTextDocument },
+                { label: "Sticky Note",
+                  run: function () {
+                      StickyNotes.add(desktop.screenName,
+                          Math.min(desktop.width - 230, desktop.menuAt.x),
+                          Math.min(desktop.height - 210, desktop.menuAt.y));
+                  } }
             ] },
             { label: "Open in Terminal", icon: Qt.resolvedUrl("../assets/icons/run.png"),
               run: desktop.openTerminal },
@@ -392,6 +398,8 @@ Item {
     /// draws it in a surface of its own above everything (shell.qml).
     property var menuEntries: []
     property rect menuAt: Qt.rect(0, 0, 1, 1)
+    /// The screen the desktop is on, for the notes made on it.
+    property string screenName: ""
     readonly property bool menuOpen: menuEntries.length > 0
 
     function showMenu(entries, x, y) {

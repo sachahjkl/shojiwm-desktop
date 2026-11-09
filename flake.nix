@@ -182,6 +182,7 @@
           singleton WorldClocks 1.0 WorldClocks.qml
           singleton SystemStats 1.0 SystemStats.qml
           singleton Slideshow 1.0 Slideshow.qml
+          singleton StickyNotes 1.0 StickyNotes.qml
           EOF
           cd ./shell
           qmllint \

@@ -74,8 +74,17 @@ ShellRoot {
                 WlrLayershell.namespace: "no_blur"
                 // The desktop takes the keyboard when clicked, for Delete, F2,
                 // Return and Ctrl+A, and holds it while an icon is renamed.
-                WlrLayershell.keyboardFocus: desktopIcons.renaming
+                WlrLayershell.keyboardFocus: desktopIcons.renaming || StickyNotes.editing.length > 0
                     ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.OnDemand
+
+                // A sticky note keeps the keyboard until the pointer goes to
+                // a window or a panel: the desktop is then under it no more.
+                HoverHandler {
+                    onHoveredChanged: {
+                        if (!hovered)
+                            StickyNotes.editing = "";
+                    }
+                }
 
                 Image {
                     anchors.fill: parent
@@ -90,6 +99,18 @@ ShellRoot {
                 Desktop {
                     id: desktopIcons
                     anchors.fill: parent
+                    screenName: desktopScope.modelData.name
+                }
+
+                // The sticky notes of this screen.
+                Repeater {
+                    model: StickyNotes.notes.filter(function (note) {
+                        return note.screen === desktopScope.modelData.name;
+                    })
+
+                    delegate: StickyNote {
+                        focusOnShow: modelData.id === StickyNotes.lastAdded
+                    }
                 }
 
                 // The CPU Meter gadget, on the first screen. A drag moves it;
