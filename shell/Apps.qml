@@ -623,7 +623,7 @@ Singleton {
     ]
     /// The action the button itself runs, by id. Set in the Control Panel.
     readonly property string powerButtonAction: powerAction(Settings.powerButtonAction)
-        ? Settings.powerButtonAction : "sleep"
+        ? Settings.powerButtonAction : "logoff"
 
     function powerAction(id) {
         for (var i = 0; i < powerActions.length; i++) {

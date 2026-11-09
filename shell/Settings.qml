@@ -48,6 +48,9 @@ Singleton {
     property alias desktopIconSize: adapter.desktopIconSize
     property alias showDesktopIcons: adapter.showDesktopIcons
     property alias desktopSort: adapter.desktopSort
+    property alias desktopAutoArrange: adapter.desktopAutoArrange
+    property alias desktopAlignToGrid: adapter.desktopAlignToGrid
+    property alias desktopPlaces: adapter.desktopPlaces
     property alias showFrequent: adapter.showFrequent
     property alias powerButtonAction: adapter.powerButtonAction
     property alias peek: adapter.peek
@@ -246,11 +249,18 @@ Singleton {
             property string desktopIconSize: "medium"
             property bool showDesktopIcons: true
             property string desktopSort: "name"
+            /// "Auto arrange icons": each screen's icons in columns, in sort order.
+            property bool desktopAutoArrange: false
+            /// "Align icons to grid": a moved icon snaps to the nearest free cell.
+            property bool desktopAlignToGrid: true
+            /// Where each desktop icon is, by key (file path, or "trash:" and the
+            /// like): { screen, x, y }, the top left of its cell on that screen.
+            property var desktopPlaces: ({})
             /// "shutdown", "restart", "sleep", "hibernate", "lock" or "logoff".
-            /// Sleep by default: the Shut Down dialog (Super+Shift+E, Alt+F4
+            /// Log off by default: the Shut Down dialog (Super+Shift+E, Alt+F4
             /// on the desktop) selects this action, and Return there must not
             /// turn the computer off by accident.
-            property string powerButtonAction: "sleep"
+            property string powerButtonAction: "logoff"
             property bool peek: true
 
             /// "locale", "24h" or "12h".

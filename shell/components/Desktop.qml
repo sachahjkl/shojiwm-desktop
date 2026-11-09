@@ -8,9 +8,12 @@ import ".."
 import "../theme.js" as Theme
 import "../tools.js" as Tools
 
-// The desktop icons, over the wallpaper: the Recycle Bin, then whatever is
-// in the desktop folder (XDG_DESKTOP_DIR, ~/Desktop by default), in columns
-// from the top left as Windows 7 arranges them.
+// The desktop icons of one screen, over the wallpaper: the Recycle Bin, the
+// system icons, then whatever is in the desktop folder (XDG_DESKTOP_DIR,
+// ~/Desktop by default). A drag moves an icon anywhere, to this screen or
+// another; "Align icons to grid" snaps it to a cell, and "Auto arrange
+// icons" puts each screen's icons in columns from the top left, in sort
+// order, as Windows 7 does.
 //
 // A click picks an icon, Ctrl adds to the pick, a drag on the empty desktop
 // draws a box round several; a double click opens. A .desktop file is a
@@ -40,8 +43,8 @@ Item {
                 desktop.open(open[i]);
         } else if (ctrl && event.key === Qt.Key_A) {
             var all = ({});
-            for (var k = 0; k < desktop.items.length; k++)
-                all[desktop.items[k].key] = true;
+            for (var k = 0; k < desktop.shown.length; k++)
+                all[desktop.shown[k].key] = true;
             desktop.picked = all;
         } else if (ctrl && (event.key === Qt.Key_Plus || event.key === Qt.Key_Equal)) {
             desktop.zoom(1);
@@ -62,11 +65,26 @@ Item {
     readonly property string folder: Apps.userDir("DESKTOP", "Desktop")
 
     readonly property var sizes: ({
-        "large": { icon: 64, width: 96, height: 100 },
-        "medium": { icon: 48, width: 78, height: 84 },
-        "small": { icon: 32, width: 78, height: 66 }
+        "large": { icon: 64, width: 96 },
+        "medium": { icon: 48, width: 78 },
+        "small": { icon: 32, width: 78 }
     })
-    readonly property var size: sizes[Settings.desktopIconSize] || sizes.medium
+    /// One cell: the icon, two lines of its name, and a gap before the
+    /// next icon, so a name never touches the icon under it.
+    readonly property var size: {
+        var chosen = sizes[Settings.desktopIconSize] || sizes.medium;
+        return {
+            icon: chosen.icon,
+            width: chosen.width,
+            height: 6 + chosen.icon + 4 + 2 * Math.ceil(nameMetrics.height) + 12
+        };
+    }
+
+    FontMetrics {
+        id: nameMetrics
+        font.family: Theme.fontFamily
+        font.pixelSize: Theme.fontSize
+    }
 
     /// One size up (`step` 1) or down (-1), as Ctrl+wheel and Ctrl+plus or
     /// minus do on Windows.
@@ -155,6 +173,173 @@ Item {
         desktop.items = list;
     }
 
+    // ----- where the icons are ------------------------------------------------
+    //
+    // Each icon has a place in Settings.desktopPlaces: a screen and the top
+    // left of its cell. An icon without one, or whose screen is not
+    // connected, shows on the main screen in the first free cell. Its place
+    // is kept, so it goes back when its screen comes back.
+
+    readonly property var screenNames: Quickshell.screens.map(function (screen) {
+        return screen.name;
+    })
+    /// The main screen: the top left one of the layout, whatever order the
+    /// screens are found in.
+    readonly property string firstScreen: {
+        var best = null;
+        for (var i = 0; i < Quickshell.screens.length; i++) {
+            var screen = Quickshell.screens[i];
+            if (!best || screen.y < best.y || (screen.y === best.y && screen.x < best.x))
+                best = screen;
+        }
+        return best ? best.name : "";
+    }
+    /// The cells: the screen less the taskbar, filled in columns.
+    readonly property int rows: Math.max(1, Math.floor((height - Theme.taskbarHeight - 4) / size.height))
+    readonly property int columns: Math.max(1, Math.floor((width - 4) / size.width))
+
+    function screenOf(item) {
+        var place = Settings.desktopPlaces[item.key];
+        return place && screenNames.indexOf(place.screen) >= 0 ? place.screen : firstScreen;
+    }
+
+    /// The icons on this screen, in sort order.
+    readonly property var shown: items.filter(function (item) {
+        return desktop.screenOf(item) === desktop.screenName;
+    })
+
+    function cellPoint(cell) {
+        return Qt.point(2 + Math.floor(cell / rows) * size.width, 2 + (cell % rows) * size.height);
+    }
+
+    /// The cell nearest to a point.
+    function cellAt(x, y) {
+        var column = Math.max(0, Math.min(columns - 1, Math.round((x - 2) / size.width)));
+        var row = Math.max(0, Math.min(rows - 1, Math.round((y - 2) / size.height)));
+        return column * rows + row;
+    }
+
+    /// A point kept on the screen, so an icon is never out of reach.
+    function onScreen(x, y) {
+        return Qt.point(Math.max(2, Math.min(width - 2 - size.width, x)),
+            Math.max(2, Math.min(height - Theme.taskbarHeight - 2 - size.height, y)));
+    }
+
+    /// The top left of each shown icon, by key.
+    readonly property var positions: {
+        var result = {};
+        var taken = {};
+        var waiting = [];
+        for (var i = 0; i < shown.length; i++) {
+            var item = shown[i];
+            var place = Settings.desktopPlaces[item.key];
+            if (Settings.desktopAutoArrange || !place || place.screen !== screenName) {
+                waiting.push(item);
+                continue;
+            }
+            var point = onScreen(place.x, place.y);
+            var cell = cellAt(point.x, point.y);
+            if (Settings.desktopAlignToGrid) {
+                if (taken[cell]) {
+                    waiting.push(item);
+                    continue;
+                }
+                point = cellPoint(cell);
+            }
+            taken[cell] = true;
+            result[item.key] = point;
+        }
+        var next = 0;
+        for (var j = 0; j < waiting.length; j++) {
+            while (taken[next])
+                next++;
+            taken[next] = true;
+            result[waiting[j].key] = cellPoint(next);
+        }
+        return result;
+    }
+
+    /// Change the places of some icons; the others keep theirs.
+    function setPlaces(changes) {
+        var next = Object.assign({}, Settings.desktopPlaces);
+        for (var key in changes) {
+            if (changes[key])
+                next[key] = changes[key];
+            else
+                delete next[key];
+        }
+        Settings.desktopPlaces = next;
+    }
+
+    /// Every icon of this screen gets the place it shows at now. Moving one
+    /// icon then leaves the others where they are, instead of letting the
+    /// ones without a place fill the cell it left.
+    function keepPlaces(changes) {
+        for (var i = 0; i < shown.length; i++) {
+            var key = shown[i].key;
+            var place = Settings.desktopPlaces[key];
+            if (changes[key] === undefined && !(place && place.screen === screenName) && positions[key])
+                changes[key] = { screen: screenName, x: positions[key].x, y: positions[key].y };
+        }
+        return changes;
+    }
+
+    /// "Sort by" without "Auto arrange icons": this screen's icons go to
+    /// the first cells, in the new order, once.
+    function arrange() {
+        var changes = {};
+        for (var i = 0; i < shown.length; i++) {
+            var point = cellPoint(i);
+            changes[shown[i].key] = { screen: screenName, x: point.x, y: point.y };
+        }
+        setPlaces(changes);
+    }
+
+    /// The data of a drag of the picked icons, started on `anchorKey` at a
+    /// point of its cell: what a desktop needs to place them where they
+    /// are dropped, on any screen.
+    function dragData(anchorKey, grab) {
+        var keys = [];
+        var offsets = {};
+        var anchor = positions[anchorKey] || Qt.point(0, 0);
+        var list = pickedItems();
+        for (var i = 0; i < list.length; i++) {
+            var at = positions[list[i].key];
+            if (!at)
+                continue;
+            keys.push(list[i].key);
+            offsets[list[i].key] = { x: at.x - anchor.x, y: at.y - anchor.y };
+        }
+        if (!Settings.desktopAutoArrange)
+            setPlaces(keepPlaces({}));
+        return { urls: pickedUrls(), keys: keys, offsets: offsets, grab: { x: grab.x, y: grab.y } };
+    }
+
+    /// Dragged icons dropped at a point of this screen: the anchor's cell
+    /// goes under the pointer where it was grabbed, the others keep their
+    /// distance from it. On the grid, each takes the nearest free cell.
+    function placeDragged(moving, x, y) {
+        var taken = {};
+        for (var key in positions) {
+            if (moving.keys.indexOf(key) < 0)
+                taken[cellAt(positions[key].x, positions[key].y)] = true;
+        }
+        var changes = {};
+        for (var i = 0; i < moving.keys.length; i++) {
+            var offset = moving.offsets[moving.keys[i]];
+            var point = onScreen(x - moving.grab.x + offset.x, y - moving.grab.y + offset.y);
+            if (Settings.desktopAlignToGrid) {
+                var cell = cellAt(point.x, point.y);
+                while (taken[cell])
+                    cell++;
+                taken[cell] = true;
+                point = cellPoint(cell);
+            }
+            changes[moving.keys[i]] = { screen: screenName, x: Math.round(point.x), y: Math.round(point.y) };
+        }
+        setPlaces(Settings.desktopAutoArrange ? changes : keepPlaces(changes));
+    }
+
     // Whether the Recycle Bin has anything in it, for its icon.
     property bool trashFull: false
 
@@ -238,6 +423,10 @@ Item {
         name = String(name).trim();
         if (!item || name.length === 0 || name === item.name || name.indexOf("/") >= 0)
             return;
+        // The icon keeps its place under its new name.
+        var changes = {};
+        changes[parentOf(item.path) + "/" + name] = Settings.desktopPlaces[item.key];
+        setPlaces(changes);
         Quickshell.execDetached([Tools.gio, "rename", item.path, name]);
     }
 
@@ -294,8 +483,20 @@ Item {
         var moving = paths.filter(function (path) {
             return path !== folder && desktop.parentOf(path) !== folder;
         });
-        if (moving.length > 0)
-            Quickshell.execDetached([Tools.gio, copy ? "copy" : "move"].concat(moving, [folder + "/"]));
+        if (moving.length === 0)
+            return;
+        // Files that come to the desktop show where they are dropped.
+        if (folder === desktop.folder) {
+            var changes = {};
+            for (var j = 0; j < moving.length; j++) {
+                var point = onScreen(x - size.width / 2 + j * size.width, y - size.height / 3);
+                changes[folder + "/" + moving[j].split("/").pop()] = {
+                    screen: screenName, x: Math.round(point.x), y: Math.round(point.y)
+                };
+            }
+            setPlaces(changes);
+        }
+        Quickshell.execDetached([Tools.gio, copy ? "copy" : "move"].concat(moving, [folder + "/"]));
     }
 
     /// The picked icons as file URLs, for a drag to another program.
@@ -352,6 +553,21 @@ Item {
         };
     }
 
+    /// A "Sort by" line: the order, then, unless the icons arrange
+    /// themselves, this screen's icons put in that order once.
+    function sortBy(label, value) {
+        return {
+            label: label,
+            checked: Settings.desktopSort === value,
+            run: function () {
+                Settings.desktopSort = value;
+                desktop.rebuild();
+                if (!Settings.desktopAutoArrange)
+                    desktop.arrange();
+            }
+        };
+    }
+
     function desktopEntries() {
         return [
             { label: "View", children: [
@@ -359,14 +575,19 @@ Item {
                 radio("Medium icons", "desktopIconSize", "medium"),
                 radio("Small icons", "desktopIconSize", "small"),
                 { separator: true },
+                { label: "Auto arrange icons", checked: Settings.desktopAutoArrange,
+                  run: function () { Settings.desktopAutoArrange = !Settings.desktopAutoArrange; } },
+                { label: "Align icons to grid", checked: Settings.desktopAlignToGrid,
+                  run: function () { Settings.desktopAlignToGrid = !Settings.desktopAlignToGrid; } },
+                { separator: true },
                 { label: "Show desktop icons", checked: Settings.showDesktopIcons,
                   run: function () { Settings.showDesktopIcons = !Settings.showDesktopIcons; } }
             ] },
             { label: "Sort by", children: [
-                radio("Name", "desktopSort", "name"),
-                radio("Size", "desktopSort", "size"),
-                radio("Item type", "desktopSort", "type"),
-                radio("Date modified", "desktopSort", "date")
+                sortBy("Name", "name"),
+                sortBy("Size", "size"),
+                sortBy("Item type", "type"),
+                sortBy("Date modified", "date")
             ] },
             { label: "Refresh", run: desktop.refresh },
             { separator: true },
@@ -525,16 +746,29 @@ Item {
         id: drop
 
         anchors.fill: parent
-        keys: ["text/uri-list"]
+        keys: ["text/uri-list", "application/x-shojiwm-desktop-icons"]
 
         onDropped: function (event) {
+            var copy = event.proposedAction === Qt.CopyAction;
             // The shell's own icons are not read back through Wayland: see
-            // DragState.
-            var urls = DragState.kind === "files" ? DragState.data
-                : event.hasUrls ? event.urls : [];
+            // DragState. Dropped on the Recycle Bin or a folder, their files
+            // go there; anywhere else, the icons move there, on this screen.
+            if (DragState.kind === "desktop") {
+                var moving = DragState.data;
+                var target = desktop.itemAt(event.x, event.y);
+                if (target && moving.keys.indexOf(target.key) < 0
+                    && (target.kind === "trash" || target.kind === "folder")) {
+                    desktop.dropFiles(moving.urls, event.x, event.y, copy);
+                    event.accept(copy ? Qt.CopyAction : Qt.MoveAction);
+                    return;
+                }
+                desktop.placeDragged(moving, event.x, event.y);
+                event.accept(Qt.MoveAction);
+                return;
+            }
+            var urls = event.hasUrls ? event.urls : [];
             if (urls.length === 0)
                 return;
-            var copy = event.proposedAction === Qt.CopyAction;
             desktop.dropFiles(urls, event.x, event.y, copy);
             event.accept(copy ? Qt.CopyAction : Qt.MoveAction);
         }
@@ -542,309 +776,316 @@ Item {
 
     // ----- the icons ------------------------------------------------------------
 
-    GridView {
-        id: grid
-
-        x: 2
-        y: 2
-        width: parent.width - 4
-        height: parent.height - Theme.taskbarHeight - 4
+    Item {
+        anchors.fill: parent
         visible: Settings.showDesktopIcons
-        interactive: false
-        flow: GridView.FlowTopToBottom
-        cellWidth: desktop.size.width
-        cellHeight: desktop.size.height
-        model: desktop.items
-        cacheBuffer: 10000
 
-        delegate: Item {
-            id: cell
+        Repeater {
+            model: desktop.shown
 
-            required property var modelData
-            required property int index
-            readonly property var item: modelData
-            readonly property bool isPicked: desktop.picked[modelData.key] === true
-            readonly property bool editing: desktop.renameKey === modelData.key
+            delegate: Item {
+                id: cell
 
-            width: grid.cellWidth
-            height: grid.cellHeight
-            z: isPicked || editing ? 2 : 0
+                required property var modelData
+                readonly property var item: modelData
+                readonly property bool isPicked: desktop.picked[modelData.key] === true
+                readonly property bool editing: desktop.renameKey === modelData.key
+                readonly property point at: desktop.positions[modelData.key] || Qt.point(2, 2)
+                /// Where the pointer took the icon, in the cell, for a drag.
+                property point grab: Qt.point(0, 0)
 
-            Component.onCompleted: desktop.cells[modelData.key] = cell
-            Component.onDestruction: {
-                if (desktop.cells[modelData.key] === cell)
-                    delete desktop.cells[modelData.key];
-            }
+                x: at.x
+                y: at.y
+                width: desktop.size.width
+                height: desktop.size.height
+                z: isPicked || editing ? 2 : 0
 
-            function plateRect() {
-                var at = cell.mapToItem(desktop, plate.x, plate.y);
-                return Qt.rect(at.x, at.y, plate.width, plate.height);
-            }
+                Component.onCompleted: desktop.cells[modelData.key] = cell
+                Component.onDestruction: {
+                    if (desktop.cells[modelData.key] === cell)
+                        delete desktop.cells[modelData.key];
+                }
 
-            function commitRename() {
-                desktop.rename(cell.item, field.text);
-            }
+                function plateRect() {
+                    var at = cell.mapToItem(desktop, plate.x, plate.y);
+                    return Qt.rect(at.x, at.y, plate.width, plate.height);
+                }
 
-            readonly property string iconSource: {
-                var item = cell.item;
-                if (item.kind === "trash")
-                    return Qt.resolvedUrl(desktop.trashFull
-                        ? "../assets/icons/recycle-bin-full.png"
-                        : "../assets/icons/recycle-bin.png");
-                if (item.kind === "folder")
-                    return Qt.resolvedUrl("../assets/icons/folder.png");
-                if (item.kind === "computer")
-                    return Qt.resolvedUrl("../assets/icons/computer.png");
-                if (item.kind === "userfiles")
-                    return Qt.resolvedUrl("../assets/icons/home.png");
-                if (item.kind === "controlpanel")
-                    return Qt.resolvedUrl("../assets/icons/control-panel.png");
-                if (item.kind === "shortcut")
-                    return shortcutIcon;
-                if (["png", "jpg", "jpeg", "gif", "webp", "bmp", "svg"].indexOf(item.suffix) >= 0)
-                    return "file://" + item.path;
-                return Apps.fileIcon(item.name);
-            }
+                function commitRename() {
+                    desktop.rename(cell.item, field.text);
+                }
 
-            // The name and the icon of a shortcut, read from its .desktop file.
-            property string shortcutName: ""
-            property string shortcutIcon: Qt.resolvedUrl("../assets/icons/run.png")
+                readonly property string iconSource: {
+                    var item = cell.item;
+                    if (item.kind === "trash")
+                        return Qt.resolvedUrl(desktop.trashFull
+                            ? "../assets/icons/recycle-bin-full.png"
+                            : "../assets/icons/recycle-bin.png");
+                    if (item.kind === "folder")
+                        return Qt.resolvedUrl("../assets/icons/folder.png");
+                    if (item.kind === "computer")
+                        return Qt.resolvedUrl("../assets/icons/computer.png");
+                    if (item.kind === "userfiles")
+                        return Qt.resolvedUrl("../assets/icons/home.png");
+                    if (item.kind === "controlpanel")
+                        return Qt.resolvedUrl("../assets/icons/control-panel.png");
+                    if (item.kind === "shortcut")
+                        return shortcutIcon;
+                    if (["png", "jpg", "jpeg", "gif", "webp", "bmp", "svg"].indexOf(item.suffix) >= 0)
+                        return "file://" + item.path;
+                    return Apps.fileIcon(item.name);
+                }
 
-            FileView {
-                path: cell.item.kind === "shortcut" ? cell.item.path : ""
-                printErrors: false
-                watchChanges: true
-                onFileChanged: reload()
-                onLoaded: {
-                    var lines = text().split("\n");
-                    var section = "";
-                    var fields = {};
-                    for (var i = 0; i < lines.length; i++) {
-                        var line = lines[i].trim();
-                        if (line.startsWith("[")) {
-                            section = line;
-                            continue;
+                // The name and the icon of a shortcut, read from its .desktop file.
+                property string shortcutName: ""
+                property string shortcutIcon: Qt.resolvedUrl("../assets/icons/run.png")
+
+                FileView {
+                    path: cell.item.kind === "shortcut" ? cell.item.path : ""
+                    printErrors: false
+                    watchChanges: true
+                    onFileChanged: reload()
+                    onLoaded: {
+                        var lines = text().split("\n");
+                        var section = "";
+                        var fields = {};
+                        for (var i = 0; i < lines.length; i++) {
+                            var line = lines[i].trim();
+                            if (line.startsWith("[")) {
+                                section = line;
+                                continue;
+                            }
+                            if (section !== "[Desktop Entry]")
+                                continue;
+                            var match = /^(Name|Icon|Exec)\s*=\s*(.*)$/.exec(line);
+                            if (match)
+                                fields[match[1]] = match[2];
                         }
-                        if (section !== "[Desktop Entry]")
-                            continue;
-                        var match = /^(Name|Icon|Exec)\s*=\s*(.*)$/.exec(line);
-                        if (match)
-                            fields[match[1]] = match[2];
+                        cell.shortcutName = fields.Name || "";
+                        cell.shortcutIcon = desktop.shortcutIconFor(fields.Icon, fields.Exec);
                     }
-                    cell.shortcutName = fields.Name || "";
-                    cell.shortcutIcon = desktop.shortcutIconFor(fields.Icon, fields.Exec);
-                }
-            }
-
-            readonly property string label: item.kind === "shortcut"
-                ? (shortcutName || item.name.replace(/\.desktop$/i, ""))
-                : item.name
-
-            // The plate under the pointer or the pick: pale glass.
-            Rectangle {
-                id: plate
-
-                x: 2
-                y: 2
-                width: parent.width - 4
-                height: Math.min(cell.height + (cell.isPicked ? 40 : 0),
-                    picture.height + 8 + (cell.editing ? field.height : name.height) + 6)
-                radius: 3
-                visible: cell.isPicked || iconArea.containsMouse
-                color: cell.isPicked
-                    ? (iconArea.containsMouse ? "#5c9fd2f7" : "#4d86c0ec")
-                    : "#26ffffff"
-                border.width: 1
-                border.color: cell.isPicked ? "#a6cfeaff" : "#59ffffff"
-            }
-
-            Image {
-                id: picture
-
-                anchors.horizontalCenter: parent.horizontalCenter
-                y: 6
-                width: desktop.size.icon
-                height: desktop.size.icon
-                sourceSize.width: desktop.size.icon * 2
-                sourceSize.height: desktop.size.icon * 2
-                fillMode: Image.PreserveAspectFit
-                asynchronous: true
-                smooth: true
-                source: cell.iconSource
-            }
-
-            // The shortcut arrow, in the bottom left corner of the icon.
-            Rectangle {
-                visible: cell.item.kind === "shortcut"
-                x: picture.x
-                y: picture.y + picture.height - height
-                width: Math.round(desktop.size.icon / 3)
-                height: width
-                radius: 1
-                color: "#ffffff"
-                border.width: 1
-                border.color: "#8c9aa6"
-
-                Text {
-                    anchors.centerIn: parent
-                    text: "↗"
-                    color: "#1f5fa8"
-                    font.pixelSize: parent.width - 3
-                    font.bold: true
-                }
-            }
-
-            // The name: white, with a dark shadow so it reads on any
-            // wallpaper; two lines at most until the icon is picked.
-            Item {
-                id: name
-
-                visible: !cell.editing
-                anchors.horizontalCenter: parent.horizontalCenter
-                y: picture.y + picture.height + 4
-                width: cell.width - 6
-                height: nameText.implicitHeight
-
-                Text {
-                    x: 1
-                    y: 1
-                    width: parent.width
-                    text: nameText.text
-                    font: nameText.font
-                    horizontalAlignment: Text.AlignHCenter
-                    wrapMode: nameText.wrapMode
-                    maximumLineCount: nameText.maximumLineCount
-                    elide: Text.ElideRight
-                    color: "#d9000000"
                 }
 
-                Text {
-                    id: nameText
+                readonly property string label: item.kind === "shortcut"
+                    ? (shortcutName || item.name.replace(/\.desktop$/i, ""))
+                    : item.name
 
-                    width: parent.width
-                    text: cell.label
-                    color: "#ffffff"
-                    font.family: Theme.fontFamily
-                    font.pixelSize: Theme.fontSize
-                    horizontalAlignment: Text.AlignHCenter
-                    wrapMode: Text.WrapAtWordBoundaryOrAnywhere
-                    maximumLineCount: cell.isPicked ? 6 : 2
-                    elide: Text.ElideRight
-                }
-            }
-
-            // Renaming: a plain white field round the name.
-            Rectangle {
-                visible: cell.editing
-                anchors.horizontalCenter: parent.horizontalCenter
-                y: picture.y + picture.height + 3
-                width: cell.width - 4
-                height: field.height + 2
-                color: "#ffffff"
-                border.width: 1
-                border.color: "#000000"
-
-                TextInput {
-                    id: field
+                // The plate under the pointer or the pick: pale glass.
+                Rectangle {
+                    id: plate
 
                     x: 2
-                    y: 1
+                    y: 2
                     width: parent.width - 4
-                    text: cell.item.name
-                    color: "#000000"
-                    selectionColor: "#3399ff"
-                    selectedTextColor: "#ffffff"
-                    font.family: Theme.fontFamily
-                    font.pixelSize: Theme.fontSize
-                    horizontalAlignment: TextInput.AlignHCenter
-                    wrapMode: TextInput.WrapAnywhere
-                    selectByMouse: true
+                    height: Math.min(cell.height + (cell.isPicked ? 40 : 0),
+                        picture.height + 8 + (cell.editing ? field.height : name.height) + 6)
+                    radius: 3
+                    visible: cell.isPicked || iconArea.containsMouse
+                    color: cell.isPicked
+                        ? (iconArea.containsMouse ? "#5c9fd2f7" : "#4d86c0ec")
+                        : "#26ffffff"
+                    border.width: 1
+                    border.color: cell.isPicked ? "#a6cfeaff" : "#59ffffff"
+                }
 
-                    onAccepted: cell.commitRename()
-                    Keys.onEscapePressed: {
-                        desktop.renameKey = "";
-                        desktop.forceActiveFocus();
+                Image {
+                    id: picture
+
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    y: 6
+                    width: desktop.size.icon
+                    height: desktop.size.icon
+                    sourceSize.width: desktop.size.icon * 2
+                    sourceSize.height: desktop.size.icon * 2
+                    fillMode: Image.PreserveAspectFit
+                    asynchronous: true
+                    smooth: true
+                    source: cell.iconSource
+                }
+
+                // The shortcut arrow, in the bottom left corner of the icon.
+                Rectangle {
+                    visible: cell.item.kind === "shortcut"
+                    x: picture.x
+                    y: picture.y + picture.height - height
+                    width: Math.round(desktop.size.icon / 3)
+                    height: width
+                    radius: 1
+                    color: "#ffffff"
+                    border.width: 1
+                    border.color: "#8c9aa6"
+
+                    Text {
+                        anchors.centerIn: parent
+                        text: "↗"
+                        color: "#1f5fa8"
+                        font.pixelSize: parent.width - 3
+                        font.bold: true
                     }
                 }
-            }
 
-            onEditingChanged: {
-                if (!editing)
-                    return;
-                field.text = cell.item.name;
-                field.forceActiveFocus();
-                // The name without its extension is picked, as Windows does.
-                var dot = cell.item.dir ? -1 : cell.item.name.lastIndexOf(".");
-                field.select(0, dot > 0 ? dot : cell.item.name.length);
-            }
+                // The name: white, with a dark shadow so it reads on any
+                // wallpaper; two lines at most until the icon is picked.
+                Item {
+                    id: name
 
-            // What the pointer drags: invisible, the drag shows a picture of
-            // the icon and carries the picked files to whatever takes them.
-            Item {
-                id: dragProxy
+                    visible: !cell.editing
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    y: picture.y + picture.height + 4
+                    width: cell.width - 6
+                    height: nameText.implicitHeight
 
-                width: plate.width
-                height: plate.height
-                Drag.active: iconArea.drag.active
-                Drag.dragType: Drag.Automatic
-                Drag.supportedActions: Qt.MoveAction | Qt.CopyAction | Qt.LinkAction
-                Drag.hotSpot.x: width / 2
-                Drag.hotSpot.y: height / 2
-                Drag.keys: ["text/uri-list"]
-                Drag.mimeData: ({ "text/uri-list": desktop.pickedUrls().join("\r\n") })
-                Drag.onDragStarted: DragState.start("files", desktop.pickedUrls())
-                Drag.onDragFinished: {
-                    DragState.finish();
-                    dragProxy.x = 0;
-                    dragProxy.y = 0;
-                }
-            }
+                    Text {
+                        x: 1
+                        y: 1
+                        width: parent.width
+                        text: nameText.text
+                        font: nameText.font
+                        horizontalAlignment: Text.AlignHCenter
+                        wrapMode: nameText.wrapMode
+                        maximumLineCount: nameText.maximumLineCount
+                        elide: Text.ElideRight
+                        color: "#d9000000"
+                    }
 
-            MouseArea {
-                id: iconArea
+                    Text {
+                        id: nameText
 
-                x: plate.x
-                y: plate.y
-                width: plate.width
-                height: plate.height
-                enabled: !cell.editing
-                hoverEnabled: true
-                acceptedButtons: Qt.LeftButton | Qt.RightButton
-                drag.target: desktop.isSystem(cell.item) ? null : dragProxy
-
-                onReleased: {
-                    dragProxy.x = 0;
-                    dragProxy.y = 0;
+                        width: parent.width
+                        text: cell.label
+                        color: "#ffffff"
+                        font.family: Theme.fontFamily
+                        font.pixelSize: Theme.fontSize
+                        horizontalAlignment: Text.AlignHCenter
+                        wrapMode: Text.WrapAtWordBoundaryOrAnywhere
+                        maximumLineCount: cell.isPicked ? 6 : 2
+                        elide: Text.ElideRight
+                    }
                 }
 
-                onPressed: function (event) {
-                    desktop.closeMenu();
-                    if (desktop.renaming)
-                        background.renameCommit();
-                    desktop.forceActiveFocus();
-                    var add = (event.modifiers & Qt.ControlModifier) !== 0;
-                    if (event.button === Qt.RightButton) {
-                        if (!cell.isPicked)
-                            desktop.pick(cell.item.key, false);
-                        var at = iconArea.mapToItem(desktop, event.x, event.y);
-                        desktop.showMenu(desktop.itemEntries(cell.item), at.x, at.y);
+                // Renaming: a plain white field round the name.
+                Rectangle {
+                    visible: cell.editing
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    y: picture.y + picture.height + 3
+                    width: cell.width - 4
+                    height: field.height + 2
+                    color: "#ffffff"
+                    border.width: 1
+                    border.color: "#000000"
+
+                    TextInput {
+                        id: field
+
+                        x: 2
+                        y: 1
+                        width: parent.width - 4
+                        text: cell.item.name
+                        color: "#000000"
+                        selectionColor: "#3399ff"
+                        selectedTextColor: "#ffffff"
+                        font.family: Theme.fontFamily
+                        font.pixelSize: Theme.fontSize
+                        horizontalAlignment: TextInput.AlignHCenter
+                        wrapMode: TextInput.WrapAnywhere
+                        selectByMouse: true
+
+                        onAccepted: cell.commitRename()
+                        Keys.onEscapePressed: {
+                            desktop.renameKey = "";
+                            desktop.forceActiveFocus();
+                        }
+                    }
+                }
+
+                onEditingChanged: {
+                    if (!editing)
                         return;
+                    field.text = cell.item.name;
+                    field.forceActiveFocus();
+                    // The name without its extension is picked, as Windows does.
+                    var dot = cell.item.dir ? -1 : cell.item.name.lastIndexOf(".");
+                    field.select(0, dot > 0 ? dot : cell.item.name.length);
+                }
+
+                // What the pointer drags: invisible, the drag shows a picture of
+                // the icon. It carries the picked files to whatever takes them,
+                // and the icons themselves to a desktop (DragState): the system
+                // icons, which are no files, only there.
+                Item {
+                    id: dragProxy
+
+                    readonly property var urls: cell.isPicked ? desktop.pickedUrls() : []
+
+                    width: plate.width
+                    height: plate.height
+                    Drag.active: iconArea.drag.active
+                    Drag.dragType: Drag.Automatic
+                    Drag.supportedActions: Qt.MoveAction | Qt.CopyAction | Qt.LinkAction
+                    Drag.hotSpot.x: cell.grab.x - plate.x
+                    Drag.hotSpot.y: cell.grab.y - plate.y
+                    Drag.keys: dragProxy.urls.length > 0
+                        ? ["text/uri-list", "application/x-shojiwm-desktop-icons"]
+                        : ["application/x-shojiwm-desktop-icons"]
+                    Drag.mimeData: dragProxy.urls.length > 0
+                        ? ({ "text/uri-list": dragProxy.urls.join("\r\n"),
+                             "application/x-shojiwm-desktop-icons": cell.item.key })
+                        : ({ "application/x-shojiwm-desktop-icons": cell.item.key })
+                    Drag.onDragStarted: DragState.start("desktop", desktop.dragData(cell.item.key, cell.grab))
+                    Drag.onDragFinished: {
+                        DragState.finish();
+                        dragProxy.x = 0;
+                        dragProxy.y = 0;
                     }
-                    if (add || !cell.isPicked)
-                        desktop.pick(cell.item.key, add);
-                    picture.grabToImage(function (result) {
-                        dragProxy.Drag.imageSource = result.url;
-                    }, Qt.size(picture.width, picture.height));
                 }
-                onClicked: function (event) {
-                    // A click on one of several picked icons picks it alone.
-                    if (event.button === Qt.LeftButton
-                        && !(event.modifiers & Qt.ControlModifier))
-                        desktop.pick(cell.item.key, false);
-                }
-                onDoubleClicked: function (event) {
-                    if (event.button === Qt.LeftButton)
-                        desktop.open(cell.item);
+
+                MouseArea {
+                    id: iconArea
+
+                    x: plate.x
+                    y: plate.y
+                    width: plate.width
+                    height: plate.height
+                    enabled: !cell.editing
+                    hoverEnabled: true
+                    acceptedButtons: Qt.LeftButton | Qt.RightButton
+                    drag.target: dragProxy
+
+                    onReleased: {
+                        dragProxy.x = 0;
+                        dragProxy.y = 0;
+                    }
+
+                    onPressed: function (event) {
+                        desktop.closeMenu();
+                        if (desktop.renaming)
+                            background.renameCommit();
+                        desktop.forceActiveFocus();
+                        var add = (event.modifiers & Qt.ControlModifier) !== 0;
+                        if (event.button === Qt.RightButton) {
+                            if (!cell.isPicked)
+                                desktop.pick(cell.item.key, false);
+                            var at = iconArea.mapToItem(desktop, event.x, event.y);
+                            desktop.showMenu(desktop.itemEntries(cell.item), at.x, at.y);
+                            return;
+                        }
+                        if (add || !cell.isPicked)
+                            desktop.pick(cell.item.key, add);
+                        cell.grab = iconArea.mapToItem(cell, event.x, event.y);
+                        picture.grabToImage(function (result) {
+                            dragProxy.Drag.imageSource = result.url;
+                        }, Qt.size(picture.width, picture.height));
+                    }
+                    onClicked: function (event) {
+                        // A click on one of several picked icons picks it alone.
+                        if (event.button === Qt.LeftButton
+                            && !(event.modifiers & Qt.ControlModifier))
+                            desktop.pick(cell.item.key, false);
+                    }
+                    onDoubleClicked: function (event) {
+                        if (event.button === Qt.LeftButton)
+                            desktop.open(cell.item);
+                    }
                 }
             }
         }
