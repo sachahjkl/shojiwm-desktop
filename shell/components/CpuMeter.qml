@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Shapes
 import ".."
 import "../theme.js" as Theme
 
@@ -70,46 +71,105 @@ Item {
         property string detail: ""
 
         // A gauge from 7 to 5 o'clock: the track, then the value in a green
-        // to red gradient.
-        Canvas {
-            id: canvas
+        // to red gradient. Shapes, which the GPU draws: a reading moves the
+        // value without painting anything on the processor.
+        readonly property real centreX: width / 2
+        readonly property real centreY: height / 2 + 2
+        readonly property real radius: Math.min(width, height) / 2 - 6
+        property real shown: dial.value
+        Behavior on shown {
+            NumberAnimation { duration: Settings.motion(400); easing.type: Easing.OutCubic }
+        }
+
+        Shape {
+            anchors.fill: parent
+            preferredRendererType: Shape.CurveRenderer
+
+            ShapePath {
+                strokeWidth: 6
+                strokeColor: "#8c000000"
+                fillColor: "transparent"
+                capStyle: ShapePath.RoundCap
+                PathAngleArc {
+                    centerX: dial.centreX
+                    centerY: dial.centreY
+                    radiusX: dial.radius
+                    radiusY: dial.radius
+                    startAngle: 135
+                    sweepAngle: 270
+                }
+            }
+
+            ShapePath {
+                strokeWidth: 4
+                strokeColor: "#1fffffff"
+                fillColor: "transparent"
+                capStyle: ShapePath.RoundCap
+                PathAngleArc {
+                    centerX: dial.centreX
+                    centerY: dial.centreY
+                    radiusX: dial.radius
+                    radiusY: dial.radius
+                    startAngle: 135
+                    sweepAngle: 270
+                }
+            }
+        }
+
+        // The value: a band 4 px wide with round ends, filled with the
+        // gradient across the dial.
+        Shape {
+            id: band
+
+            readonly property real outer: dial.radius + 2
+            readonly property real inner: dial.radius - 2
+            readonly property real sweep: 270 * dial.shown
+            readonly property real end: (135 + sweep) * Math.PI / 180
 
             anchors.fill: parent
-            property real shown: dial.value
-            Behavior on shown {
-                NumberAnimation { duration: Settings.motion(400); easing.type: Easing.OutCubic }
-            }
-            onShownChanged: requestPaint()
+            visible: dial.shown > 0.005
+            preferredRendererType: Shape.CurveRenderer
 
-            onPaint: {
-                var context = getContext("2d");
-                context.reset();
-                var cx = width / 2;
-                var cy = height / 2 + 2;
-                var r = Math.min(width, height) / 2 - 6;
-                var start = Math.PI * 0.75;
-                var sweep = Math.PI * 1.5;
-                context.lineCap = "round";
-                context.lineWidth = 6;
-                context.strokeStyle = "rgba(0, 0, 0, 0.55)";
-                context.beginPath();
-                context.arc(cx, cy, r, start, start + sweep);
-                context.stroke();
-                context.lineWidth = 4;
-                context.strokeStyle = "rgba(255, 255, 255, 0.12)";
-                context.beginPath();
-                context.arc(cx, cy, r, start, start + sweep);
-                context.stroke();
-                if (shown > 0.005) {
-                    var gradient = context.createLinearGradient(cx - r, 0, cx + r, 0);
-                    gradient.addColorStop(0, "#5fd35a");
-                    gradient.addColorStop(0.6, "#f2c335");
-                    gradient.addColorStop(1, "#e5463a");
-                    context.strokeStyle = gradient;
-                    context.lineWidth = 4;
-                    context.beginPath();
-                    context.arc(cx, cy, r, start, start + sweep * shown);
-                    context.stroke();
+            ShapePath {
+                strokeColor: "transparent"
+                fillGradient: LinearGradient {
+                    x1: dial.centreX - dial.radius
+                    y1: 0
+                    x2: dial.centreX + dial.radius
+                    y2: 0
+                    GradientStop { position: 0.0; color: "#5fd35a" }
+                    GradientStop { position: 0.6; color: "#f2c335" }
+                    GradientStop { position: 1.0; color: "#e5463a" }
+                }
+
+                PathAngleArc {
+                    centerX: dial.centreX
+                    centerY: dial.centreY
+                    radiusX: band.outer
+                    radiusY: band.outer
+                    startAngle: 135
+                    sweepAngle: band.sweep
+                }
+                PathArc {
+                    x: dial.centreX + Math.cos(band.end) * band.inner
+                    y: dial.centreY + Math.sin(band.end) * band.inner
+                    radiusX: 2
+                    radiusY: 2
+                }
+                PathAngleArc {
+                    centerX: dial.centreX
+                    centerY: dial.centreY
+                    radiusX: band.inner
+                    radiusY: band.inner
+                    startAngle: 135 + band.sweep
+                    sweepAngle: -band.sweep
+                    moveToStart: false
+                }
+                PathArc {
+                    x: dial.centreX + Math.cos(Math.PI * 0.75) * band.outer
+                    y: dial.centreY + Math.sin(Math.PI * 0.75) * band.outer
+                    radiusX: 2
+                    radiusY: 2
                 }
             }
         }

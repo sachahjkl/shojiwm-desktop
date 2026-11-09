@@ -28,19 +28,21 @@ Item {
         color: "#50000000"
     }
 
-    Canvas {
-        id: face
+    readonly property real centreX: width / 2
+    readonly property real centreY: height / 2
+    readonly property real radius: Math.min(width, height) / 2 - 3
 
+    // The face, painted once: the rim, the glass and the marks. Only the
+    // hands move, and the GPU turns them.
+    Canvas {
         anchors.fill: parent
-        property date now: clock.date
-        onNowChanged: requestPaint()
 
         onPaint: {
             var context = getContext("2d");
             context.reset();
-            var cx = width / 2;
-            var cy = height / 2;
-            var r = Math.min(width, height) / 2 - 3;
+            var cx = gadget.centreX;
+            var cy = gadget.centreY;
+            var r = gadget.radius;
 
             // The rim: dark, lighter at the top.
             var rim = context.createLinearGradient(0, 0, 0, height);
@@ -74,29 +76,79 @@ Item {
                 context.lineTo(cx + Math.sin(angle) * outer, cy - Math.cos(angle) * outer);
                 context.stroke();
             }
+        }
+    }
 
-            var t = face.now;
-            var seconds = t.getSeconds();
-            var minutes = t.getMinutes() + seconds / 60;
-            var hours = (t.getHours() % 12) + minutes / 60;
-            function hand(angle, length, widthPx, colour, back) {
-                context.strokeStyle = colour;
-                context.lineWidth = widthPx;
-                context.beginPath();
-                context.moveTo(cx - Math.sin(angle) * back, cy + Math.cos(angle) * back);
-                context.lineTo(cx + Math.sin(angle) * length, cy - Math.cos(angle) * length);
-                context.stroke();
-            }
-            hand(hours * Math.PI / 6, r * 0.45, 4.5, "#1f2b36", 6);
-            hand(minutes * Math.PI / 30, r * 0.68, 3, "#1f2b36", 8);
-            hand(seconds * Math.PI / 30, r * 0.74, 1.2, "#c42b1c", 12);
+    /// One hand: a rounded bar from a little behind the centre to its tip,
+    /// turned about the centre.
+    component Hand: Rectangle {
+        id: hand
 
-            context.fillStyle = "#c42b1c";
-            context.beginPath();
-            context.arc(cx, cy, 3, 0, Math.PI * 2);
-            context.fill();
+        property real length: 0
+        property real back: 0
+        /// Degrees clockwise from twelve.
+        property real turn: 0
 
-            // The gloss over the upper half of the glass.
+        x: gadget.centreX - width / 2
+        y: gadget.centreY - length
+        height: length + back
+        radius: width / 2
+        antialiasing: true
+        transform: Rotation {
+            origin.x: hand.width / 2
+            origin.y: hand.length
+            angle: hand.turn
+        }
+    }
+
+    readonly property date now: clock.date
+    readonly property real seconds: now.getSeconds()
+    readonly property real minutes: now.getMinutes() + seconds / 60
+    readonly property real hours: (now.getHours() % 12) + minutes / 60
+
+    Hand {
+        length: gadget.radius * 0.45
+        back: 6
+        width: 4.5
+        color: "#1f2b36"
+        turn: gadget.hours * 30
+    }
+
+    Hand {
+        length: gadget.radius * 0.68
+        back: 8
+        width: 3
+        color: "#1f2b36"
+        turn: gadget.minutes * 6
+    }
+
+    Hand {
+        length: gadget.radius * 0.74
+        back: 12
+        width: 1.2
+        color: "#c42b1c"
+        turn: gadget.seconds * 6
+    }
+
+    Rectangle {
+        x: gadget.centreX - 3
+        y: gadget.centreY - 3
+        width: 6
+        height: 6
+        radius: 3
+        color: "#c42b1c"
+    }
+
+    // The gloss over the upper half of the glass, painted once.
+    Canvas {
+        anchors.fill: parent
+
+        onPaint: {
+            var context = getContext("2d");
+            context.reset();
+            var cx = gadget.centreX;
+            var cy = gadget.centreY;
+            var r = gadget.radius;
             var gloss = context.createLinearGradient(0, cy - r, 0, cy);
             gloss.addColorStop(0, "rgba(255, 255, 255, 0.55)");
             gloss.addColorStop(1, "rgba(255, 255, 255, 0)");
