@@ -113,6 +113,9 @@ COMPOSITOR.process.once("launcher", {
     `[ -e "$config" ] || printf '{\\n  "imports": ["assets/vicinae/aero.json"]\\n}\\n' >"$config"; ` +
     `state="\${XDG_STATE_HOME:-$HOME/.local/state}/vicinae"; mkdir -p "$state"; ` +
     `[ -e "$state/onboarding.json" ] || printf '{"version":1,"completedAt":""}\\n' >"$state/onboarding.json"; ` +
+    // An empty HYPRLAND_INSTANCE_SIGNATURE, left by a Hyprland session,
+    // makes Vicinae ask hyprctl for the windows.
+    `unset HYPRLAND_INSTANCE_SIGNATURE; ` +
     `XDG_DATA_DIRS="$HOME/.config/shojiwm/assets/vicinae:\${XDG_DATA_DIRS:-/usr/local/share:/usr/share}" ` +
     `exec ${VICINAE} server --config "$config"`,
   runPolicy: "once-per-session",
