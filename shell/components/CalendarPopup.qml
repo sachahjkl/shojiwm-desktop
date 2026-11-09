@@ -258,5 +258,55 @@ PopupWindow {
                 onClicked: popup.month = popup.firstOfMonth(new Date())
             }
         }
+
+        // The additional clocks, as Windows 7 lists them under the month.
+        Rectangle {
+            width: parent.width
+            height: 1
+            color: Scheme.menuDivider
+            visible: WorldClocks.clocks.length > 0
+        }
+
+        Repeater {
+            model: WorldClocks.clocks
+
+            delegate: Item {
+                id: worldClock
+
+                required property var modelData
+
+                width: body.width
+                height: 34
+
+                Column {
+                    anchors.left: parent.left
+                    anchors.verticalCenter: parent.verticalCenter
+
+                    Text {
+                        text: worldClock.modelData.label
+                        color: Scheme.text
+                        font.family: Theme.fontFamily
+                        font.pixelSize: Theme.fontSize
+                    }
+
+                    Text {
+                        text: worldClock.modelData.day
+                        color: Scheme.textMuted
+                        font.family: Theme.fontFamily
+                        font.pixelSize: Theme.fontSizeSmall
+                    }
+                }
+
+                Text {
+                    anchors.right: parent.right
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: worldClock.modelData.time
+                    color: Scheme.text
+                    font.family: Theme.fontFamily
+                    font.pixelSize: Theme.fontSize + 4
+                    font.weight: Font.Light
+                }
+            }
+        }
     }
 }

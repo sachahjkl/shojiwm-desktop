@@ -62,6 +62,8 @@ Item {
         id: area
         anchors.fill: parent
         hoverEnabled: true
+        // The tooltip waits for the next rest of the pointer.
+        onContainsMouseChanged: if (!containsMouse) tipTimer.shown = false
         onClicked: icon.clicked()
     }
 
@@ -105,8 +107,7 @@ Item {
         id: tipTimer
         property bool shown: false
         interval: 600
-        running: area.containsMouse
-        onRunningChanged: if (!running) shown = false
+        running: area.containsMouse && !shown
         onTriggered: shown = true
     }
 }

@@ -68,6 +68,7 @@ FloatingWindow {
         { text: "Show the programs used most in the Start menu", page: "taskbar", words: "start menu frequent recent programs" },
         { text: "Change what the power button does", page: "taskbar", words: "power button shut down shutdown restart sleep hibernate log off lock" },
         { text: "Select which icons appear on the taskbar", page: "notifications", words: "notification area tray icons hidden show" },
+        { text: "Show clocks for other time zones", page: "clock", words: "additional clocks time zone world clock other city" },
         { text: "Change the clock format", page: "clock", words: "clock time date format 24 12 hour" },
         { text: "See the time zone and time synchronization", page: "clock", words: "time zone timezone ntp synchronization sync server internet" },
         { text: "Turn off all unnecessary animations", page: "ease", words: "animations motion reduce reduced effects ease access accessibility" },
@@ -1620,6 +1621,151 @@ FloatingWindow {
                 width: parent.width
                 text: "The language and the date format follow the system locale "
                     + "(LANG, i18n.defaultLocale on NixOS)."
+            }
+
+            SubHeading { text: "Additional clocks" }
+
+            Note {
+                width: parent.width
+                text: "Show the time in other time zones under the calendar and "
+                    + "when you rest the pointer on the clock."
+            }
+
+            Repeater {
+                model: 2
+
+                delegate: Column {
+                    id: extra
+
+                    required property int index
+
+                    readonly property var clocks: Settings.extraClocks || []
+                    readonly property bool shown: extra.index < extra.clocks.length
+                    readonly property var clock: extra.shown ? extra.clocks[extra.index] : null
+                    /// Zones that hold what is typed, for the field to offer.
+                    readonly property var matches: {
+                        var typed = zoneField.text.toLowerCase().replace(/ /g, "_");
+                        if (!zoneField.activeFocus || typed.length < 2)
+                            return [];
+                        return WorldClocks.zones.filter(function (zone) {
+                            return zone.toLowerCase().indexOf(typed) >= 0 && zone !== zoneField.text;
+                        }).slice(0, 6);
+                    }
+
+                    function store(zone, label) {
+                        var list = extra.clocks.slice();
+                        list[extra.index] = { zone: zone, label: label };
+                        Settings.extraClocks = list;
+                    }
+
+                    spacing: 6
+                    // A second clock comes after a first.
+                    visible: extra.index <= extra.clocks.length
+
+                    CpCheck {
+                        label: "Show this clock"
+                        checked: extra.shown
+                        onToggled: function (on) {
+                            var list = extra.clocks.slice();
+                            if (on)
+                                list.push({ zone: "America/New_York", label: "New York" });
+                            else
+                                list.splice(extra.index, 1);
+                            Settings.extraClocks = list;
+                        }
+                    }
+
+                    Grid {
+                        columns: 2
+                        columnSpacing: 12
+                        rowSpacing: 6
+                        leftPadding: 24
+                        visible: extra.shown
+
+                        Note { text: "Display name:"; height: 24; verticalAlignment: Text.AlignVCenter }
+                        Rectangle {
+                            width: 260
+                            height: 24
+                            radius: Scheme.fieldRadius
+                            color: Scheme.field
+                            border.width: 1
+                            border.color: labelField.activeFocus ? Scheme.fieldFocus : Scheme.fieldBorder
+
+                            TextInput {
+                                id: labelField
+                                // A click picks the whole value, so typing replaces it.
+                                onActiveFocusChanged: if (activeFocus) selectAll()
+                                anchors.fill: parent
+                                anchors.leftMargin: 6
+                                anchors.rightMargin: 6
+                                verticalAlignment: TextInput.AlignVCenter
+                                text: extra.clock ? extra.clock.label : ""
+                                color: Scheme.text
+                                font.family: Theme.fontFamily
+                                font.pixelSize: Theme.fontSize
+                                selectByMouse: true
+                                clip: true
+                                onEditingFinished: {
+                                    if (extra.clock && text !== extra.clock.label)
+                                        extra.store(extra.clock.zone, text);
+                                }
+                            }
+                        }
+
+                        Note { text: "Time zone:"; height: 24; verticalAlignment: Text.AlignVCenter }
+                        Column {
+                            spacing: 2
+
+                            Rectangle {
+                                width: 260
+                                height: 24
+                                radius: Scheme.fieldRadius
+                                color: Scheme.field
+                                border.width: 1
+                                border.color: zoneField.activeFocus ? Scheme.fieldFocus
+                                    : WorldClocks.zones.indexOf(zoneField.text) >= 0
+                                        ? Scheme.fieldBorder : "#d9302a"
+
+                                TextInput {
+                                    id: zoneField
+                                // A click picks the whole value, so typing replaces it.
+                                onActiveFocusChanged: if (activeFocus) selectAll()
+                                    anchors.fill: parent
+                                    anchors.leftMargin: 6
+                                    anchors.rightMargin: 6
+                                    verticalAlignment: TextInput.AlignVCenter
+                                    text: extra.clock ? extra.clock.zone : ""
+                                    color: Scheme.text
+                                    font.family: Theme.fontFamily
+                                    font.pixelSize: Theme.fontSize
+                                    selectByMouse: true
+                                    clip: true
+                                    // A zone the system knows is kept.
+                                    onEditingFinished: {
+                                        if (extra.clock && WorldClocks.zones.indexOf(text) >= 0
+                                            && text !== extra.clock.zone)
+                                            extra.store(text, extra.clock.label);
+                                    }
+                                }
+                            }
+
+                            Repeater {
+                                model: extra.matches
+
+                                delegate: CpLink {
+                                    required property var modelData
+                                    text: modelData.replace(/_/g, " ")
+                                    onClicked: {
+                                        var name = modelData.substring(modelData.lastIndexOf("/") + 1)
+                                            .replace(/_/g, " ");
+                                        extra.store(modelData, name);
+                                        zoneField.focus = false;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
 
             SubHeading { text: "Time zone and synchronization" }

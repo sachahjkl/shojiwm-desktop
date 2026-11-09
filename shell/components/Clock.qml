@@ -65,10 +65,57 @@ Item {
         }
     }
 
+    // The tooltip of Windows 7: the long date, then the additional clocks.
+    PopupWindow {
+        anchor.item: clock
+        anchor.rect: Qt.rect(0, 0, clock.width, clock.height)
+        anchor.edges: Edges.Top
+        anchor.gravity: Edges.Top
+        anchor.margins.bottom: Theme.popupGap + 2
+        visible: tipTimer.shown && area.containsMouse && !clock.active
+        color: "transparent"
+        implicitWidth: tip.implicitWidth + 16
+        implicitHeight: tip.implicitHeight + 10
+
+        Rectangle {
+            anchors.fill: parent
+            radius: Scheme.itemRadius
+            border.width: 1
+            border.color: Scheme.popupOutline
+            gradient: Gradient {
+                GradientStop { position: 0.0; color: Scheme.popupTop }
+                GradientStop { position: 1.0; color: Scheme.popupBottom }
+            }
+        }
+
+        Text {
+            id: tip
+            anchors.centerIn: parent
+            text: [source.date.toLocaleDateString(Qt.locale(), Locale.LongFormat)].concat(
+                WorldClocks.clocks.map(function (other) {
+                    return other.label + ": " + other.time
+                        + (other.day === "Today" ? "" : " (" + other.day.toLowerCase() + ")");
+                })).join("\n")
+            color: Scheme.text
+            font.family: Theme.fontFamily
+            font.pixelSize: Theme.fontSizeSmall
+        }
+    }
+
+    Timer {
+        id: tipTimer
+        property bool shown: false
+        interval: 600
+        running: area.containsMouse && !shown
+        onTriggered: shown = true
+    }
+
     MouseArea {
         id: area
         anchors.fill: parent
         hoverEnabled: true
+        // The tooltip waits for the next rest of the pointer.
+        onContainsMouseChanged: if (!containsMouse) tipTimer.shown = false
         acceptedButtons: Qt.LeftButton | Qt.RightButton
         onClicked: function (event) {
             if (event.button === Qt.RightButton) {

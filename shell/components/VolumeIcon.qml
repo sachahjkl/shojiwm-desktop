@@ -42,6 +42,8 @@ Item {
         id: area
         anchors.fill: parent
         hoverEnabled: true
+        // The tooltip waits for the next rest of the pointer.
+        onContainsMouseChanged: if (!containsMouse) tipTimer.shown = false
         acceptedButtons: Qt.LeftButton | Qt.MiddleButton | Qt.RightButton
         onClicked: function (event) {
             if (event.button === Qt.MiddleButton)
@@ -94,8 +96,7 @@ Item {
         id: tipTimer
         property bool shown: false
         interval: 600
-        running: area.containsMouse
-        onRunningChanged: if (!running) shown = false
+        running: area.containsMouse && !shown
         onTriggered: shown = true
     }
 }

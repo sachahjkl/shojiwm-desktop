@@ -179,6 +179,7 @@
           singleton LauncherEntries 1.0 LauncherEntries.qml
           singleton Network 1.0 Network.qml
           singleton NotificationHistory 1.0 NotificationHistory.qml
+          singleton WorldClocks 1.0 WorldClocks.qml
           EOF
           cd ./shell
           qmllint \

@@ -27,6 +27,7 @@ Singleton {
     property alias glassBlur: adapter.glassBlur
     property alias animationSpeed: adapter.animationSpeed
     property alias displayChoices: adapter.displayChoices
+    property alias extraClocks: adapter.extraClocks
     property alias desktopIconSize: adapter.desktopIconSize
     property alias showDesktopIcons: adapter.showDesktopIcons
     property alias desktopSort: adapter.desktopSort
@@ -184,6 +185,9 @@ Singleton {
             /// { "DP-2": { width, height, refreshRate, scale } }. Empty
             /// keeps the session's own layout (SHOJIWM_WIN7_OUTPUTS).
             property var displayChoices: ({})
+            /// Up to two more clocks, as Windows 7's Additional Clocks:
+            /// [{ zone: "America/New_York", label: "New York" }].
+            property var extraClocks: []
             property bool showFrequent: true
 
             /// The desktop: "large", "medium" or "small" icons, whether they
