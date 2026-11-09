@@ -21,6 +21,19 @@ Singleton {
     /// The current try's Socket (see `line`).
     readonly property Socket socket: line.item as Socket
 
+    // Once the line is up, the compositor gets the settings it draws with.
+    // Not from the Socket's own connected change: a local socket can connect
+    // while the Loader still builds it, before `socket` names it, and what
+    // is sent then is lost.
+    onAvailableChanged: {
+        if (available) {
+            root.sendAnimations();
+            root.sendGlass();
+            root.sendCorners();
+            root.sendDisplay();
+        }
+    }
+
     function send(method, params) {
         if (!root.available)
             return false;
@@ -116,15 +129,6 @@ Singleton {
             connected: true
             parser: SplitParser {
                 onRead: function (line) { root.answer(line); }
-            }
-            // On connecting, the compositor gets the settings it draws with.
-            onConnectedChanged: {
-                if (connected) {
-                    root.sendAnimations();
-                    root.sendGlass();
-                    root.sendCorners();
-                    root.sendDisplay();
-                }
             }
         }
     }
