@@ -94,11 +94,14 @@ const OWN_TITLE_BAR = new Set(["com.mitchellh.ghostty"]);
 
 // Draw the Aero frame for every client that lets us, and keep the client's
 // own title bar when it insists on one (Firefox, GTK header bars) or is one
-// of OWN_TITLE_BAR. ShojiWM asks again when the app id changes.
+// of OWN_TITLE_BAR. A client that speaks no decoration protocol (GTK 4, as
+// File Roller) draws its own, as xdg-shell has it: a frame would add a
+// second title bar. ShojiWM asks again when the app id changes.
 COMPOSITOR.window.decoration.configure((window, context) => ({
-  mode: OWN_TITLE_BAR.has(window.appId() ?? "")
-    ? "client"
-    : (context.clientPreference ?? "server"),
+  mode:
+    OWN_TITLE_BAR.has(window.appId() ?? "") || !context.canNegotiate
+      ? "client"
+      : (context.clientPreference ?? "server"),
 }));
 
 // GTK 3 applications such as Thunar pick their title bar once, from this
