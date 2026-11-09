@@ -247,7 +247,10 @@ Singleton {
             property bool showDesktopIcons: true
             property string desktopSort: "name"
             /// "shutdown", "restart", "sleep", "hibernate", "lock" or "logoff".
-            property string powerButtonAction: "shutdown"
+            /// Sleep by default: the Shut Down dialog (Super+Shift+E, Alt+F4
+            /// on the desktop) selects this action, and Return there must not
+            /// turn the computer off by accident.
+            property string powerButtonAction: "sleep"
             property bool peek: true
 
             /// "locale", "24h" or "12h".

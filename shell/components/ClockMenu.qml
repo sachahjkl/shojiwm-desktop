@@ -6,7 +6,7 @@ import ".."
 import "../theme.js" as Theme
 
 // The menu of the clock, on a right click: the calendar, the date and time
-// settings, and the desktop.
+// settings, the desktop and the task manager.
 PopupWindow {
     id: popup
 
@@ -108,6 +108,15 @@ PopupWindow {
             onActivated: {
                 popup.dismissed();
                 CompositorIpc.showDesktop();
+            }
+        }
+
+        MenuItemRow {
+            width: column.width
+            label: "Start Task Manager"
+            onActivated: {
+                popup.dismissed();
+                Quickshell.execDetached(["sh", "-c", Apps.taskManager]);
             }
         }
     }

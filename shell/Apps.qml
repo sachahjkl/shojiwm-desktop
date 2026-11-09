@@ -20,6 +20,9 @@ Singleton {
     /// The terminal: the command in SHOJIWM_WIN7_TERMINAL, run by a shell,
     /// else kitty.
     readonly property string terminal: Quickshell.env("SHOJIWM_WIN7_TERMINAL") || "kitty"
+    /// The task manager: the command in SHOJIWM_WIN7_TASK_MANAGER, run by a
+    /// shell, else Mission Center. Ctrl+Shift+Escape opens the same one.
+    readonly property string taskManager: Quickshell.env("SHOJIWM_WIN7_TASK_MANAGER") || "missioncenter"
     readonly property string fileManager: "thunar"
     readonly property string browser: "chromium"
     /// The programs pinned to the Start menu, and the ones that keep a button
@@ -620,7 +623,7 @@ Singleton {
     ]
     /// The action the button itself runs, by id. Set in the Control Panel.
     readonly property string powerButtonAction: powerAction(Settings.powerButtonAction)
-        ? Settings.powerButtonAction : "shutdown"
+        ? Settings.powerButtonAction : "sleep"
 
     function powerAction(id) {
         for (var i = 0; i < powerActions.length; i++) {
