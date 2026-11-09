@@ -41,6 +41,7 @@ Item {
         menu.pick = 0;
         menu.filesFound = [];
         menu.jumpEntry = null;
+        menu.recentOpen = false;
         search.forceActiveFocus();
     }
 
@@ -101,6 +102,79 @@ Item {
         } else {
             jumpDelay.stop();
             menu.jumpEntry = null;
+        }
+    }
+
+    // ----- Recent Items, a submenu of the places ------------------------------
+
+    property bool recentOpen: false
+
+    Timer {
+        id: recentDelay
+        property Item anchor: null
+        interval: 350
+        onTriggered: menu.recentOpen = true
+    }
+
+    PopupWindow {
+        id: recentMenu
+
+        readonly property var files: Apps.recentFiles.slice(0, 15)
+
+        visible: menu.recentOpen && menu.visible && recentDelay.anchor !== null
+        color: "transparent"
+        anchor.item: recentDelay.anchor
+        anchor.rect: Qt.rect(0, 0, recentDelay.anchor ? recentDelay.anchor.width : 1,
+                             recentDelay.anchor ? recentDelay.anchor.height : 1)
+        anchor.edges: Edges.Right | Edges.Top
+        anchor.gravity: Edges.Right | Edges.Bottom
+        anchor.adjustment: PopupAdjustment.FlipX | PopupAdjustment.SlideY
+
+        implicitWidth: 280
+        implicitHeight: recentColumn.implicitHeight + Theme.popupPadY * 2 + 2
+
+        Rectangle {
+            anchors.fill: parent
+            radius: Scheme.menuRadius
+            border.width: 1
+            border.color: Scheme.menuOutline
+            gradient: Gradient {
+                GradientStop { position: 0.0; color: Scheme.menuTop }
+                GradientStop { position: 1.0; color: Scheme.menuBottom }
+            }
+        }
+
+        Column {
+            id: recentColumn
+
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.top: parent.top
+            anchors.topMargin: Theme.popupPadY
+            anchors.leftMargin: 1
+            anchors.rightMargin: 1
+
+            MenuItemRow {
+                width: recentColumn.width
+                visible: recentMenu.files.length === 0
+                label: "No recent items"
+                itemEnabled: false
+            }
+
+            Repeater {
+                model: recentMenu.files
+
+                delegate: MenuItemRow {
+                    required property var modelData
+                    width: recentColumn.width
+                    label: modelData.name
+                    icon: Apps.fileIcon(modelData.name)
+                    onActivated: {
+                        Quickshell.execDetached(["xdg-open", modelData.path]);
+                        menu.dismissed();
+                    }
+                }
+            }
         }
     }
 
@@ -358,6 +432,7 @@ Item {
                       path: Apps.userDir("MUSIC", "Music") },
                     { label: "Videos", icon: "place-videos.svg", tile: "videos",
                       path: Apps.userDir("VIDEOS", "Videos") },
+                    { label: "Recent Items", tile: "documents", recent: true },
                     { separator: true },
                     { label: "Computer", icon: "place-computer.svg", tile: "computer",
                       path: "/" },
@@ -385,6 +460,7 @@ Item {
                     }
 
                     PlaceRow {
+                        id: placeRow
                         anchors.fill: parent
                         visible: place.modelData.separator !== true
                         label: place.modelData.label || ""
@@ -393,8 +469,27 @@ Item {
                                 menu.hoveredPlace = place.modelData.tile || "";
                             else if (menu.hoveredPlace === place.modelData.tile)
                                 menu.hoveredPlace = "";
+                            // Recent Items opens its submenu after a rest;
+                            // another place closes it.
+                            if (hovered && place.modelData.recent) {
+                                recentDelay.anchor = placeRow;
+                                recentDelay.restart();
+                            } else if (hovered) {
+                                recentDelay.stop();
+                                menu.recentOpen = false;
+                            } else if (place.modelData.recent) {
+                                // Only leaving Recent Items itself cancels
+                                // the wait: another line's leave can come
+                                // after this one's enter.
+                                recentDelay.stop();
+                            }
                         }
                         onActivated: {
+                            if (place.modelData.recent) {
+                                recentDelay.anchor = placeRow;
+                                menu.recentOpen = true;
+                                return;
+                            }
                             if (place.modelData.run) {
                                 // Run... is the search box, which runs what
                                 // it does not find.
@@ -409,6 +504,17 @@ Item {
                                 Apps.openPath(place.modelData.path);
                             menu.dismissed();
                         }
+                    }
+
+                    // The arrow of the line that opens a submenu.
+                    Text {
+                        anchors.right: parent.right
+                        anchors.rightMargin: 8
+                        anchors.verticalCenter: parent.verticalCenter
+                        visible: place.modelData.recent === true
+                        text: "▸"
+                        color: Scheme.placesText
+                        font.pixelSize: Theme.fontSize
                     }
                 }
             }
