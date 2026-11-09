@@ -62,17 +62,21 @@ Item {
         }
     }
 
-    // The seam between the two halves, on the arrow's left edge: one dark
-    // line, and on glass a faint light one beside it.
+    // The seam between the two halves, on the arrow's left edge: one line,
+    // and on glass a faint light one beside it. On the red button the line is
+    // a darker red, not the outline's near black: with a light line beside it,
+    // it read as a heavy bar.
     Rectangle {
         visible: part.rightRounded && !part.leftRounded
         anchors.top: parent.top
         anchors.bottom: parent.bottom
+        anchors.topMargin: part.danger ? 1 : 0
+        anchors.bottomMargin: part.danger ? 1 : 0
         width: 1
-        color: part.outline
+        color: part.danger ? "#8f2414" : part.outline
     }
     Rectangle {
-        visible: (part.glass || part.danger) && part.rightRounded && !part.leftRounded
+        visible: part.glass && part.rightRounded && !part.leftRounded
         x: 1
         anchors.top: parent.top
         anchors.bottom: parent.bottom

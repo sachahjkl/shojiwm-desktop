@@ -271,7 +271,7 @@ Item {
             PowerPart {
                 id: arrow
 
-                width: 24
+                width: 20
                 rightRounded: true
                 danger: true
                 hot: arrowArea.containsMouse || menu.powerMenuOpen
