@@ -1,6 +1,7 @@
 pragma ComponentBehavior: Bound
 
 import QtQuick
+import Quickshell
 import ".."
 import "../theme.js" as Theme
 
@@ -35,13 +36,16 @@ Item {
     /// One of the bar's menus or panels is open: a click outside closes it
     /// (shell.qml).
     readonly property bool popupOpen: bar.jumpListGroup !== null || bar.trayMenuItem !== null
-        || bar.calendarOpen || bar.clockMenuOpen || bar.trayOverflowOpen
+        || bar.calendarOpen || bar.contextMenuKey.length > 0 || bar.trayOverflowOpen
         || bar.volumeOpen || bar.networkOpen || bar.bluetoothOpen || bar.notificationsOpen
         || bar.actionCenterOpen
     /// A menu, a panel or the thumbnails of the bar are open: an auto-hidden
     /// bar stays up meanwhile.
     readonly property bool busy: bar.menuOpen || bar.previewGroup !== null || bar.popupOpen
-    property bool clockMenuOpen: false
+    /// Which right-click menu is open (contextEntries): "bell", "volume",
+    /// "network", "flag", "bluetooth", "clock", "desktop", "taskbar"; "" for
+    /// none.
+    property string contextMenuKey: ""
     property bool trayOverflowOpen: false
 
     // A notification-area icon dropped anywhere on the taskbar shows there:
@@ -91,8 +95,107 @@ Item {
         bar.bluetoothOpen = false;
         bar.notificationsOpen = false;
         bar.actionCenterOpen = false;
-        bar.clockMenuOpen = false;
+        bar.contextMenuKey = "";
         bar.trayOverflowOpen = false;
+    }
+
+    function showTheDesktop() {
+        if (!CompositorIpc.showDesktop())
+            Apps.minimizeAll();
+    }
+
+    /// Opens the right-click menu `key` above `at`, or closes it when it is
+    /// the one open.
+    function openContextMenu(key, at) {
+        var again = bar.contextMenuKey === key;
+        bar.closePopups();
+        if (again)
+            return;
+        contextMenu.entries = bar.contextEntries(key);
+        contextMenu.anchorRect = at;
+        bar.contextMenuKey = key;
+    }
+
+    /// The lines of each right-click menu (ContextMenu), as Windows 7 has
+    /// them where it can, read when the menu opens.
+    function contextEntries(key) {
+        var separator = { separator: true };
+        var showDesktop = { label: "Show the desktop", run: bar.showTheDesktop };
+        var taskManager = { label: "Start Task Manager", run: function () {
+            Quickshell.execDetached(["sh", "-c", Apps.taskManager]);
+        } };
+        var iconsPage = { label: "Customize notification icons", run: function () {
+            ControlPanelState.open("notifications");
+        } };
+        switch (key) {
+        case "bell":
+            return [
+                { label: "Open notifications", run: function () { bar.notificationsOpen = true; } },
+                { label: "Clear all", enabled: NotificationHistory.entries.length > 0,
+                  run: NotificationHistory.clear },
+                separator,
+                { label: "Do not disturb", checked: NotificationHistory.doNotDisturb,
+                  run: function () { NotificationHistory.setDoNotDisturb(!NotificationHistory.doNotDisturb); } },
+                separator,
+                iconsPage
+            ];
+        case "volume":
+            return [
+                { label: "Open Volume Mixer", run: Audio.openMixer },
+                { label: "Playback devices", run: function () {
+                    bar.volumeOpen = true;
+                    volumePopup.devicesOpen = true;
+                } },
+                { label: "Mute", checked: Audio.muted, enabled: Audio.ready, run: Audio.toggleMute },
+                separator,
+                { label: "Sound settings", run: function () { ControlPanelState.open("sound"); } }
+            ];
+        case "network":
+            return [
+                { label: "Open the network panel", run: function () { bar.networkOpen = true; } },
+                { label: "Wi-Fi", checked: Network.wifiEnabled, enabled: Network.hasWifi,
+                  run: function () { Network.setWifi(!Network.wifiEnabled); } },
+                separator,
+                { label: "Network connections", run: Network.openEditor }
+            ];
+        case "flag":
+            return [
+                { label: "Open Action Center", run: function () { bar.actionCenterOpen = true; } },
+                separator,
+                { label: "Control Panel", run: function () { ControlPanelState.open("home"); } },
+                iconsPage
+            ];
+        case "bluetooth":
+            return [
+                { label: "Open the Bluetooth panel", run: function () { bar.bluetoothOpen = true; } },
+                { label: "Bluetooth settings", run: function () {
+                    Quickshell.execDetached(["blueman-manager"]);
+                } }
+            ];
+        case "clock":
+            return [
+                { label: "Open the calendar", icon: Qt.resolvedUrl("../assets/icons/calendar.png"),
+                  run: function () { bar.calendarOpen = true; } },
+                { label: "Adjust date/time", run: function () { ControlPanelState.open("clock"); } },
+                separator,
+                showDesktop,
+                taskManager
+            ];
+        case "desktop":
+            return [
+                showDesktop,
+                { label: "Peek at desktop", checked: Settings.peek,
+                  run: function () { Settings.peek = !Settings.peek; } }
+            ];
+        case "taskbar":
+            return [
+                showDesktop,
+                taskManager,
+                separator,
+                { label: "Properties", run: function () { ControlPanelState.open("taskbar"); } }
+            ];
+        }
+        return [];
     }
 
     // ----- glass ------------------------------------------------------------
@@ -178,6 +281,7 @@ Item {
             id: actionCenterIcon
 
             anchors.verticalCenter: parent.verticalCenter
+            onMenuRequested: function (at) { bar.openContextMenu("flag", at); }
             active: bar.actionCenterOpen
             onClicked: {
                 var open = !bar.actionCenterOpen;
@@ -190,6 +294,7 @@ Item {
             id: notificationIcon
 
             anchors.verticalCenter: parent.verticalCenter
+            onMenuRequested: function (at) { bar.openContextMenu("bell", at); }
             active: bar.notificationsOpen
             onClicked: {
                 var open = !bar.notificationsOpen;
@@ -202,6 +307,7 @@ Item {
             id: bluetoothIcon
 
             anchors.verticalCenter: parent.verticalCenter
+            onMenuRequested: function (at) { bar.openContextMenu("bluetooth", at); }
             active: bar.bluetoothOpen
             onClicked: {
                 var open = !bar.bluetoothOpen;
@@ -214,6 +320,7 @@ Item {
             id: networkIcon
 
             anchors.verticalCenter: parent.verticalCenter
+            onMenuRequested: function (at) { bar.openContextMenu("network", at); }
             active: bar.networkOpen
             onClicked: {
                 var open = !bar.networkOpen;
@@ -226,6 +333,7 @@ Item {
             id: volumeIcon
 
             anchors.verticalCenter: parent.verticalCenter
+            onMenuRequested: function (at) { bar.openContextMenu("volume", at); }
             active: bar.volumeOpen
             onClicked: {
                 var open = !bar.volumeOpen;
@@ -244,12 +352,7 @@ Item {
                 bar.closePopups();
                 bar.calendarOpen = open;
             }
-            onMenuRequested: function (at) {
-                var open = !bar.clockMenuOpen;
-                bar.closePopups();
-                clockMenu.anchorRect = at;
-                bar.clockMenuOpen = open;
-            }
+            onMenuRequested: function (at) { bar.openContextMenu("clock", at); }
         }
 
         // Show desktop: the glass strip Windows puts past the clock, a
@@ -295,6 +398,7 @@ Item {
                 id: showDesktopArea
                 anchors.fill: parent
                 hoverEnabled: true
+                acceptedButtons: Qt.LeftButton | Qt.RightButton
                 onEntered: {
                     if (Settings.peek)
                         peekTimer.restart();
@@ -303,13 +407,29 @@ Item {
                     peekTimer.stop();
                     CompositorIpc.peek(false);
                 }
-                onClicked: {
+                onClicked: function (event) {
                     peekTimer.stop();
+                    if (event.button === Qt.RightButton) {
+                        var point = showDesktop.mapToItem(null, 0, 0);
+                        bar.openContextMenu("desktop",
+                            Qt.rect(point.x, point.y, showDesktop.width, showDesktop.height));
+                        return;
+                    }
                     bar.closePopups();
-                    if (!CompositorIpc.showDesktop())
-                        Apps.minimizeAll();
+                    bar.showTheDesktop();
                 }
             }
+        }
+    }
+
+    // A right click on the bar where nothing else is: its menu. Declared
+    // before the orb, the buttons and the notification area, so they are
+    // over it and keep their own clicks.
+    MouseArea {
+        anchors.fill: parent
+        acceptedButtons: Qt.RightButton
+        onClicked: function (event) {
+            bar.openContextMenu("taskbar", Qt.rect(event.x, 0, 1, bar.height));
         }
     }
 
@@ -526,13 +646,12 @@ Item {
         onDismissed: bar.jumpListGroup = null
     }
 
-    ClockMenu {
-        id: clockMenu
+    ContextMenu {
+        id: contextMenu
 
         anchorWindow: bar.window
-        open: bar.clockMenuOpen
-        onDismissed: bar.clockMenuOpen = false
-        onCalendarRequested: bar.calendarOpen = true
+        open: bar.contextMenuKey.length > 0
+        onDismissed: bar.contextMenuKey = ""
     }
 
     TrayOverflow {
