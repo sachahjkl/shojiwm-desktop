@@ -48,6 +48,7 @@ FloatingWindow {
         "startup": { title: "Startup Programs", category: "System" },
         "defaults": { title: "Default Programs", category: "Programs" },
         "sound": { title: "Sound", category: "Hardware and Sound" },
+        "devices": { title: "Devices and Printers", category: "Hardware and Sound" },
         "display": { title: "Screen Resolution", category: "Appearance and Personalization" },
         "about": { title: "System", category: "System" }
     })
@@ -281,7 +282,7 @@ FloatingWindow {
 
             Repeater {
                 model: ["appearance", "background", "display", "lockscreen", "account",
-                        "taskbar", "notifications", "clock", "ease", "sound", "defaults", "startup", "about"]
+                        "taskbar", "notifications", "clock", "ease", "devices", "sound", "defaults", "startup", "about"]
 
                 delegate: CpLink {
                     required property string modelData
@@ -336,6 +337,7 @@ FloatingWindow {
                 case "startup": return startupPage;
                 case "defaults": return defaultsPage;
                 case "sound": return soundPage;
+                case "devices": return devicesPage;
                 case "display": return displayPage;
                 case "about": return aboutPage;
                 default: return homePage;
@@ -858,6 +860,202 @@ FloatingWindow {
                 text: "Your choices replace the session's layout (SHOJIWM_WIN7_OUTPUTS) "
                     + "for the screens you change; the screens are then placed side by "
                     + "side, left to right."
+            }
+        }
+    }
+
+    Component {
+        id: devicesPage
+
+        Column {
+            id: devices
+
+            /// The USB devices (hubs left out), the printers and the default
+            /// one, from lsusb and lpstat.
+            property var usb: []
+            property var printers: []
+            property string defaultPrinter: ""
+
+            /// An icon of the theme that fits a device's name.
+            function iconFor(name) {
+                var text = name.toLowerCase();
+                var kinds = [
+                    ["keyboard", "input-keyboard"], ["desktop", "input-keyboard"],
+                    ["mouse", "input-mouse"], ["dongle", "input-mouse"],
+                    ["webcam", "camera-web"], ["camera", "camera-web"],
+                    ["mv5", "audio-input-microphone"], ["microphone", "audio-input-microphone"],
+                    ["audio", "audio-card"], ["headset", "audio-headset"],
+                    ["monitor", "video-display"], ["display", "video-display"],
+                    ["yubikey", "dialog-password"], ["security", "dialog-password"],
+                    ["storage", "drive-removable-media"], ["flash", "drive-removable-media"],
+                    ["bluetooth", "bluetooth"], ["led", "preferences-desktop-color"]
+                ];
+                for (var i = 0; i < kinds.length; i++) {
+                    if (text.indexOf(kinds[i][0]) >= 0)
+                        return Quickshell.iconPath(kinds[i][1], "drive-harddisk");
+                }
+                return Quickshell.iconPath("drive-harddisk-usb", "drive-harddisk");
+            }
+
+            spacing: 10
+
+            Process {
+                command: ["sh", "-c",
+                    "echo '#usb'; lsusb 2>/dev/null | cut -d' ' -f7- | grep -v -i 'hub'"
+                    + "; echo '#printers'; lpstat -p 2>/dev/null | awk '/^printer/ {print $2 \"\\t\" $4}'"
+                    + "; echo '#default'; lpstat -d 2>/dev/null | sed -n 's/.*: //p'"]
+                running: true
+                stdout: StdioCollector {
+                    onStreamFinished: {
+                        var section = "";
+                        var usb = [];
+                        var printers = [];
+                        String(text).split("\n").forEach(function (line) {
+                            if (line.length === 0)
+                                return;
+                            if (line[0] === "#") {
+                                section = line.substring(1);
+                            } else if (section === "usb") {
+                                usb.push(line.trim());
+                            } else if (section === "printers") {
+                                var parts = line.split("\t");
+                                printers.push({ name: parts[0], state: parts[1] || "" });
+                            } else if (section === "default") {
+                                devices.defaultPrinter = line.trim();
+                            }
+                        });
+                        devices.usb = usb;
+                        devices.printers = printers;
+                    }
+                }
+            }
+
+            Heading { text: "Devices and Printers" }
+
+            component Tile: Column {
+                id: tile
+
+                property string label: ""
+                property string detail: ""
+                property string iconSource: ""
+                property bool marked: false
+
+                width: 120
+                spacing: 4
+
+                Item {
+                    width: parent.width
+                    height: 52
+
+                    IconImage {
+                        anchors.centerIn: parent
+                        implicitSize: 48
+                        source: tile.iconSource
+                    }
+
+                    // The default one, as Windows marks it: a green tick.
+                    Rectangle {
+                        visible: tile.marked
+                        x: parent.width / 2 + 10
+                        y: 30
+                        width: 18
+                        height: 18
+                        radius: 9
+                        color: "#3fbf3a"
+                        border.width: 1
+                        border.color: "#ffffff"
+
+                        Text {
+                            anchors.centerIn: parent
+                            text: "✔"
+                            color: "#ffffff"
+                            font.pixelSize: 11
+                        }
+                    }
+                }
+
+                Text {
+                    width: parent.width
+                    horizontalAlignment: Text.AlignHCenter
+                    text: tile.label
+                    color: Scheme.text
+                    wrapMode: Text.Wrap
+                    maximumLineCount: 3
+                    elide: Text.ElideRight
+                    font.family: Theme.fontFamily
+                    font.pixelSize: Theme.fontSizeSmall
+                }
+
+                Text {
+                    width: parent.width
+                    horizontalAlignment: Text.AlignHCenter
+                    visible: tile.detail.length > 0
+                    text: tile.detail
+                    color: Scheme.textMuted
+                    font.family: Theme.fontFamily
+                    font.pixelSize: Theme.fontSizeSmall - 1
+                }
+            }
+
+            SubHeading { text: "Devices (" + (devices.usb.length + Quickshell.screens.length) + ")" }
+
+            Flow {
+                width: parent.width
+                spacing: 12
+
+                Tile {
+                    label: "Computer"
+                    iconSource: Qt.resolvedUrl("../assets/icons/computer.png")
+                }
+
+                Repeater {
+                    model: Quickshell.screens
+
+                    delegate: Tile {
+                        required property var modelData
+                        // Quickshell says "Unknown" for a model it cannot read.
+                        label: modelData.model && modelData.model !== "Unknown"
+                            ? modelData.model : "Display"
+                        detail: modelData.name + " · " + modelData.width + " × " + modelData.height
+                        iconSource: Quickshell.iconPath("video-display", "computer")
+                    }
+                }
+
+                Repeater {
+                    model: devices.usb
+
+                    delegate: Tile {
+                        required property var modelData
+                        label: modelData
+                        detail: "USB"
+                        iconSource: devices.iconFor(modelData)
+                    }
+                }
+            }
+
+            SubHeading { text: "Printers (" + devices.printers.length + ")" }
+
+            Flow {
+                width: parent.width
+                spacing: 12
+
+                Repeater {
+                    model: devices.printers
+
+                    delegate: Tile {
+                        required property var modelData
+                        label: modelData.name.replace(/_/g, " ")
+                        detail: modelData.state
+                        iconSource: Quickshell.iconPath("printer", "document-print")
+                        marked: modelData.name === devices.defaultPrinter
+                    }
+                }
+            }
+
+            Note {
+                width: parent.width
+                visible: devices.printers.length === 0
+                text: "No printer is set up (CUPS)."
             }
         }
     }

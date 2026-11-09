@@ -41,6 +41,7 @@ Singleton {
         { text: "Turn off all unnecessary animations", page: "ease", words: "animations motion reduce reduced effects ease access accessibility" },
         { text: "Change the animation speed", page: "ease", words: "animation speed fast faster slow slower motion duration" },
         { text: "Change the screen resolution and scale", page: "display", words: "display screen monitor resolution scale size dpi refresh rate hz mode text bigger" },
+        { text: "View devices and printers", page: "devices", words: "devices printers usb hardware keyboard mouse webcam printer monitor" },
         { text: "Manage audio devices", page: "sound", words: "sound audio speakers headphones microphone recording playback default device output input" },
         { text: "Choose the programs that open your files and links", page: "defaults", words: "default programs apps browser web mail email open with file association mime pdf pictures music video folder" },
         { text: "Choose the programs that start when you log on", page: "startup", words: "startup start log on login boot autostart programs run session" },
