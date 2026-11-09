@@ -330,15 +330,43 @@ Item {
         setPlaces(Settings.desktopAutoArrange ? changes : keepPlaces(changes));
     }
 
-    // Whether the Recycle Bin has anything in it, for its icon.
+    // Whether the Recycle Bin has anything in it, for its icon. Files are
+    // trashed where their mount allows it: ~/.local/share/Trash for $HOME's
+    // own device, a .Trash-<uid> at the top of another mount. trash:///
+    // (gvfs) counts them all, and its monitor says when that changes.
     property bool trashFull: false
+    property bool trashRecount: false
 
-    FolderListModel {
-        id: trashFiles
-        folder: "file://" + Apps.dataHome + "/Trash/files"
-        showHidden: true
-        showDotAndDotDot: false
-        onCountChanged: desktop.trashFull = trashFiles.count > 0
+    function countTrash() {
+        if (trashCount.running)
+            desktop.trashRecount = true;
+        else
+            trashCount.running = true;
+    }
+
+    Process {
+        id: trashCount
+
+        command: [Tools.gio, "info", "-a", "trash::item-count", "trash:///"]
+        running: true
+        stdout: StdioCollector {
+            onStreamFinished: {
+                var count = /trash::item-count:\s*(\d+)/.exec(text);
+                desktop.trashFull = count !== null && Number(count[1]) > 0;
+                if (desktop.trashRecount) {
+                    desktop.trashRecount = false;
+                    trashCount.running = true;
+                }
+            }
+        }
+    }
+
+    Process {
+        command: [Tools.gio, "monitor", "trash:///"]
+        running: true
+        stdout: SplitParser {
+            onRead: desktop.countTrash()
+        }
     }
 
     // ----- doing things -------------------------------------------------------
