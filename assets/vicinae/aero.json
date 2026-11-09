@@ -7,8 +7,8 @@
     "dark": { "name": "aero-dark", "icon_theme": "auto" }
   },
   "launcher_window": {
-    // Translucent, so the compositor's blur shows through, as it does
-    // behind the taskbar and the Start menu.
+    // Nearly opaque. The compositor blurs the shell's own glass only, so
+    // the desktop shows through faintly, unblurred.
     "opacity": 0.95,
     "material": "none",
     "rounding": 6,

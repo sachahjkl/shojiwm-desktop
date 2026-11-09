@@ -358,15 +358,18 @@ const MENU_GLASS = layerGlass(backdropSource());
 const TASKBAR_GLASS = layerGlass(xrayBackdropSource());
 
 COMPOSITOR.effect.layer = (layer) => {
-  switch (layer.namespace()) {
-    // The wallpaper has nothing behind it to blur.
-    case "no_blur":
-      return {};
-    case "shojiwm-win7-taskbar":
-      return { behind: TASKBAR_GLASS };
-    default:
-      return { behind: MENU_GLASS };
+  const namespace = layer.namespace();
+  if (namespace === "shojiwm-win7-taskbar") {
+    return { behind: TASKBAR_GLASS };
   }
+  // The shell's own glass surfaces. Other programs' layers (Vicinae, the
+  // wallpaper, the shell's full-screen catchers named "no_blur") get none:
+  // a blur costs a capture and a pass every frame they change, and Vicinae,
+  // nearly opaque, would show little of it.
+  if (namespace.startsWith("shojiwm-win7-")) {
+    return { behind: MENU_GLASS };
+  }
+  return {};
 };
 
 /**
