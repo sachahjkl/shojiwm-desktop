@@ -8,28 +8,26 @@ import "../theme.js" as Theme
 // The menu of the Start orb, on a right click or Super+X: the tools a power
 // user wants at hand, as Windows' Win+X menu has them. A terminal, a root
 // one, the task manager, the Control Panel, the files, the system's pages,
-// the network and disk tools, the system log, the launcher, the power
+// the network and disk tools, the system log, Search and Run, the power
 // actions and the desktop.
-PopupWindow {
+//
+// It fills its screen's window (shell.qml), with the keyboard: Up and Down
+// pick an entry, Return starts it, Escape or a click outside closes it.
+Item {
     id: popup
-
-    property bool open: false
-    property var anchorWindow: null
-    property rect anchorRect: Qt.rect(0, 0, 1, 1)
 
     signal dismissed
     signal launcherRequested
     signal runRequested
 
-    color: "transparent"
-    visible: popup.open
+    /// The entry the keys picked, as an index into `entries`; -1 for none.
+    property int pick: -1
 
-    anchor.window: popup.anchorWindow
-    anchor.rect: popup.anchorRect
-    anchor.edges: Edges.Top
-    anchor.gravity: Edges.Top
-    anchor.margins.bottom: Theme.popupGap
-    anchor.adjustment: PopupAdjustment.SlideX | PopupAdjustment.FlipY
+    /// Called each time it opens.
+    function reset() {
+        popup.pick = -1;
+        keys.forceActiveFocus();
+    }
 
     /// A command line run by a shell, as the terminal and the task manager
     /// are given.
@@ -91,6 +89,18 @@ PopupWindow {
         Apps.runPower(id);
     }
 
+    /// The next entry from `from` in the direction `by`, past separators.
+    function step(from, by) {
+        var count = popup.entries.length;
+        var at = from;
+        for (var i = 0; i < count; i++) {
+            at = (at + by + count) % count;
+            if (!popup.entries[at].separator)
+                return at;
+        }
+        return from;
+    }
+
     readonly property real longestLabel: {
         var longest = 0;
         for (var i = 0; i < popup.entries.length; i++) {
@@ -100,18 +110,45 @@ PopupWindow {
         return Math.ceil(longest);
     }
 
-    implicitWidth: Math.min(Theme.popupMaxWidth,
-        Math.max(Theme.popupMinWidth, popup.longestLabel + Theme.popupPadX * 2 + 24))
-    implicitHeight: column.implicitHeight + Theme.popupPadY * 2 + 2
-
     FontMetrics {
         id: metrics
         font.family: Theme.fontFamily
         font.pixelSize: Theme.fontSize
     }
 
-    Rectangle {
+    Item {
+        id: keys
+
+        focus: true
+        Keys.onUpPressed: popup.pick = popup.step(popup.pick < 0 ? 0 : popup.pick, -1)
+        Keys.onDownPressed: popup.pick = popup.step(popup.pick, 1)
+        Keys.onReturnPressed: {
+            if (popup.pick >= 0)
+                popup.entries[popup.pick].run();
+        }
+        Keys.onEnterPressed: {
+            if (popup.pick >= 0)
+                popup.entries[popup.pick].run();
+        }
+        Keys.onEscapePressed: popup.dismissed()
+    }
+
+    // A click outside closes it.
+    MouseArea {
         anchors.fill: parent
+        acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
+        onPressed: popup.dismissed()
+    }
+
+    // The menu, above the Start orb.
+    Rectangle {
+        id: menu
+
+        x: Theme.orbLeft
+        y: parent.height - Theme.taskbarHeight - height - Theme.popupGap
+        width: Math.min(Theme.popupMaxWidth,
+            Math.max(Theme.popupMinWidth, popup.longestLabel + Theme.popupPadX * 2 + 24))
+        height: column.implicitHeight + Theme.popupPadY * 2 + 2
         radius: Scheme.popupRadius
         border.width: 1
         border.color: Scheme.popupOutline
@@ -119,38 +156,45 @@ PopupWindow {
             GradientStop { position: 0.0; color: Scheme.popupTop }
             GradientStop { position: 1.0; color: Scheme.popupBottom }
         }
-    }
 
-    // The light line inside the outline, as every Windows 7 menu has.
-    Rectangle {
-        anchors.fill: parent
-        anchors.margins: 1
-        radius: Math.max(0, Scheme.popupRadius - 1)
-        color: "transparent"
-        border.width: 1
-        border.color: Scheme.popupInnerLine
-    }
+        // A click on the menu stays here.
+        MouseArea {
+            anchors.fill: parent
+        }
 
-    Column {
-        id: column
+        // The light line inside the outline, as every Windows 7 menu has.
+        Rectangle {
+            anchors.fill: parent
+            anchors.margins: 1
+            radius: Math.max(0, Scheme.popupRadius - 1)
+            color: "transparent"
+            border.width: 1
+            border.color: Scheme.popupInnerLine
+        }
 
-        anchors.left: parent.left
-        anchors.right: parent.right
-        anchors.top: parent.top
-        anchors.topMargin: Theme.popupPadY
-        anchors.leftMargin: 1
-        anchors.rightMargin: 1
+        Column {
+            id: column
 
-        Repeater {
-            model: popup.entries
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.top: parent.top
+            anchors.topMargin: Theme.popupPadY
+            anchors.leftMargin: 1
+            anchors.rightMargin: 1
 
-            delegate: MenuItemRow {
-                required property var modelData
+            Repeater {
+                model: popup.entries
 
-                width: column.width
-                label: modelData.label || ""
-                separator: !!modelData.separator
-                onActivated: modelData.run()
+                delegate: MenuItemRow {
+                    required property var modelData
+                    required property int index
+
+                    width: column.width
+                    label: modelData.label || ""
+                    separator: !!modelData.separator
+                    highlighted: index === popup.pick
+                    onActivated: modelData.run()
+                }
             }
         }
     }

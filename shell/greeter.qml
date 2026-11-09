@@ -40,6 +40,11 @@ ShellRoot {
                 auth: GreeterState
                 userName: GreeterState.userName
                 picture: GreeterState.picture
+                runPower: function (id) {
+                    var action = Apps.powerAction(id);
+                    if (action && action.command)
+                        Quickshell.execDetached(action.command);
+                }
             }
 
             SessionPicker {

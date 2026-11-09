@@ -14,10 +14,8 @@ Item {
     id: bar
 
     property bool menuOpen: false
-    /// The Start orb's right-click menu is open on this bar.
-    property bool adminMenuOpen: false
+    /// A right click on the Start orb: its menu (AdminMenu, shell.qml).
     signal adminMenuRequested
-    signal adminMenuDismissed
     /// The layer-shell window this bar is drawn in. Popups anchor to it.
     property var window: null
 
@@ -39,7 +37,7 @@ Item {
     readonly property bool popupOpen: bar.jumpListGroup !== null || bar.trayMenuItem !== null
         || bar.calendarOpen || bar.clockMenuOpen || bar.trayOverflowOpen
         || bar.volumeOpen || bar.networkOpen || bar.bluetoothOpen || bar.notificationsOpen
-        || bar.actionCenterOpen || bar.adminMenuOpen
+        || bar.actionCenterOpen
     /// A menu, a panel or the thumbnails of the bar are open: an auto-hidden
     /// bar stays up meanwhile.
     readonly property bool busy: bar.menuOpen || bar.previewGroup !== null || bar.popupOpen
@@ -95,8 +93,6 @@ Item {
         bar.actionCenterOpen = false;
         bar.clockMenuOpen = false;
         bar.trayOverflowOpen = false;
-        if (bar.adminMenuOpen)
-            bar.adminMenuDismissed();
     }
 
     // ----- glass ------------------------------------------------------------
@@ -528,17 +524,6 @@ Item {
         anchorWindow: bar.window
         group: bar.jumpListGroup
         onDismissed: bar.jumpListGroup = null
-    }
-
-    AdminMenu {
-        id: adminMenu
-
-        anchorWindow: bar.window
-        anchorRect: Qt.rect(orb.x, orb.y, orb.width, orb.height)
-        open: bar.adminMenuOpen
-        onDismissed: bar.adminMenuDismissed()
-        onLauncherRequested: StartMenuState.openLauncher(bar.window && bar.window.screen ? bar.window.screen.name : "")
-        onRunRequested: RunState.open(bar.window && bar.window.screen ? bar.window.screen.name : "")
     }
 
     ClockMenu {

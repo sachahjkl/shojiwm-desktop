@@ -383,9 +383,7 @@ ShellRoot {
                 window: barWindow
                 menuOpen: StartMenuState.openOn === barWindow.modelData.name
                 onStartRequested: StartMenuState.toggle(barWindow.modelData.name)
-                adminMenuOpen: StartMenuState.adminMenuOn === barWindow.modelData.name
                 onAdminMenuRequested: StartMenuState.toggleAdminMenu(barWindow.modelData.name)
-                onAdminMenuDismissed: StartMenuState.adminMenuOn = ""
             }
         }
     }
@@ -523,6 +521,48 @@ ShellRoot {
                     StartMenuState.close();
                     shutdownDialog.reset();
                 }
+            }
+        }
+    }
+
+    // ----- the Start orb's menu --------------------------------------------------
+
+    // A right click on the orb, or Super+X: over the screen it is asked on,
+    // with the keyboard, its menu above the orb.
+    Variants {
+        model: Quickshell.screens
+
+        PanelWindow {
+            id: adminWindow
+
+            required property var modelData
+            screen: modelData
+
+            readonly property bool open: StartMenuState.adminMenuOn === modelData.name
+
+            visible: open
+            color: "transparent"
+            anchors.top: true
+            anchors.bottom: true
+            anchors.left: true
+            anchors.right: true
+
+            exclusionMode: ExclusionMode.Ignore
+            WlrLayershell.layer: WlrLayer.Overlay
+            WlrLayershell.namespace: "shojiwm-win7-adminmenu"
+            WlrLayershell.keyboardFocus: open ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
+
+            AdminMenu {
+                id: adminMenu
+                anchors.fill: parent
+                onDismissed: StartMenuState.adminMenuOn = ""
+                onLauncherRequested: StartMenuState.openLauncher(adminWindow.modelData.name)
+                onRunRequested: RunState.open(adminWindow.modelData.name)
+            }
+
+            onOpenChanged: {
+                if (open)
+                    adminMenu.reset();
             }
         }
     }

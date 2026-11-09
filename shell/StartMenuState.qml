@@ -60,6 +60,7 @@ Singleton {
 
     function open(screen) {
         root.launcherOpen = false;
+        root.adminMenuOn = "";
         root.openOn = screen.length > 0 ? screen : firstScreen();
     }
 

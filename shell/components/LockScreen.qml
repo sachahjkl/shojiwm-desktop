@@ -25,6 +25,11 @@ Item {
     /// The account's name and picture.
     property string userName: Apps.userName
     property url picture: Settings.userPictureSource
+    /// Runs a power action by id (Apps.powerActions). The log-on screen
+    /// passes one that only runs the command: there is no session to lock.
+    property var runPower: function (id) {
+        Apps.runPower(id);
+    }
 
     // ----- the picture behind ---------------------------------------------------
 
@@ -272,7 +277,7 @@ Item {
         anchors.right: parent.right
         anchors.bottom: parent.bottom
         anchors.margins: 26
-        onPower: Apps.runPower(Apps.powerButtonAction === "lock"
+        onPower: screen.runPower(Apps.powerButtonAction === "lock"
             ? "shutdown" : Apps.powerButtonAction)
         onMenu: powerMenuOpen = !powerMenuOpen
     }
@@ -334,7 +339,7 @@ Item {
                         hoverEnabled: true
                         onClicked: {
                             screen.powerMenuOpen = false;
-                            Apps.runPower(powerRow.modelData.id);
+                            screen.runPower(powerRow.modelData.id);
                         }
                     }
                 }
