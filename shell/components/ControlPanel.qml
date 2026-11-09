@@ -4,6 +4,7 @@ import QtQuick
 import QtQuick.Controls.Basic
 import Quickshell
 import Quickshell.Io
+import Quickshell.Services.Pipewire
 import Quickshell.Services.SystemTray
 import Quickshell.Widgets
 import ".."
@@ -46,6 +47,7 @@ FloatingWindow {
         "ease": { title: "Ease of Access", category: "Ease of Access" },
         "startup": { title: "Startup Programs", category: "System" },
         "defaults": { title: "Default Programs", category: "Programs" },
+        "sound": { title: "Sound", category: "Hardware and Sound" },
         "display": { title: "Screen Resolution", category: "Appearance and Personalization" },
         "about": { title: "System", category: "System" }
     })
@@ -279,7 +281,7 @@ FloatingWindow {
 
             Repeater {
                 model: ["appearance", "background", "display", "lockscreen", "account",
-                        "taskbar", "notifications", "clock", "ease", "defaults", "startup", "about"]
+                        "taskbar", "notifications", "clock", "ease", "sound", "defaults", "startup", "about"]
 
                 delegate: CpLink {
                     required property string modelData
@@ -333,6 +335,7 @@ FloatingWindow {
                 case "ease": return easePage;
                 case "startup": return startupPage;
                 case "defaults": return defaultsPage;
+                case "sound": return soundPage;
                 case "display": return displayPage;
                 case "about": return aboutPage;
                 default: return homePage;
@@ -855,6 +858,132 @@ FloatingWindow {
                 text: "Your choices replace the session's layout (SHOJIWM_WIN7_OUTPUTS) "
                     + "for the screens you change; the screens are then placed side by "
                     + "side, left to right."
+            }
+        }
+    }
+
+    Component {
+        id: soundPage
+
+        Column {
+            id: sound
+
+            spacing: 10
+
+            // The devices: audio nodes that are not a program's stream.
+            readonly property var devices: Pipewire.nodes ? Pipewire.nodes.values.filter(function (node) {
+                return node && node.audio && !node.isStream;
+            }) : []
+            readonly property var playback: sound.devices.filter(function (node) { return node.isSink; })
+            readonly property var recording: sound.devices.filter(function (node) { return !node.isSink; })
+
+            Heading { text: "Sound" }
+
+            component DeviceRow: Rectangle {
+                id: device
+
+                required property var modelData
+                property bool isDefault: false
+                property bool playbackDevice: true
+
+                width: parent ? parent.width : 400
+                height: 46
+                radius: Scheme.itemRadius
+                color: device.isDefault ? Scheme.selection : "transparent"
+                border.width: device.isDefault ? 1 : 0
+                border.color: Scheme.selectionBorder
+
+                Image {
+                    x: 10
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: 28
+                    height: 28
+                    sourceSize: Qt.size(56, 56)
+                    source: Qt.resolvedUrl("../assets/" + (Scheme.dark ? "" : "ink-") + "speaker-3.svg")
+                    visible: device.playbackDevice
+                }
+
+                Text {
+                    x: 10
+                    anchors.verticalCenter: parent.verticalCenter
+                    visible: !device.playbackDevice
+                    text: "🎙"
+                    font.pixelSize: 22
+                }
+
+                Column {
+                    x: 50
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: parent.width - 50 - 130
+
+                    Text {
+                        width: parent.width
+                        text: device.modelData.nickname || device.modelData.description || device.modelData.name
+                        color: Scheme.text
+                        font.family: Theme.fontFamily
+                        font.pixelSize: Theme.fontSize
+                        elide: Text.ElideRight
+                    }
+
+                    Text {
+                        width: parent.width
+                        text: device.isDefault ? "Default Device" : device.modelData.description
+                        color: device.isDefault ? "#3fbf3a" : Scheme.textMuted
+                        font.family: Theme.fontFamily
+                        font.pixelSize: Theme.fontSizeSmall
+                        elide: Text.ElideRight
+                    }
+                }
+
+                CpButton {
+                    anchors.right: parent.right
+                    anchors.rightMargin: 10
+                    anchors.verticalCenter: parent.verticalCenter
+                    visible: !device.isDefault
+                    label: "Set Default"
+                    onClicked: {
+                        if (device.playbackDevice)
+                            Pipewire.preferredDefaultAudioSink = device.modelData;
+                        else
+                            Pipewire.preferredDefaultAudioSource = device.modelData;
+                    }
+                }
+            }
+
+            SubHeading { text: "Playback" }
+
+            Repeater {
+                model: sound.playback
+
+                delegate: DeviceRow {
+                    width: sound.width
+                    isDefault: modelData === Pipewire.defaultAudioSink
+                    playbackDevice: true
+                }
+            }
+
+            SubHeading { text: "Recording" }
+
+            Repeater {
+                model: sound.recording
+
+                delegate: DeviceRow {
+                    width: sound.width
+                    isDefault: modelData === Pipewire.defaultAudioSource
+                    playbackDevice: false
+                }
+            }
+
+            Note {
+                width: parent.width
+                visible: sound.devices.length === 0
+                text: "PipeWire lists no sound device."
+            }
+
+            CpLink {
+                topPadding: 6
+                text: "Open the volume mixer"
+                onClicked: Audio.openMixer()
             }
         }
     }
