@@ -14,6 +14,8 @@
 #
 # Override the Quickshell it uses with QUICKSHELL_FLAKE, and the compositor
 # with SHOJIWM_FLAKE (a local clone: SHOJIWM_FLAKE=path:/src/ShojiWM#default).
+# The default is the integration branch of the fork, which carries what this
+# configuration uses before upstream has it (labels' textShadow).
 set -euo pipefail
 
 repo="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -21,7 +23,7 @@ out="$repo/assets/site"
 
 if [ "${1:-}" != "--inner" ]; then
   exec nix shell \
-    "${SHOJIWM_FLAKE:-github:bea4dev/ShojiWM#default}" \
+    "${SHOJIWM_FLAKE:-github:sachahjkl/ShojiWM/integration#default}" \
     "nixpkgs#xorg-server" \
     "nixpkgs#xdotool" \
     "nixpkgs#imagemagick" \
@@ -82,8 +84,13 @@ export HOME="$work"
 export XDG_CONFIG_HOME="$work/.config"
 export XDG_STATE_HOME="$work/.local/state"
 export XDG_DATA_HOME="$work/.local/share"
-export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-$work/run}"
+# A runtime folder of its own and no Wayland display: run from a desktop
+# session, the nested backend would open on that session instead of Xvfb,
+# and the shell's IPC would reach the desktop's own shell.
+export XDG_RUNTIME_DIR="$work/run"
+unset WAYLAND_DISPLAY
 mkdir -p "$XDG_RUNTIME_DIR" "$XDG_DATA_HOME/fonts"
+chmod 700 "$XDG_RUNTIME_DIR"
 
 # $XDG_DATA_HOME/fonts is read both by fontconfig (Qt, for the shell) and by
 # fontdb (cosmic-text, for the window titles).
@@ -215,7 +222,7 @@ say "nested window $window ($(xdotool getwindowgeometry "$window" | tr '\n' ' ')
 # Whether the shell is still up. It is the first thing to check when a
 # picture comes out without a taskbar.
 alive() {
-  if pgrep -f "quickshell --path" >/dev/null; then
+  if pgrep -f "quickshell --path $XDG_CONFIG_HOME/" >/dev/null; then
     say "shell: up ($1)"
   else
     say "shell: GONE ($1)"
