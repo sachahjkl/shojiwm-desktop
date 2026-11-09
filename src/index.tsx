@@ -19,7 +19,6 @@ import {
   Windows,
   computed,
   type CompositionRenderable,
-  type DisplayConfigDraft,
   type OutputInfo,
   type WaylandWindow,
 } from "shoji_wm";
@@ -27,6 +26,8 @@ import { aeroFrame } from "./decoration";
 import { createAltTab } from "./alt-tab";
 import { SHELL_SOCKET, createPeek } from "./peek";
 import { createZoom } from "./zoom";
+// The screens: SHOJIWM_WIN7_OUTPUTS and the Control Panel's choices.
+import "./display";
 import { layerGlassEffect, windowGlassEffect } from "./glass";
 import {
   FloatingWindowManager,
@@ -61,45 +62,6 @@ const VICINAE = "vicinae";
 
 /** Where the Quickshell shell lives, as a shell word. */
 const SHELL_PATH = "~/.config/shojiwm/shell";
-
-/**
- * The outputs, from SHOJIWM_WIN7_OUTPUTS: Hyprland monitor rules
- * `name,mode,position,scale` separated by `;`, for example
- * `DP-2,2560x1440@180,0x0,1.25;HDMI-A-1,preferred,auto,1.875`.
- * The value has no quotes, which session environment files do not escape.
- * Without it, ShojiWM picks the best mode of each output at scale 1.
- */
-function parseOutputs(rules: string): DisplayConfigDraft {
-  const layout: DisplayConfigDraft = {};
-  for (const rule of rules.split(";")) {
-    const [name, mode, position, scale] = rule.split(",");
-    if (!name || !mode || !position || !scale) {
-      throw new Error(`SHOJIWM_WIN7_OUTPUTS: invalid rule "${rule}"`);
-    }
-    const [size, refresh] = mode.split("@");
-    const [width, height] = (size ?? "").split("x").map(Number);
-    const [x, y] = position.split("x").map(Number);
-    layout[name] = {
-      resolution:
-        mode === "preferred"
-          ? "best"
-          : {
-              width: width ?? 0,
-              height: height ?? 0,
-              ...(refresh ? { refreshRate: Number(refresh) } : {}),
-            },
-      position: position === "auto" ? "auto" : { x: x ?? 0, y: y ?? 0 },
-      scale: Number(scale),
-    };
-  }
-  return layout;
-}
-
-const OUTPUTS = COMPOSITOR.env.get("SHOJIWM_WIN7_OUTPUTS");
-if (OUTPUTS) {
-  const layout = parseOutputs(OUTPUTS);
-  COMPOSITOR.output.configure(() => layout);
-}
 
 COMPOSITOR.env.apply({
   QT_QPA_PLATFORM: "wayland;xcb",

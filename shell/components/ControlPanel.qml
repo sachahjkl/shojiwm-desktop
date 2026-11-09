@@ -45,6 +45,7 @@ FloatingWindow {
         "clock": { title: "Date and Time", category: "Clock and Region" },
         "ease": { title: "Ease of Access", category: "Ease of Access" },
         "startup": { title: "Startup Programs", category: "System" },
+        "display": { title: "Screen Resolution", category: "Appearance and Personalization" },
         "about": { title: "System", category: "System" }
     })
 
@@ -71,6 +72,7 @@ FloatingWindow {
         { text: "See the time zone and time synchronization", page: "clock", words: "time zone timezone ntp synchronization sync server internet" },
         { text: "Turn off all unnecessary animations", page: "ease", words: "animations motion reduce reduced effects ease access accessibility" },
         { text: "Change the animation speed", page: "ease", words: "animation speed fast faster slow slower motion duration" },
+        { text: "Change the screen resolution and scale", page: "display", words: "display screen monitor resolution scale size dpi refresh rate hz mode text bigger" },
         { text: "Choose the programs that start when you log on", page: "startup", words: "startup start log on login boot autostart programs run session" },
         { text: "About this desktop", page: "about", words: "about system version information" }
     ]
@@ -296,7 +298,7 @@ FloatingWindow {
             Item { width: 1; height: 6 }
 
             Repeater {
-                model: ["appearance", "background", "lockscreen", "account",
+                model: ["appearance", "background", "display", "lockscreen", "account",
                         "taskbar", "notifications", "clock", "ease", "startup", "about"]
 
                 delegate: CpLink {
@@ -350,6 +352,7 @@ FloatingWindow {
                 case "clock": return clockPage;
                 case "ease": return easePage;
                 case "startup": return startupPage;
+                case "display": return displayPage;
                 case "about": return aboutPage;
                 default: return homePage;
                 }
@@ -589,6 +592,288 @@ FloatingWindow {
                     text: "Reset"
                     onClicked: Settings.animationSpeed = 1
                 }
+            }
+        }
+    }
+
+    Component {
+        id: displayPage
+
+        Column {
+            id: display
+
+            /// The screen being set, by connector name.
+            property string selected: ""
+            readonly property var screen: {
+                var list = DisplaySettings.screens;
+                for (var i = 0; i < list.length; i++) {
+                    if (list[i].name === display.selected)
+                        return list[i];
+                }
+                return list.length > 0 ? list[0] : null;
+            }
+            /// The screen's resolutions, largest first, and the refresh
+            /// rates of the one shown.
+            readonly property var sizes: {
+                var out = [];
+                var modes = display.screen ? display.screen.modes : [];
+                for (var i = 0; i < modes.length; i++) {
+                    var label = modes[i].width + " × " + modes[i].height;
+                    if (out.indexOf(label) < 0)
+                        out.push(label);
+                }
+                return out;
+            }
+            property int sizeIndex: 0
+            readonly property var rates: {
+                var out = [];
+                var modes = display.screen ? display.screen.modes : [];
+                var size = display.sizes[display.sizeIndex] || "";
+                for (var i = 0; i < modes.length; i++) {
+                    if (modes[i].width + " × " + modes[i].height === size
+                        && out.indexOf(modes[i].refreshRate) < 0)
+                        out.push(modes[i].refreshRate);
+                }
+                return out;
+            }
+            property int rateIndex: 0
+            readonly property var scales: [1, 1.25, 1.5, 1.75, 1.875, 2, 2.25, 2.5, 3]
+            property int scaleIndex: 0
+
+            /// Show the selected screen's current mode and scale.
+            function load() {
+                var screen = display.screen;
+                if (!screen)
+                    return;
+                display.sizeIndex = Math.max(0, display.sizes.indexOf(screen.width + " × " + screen.height));
+                display.rateIndex = Math.max(0, display.rates.indexOf(screen.refreshRate));
+                var scale = display.scales.indexOf(screen.scale);
+                display.scaleIndex = scale >= 0 ? scale : 0;
+            }
+
+            function apply() {
+                var screen = display.screen;
+                var size = (display.sizes[display.sizeIndex] || "").split(" × ");
+                if (!screen || size.length !== 2)
+                    return;
+                var choices = Object.assign({}, Settings.displayChoices);
+                choices[screen.name] = {
+                    width: Number(size[0]),
+                    height: Number(size[1]),
+                    refreshRate: display.rates[display.rateIndex] || 0,
+                    scale: display.scales[display.scaleIndex]
+                };
+                DisplaySettings.apply(choices);
+            }
+
+            spacing: 12
+
+            Component.onCompleted: DisplaySettings.refresh()
+            onScreenChanged: display.load()
+
+            Heading { text: "Change the appearance of your displays" }
+
+            // The screens as they are placed, to pick one: a picture of the
+            // layout, scaled to fit.
+            Rectangle {
+                id: layoutFrame
+
+                width: parent.width
+                height: 150
+                radius: 3
+                color: Scheme.dark ? "#141b22" : "#f3f6f9"
+                border.width: 1
+                border.color: Scheme.fieldBorder
+
+                Item {
+                    id: layoutArea
+
+                    readonly property var bounds: {
+                        var list = DisplaySettings.screens;
+                        var right = 1;
+                        var bottom = 1;
+                        for (var i = 0; i < list.length; i++) {
+                            right = Math.max(right, list[i].x + list[i].width / list[i].scale);
+                            bottom = Math.max(bottom, list[i].y + list[i].height / list[i].scale);
+                        }
+                        return { width: right, height: bottom };
+                    }
+                    readonly property real k: Math.min((layoutFrame.width - 40) / bounds.width,
+                                                       (layoutFrame.height - 30) / bounds.height)
+
+                    width: bounds.width * k
+                    height: bounds.height * k
+                    anchors.centerIn: parent
+
+                    Repeater {
+                        model: DisplaySettings.screens
+
+                        delegate: Rectangle {
+                            id: tile
+
+                            required property var modelData
+                            required property int index
+                            readonly property bool chosen: !!display.screen
+                                && tile.modelData.name === display.screen.name
+
+                            x: tile.modelData.x * layoutArea.k + 2
+                            y: tile.modelData.y * layoutArea.k + 2
+                            width: tile.modelData.width / tile.modelData.scale * layoutArea.k - 4
+                            height: tile.modelData.height / tile.modelData.scale * layoutArea.k - 4
+                            radius: 2
+                            border.width: tile.chosen ? 2 : 1
+                            border.color: tile.chosen ? Scheme.fieldFocus : "#5d7489"
+                            gradient: Gradient {
+                                GradientStop { position: 0.0; color: "#5f9bd1" }
+                                GradientStop { position: 1.0; color: "#2d6aa8" }
+                            }
+
+                            Text {
+                                anchors.centerIn: parent
+                                text: tile.index + 1
+                                color: "#ffffff"
+                                style: Text.Outline
+                                styleColor: "#40000000"
+                                font.family: Theme.fontFamily
+                                font.pixelSize: Math.min(36, parent.height * 0.5)
+                                font.bold: true
+                            }
+
+                            MouseArea {
+                                anchors.fill: parent
+                                onClicked: {
+                                    display.selected = tile.modelData.name;
+                                    display.load();
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            Note {
+                width: parent.width
+                visible: DisplaySettings.screens.length === 0
+                text: "The compositor did not list the screens. This page needs the "
+                    + "shell started by the Windows 7 configuration."
+            }
+
+            Grid {
+                columns: 2
+                columnSpacing: 12
+                rowSpacing: 10
+                visible: !!display.screen
+                // The open lists draw over the rows below.
+                z: 5
+
+                Note { text: "Display:"; height: 24; verticalAlignment: Text.AlignVCenter }
+                CpCombo {
+                    width: 300
+                    z: open ? 10 : 4
+                    model: DisplaySettings.screens.map(function (screen, index) {
+                        return (index + 1) + ". " + screen.description + " (" + screen.name + ")";
+                    })
+                    currentIndex: Math.max(0, DisplaySettings.screens.indexOf(display.screen))
+                    onActivated: function (index) {
+                        display.selected = DisplaySettings.screens[index].name;
+                        display.load();
+                    }
+                }
+
+                Note { text: "Resolution:"; height: 24; verticalAlignment: Text.AlignVCenter }
+                CpCombo {
+                    width: 300
+                    z: open ? 10 : 3
+                    model: display.sizes
+                    currentIndex: display.sizeIndex
+                    onActivated: function (index) {
+                        display.sizeIndex = index;
+                        display.rateIndex = 0;
+                    }
+                }
+
+                Note { text: "Refresh rate:"; height: 24; verticalAlignment: Text.AlignVCenter }
+                CpCombo {
+                    width: 300
+                    z: open ? 10 : 2
+                    model: display.rates.map(function (rate) { return rate + " Hz"; })
+                    currentIndex: display.rateIndex
+                    onActivated: function (index) { display.rateIndex = index; }
+                }
+
+                Note { text: "Scale:"; height: 24; verticalAlignment: Text.AlignVCenter }
+                CpCombo {
+                    width: 300
+                    z: open ? 10 : 1
+                    model: display.scales.map(function (scale) {
+                        return Math.round(scale * 1000) / 10 + " %"
+                            + (scale === 1 ? " (smaller)" : scale >= 2 ? " (larger)" : "");
+                    })
+                    currentIndex: display.scaleIndex
+                    onActivated: function (index) { display.scaleIndex = index; }
+                }
+            }
+
+            Row {
+                spacing: 10
+                topPadding: 4
+                visible: !DisplaySettings.confirming
+
+                CpButton {
+                    label: "Apply"
+                    onClicked: display.apply()
+                }
+
+                CpButton {
+                    label: "Use the session's layout"
+                    visible: Object.keys(Settings.displayChoices).length > 0
+                    onClicked: DisplaySettings.reset()
+                }
+            }
+
+            // As on Windows: keep the change, or it goes back on its own.
+            Rectangle {
+                width: parent.width
+                height: confirmRow.implicitHeight + 20
+                visible: DisplaySettings.confirming
+                radius: 3
+                color: Scheme.dark ? "#2a3a1c" : "#fff8d6"
+                border.width: 1
+                border.color: Scheme.dark ? "#6b7f3c" : "#e0c66b"
+
+                Row {
+                    id: confirmRow
+
+                    anchors.verticalCenter: parent.verticalCenter
+                    x: 12
+                    spacing: 12
+
+                    Text {
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: "Keep these display settings? Reverting in "
+                            + DisplaySettings.secondsLeft + " s."
+                        color: Scheme.text
+                        font.family: Theme.fontFamily
+                        font.pixelSize: Theme.fontSize
+                    }
+
+                    CpButton {
+                        label: "Keep changes"
+                        onClicked: DisplaySettings.keep()
+                    }
+
+                    CpButton {
+                        label: "Revert"
+                        onClicked: DisplaySettings.revert()
+                    }
+                }
+            }
+
+            Note {
+                width: parent.width
+                text: "Your choices replace the session's layout (SHOJIWM_WIN7_OUTPUTS) "
+                    + "for the screens you change; the screens are then placed side by "
+                    + "side, left to right."
             }
         }
     }

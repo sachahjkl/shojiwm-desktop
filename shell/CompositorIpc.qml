@@ -27,6 +27,40 @@ Singleton {
         return true;
     }
 
+    /// Ask the compositor and get its answer: `callback(result)`, with
+    /// `null` when it fails or the line is down.
+    property int lastId: 0
+    property var pending: ({})
+
+    function request(method, params, callback) {
+        if (!socket.connected) {
+            callback(null);
+            return;
+        }
+        root.lastId += 1;
+        root.pending[root.lastId] = callback;
+        socket.write(JSON.stringify({ id: root.lastId, method: method, params: params }) + "\n");
+        socket.flush();
+    }
+
+    function answer(line) {
+        var message;
+        try {
+            message = JSON.parse(line);
+        } catch (error) {
+            return;
+        }
+        if (message.id === undefined || !root.pending[message.id])
+            return;
+        var callback = root.pending[message.id];
+        delete root.pending[message.id];
+        callback(message.error !== undefined ? null : message.result);
+    }
+
+    function sendDisplay() {
+        return send("display", { choices: Settings.displayChoices });
+    }
+
     function peek(on) {
         return send("peek", { on: on });
     }
@@ -51,6 +85,7 @@ Singleton {
         function onAnimationsChanged() { root.sendAnimations(); }
         function onAnimationSpeedChanged() { root.sendAnimations(); }
         function onGlassBlurChanged() { root.sendGlass(); }
+        function onDisplayChoicesChanged() { root.sendDisplay(); }
     }
 
 
@@ -59,11 +94,15 @@ Singleton {
 
         path: root.path
         connected: root.path.length > 0
+        parser: SplitParser {
+            onRead: function (line) { root.answer(line); }
+        }
         // The compositor can be reloaded, which closes its end.
         onConnectedChanged: {
             if (connected) {
                 root.sendAnimations();
                 root.sendGlass();
+                root.sendDisplay();
             }
             else if (root.path.length > 0)
                 reconnect.restart();

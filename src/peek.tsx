@@ -35,6 +35,7 @@ import {
 } from "./window-manager";
 import { setAnimationSpeed, setAnimations } from "./motion";
 import { setGlassLevel } from "./glass";
+import { type DisplayChoice, screens, setDisplayChoices } from "./display";
 
 /** The colours of a window while it is peeked through. */
 const PEEK = {
@@ -94,6 +95,19 @@ export function createPeek(manager: FloatingWindowManager): Peek {
         ? Number((params as { level?: unknown }).level)
         : NaN;
     setGlassLevel(value);
+    return true;
+  });
+  server.handle("screens", () => screens());
+  server.handle("display", (params) => {
+    const choices =
+      typeof params === "object" && params !== null
+        ? (params as { choices?: unknown }).choices
+        : undefined;
+    setDisplayChoices(
+      typeof choices === "object" && choices !== null
+        ? (choices as Record<string, DisplayChoice>)
+        : {},
+    );
     return true;
   });
   server.handle("show-desktop", () => {

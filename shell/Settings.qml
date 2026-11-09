@@ -26,6 +26,7 @@ Singleton {
     property alias taskbarCompact: adapter.taskbarCompact
     property alias glassBlur: adapter.glassBlur
     property alias animationSpeed: adapter.animationSpeed
+    property alias displayChoices: adapter.displayChoices
     property alias desktopIconSize: adapter.desktopIconSize
     property alias showDesktopIcons: adapter.showDesktopIcons
     property alias desktopSort: adapter.desktopSort
@@ -179,6 +180,10 @@ Singleton {
             property int glassBlur: 2
             /// How fast every animation plays: 1 is normal, 2 twice as fast.
             property real animationSpeed: 1
+            /// The Control Panel's mode and scale per screen, by connector:
+            /// { "DP-2": { width, height, refreshRate, scale } }. Empty
+            /// keeps the session's own layout (SHOJIWM_WIN7_OUTPUTS).
+            property var displayChoices: ({})
             property bool showFrequent: true
 
             /// The desktop: "large", "medium" or "small" icons, whether they
