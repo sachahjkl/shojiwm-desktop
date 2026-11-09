@@ -177,10 +177,18 @@ PopupWindow {
                 width: Theme.thumbWidth
                 height: Theme.thumbHeight + Theme.thumbTitleHeight
 
+                // Under the pointer, the title makes room for the close
+                // button Windows 7 puts at the card's top right.
+                readonly property bool hovered: cardHover.hovered
+
+                HoverHandler {
+                    id: cardHover
+                }
+
                 Text {
                     id: label
 
-                    width: parent.width
+                    width: parent.width - (card.hovered ? 22 : 0)
                     height: Theme.thumbTitleHeight
                     text: Apps.titleOf(card.modelData)
                     color: Scheme.text
@@ -188,6 +196,38 @@ PopupWindow {
                     font.pixelSize: Theme.fontSizeSmall
                     elide: Text.ElideRight
                     verticalAlignment: Text.AlignVCenter
+                }
+
+                // The close button: red under the pointer, as the caption's.
+                Rectangle {
+                    anchors.right: parent.right
+                    anchors.top: parent.top
+                    anchors.topMargin: 1
+                    width: 20
+                    height: 17
+                    radius: 3
+                    visible: card.hovered
+                    border.width: 1
+                    border.color: closeArea.containsMouse ? "#7a1a12" : "transparent"
+                    gradient: Gradient {
+                        GradientStop { position: 0.0; color: closeArea.containsMouse ? "#f08a7c" : "transparent" }
+                        GradientStop { position: 1.0; color: closeArea.containsMouse ? "#c42b1c" : "transparent" }
+                    }
+
+                    Text {
+                        anchors.centerIn: parent
+                        text: "×"
+                        color: closeArea.containsMouse ? "#ffffff" : Scheme.textMuted
+                        font.pixelSize: 15
+                        font.bold: true
+                    }
+
+                    MouseArea {
+                        id: closeArea
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        onClicked: card.modelData.close()
+                    }
                 }
 
                 Rectangle {
