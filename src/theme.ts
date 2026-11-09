@@ -105,4 +105,7 @@ export const TIMING = {
   close: 110,
   minimize: 130,
   management: 160,
+  /** A caption button lights up quickly and dims slowly. */
+  hoverIn: 120,
+  hoverOut: 350,
 } as const;

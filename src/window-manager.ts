@@ -33,6 +33,7 @@ import type {
   WindowDecorationState,
   WindowSizeConstraints,
 } from "shoji_wm/types";
+import { motion } from "./motion";
 import { FRAME_HEIGHT_EXTRA, FRAME_WIDTH_EXTRA, TIMING } from "./theme";
 
 /** The frame rectangle of a window: the chrome, not the client surface. */
@@ -168,21 +169,6 @@ function maxSize(
 }
 
 export class FloatingWindowManager {
-  /**
-   * Whether windows animate. The shell passes on the system's preference
-   * (org.gnome.desktop.interface enable-animations) over its socket.
-   */
-  private animations = true;
-
-  public setAnimations(on: boolean): void {
-    this.animations = on;
-  }
-
-  /** The length of an animation: `ms`, or 0 when animations are off. */
-  private motion(ms: number): number {
-    return this.animations ? ms : 0;
-  }
-
   private readonly stack = createWindowStack();
   private readonly windowsById = new Map<string, WaylandWindow>();
   /** Window ids, most recently focused first. Drives Alt+Tab. */
@@ -344,14 +330,14 @@ export class FloatingWindowManager {
       rect: {
         from: { x: 0, y: 24, width: 0, height: 0 },
         to: { x: 0, y: 0, width: 0, height: 0 },
-        duration: this.motion(TIMING.open),
+        duration: motion(TIMING.open),
         easing: OPEN_EASING,
         mode: "add",
       },
       opacity: {
         from: 0,
         to: 1,
-        duration: this.motion(TIMING.open),
+        duration: motion(TIMING.open),
         easing: OPEN_EASING,
         mode: "multiply",
       },
@@ -359,20 +345,20 @@ export class FloatingWindowManager {
   }
 
   public onStartClose(window: WaylandWindow): void {
-    window.setCloseAnimationDuration(this.motion(TIMING.close));
+    window.setCloseAnimationDuration(motion(TIMING.close));
     window.scheduleAnimation({
       channel: CLOSE_CHANNEL,
       rect: {
         from: { x: 0, y: 0, width: 0, height: 0 },
         to: { x: 0, y: 16, width: 0, height: 0 },
-        duration: this.motion(TIMING.close),
+        duration: motion(TIMING.close),
         easing: CLOSE_EASING,
         mode: "add",
       },
       opacity: {
         from: 1,
         to: 0,
-        duration: this.motion(TIMING.close),
+        duration: motion(TIMING.close),
         easing: CLOSE_EASING,
         mode: "multiply",
       },
@@ -722,14 +708,14 @@ export class FloatingWindowManager {
       rect: {
         from: { x: 0, y: minimized ? 0 : 40, width: 0, height: 0 },
         to: { x: 0, y: minimized ? 40 : 0, width: 0, height: 0 },
-        duration: this.motion(TIMING.minimize),
+        duration: motion(TIMING.minimize),
         easing: minimized ? CLOSE_EASING : OPEN_EASING,
         mode: "add",
       },
       opacity: {
         from: minimized ? 1 : 0,
         to: minimized ? 0 : 1,
-        duration: this.motion(TIMING.minimize),
+        duration: motion(TIMING.minimize),
         easing: minimized ? CLOSE_EASING : OPEN_EASING,
         mode: "override",
       },

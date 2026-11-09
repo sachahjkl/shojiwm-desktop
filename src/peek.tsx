@@ -33,6 +33,7 @@ import {
   WIN_MINIMIZED,
   WIN_RECT,
 } from "./window-manager";
+import { setAnimations } from "./motion";
 
 /** The colours of a window while it is peeked through. */
 const PEEK = {
@@ -79,7 +80,7 @@ export function createPeek(manager: FloatingWindowManager): Peek {
       typeof params !== "object" ||
       params === null ||
       (params as { on?: unknown }).on !== false;
-    manager.setAnimations(on);
+    setAnimations(on);
     return on;
   });
   server.handle("show-desktop", () => {
