@@ -810,7 +810,7 @@ Item {
                 enabled: !cell.editing
                 hoverEnabled: true
                 acceptedButtons: Qt.LeftButton | Qt.RightButton
-                drag.target: cell.item.kind === "trash" ? null : dragProxy
+                drag.target: desktop.isSystem(cell.item) ? null : dragProxy
 
                 onReleased: {
                     dragProxy.x = 0;
