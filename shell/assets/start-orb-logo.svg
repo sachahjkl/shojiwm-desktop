@@ -2,9 +2,10 @@
 <!-- Created with Inkscape (http://www.inkscape.org/) -->
 
 <!--
-  The NixOS snowflake (nixos-snowflake.svg), in white and ice blue for the
-  Start orb: the light lambdas white, the dark ones a pale blue, so the two
-  tones stay apart on the orb's blue glass.
+  The NixOS snowflake (nixos-snowflake.svg) for the Start orb, made for its
+  small size: plain white, and each lambda outlined in white (18 units) so
+  the arms are bolder and the notches between them close. At 38 pixels the
+  two-tone original had more edges than pixels to draw them.
 -->
 <svg
    width="535"
@@ -34,9 +35,9 @@
       <stop
          id="stop5566"
          offset="0.24345198"
-         style="stop-color:#f6fbff;stop-opacity:1" />
+         style="stop-color:#ffffff;stop-opacity:1" />
       <stop
-         style="stop-color:#eef7ff;stop-opacity:1"
+         style="stop-color:#ffffff;stop-opacity:1"
          offset="1"
          id="stop5568" />
     </linearGradient>
@@ -44,15 +45,15 @@
        inkscape:collect="always"
        id="linearGradient5053">
       <stop
-         style="stop-color:#bcdcfa;stop-opacity:1"
+         style="stop-color:#ffffff;stop-opacity:1"
          offset="0"
          id="stop5055" />
       <stop
          id="stop5057"
          offset="0.23168644"
-         style="stop-color:#c8e3fc;stop-opacity:1" />
+         style="stop-color:#ffffff;stop-opacity:1" />
       <stop
-         style="stop-color:#d4eafe;stop-opacity:1"
+         style="stop-color:#ffffff;stop-opacity:1"
          offset="1"
          id="stop5059" />
     </linearGradient>
@@ -129,7 +130,7 @@
          inkscape:connector-curvature="0"
          id="path3336-6"
          d="m 309.54892,-710.38827 122.19683,211.67512 -56.15706,0.5268 -32.6236,-56.8692 -32.85645,56.5653 -27.90237,-0.011 -14.29086,-24.6896 46.81047,-80.4901 -33.22946,-57.8257 z"
-         style="opacity:1;fill:url(#linearGradient4328);fill-opacity:1;fill-rule:evenodd;stroke:none;stroke-width:3.00018;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
+         style="opacity:1;fill:url(#linearGradient4328);fill-opacity:1;fill-rule:evenodd;stroke:#ffffff;stroke-width:18;stroke-linejoin:round;stroke-width:3.00018;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
       <use
          height="100%"
          width="100%"
@@ -164,7 +165,7 @@
          x="0"
          style="stroke-width:1.00006" />
       <path
-         style="color:#000000;clip-rule:nonzero;display:inline;overflow:visible;visibility:visible;opacity:1;isolation:auto;mix-blend-mode:normal;color-interpolation:sRGB;color-interpolation-filters:linearRGB;solid-color:#000000;solid-opacity:1;fill:url(#linearGradient4330);fill-opacity:1;fill-rule:evenodd;stroke:none;stroke-width:3.00018;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;color-rendering:auto;image-rendering:auto;shape-rendering:auto;text-rendering:auto;enable-background:accumulate"
+         style="color:#000000;clip-rule:nonzero;display:inline;overflow:visible;visibility:visible;opacity:1;isolation:auto;mix-blend-mode:normal;color-interpolation:sRGB;color-interpolation-filters:linearRGB;solid-color:#000000;solid-opacity:1;fill:url(#linearGradient4330);fill-opacity:1;fill-rule:evenodd;stroke:#ffffff;stroke-width:18;stroke-linejoin:round;stroke-width:3.00018;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;color-rendering:auto;image-rendering:auto;shape-rendering:auto;text-rendering:auto;enable-background:accumulate"
          d="m 309.54892,-710.38827 122.19683,211.67512 -56.15706,0.5268 -32.6236,-56.8692 -32.85645,56.5653 -27.90237,-0.011 -14.29086,-24.6896 46.81047,-80.4901 -33.22946,-57.8256 z"
          id="path4260-0"
          inkscape:connector-curvature="0"
