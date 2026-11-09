@@ -347,9 +347,16 @@ ShellRoot {
 
             // A layer-shell popup gets no press from outside itself: while one
             // of the bar's menus or panels is open, a clear window over this
-            // screen, above the bar, takes the next click outside and closes
-            // them, as Windows does. The bar stays out of it, so a click on
-            // another icon there opens its panel at once.
+            // screen takes the next click outside and closes them, as Windows
+            // does.
+            //
+            // It must cover the whole screen, bar included. ShojiWM hit-tests
+            // a layer in two passes, and the first one skips a layer surface
+            // that covers its whole output without keyboard focus: the bar and
+            // its menus (its popups) take their clicks there before this
+            // window, which only gets the clicks that hit nothing else. With a
+            // margin it no longer covers the output, and, mapped after the
+            // bar, it takes the clicks of the menus themselves.
             PanelWindow {
                 screen: barWindow.modelData
                 visible: taskbar.popupOpen
@@ -359,7 +366,6 @@ ShellRoot {
                 anchors.bottom: true
                 anchors.left: true
                 anchors.right: true
-                margins.bottom: barWindow.implicitHeight
                 exclusionMode: ExclusionMode.Ignore
                 WlrLayershell.layer: WlrLayer.Top
                 WlrLayershell.namespace: "no_blur"
