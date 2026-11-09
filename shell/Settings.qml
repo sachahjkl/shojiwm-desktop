@@ -33,6 +33,7 @@ Singleton {
     property alias slideshowMinutes: adapter.slideshowMinutes
     property alias slideshowShuffle: adapter.slideshowShuffle
     property alias jumpPins: adapter.jumpPins
+    property alias desktopSystemIcons: adapter.desktopSystemIcons
     property alias cpuMeterPlace: adapter.cpuMeterPlace
     property alias showClockGadget: adapter.showClockGadget
     property alias clockGadgetPlace: adapter.clockGadgetPlace
@@ -208,6 +209,9 @@ Singleton {
             /// The files pinned to a program's jump list, by .desktop file
             /// name: { "org.gnome.TextEditor.desktop": ["/home/…/notes.txt"] }.
             property var jumpPins: ({})
+            /// The system icons on the desktop beside the Recycle Bin:
+            /// "computer", "userfiles", "controlpanel".
+            property list<string> desktopSystemIcons: ["computer"]
             property var cpuMeterPlace: ({ right: 24, top: 24 })
             /// The Clock gadget, under the CPU Meter by default.
             property bool showClockGadget: true

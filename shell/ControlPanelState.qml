@@ -27,6 +27,7 @@ Singleton {
         { text: "Lock screen and its picture", page: "lockscreen", words: "lock screen picture password idle delay suspend sleep" },
         { text: "Lock the computer after a delay", page: "lockscreen", words: "lock idle minutes delay timeout screensaver" },
         { text: "Change your account picture", page: "account", words: "account user picture avatar face photo profile" },
+        { text: "Show or hide common icons on the desktop", page: "taskbar", words: "desktop icons computer user files control panel recycle bin show hide" },
         { text: "Combine taskbar buttons", page: "taskbar", words: "taskbar combine group buttons windows" },
         { text: "Show labels on taskbar buttons", page: "taskbar", words: "taskbar labels compact icons text" },
         { text: "Use Aero Peek to preview the desktop", page: "taskbar", words: "aero peek preview desktop show" },

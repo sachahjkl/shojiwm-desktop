@@ -32,7 +32,7 @@ Item {
             desktop.trash(desktop.pickedItems());
         } else if (event.key === Qt.Key_F2) {
             var list = desktop.pickedItems();
-            if (list.length === 1 && list[0].kind !== "trash")
+            if (list.length === 1 && !desktop.isSystem(list[0]))
                 desktop.renameKey = list[0].key;
         } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
             var open = desktop.pickedItems();
@@ -109,6 +109,7 @@ Item {
     Connections {
         target: Settings
         function onDesktopSortChanged() { desktop.rebuild(); }
+        function onDesktopSystemIconsChanged() { desktop.rebuild(); }
     }
 
     function rebuild() {
@@ -143,7 +144,14 @@ Item {
                 return b.modified.getTime() - a.modified.getTime();
             return a.name.localeCompare(b.name, undefined, { sensitivity: "base" });
         });
-        list.unshift({ key: "trash:", kind: "trash", path: "trash:///", name: "Recycle Bin" });
+        // The system icons first, the Recycle Bin on top, as on Windows 7.
+        var system = desktop.systemIcons.filter(function (icon) {
+            return Settings.desktopSystemIcons.indexOf(icon.kind) >= 0;
+        }).map(function (icon) {
+            return { key: icon.kind + ":", kind: icon.kind, path: icon.path, name: icon.name };
+        });
+        list = [{ key: "trash:", kind: "trash", path: "trash:///", name: "Recycle Bin" }]
+            .concat(system, list);
         desktop.items = list;
     }
 
@@ -186,10 +194,26 @@ Item {
         desktop.picked = next;
     }
 
+    /// The system icons, as Windows 7's Desktop Icon Settings lists them.
+    /// They are no files: they are not renamed, trashed or dragged out.
+    readonly property var systemIcons: [
+        { kind: "computer", name: "Computer", path: "/" },
+        { kind: "userfiles", name: Apps.userName, path: Apps.home },
+        { kind: "controlpanel", name: "Control Panel", path: "" }
+    ]
+
+    function isSystem(item) {
+        return item.kind === "trash" || item.kind === "computer"
+            || item.kind === "userfiles" || item.kind === "controlpanel";
+    }
+
     function open(item) {
         if (!item)
             return;
-        if (item.kind === "trash" || item.kind === "folder")
+        if (item.kind === "controlpanel")
+            ControlPanelState.open("");
+        else if (item.kind === "trash" || item.kind === "folder"
+                 || item.kind === "computer" || item.kind === "userfiles")
             Apps.openPath(item.path);
         else if (item.kind === "shortcut")
             Quickshell.execDetached([Tools.gio, "launch", item.path]);
@@ -200,7 +224,7 @@ Item {
     function trash(list) {
         var paths = [];
         for (var i = 0; i < list.length; i++) {
-            if (list[i].kind !== "trash")
+            if (!desktop.isSystem(list[i]))
                 paths.push(list[i].path);
         }
         if (paths.length > 0)
@@ -279,7 +303,7 @@ Item {
         var list = pickedItems();
         var urls = [];
         for (var i = 0; i < list.length; i++) {
-            if (list[i].kind !== "trash")
+            if (!desktop.isSystem(list[i]))
                 urls.push("file://" + encodeURI(list[i].path));
         }
         return urls;
@@ -377,6 +401,17 @@ Item {
 
     function itemEntries(item) {
         var list = pickedItems();
+        if (item.kind === "computer" || item.kind === "userfiles" || item.kind === "controlpanel") {
+            return [
+                { label: "Open", run: function () { desktop.open(item); } },
+                { separator: true },
+                { label: "Remove from the desktop", run: function () {
+                    Settings.desktopSystemIcons = Settings.desktopSystemIcons.filter(function (kind) {
+                        return kind !== item.kind;
+                    });
+                } }
+            ];
+        }
         if (item.kind === "trash") {
             return [
                 { label: "Open", run: function () { desktop.open(item); } },
@@ -558,6 +593,12 @@ Item {
                         : "../assets/icons/recycle-bin.png");
                 if (item.kind === "folder")
                     return Qt.resolvedUrl("../assets/icons/folder.png");
+                if (item.kind === "computer")
+                    return Qt.resolvedUrl("../assets/icons/computer.png");
+                if (item.kind === "userfiles")
+                    return Qt.resolvedUrl("../assets/icons/home.png");
+                if (item.kind === "controlpanel")
+                    return Qt.resolvedUrl("../assets/icons/control-panel.png");
                 if (item.kind === "shortcut")
                     return shortcutIcon;
                 if (["png", "jpg", "jpeg", "gif", "webp", "bmp", "svg"].indexOf(item.suffix) >= 0)

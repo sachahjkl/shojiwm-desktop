@@ -1533,6 +1533,32 @@ FloatingWindow {
                 onToggled: function (on) { Settings.peek = on; }
             }
 
+            SubHeading { text: "Desktop icons" }
+
+            Note { text: "Show these on the desktop, beside the Recycle Bin:" }
+
+            Repeater {
+                model: [
+                    { kind: "computer", label: "Computer" },
+                    { kind: "userfiles", label: "User's Files" },
+                    { kind: "controlpanel", label: "Control Panel" }
+                ]
+
+                delegate: CpCheck {
+                    required property var modelData
+                    label: modelData.label
+                    checked: Settings.desktopSystemIcons.indexOf(modelData.kind) >= 0
+                    onToggled: function (on) {
+                        var kinds = Settings.desktopSystemIcons.filter(function (kind) {
+                            return kind !== modelData.kind;
+                        });
+                        if (on)
+                            kinds.push(modelData.kind);
+                        Settings.desktopSystemIcons = kinds;
+                    }
+                }
+            }
+
             SubHeading { text: "Start menu" }
 
             CpCheck {
