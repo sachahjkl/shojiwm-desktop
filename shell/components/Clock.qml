@@ -27,7 +27,7 @@ Item {
         color: "#ffffff"
         opacity: clock.active ? 0.22 : area.containsMouse ? 0.14 : 0
         Behavior on opacity {
-            NumberAnimation { duration: Theme.fade }
+            NumberAnimation { duration: Settings.motion(Theme.fade) }
         }
     }
 

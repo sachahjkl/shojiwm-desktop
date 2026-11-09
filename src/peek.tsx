@@ -74,6 +74,14 @@ export function createPeek(manager: FloatingWindowManager): Peek {
     peeking.set(on);
     return on;
   });
+  server.handle("animations", (params) => {
+    const on =
+      typeof params !== "object" ||
+      params === null ||
+      (params as { on?: unknown }).on !== false;
+    manager.setAnimations(on);
+    return on;
+  });
   server.handle("show-desktop", () => {
     // The desktop is what the pointer was peeking at; show it for real.
     peeking.set(false);

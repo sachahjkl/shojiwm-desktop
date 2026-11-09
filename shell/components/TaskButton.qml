@@ -85,22 +85,40 @@ Item {
         opacity: button.idle && !button.hovered && !area.pressed ? 0 : 1
 
         Behavior on opacity {
-            NumberAnimation { duration: Theme.fade }
+            NumberAnimation { duration: Settings.motion(Theme.fade) }
         }
 
-        Rectangle {
-            anchors.fill: parent
-            anchors.margins: 1
-            radius: Scheme.itemRadius - 1
-            antialiasing: true
-            border.width: 1
-            border.color: body.look === "Pressed" ? Theme.buttonRestBorder
-                : Theme["button" + body.look + "Border"]
-            gradient: Gradient {
-                GradientStop { position: 0.0; color: Theme["button" + body.look + "Top"] }
-                GradientStop { position: 0.46; color: Theme["button" + body.look + "Upper"] }
-                GradientStop { position: 0.5; color: Theme["button" + body.look + "Lower"] }
-                GradientStop { position: 1.0; color: Theme["button" + body.look + "Bottom"] }
+        // One plate per look, cross-faded as Windows 7 does: quick in, slow
+        // out.
+        Repeater {
+            model: ["Rest", "Hover", "Active", "Pressed"]
+
+            delegate: Rectangle {
+                id: plate
+
+                required property string modelData
+                readonly property bool shown: body.look === modelData
+
+                anchors.fill: parent
+                anchors.margins: 1
+                radius: Scheme.itemRadius - 1
+                antialiasing: true
+                opacity: shown ? 1 : 0
+                border.width: 1
+                border.color: modelData === "Pressed" ? Theme.buttonRestBorder
+                    : Theme["button" + modelData + "Border"]
+                gradient: Gradient {
+                    GradientStop { position: 0.0; color: Theme["button" + plate.modelData + "Top"] }
+                    GradientStop { position: 0.46; color: Theme["button" + plate.modelData + "Upper"] }
+                    GradientStop { position: 0.5; color: Theme["button" + plate.modelData + "Lower"] }
+                    GradientStop { position: 1.0; color: Theme["button" + plate.modelData + "Bottom"] }
+                }
+
+                Behavior on opacity {
+                    NumberAnimation {
+                        duration: Settings.motion(plate.shown ? Theme.hoverIn : Theme.hoverOut)
+                    }
+                }
             }
         }
     }
@@ -109,7 +127,7 @@ Item {
     IconImage {
         anchors.centerIn: body
         anchors.verticalCenterOffset: area.pressed ? 1 : 0
-        implicitSize: Theme.pinnedIconSize
+        implicitSize: Theme.taskIconSize
         source: button.group ? button.group.icon : ""
         visible: button.iconOnly
     }
@@ -126,7 +144,7 @@ Item {
 
             IconImage {
                 anchors.verticalCenter: parent.verticalCenter
-                implicitSize: Theme.pinnedIconSize
+                implicitSize: Theme.taskIconSize
                 source: button.group ? button.group.icon : ""
             }
 
@@ -134,7 +152,7 @@ Item {
             // glass.
             Item {
                 anchors.verticalCenter: parent.verticalCenter
-                width: Math.max(0, body.width - 12 - Theme.pinnedIconSize - 6)
+                width: Math.max(0, body.width - 12 - Theme.taskIconSize - 6)
                 height: label.implicitHeight
                 visible: body.width > 70
 

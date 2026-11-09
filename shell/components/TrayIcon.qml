@@ -22,7 +22,9 @@ Item {
     /// The item was activated, so a popover holding it can close.
     signal used
     /// The icon is being dragged; a popover holding it stays open meanwhile.
-    readonly property bool dragging: area.drag.active
+    /// Set from the drag itself: once the platform drag starts, the pointer
+    /// belongs to it and the mouse area no longer sees it.
+    property bool dragging: false
 
     width: Theme.trayIconSize + 8
     height: Theme.trayIconSize + 8
@@ -38,7 +40,7 @@ Item {
         color: icon.hoverColor
         opacity: area.containsMouse ? 1 : 0
         Behavior on opacity {
-            NumberAnimation { duration: Theme.fade }
+            NumberAnimation { duration: Settings.motion(Theme.fade) }
         }
     }
 
@@ -60,7 +62,14 @@ Item {
         Drag.supportedActions: Qt.MoveAction
         Drag.hotSpot.x: width / 2
         Drag.hotSpot.y: height / 2
+        Drag.keys: [Settings.trayDragType]
         Drag.mimeData: ({ [Settings.trayDragType]: icon.item ? String(icon.item.id) : "" })
+        Drag.onDragStarted: icon.dragging = true
+        Drag.onDragFinished: {
+            icon.dragging = false;
+            dragProxy.x = 0;
+            dragProxy.y = 0;
+        }
     }
 
     MouseArea {

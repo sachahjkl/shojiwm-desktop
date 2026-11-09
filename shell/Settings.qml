@@ -3,6 +3,7 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import Quickshell.Services.SystemTray
 import "tools.js" as Tools
 
 // What the Control Panel changes, kept in ~/.config/shojiwm/settings.json:
@@ -53,14 +54,25 @@ Singleton {
     /// The MIME type of a notification-area icon being dragged: its item id.
     readonly property string trayDragType: "application/x-shojiwm-win7-tray-item"
 
+    /// Up to this many notification-area items, the ones with no choice made
+    /// show on the taskbar; beyond it they wait in the popover.
+    readonly property int trayShownByDefault: 3
+    readonly property int trayCount: SystemTray.items ? SystemTray.items.values.length : 0
+
     /// Whether a notification-area item shows on the taskbar, or only in the
-    /// popover of hidden icons. New items are hidden, as on Windows 7.
+    /// popover of hidden icons: the choice made for it, else shown while there
+    /// are few items.
     function trayVisible(id) {
-        return adapter.trayShowAll || adapter.trayShown.indexOf(String(id)) >= 0;
+        if (adapter.trayShowAll || adapter.trayShown.indexOf(String(id)) >= 0)
+            return true;
+        if (adapter.trayHidden.indexOf(String(id)) >= 0)
+            return false;
+        return trayCount <= trayShownByDefault;
     }
 
     function setTrayVisible(id, on) {
         adapter.trayShown = withMember(adapter.trayShown, id, on);
+        adapter.trayHidden = withMember(adapter.trayHidden, id, !on);
     }
 
     // ----- pictures -----------------------------------------------------------
@@ -158,9 +170,10 @@ Singleton {
 
             /// Show every notification-area icon on the taskbar.
             property bool trayShowAll: false
-            /// The ids of the icons shown on the taskbar; the rest wait in
-            /// the popover of hidden icons.
+            /// The ids of the icons chosen to show on the taskbar, and of the
+            /// ones chosen to wait in the popover of hidden icons.
             property list<string> trayShown: []
+            property list<string> trayHidden: []
 
             /// The programs pinned to the Start menu and to the taskbar, as
             /// .desktop file names, in order.
@@ -239,4 +252,52 @@ Singleton {
     }
 
     readonly property string gtkSwitch: String(Qt.resolvedUrl("gtk-switch.sh")).replace(/^file:\/\//, "")
+
+    // ----- animations ---------------------------------------------------------
+
+    /// The system's preference, as GNOME stores it: GTK, libadwaita and the
+    /// settings portal pass it on to programs. `false` asks for no motion.
+    property bool animations: true
+    readonly property string animationsKey: "/org/gnome/desktop/interface/enable-animations"
+
+    /// The length of an animation: `ms`, or 0 when the system asks for none.
+    function motion(ms) {
+        return root.animations ? ms : 0;
+    }
+
+    function setAnimations(on) {
+        root.animations = on;
+        Quickshell.execDetached([Tools.dconf, "write", root.animationsKey, on ? "true" : "false"]);
+    }
+
+    function parseBool(text) {
+        var value = String(text).trim();
+        return value === "true" ? true : value === "false" ? false : null;
+    }
+
+    Process {
+        command: [Tools.dconf, "read", root.animationsKey]
+        running: true
+        stdout: StdioCollector {
+            onStreamFinished: {
+                var on = root.parseBool(text);
+                if (on !== null)
+                    root.animations = on;
+            }
+        }
+    }
+
+    // Another program can change it too: the shell follows. `dconf watch`
+    // prints the key on one line and its value on the next.
+    Process {
+        command: [Tools.dconf, "watch", root.animationsKey]
+        running: true
+        stdout: SplitParser {
+            onRead: function (line) {
+                var on = root.parseBool(line);
+                if (on !== null)
+                    root.animations = on;
+            }
+        }
+    }
 }

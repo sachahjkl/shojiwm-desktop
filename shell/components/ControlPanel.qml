@@ -42,10 +42,51 @@ FloatingWindow {
         "taskbar": { title: "Taskbar and Start Menu", category: "Appearance and Personalization" },
         "notifications": { title: "Notification Area Icons", category: "Appearance and Personalization" },
         "clock": { title: "Date and Time", category: "Clock and Region" },
+        "ease": { title: "Ease of Access", category: "Ease of Access" },
         "about": { title: "System", category: "System" }
     })
 
+    // ----- search -------------------------------------------------------------
+    //
+    // Every task the pages hold, with the words it is found by. Typing in the
+    // search box replaces the page with the tasks that match every word.
+
+    readonly property var tasks: [
+        { text: "Choose light or dark", page: "appearance", words: "dark light theme colour color scheme night appearance" },
+        { text: "Change desktop background", page: "background", words: "wallpaper picture image desktop background" },
+        { text: "Change the size of desktop icons", page: "taskbar", words: "desktop icons size large small medium zoom" },
+        { text: "Lock screen and its picture", page: "lockscreen", words: "lock screen picture password idle delay suspend sleep" },
+        { text: "Lock the computer after a delay", page: "lockscreen", words: "lock idle minutes delay timeout screensaver" },
+        { text: "Change your account picture", page: "account", words: "account user picture avatar face photo profile" },
+        { text: "Combine taskbar buttons", page: "taskbar", words: "taskbar combine group buttons windows" },
+        { text: "Show labels on taskbar buttons", page: "taskbar", words: "taskbar labels compact icons text" },
+        { text: "Use Aero Peek to preview the desktop", page: "taskbar", words: "aero peek preview desktop show" },
+        { text: "Show the programs used most in the Start menu", page: "taskbar", words: "start menu frequent recent programs" },
+        { text: "Change what the power button does", page: "taskbar", words: "power button shut down shutdown restart sleep hibernate log off lock" },
+        { text: "Select which icons appear on the taskbar", page: "notifications", words: "notification area tray icons hidden show" },
+        { text: "Change the clock format", page: "clock", words: "clock time date format 24 12 hour" },
+        { text: "Turn off all unnecessary animations", page: "ease", words: "animations motion reduce reduced effects ease access accessibility" },
+        { text: "About this desktop", page: "about", words: "about system version information" }
+    ]
+
+    property string query: ""
+
+    readonly property var found: {
+        var words = window.query.toLowerCase().split(/\s+/).filter(function (word) {
+            return word.length > 0;
+        });
+        if (words.length === 0)
+            return [];
+        return window.tasks.filter(function (task) {
+            var haystack = (task.text + " " + task.words + " "
+                + window.pages[task.page].title + " " + window.pages[task.page].category).toLowerCase();
+            return words.every(function (word) { return haystack.indexOf(word) >= 0; });
+        });
+    }
+
     function go(page) {
+        window.query = "";
+        searchField.text = "";
         ControlPanelState.page = page;
         flick.contentY = 0;
     }
@@ -109,11 +150,72 @@ FloatingWindow {
             }
         }
 
+        // "Search Control Panel", at the right.
+        Rectangle {
+            id: searchBox
+
+            anchors.right: parent.right
+            anchors.rightMargin: 8
+            anchors.verticalCenter: parent.verticalCenter
+            width: 210
+            height: 24
+            radius: Scheme.fieldRadius
+            color: Scheme.field
+            border.width: 1
+            border.color: searchField.activeFocus ? Scheme.fieldFocus : Scheme.fieldBorder
+
+            TextInput {
+                id: searchField
+
+                anchors.left: parent.left
+                anchors.right: searchIcon.left
+                anchors.leftMargin: 6
+                anchors.rightMargin: 4
+                anchors.verticalCenter: parent.verticalCenter
+                color: Scheme.text
+                font.family: Theme.fontFamily
+                font.pixelSize: Theme.fontSize
+                selectByMouse: true
+                clip: true
+                onTextChanged: {
+                    window.query = text;
+                    flick.contentY = 0;
+                }
+                Keys.onEscapePressed: text = ""
+                Keys.onReturnPressed: {
+                    if (window.found.length > 0)
+                        window.go(window.found[0].page);
+                }
+
+                Text {
+                    anchors.fill: parent
+                    verticalAlignment: Text.AlignVCenter
+                    text: "Search Control Panel"
+                    color: Scheme.placeholder
+                    font: searchField.font
+                    elide: Text.ElideRight
+                    visible: searchField.text.length === 0
+                }
+            }
+
+            Image {
+                id: searchIcon
+                anchors.right: parent.right
+                anchors.rightMargin: 6
+                anchors.verticalCenter: parent.verticalCenter
+                width: 14
+                height: 14
+                source: "../assets/search.svg"
+                sourceSize.width: 28
+                sourceSize.height: 28
+            }
+        }
+
         // The path: Control Panel > category > page.
         Rectangle {
             anchors.left: back.right
             anchors.leftMargin: 8
-            anchors.right: parent.right
+            anchors.right: searchBox.left
             anchors.rightMargin: 8
             anchors.verticalCenter: parent.verticalCenter
             height: 24
@@ -189,7 +291,7 @@ FloatingWindow {
 
             Repeater {
                 model: ["appearance", "background", "lockscreen", "account",
-                        "taskbar", "notifications", "clock", "about"]
+                        "taskbar", "notifications", "clock", "ease", "about"]
 
                 delegate: CpLink {
                     required property string modelData
@@ -230,6 +332,8 @@ FloatingWindow {
             y: 22
             width: flick.width - 56 - (pageBar.visible ? pageBar.width : 0)
             sourceComponent: {
+                if (window.query.trim().length > 0)
+                    return searchPage;
                 switch (window.page) {
                 case "appearance": return appearancePage;
                 case "background": return backgroundPage;
@@ -238,6 +342,7 @@ FloatingWindow {
                 case "taskbar": return taskbarPage;
                 case "notifications": return notificationsPage;
                 case "clock": return clockPage;
+                case "ease": return easePage;
                 case "about": return aboutPage;
                 default: return homePage;
                 }
@@ -310,6 +415,64 @@ FloatingWindow {
     }
 
     Component {
+        id: searchPage
+
+        Column {
+            spacing: 10
+
+            Heading {
+                text: window.found.length > 0
+                    ? "Results for “" + window.query.trim() + "”"
+                    : "No setting matches “" + window.query.trim() + "”"
+            }
+
+            Repeater {
+                model: window.found
+
+                delegate: Column {
+                    required property var modelData
+
+                    spacing: 2
+
+                    CpLink {
+                        text: modelData.text
+                        large: true
+                        onClicked: window.go(modelData.page)
+                    }
+
+                    Note {
+                        text: window.pages[modelData.page].category
+                            + "  ▸  " + window.pages[modelData.page].title
+                    }
+                }
+            }
+        }
+    }
+
+    Component {
+        id: easePage
+
+        Column {
+            spacing: 10
+
+            Heading { text: "Make the computer easier to see" }
+
+            CpCheck {
+                label: "Turn off all unnecessary animations (when possible)"
+                checked: !Settings.animations
+                onToggled: function (on) { Settings.setAnimations(!on); }
+            }
+
+            Note {
+                width: parent.width
+                text: "This is the system's own setting: GTK, libadwaita and the "
+                    + "programs that read the settings portal follow it too. The "
+                    + "shell's fades and the windows' animations stop at once."
+            }
+        }
+    }
+
+    Component {
         id: homePage
 
         Column {
@@ -350,6 +513,15 @@ FloatingWindow {
                     target: "clock"
                     links: [
                         { text: "Change the clock format", page: "clock" }
+                    ]
+                }
+
+                Category {
+                    icon: "run"
+                    name: "Ease of Access"
+                    target: "ease"
+                    links: [
+                        { text: "Turn off all unnecessary animations", page: "ease" }
                     ]
                 }
 

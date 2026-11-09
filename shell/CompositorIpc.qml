@@ -5,7 +5,8 @@ import Quickshell
 import Quickshell.Io
 
 // The shell's line to the compositor, for what the shell alone cannot do:
-// Aero Peek, and the show-desktop toggle that brings the windows back.
+// Aero Peek, the show-desktop toggle that brings the windows back, and
+// whether windows animate.
 //
 // src/peek.tsx listens, and hands the path to the shell in
 // SHOJIWM_WIN7_SOCKET when it starts it. The wire format is ShojiWM's: one
@@ -34,6 +35,15 @@ Singleton {
         return send("show-desktop", {});
     }
 
+    function sendAnimations() {
+        return send("animations", { on: Settings.animations });
+    }
+
+    Connections {
+        target: Settings
+        function onAnimationsChanged() { root.sendAnimations(); }
+    }
+
 
     Socket {
         id: socket
@@ -42,7 +52,9 @@ Singleton {
         connected: root.path.length > 0
         // The compositor can be reloaded, which closes its end.
         onConnectedChanged: {
-            if (!connected && root.path.length > 0)
+            if (connected)
+                root.sendAnimations();
+            else if (root.path.length > 0)
                 reconnect.restart();
         }
     }

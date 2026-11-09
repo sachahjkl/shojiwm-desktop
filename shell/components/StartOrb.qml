@@ -31,7 +31,7 @@ Item {
         opacity: orb.menuOpen || area.containsMouse ? 1 : 0
 
         Behavior on opacity {
-            NumberAnimation { duration: Theme.fade * 2 }
+            NumberAnimation { duration: Settings.motion(Theme.fade) * 2 }
         }
     }
 

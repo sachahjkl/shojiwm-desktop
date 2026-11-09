@@ -657,7 +657,7 @@ Item {
             dark: Settings.dark
             opacity: menu.hoveredPlace.length > 0 ? 0 : 1
             Behavior on opacity {
-                NumberAnimation { duration: Theme.fade }
+                NumberAnimation { duration: Settings.motion(Theme.fade) }
             }
         }
 
@@ -670,7 +670,7 @@ Item {
             dark: Settings.dark
             opacity: menu.hoveredPlace.length > 0 ? 1 : 0
             Behavior on opacity {
-                NumberAnimation { duration: Theme.fade }
+                NumberAnimation { duration: Settings.motion(Theme.fade) }
             }
         }
     }

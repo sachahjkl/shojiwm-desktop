@@ -265,6 +265,21 @@ COMPOSITOR.key.bind("lock", "Super+L", () => {
     command: `quickshell -p ${SHELL_PATH} ipc call lock lock`,
   });
 });
+// Print Screen and Ctrl+Print Screen: the command in SHOJIWM_WIN7_SCREENSHOT,
+// else the whole screen to the clipboard, as Windows 7 does. A string command
+// runs in a login shell, which reads the session environment afresh, so a
+// new value applies without logging in again.
+const SCREENSHOT =
+  'if [ -n "$SHOJIWM_WIN7_SCREENSHOT" ]; then exec "$SHOJIWM_WIN7_SCREENSHOT"; ' +
+  "else grim - | wl-copy --type image/png; fi";
+for (const [id, key] of [
+  ["screenshot", "Print"],
+  ["screenshot-ctrl", "Ctrl+Print"],
+] as const) {
+  COMPOSITOR.key.bind(id, key, () => {
+    COMPOSITOR.process.spawn({ command: SCREENSHOT });
+  });
+}
 COMPOSITOR.key.bind("launcher", "Super+D", () => {
   COMPOSITOR.process.spawn({ command: `${VICINAE} toggle` });
 });

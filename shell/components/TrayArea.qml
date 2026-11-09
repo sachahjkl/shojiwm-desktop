@@ -9,7 +9,8 @@ import "../theme.js" as Theme
 // the taskbar, and left of them the arrow that opens the popover of the
 // hidden ones. Which is which is set in the Control Panel, or by dragging an
 // icon: onto the taskbar to show it, onto the arrow or into the popover to
-// hide it. A new icon is hidden.
+// hide it. An icon with no choice made shows while there are three icons or
+// fewer, and waits in the popover beyond.
 Item {
     id: tray
 
@@ -63,7 +64,7 @@ Item {
                 color: "#2effffff"
                 opacity: arrowArea.containsMouse || tray.overflowOpen || drop.overArrow ? 1 : 0
                 Behavior on opacity {
-                    NumberAnimation { duration: Theme.fade }
+                    NumberAnimation { duration: Settings.motion(Theme.fade) }
                 }
             }
 

@@ -731,7 +731,12 @@ Item {
                 Drag.supportedActions: Qt.MoveAction | Qt.CopyAction | Qt.LinkAction
                 Drag.hotSpot.x: width / 2
                 Drag.hotSpot.y: height / 2
+                Drag.keys: ["text/uri-list"]
                 Drag.mimeData: ({ "text/uri-list": desktop.pickedUrls().join("\r\n") })
+                Drag.onDragFinished: {
+                    dragProxy.x = 0;
+                    dragProxy.y = 0;
+                }
             }
 
             MouseArea {

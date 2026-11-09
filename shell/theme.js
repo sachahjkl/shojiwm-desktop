@@ -22,11 +22,12 @@ var taskButtonGap = 2;
 // Room at the right of a button for the edges of the windows stacked behind
 // it.
 var stackRoom = 4;
+// Windows 7's large taskbar icons: 32 px icons on 58 px buttons.
 // A pinned program with no window open: the icon alone, as Windows draws it.
-var pinnedButtonWidth = 62;
-var pinnedIconSize = 24;
+var pinnedButtonWidth = 58;
+var taskIconSize = 32;
 // A button in the compact taskbar: the icon alone, for a running program too.
-var compactButtonWidth = 62;
+var compactButtonWidth = 58;
 var trayIconSize = 16;
 var trayGap = 8;
 var clockWidth = 74;
@@ -175,3 +176,6 @@ var fontSizeSmall = 11;
 
 var fade = 90;
 var menuFade = 120;
+// A taskbar button lights up quickly and dims slowly, as on Windows 7.
+var hoverIn = 120;
+var hoverOut = 350;
