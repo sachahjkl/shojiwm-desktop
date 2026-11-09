@@ -10,9 +10,11 @@
     };
 
     # The ShojiWM sources, for the TypeScript package the config is checked
-    # against. The compositor itself is not built here.
+    # against: the author's fork, whose integration branch carries what this
+    # config uses before upstream has it (labels' textShadow; see its
+    # FORK.md). The compositor itself is not built here.
     shojiwm-src = {
-      url = "github:bea4dev/ShojiWM";
+      url = "github:sachahjkl/ShojiWM/integration";
       flake = false;
     };
   };

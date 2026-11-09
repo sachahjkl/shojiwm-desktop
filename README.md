@@ -211,10 +211,12 @@ the resting gradient.
 
 ## Requirements
 
-- **ShojiWM**, installed and registered as a session. Super+V needs its
-  `ext-data-control-v1` global, which upstream does not have yet: it is on
-  the `integration` branch of
-  [sachahjkl/ShojiWM](https://github.com/sachahjkl/ShojiWM/blob/integration/FORK.md).
+- **ShojiWM** from the `integration` branch of
+  [sachahjkl/ShojiWM](https://github.com/sachahjkl/ShojiWM/blob/integration/FORK.md),
+  installed and registered as a session. It carries what upstream does not
+  have yet and this config uses: the `ext-data-control-v1` global (Super+V)
+  and labels' `textShadow` (the caption titles). Upstream ShojiWM runs it
+  without these.
 - **Mission Center** (`missioncenter`), the task manager, unless
   `SHOJIWM_WIN7_TASK_MANAGER` names another.
 - **Quickshell 0.3.0 or later** — it draws the taskbar, the Start menu and the

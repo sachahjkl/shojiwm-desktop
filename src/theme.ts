@@ -87,9 +87,12 @@ export const COLOR = {
   clientLightInactive: "#ffffff80",
   clientDarkActive: "#00000073",
   clientDarkInactive: "#0000004d",
-  /** Caption text. */
-  titleActive: "#000000",
-  titleInactive: "#46545e",
+  /** Caption text: white, with a dark line under it that sets it into the
+   * glass and keeps it readable over light glass. */
+  titleActive: "#ffffff",
+  titleInactive: "#d6dee5",
+  titleShadowActive: "#000000b3",
+  titleShadowInactive: "#00000080",
 } as const;
 
 /**
