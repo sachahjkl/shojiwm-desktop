@@ -539,6 +539,8 @@ style; it copies no file, no icon and no font from Microsoft.
 
 `shell/assets/nixos-snowflake.svg` is the NixOS logo from the NixOS artwork
 (nixos-icons), CC-BY-4.0, shown on the Control Panel's System page.
+`shell/assets/start-orb-logo.svg` is the same logo in white and ice blue,
+on the Start orb.
 
 `shell/assets/icons/` holds icons built by `tools/fetch-icons.sh` from
 KDE's [Oxygen icons](https://invent.kde.org/frameworks/oxygen-icons),

@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
   <!--
-    Original artwork: a plain glass orb with nothing on it. A dark bezel, a
-    blue body lit from below, a gloss across the top half. Under the pointer: brighter, with a halo.
+    Original artwork: the Start orb under the pointer, without its glass:
+    start-orb.svg brighter, with a halo.
     No clip paths: QtSvg ignores them, so every shape stays inside the body.
   -->
   <defs>
@@ -30,11 +30,6 @@
       <stop offset="0" stop-color="#d4fbff" stop-opacity="0.95"/>
       <stop offset="1" stop-color="#d4fbff" stop-opacity="0"/>
     </radialGradient>
-    <linearGradient id="gloss" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#ffffff" stop-opacity=".92"/>
-      <stop offset=".55" stop-color="#ffffff" stop-opacity=".35"/>
-      <stop offset="1" stop-color="#ffffff" stop-opacity=".06"/>
-    </linearGradient>
   </defs>
 
   <circle cx="32" cy="32" r="32" fill="url(#halo)"/>
@@ -42,6 +37,4 @@
   <circle cx="32" cy="32" r="29" fill="none" stroke="url(#bezelLight)"/>
   <circle cx="32" cy="32" r="27" fill="url(#body)" stroke="#000000" stroke-opacity=".6"/>
   <ellipse cx="32" cy="51" rx="18.5" ry="9" fill="url(#glow)"/>
-  <ellipse cx="32" cy="18.5" rx="20.5" ry="12.5" fill="url(#gloss)"/>
-  <circle cx="32" cy="32" r="26" fill="none" stroke="#ffffff" stroke-opacity=".3"/>
 </svg>
