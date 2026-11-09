@@ -9,7 +9,8 @@ import "../theme.js" as Theme
 //
 // Left click: show the window, or put it away when it is the one you are
 // looking at. With several windows it shows the thumbnails instead.
-// Right click: the jump list. Middle click: start another instance. Resting
+// Right click: the jump list. Middle click, Ctrl+click or Shift+click:
+// start another instance. Resting
 // on it shows the thumbnails.
 //
 // A pinned program with no window open is the icon alone, with no plate
@@ -267,7 +268,10 @@ Item {
                 button.menuRequested(button.buttonRect());
                 return;
             }
-            if (event.button === Qt.MiddleButton) {
+            // A middle click, Ctrl+click or Shift+click starts another
+            // instance.
+            if (event.button === Qt.MiddleButton
+                || (event.modifiers & (Qt.ControlModifier | Qt.ShiftModifier))) {
                 Apps.launch(button.group ? button.group.entry : null);
                 return;
             }

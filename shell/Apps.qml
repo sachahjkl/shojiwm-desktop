@@ -246,10 +246,22 @@ Singleton {
     /// What a left click on a group does. No window: start the program. One
     /// window: show it, or put it away when it is the one you are looking at.
     /// Several: the caller shows the thumbnails instead.
+    /// When each pinned program was last started from its button, by
+    /// .desktop file name: clicks on it while it starts are not new starts.
+    property var starting: ({})
+    readonly property int startingMs: 3000
+
     function activateGroup(group) {
         if (!group)
             return;
         if (group.windows.length === 0) {
+            var id = entryFileId(group.entry);
+            var now = Date.now();
+            if (id.length > 0 && now - (root.starting[id] || 0) < root.startingMs)
+                return;
+            var next = Object.assign({}, root.starting);
+            next[id] = now;
+            root.starting = next;
             launch(group.entry);
             return;
         }
