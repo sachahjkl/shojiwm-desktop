@@ -248,27 +248,13 @@ Item {
                 hot: buttonArea.containsMouse
                 pressed: buttonArea.pressed
 
-                Row {
+                // The label alone, as Windows 7 has it; Vista had the icon.
+                Text {
                     anchors.centerIn: parent
-                    spacing: 6
-
-                    Image {
-                        anchors.verticalCenter: parent.verticalCenter
-                        width: 16
-                        height: 16
-                        source: "../assets/power-white.svg"
-                        sourceSize.width: 32
-                        sourceSize.height: 32
-                        smooth: true
-                    }
-
-                    Text {
-                        anchors.verticalCenter: parent.verticalCenter
-                        text: power.action ? power.action.label : ""
-                        color: "#ffffff"
-                        font.family: Theme.fontFamily
-                        font.pixelSize: Theme.fontSize
-                    }
+                    text: power.action ? power.action.label : ""
+                    color: "#ffffff"
+                    font.family: Theme.fontFamily
+                    font.pixelSize: Theme.fontSize
                 }
 
                 MouseArea {
@@ -287,15 +273,26 @@ Item {
 
                 width: 24
                 rightRounded: true
+                glass: true
                 hot: arrowArea.containsMouse || menu.powerMenuOpen
                 pressed: arrowArea.pressed || menu.powerMenuOpen
 
-                Text {
+                // A small solid triangle, 4 by 7 px, as Windows 7 draws it.
+                Canvas {
                     anchors.centerIn: parent
-                    text: "▸"
-                    color: "#ffffff"
-                    font.family: Theme.fontFamily
-                    font.pixelSize: Theme.fontSize
+                    width: 4
+                    height: 7
+                    onPaint: {
+                        var ctx = getContext("2d");
+                        ctx.reset();
+                        ctx.fillStyle = "#f2ffffff";
+                        ctx.beginPath();
+                        ctx.moveTo(0, 0);
+                        ctx.lineTo(width, height / 2);
+                        ctx.lineTo(0, height);
+                        ctx.closePath();
+                        ctx.fill();
+                    }
                 }
 
                 MouseArea {

@@ -18,6 +18,8 @@ Item {
 
     height: parent ? parent.height : 28
 
+    readonly property color outline: part.glass ? "#a6000000" : Scheme.menuOutline
+
     readonly property color fillTop: part.glass
         ? (part.pressed ? "#26ffffff" : part.hot ? "#66ffffff" : "#40ffffff")
         : part.pressed ? Scheme.buttonPressedTop
@@ -27,42 +29,47 @@ Item {
         : part.pressed ? Scheme.buttonPressedBottom
             : part.hot ? Scheme.buttonHotBottom : Scheme.buttonBottom
 
-    // Rounded all round, then squared off on the inner side by a second
-    // rectangle that covers those corners.
-    Rectangle {
+    // A rectangle rounded all round, wider than the half on its inner side
+    // and clipped there: the inner corners fall outside, and the glass, which
+    // is translucent, is painted once.
+    Item {
         anchors.fill: parent
-        radius: Scheme.buttonRadius
-        border.width: 1
-        border.color: part.glass ? "#a6000000" : Scheme.menuOutline
-        gradient: Gradient {
-            GradientStop { position: 0.0; color: part.fillTop }
-            GradientStop { position: 1.0; color: part.fillBottom }
+        clip: part.leftRounded !== part.rightRounded
+
+        Rectangle {
+            readonly property real overhang: part.leftRounded === part.rightRounded
+                ? 0 : Scheme.buttonRadius + 1
+
+            x: part.rightRounded && !part.leftRounded ? -overhang : 0
+            width: parent.width + overhang
+            height: parent.height
+            radius: Scheme.buttonRadius
+            border.width: 1
+            border.color: part.outline
+            gradient: Gradient {
+                GradientStop { position: 0.0; color: part.fillTop }
+                GradientStop { position: 1.0; color: part.fillBottom }
+            }
         }
     }
 
-    Rectangle {
-        anchors.top: parent.top
-        anchors.bottom: parent.bottom
-        x: part.leftRounded ? parent.width - width : 0
-        width: 4
-        visible: part.leftRounded !== part.rightRounded
-        border.width: 0
-        gradient: Gradient {
-            GradientStop { position: 0.0; color: part.fillTop }
-            GradientStop { position: 1.0; color: part.fillBottom }
-        }
-
-        // The outline along the top and the bottom of the squared side.
-        Rectangle { anchors.top: parent.top; width: parent.width; height: 1; color: Scheme.menuOutline }
-        Rectangle { anchors.bottom: parent.bottom; width: parent.width; height: 1; color: Scheme.menuOutline }
-    }
-
-    // The line between the two halves: on the arrow's left edge.
+    // The seam between the two halves, on the arrow's left edge: one dark
+    // line, and on glass a faint light one beside it.
     Rectangle {
         visible: part.rightRounded && !part.leftRounded
         anchors.top: parent.top
         anchors.bottom: parent.bottom
         width: 1
-        color: Scheme.menuOutline
+        color: part.outline
+    }
+    Rectangle {
+        visible: part.glass && part.rightRounded && !part.leftRounded
+        x: 1
+        anchors.top: parent.top
+        anchors.bottom: parent.bottom
+        anchors.topMargin: 1
+        anchors.bottomMargin: 1
+        width: 1
+        color: "#26ffffff"
     }
 }

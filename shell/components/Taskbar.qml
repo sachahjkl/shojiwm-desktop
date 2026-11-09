@@ -260,11 +260,24 @@ Item {
 
                 group: modelData
                 shift: bar.shiftOf(index)
-                lifted: bar.dragFrom === index && bar.dropBefore >= 0
-                onDragChanged: function (active) {
-                    bar.dragFrom = active ? index : -1;
-                    if (!active)
-                        bar.dropBefore = -1;
+                dragMin: -x
+                dragMax: buttonsRepeater.count > 0 && buttonsRepeater.itemAt(buttonsRepeater.count - 1)
+                    ? buttonsRepeater.itemAt(buttonsRepeater.count - 1).x
+                        + buttonsRepeater.itemAt(buttonsRepeater.count - 1).width - x - width
+                    : 0
+                onReorderMoved: function (centre) {
+                    bar.dragFrom = index;
+                    programDrop.place(centre);
+                }
+                onReorderEnded: {
+                    var key = modelData.key;
+                    var before = bar.dropBefore;
+                    bar.dragFrom = -1;
+                    bar.dropBefore = -1;
+                    // Once this button has finished with the release: the
+                    // change rebuilds every button.
+                    if (before >= 0)
+                        Qt.callLater(function () { Apps.moveButton(key, before); });
                 }
                 width: Settings.taskbarCompact ? Theme.compactButtonWidth
                     : modelData.windows.length === 0
@@ -293,9 +306,9 @@ Item {
         }
     }
 
-    // Dragging on the buttons: a button moved to a new place, or a program
-    // from the Start menu or a .desktop file, pinned where it is dropped. The
-    // other buttons stand aside while it is dragged, as Windows 7 shows it.
+    // A button dragged along the bar to a new place, or a program dropped on
+    // it from the Start menu or a .desktop file, pinned where it lands. The
+    // other buttons stand aside meanwhile, as Windows 7 shows it.
 
     /// The index of the button being dragged, or -1.
     property int dragFrom: -1
@@ -346,15 +359,7 @@ Item {
         onExited: bar.dropBefore = -1
         onDropped: function (event) {
             var before = bar.dropBefore;
-            var from = bar.dragFrom;
             bar.dropBefore = -1;
-            if (from >= 0) {
-                var key = Apps.groups[from] ? Apps.groups[from].key : "";
-                event.accept(Qt.MoveAction);
-                // After the drag has ended: the change rebuilds its source.
-                Qt.callLater(function () { Apps.moveButton(key, before); });
-                return;
-            }
             var id = Apps.droppedProgramId(event);
             if (id.length === 0)
                 return;

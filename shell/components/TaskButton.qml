@@ -189,43 +189,28 @@ Item {
         onTriggered: button.previewRequested(button.buttonRect())
     }
 
-    /// Every button can be dragged to another place on the taskbar.
-    readonly property bool draggable: button.group !== null
-
     /// How far the button stands aside while another one is dragged over the
-    /// taskbar, and whether it is the one being dragged, which leaves its
-    /// place empty.
+    /// taskbar.
     property real shift: 0
-    property bool lifted: false
-    signal dragChanged(bool active)
+    /// How far the button may be dragged left and right: to the ends of the
+    /// row of buttons. The taskbar sets both.
+    property real dragMin: 0
+    property real dragMax: 0
 
-    opacity: button.lifted ? 0 : 1
+    /// The button is being dragged along the taskbar, this far from its place.
+    property bool reordering: false
+    property real dragOffset: 0
+    property real pressX: 0
+    /// `centre` is where the middle of the button is in the row.
+    signal reorderMoved(real centre)
+    signal reorderEnded
+
+    z: button.reordering ? 10 : 0
     transform: Translate {
-        x: button.shift
+        x: button.reordering ? button.dragOffset : button.shift
         Behavior on x {
+            enabled: !button.reordering
             NumberAnimation { duration: Settings.motion(Theme.hoverIn); easing.type: Easing.OutCubic }
-        }
-    }
-
-    // What the pointer drags: invisible, the drag shows a picture of the
-    // button and carries the program's .desktop file name.
-    Item {
-        id: dragProxy
-
-        width: body.width
-        height: body.height
-        Drag.active: area.drag.active
-        Drag.dragType: Drag.Automatic
-        Drag.supportedActions: Qt.MoveAction
-        Drag.hotSpot.x: width / 2
-        Drag.hotSpot.y: height / 2
-        Drag.keys: [Settings.programDragType]
-        Drag.mimeData: ({ [Settings.programDragType]: Apps.entryFileId(button.group ? button.group.entry : null) })
-        Drag.onDragStarted: button.dragChanged(true)
-        Drag.onDragFinished: {
-            dragProxy.x = 0;
-            dragProxy.y = 0;
-            button.dragChanged(false);
         }
     }
 
@@ -235,12 +220,31 @@ Item {
         anchors.fill: parent
         hoverEnabled: true
         acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
-        drag.target: button.draggable ? dragProxy : null
 
+        // A drag along the taskbar moves the button; it stays on the bar.
         onPressed: function (event) {
-            if (event.button === Qt.LeftButton && button.draggable)
-                body.grabToImage(function (result) { dragProxy.Drag.imageSource = result.url; },
-                                 Qt.size(body.width, body.height));
+            button.pressX = area.mapToItem(null, event.x, 0).x;
+        }
+        onPositionChanged: function (event) {
+            if (!area.pressed || !(area.pressedButtons & Qt.LeftButton))
+                return;
+            var dx = area.mapToItem(null, event.x, 0).x - button.pressX;
+            if (!button.reordering && Math.abs(dx) < 6)
+                return;
+            if (!button.reordering) {
+                restTimer.stop();
+                button.previewCancelled();
+                button.reordering = true;
+            }
+            button.dragOffset = Math.max(button.dragMin, Math.min(button.dragMax, dx));
+            button.reorderMoved(button.x + button.width / 2 + button.dragOffset);
+        }
+        onReleased: {
+            if (!button.reordering)
+                return;
+            button.reorderEnded();
+            button.reordering = false;
+            button.dragOffset = 0;
         }
 
         onEntered: {
@@ -256,6 +260,9 @@ Item {
 
         onClicked: function (event) {
             restTimer.stop();
+            // The release that ends a drag along the bar is not a click.
+            if (Math.abs(area.mapToItem(null, event.x, 0).x - button.pressX) >= 6)
+                return;
             if (event.button === Qt.RightButton) {
                 button.menuRequested(button.buttonRect());
                 return;
