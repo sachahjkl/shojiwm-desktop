@@ -47,9 +47,9 @@ import {
  * kitty.
  */
 const TERMINAL = COMPOSITOR.env.get("SHOJIWM_WIN7_TERMINAL") ?? "kitty";
-/** The task manager: SHOJIWM_WIN7_TASK_MANAGER, else btop in kitty. */
+/** The task manager: SHOJIWM_WIN7_TASK_MANAGER, else Mission Center. */
 const TASK_MANAGER =
-  COMPOSITOR.env.get("SHOJIWM_WIN7_TASK_MANAGER") ?? "kitty btop";
+  COMPOSITOR.env.get("SHOJIWM_WIN7_TASK_MANAGER") ?? "missioncenter";
 const FILE_MANAGER = ["thunar"];
 const BROWSER = ["chromium", "--ozone-platform-hint=auto"];
 
@@ -97,25 +97,12 @@ COMPOSITOR.process.once("shell", {
 // three of which this configuration already does; it could also replace the
 // Aero theme. It is marked as seen, the first time only, in the state file
 // Vicinae itself writes when the window is finished.
-// Clipboard history: cliphist keeps what is copied, text and pictures,
-// through wl-paste over the wlr data-control protocol. Vicinae's own history
-// needs ext-data-control, which ShojiWM does not offer.
-for (const type of ["text", "image"]) {
-  COMPOSITOR.process.once(`clipboard-${type}`, {
-    command: `exec wl-paste --type ${type} --watch cliphist store`,
-    runPolicy: "once-per-session",
-  });
-}
-
 COMPOSITOR.process.once("launcher", {
   command:
     `config="$HOME/.config/shojiwm/vicinae.json"; ` +
     `[ -e "$config" ] || printf '{\\n  "imports": ["assets/vicinae/aero.json"]\\n}\\n' >"$config"; ` +
     `state="\${XDG_STATE_HOME:-$HOME/.local/state}/vicinae"; mkdir -p "$state"; ` +
     `[ -e "$state/onboarding.json" ] || printf '{"version":1,"completedAt":""}\\n' >"$state/onboarding.json"; ` +
-    // An empty HYPRLAND_INSTANCE_SIGNATURE, left by a Hyprland session,
-    // makes Vicinae ask hyprctl for the windows.
-    `unset HYPRLAND_INSTANCE_SIGNATURE; ` +
     `XDG_DATA_DIRS="$HOME/.config/shojiwm/assets/vicinae:\${XDG_DATA_DIRS:-/usr/local/share:/usr/share}" ` +
     `exec ${VICINAE} server --config "$config"`,
   runPolicy: "once-per-session",
@@ -416,17 +403,16 @@ NUMBER_ROW.forEach((keys, index) => {
   }
 });
 
-// Super+V: the clipboard history in Vicinae; the chosen entry is copied
-// again. A closed list copies nothing.
+// Super+V: Vicinae's clipboard history. Vicinae keeps what is copied, text
+// and pictures, through the ext-data-control protocol. Upstream ShojiWM does
+// not offer it yet: the integration branch of sachahjkl/ShojiWM does (see
+// its FORK.md).
 COMPOSITOR.key.bind(
   "clipboard-history",
   "Super+V",
   once(() => {
     COMPOSITOR.process.spawn({
-      command:
-        `choice=$(cliphist list | ${VICINAE} dmenu -n Clipboard ` +
-        `-p "Search what you copied") && [ -n "$choice" ] && ` +
-        `printf '%s\n' "$choice" | cliphist decode | wl-copy`,
+      command: `${VICINAE} vicinae://extensions/vicinae/clipboard/history`,
     });
   }),
 );
