@@ -176,6 +176,7 @@
           singleton Audio 1.0 Audio.qml
           singleton Startup 1.0 Startup.qml
           singleton DisplaySettings 1.0 DisplaySettings.qml
+          singleton LauncherEntries 1.0 LauncherEntries.qml
           EOF
           cd ./shell
           qmllint \

@@ -29,6 +29,12 @@ Item {
     readonly property bool iconOnly: idle || Settings.taskbarCompact
     readonly property bool current: Apps.groupIsCurrent(group)
     readonly property bool hovered: area.containsMouse
+    /// What the program shows on its button: progress, a count, urgency.
+    readonly property var launcherEntry: button.group
+        ? LauncherEntries.of(Apps.entryFileId(button.group.entry)) : null
+    readonly property real progress: button.launcherEntry ? button.launcherEntry.progress : -1
+    readonly property int count: button.launcherEntry ? button.launcherEntry.count : -1
+    readonly property bool urgent: !!button.launcherEntry && button.launcherEntry.urgent
 
     /// The thumbnails or the jump list are asked for by the taskbar, which
     /// owns one of each. `rect` is in the coordinates of the bar.
@@ -125,6 +131,29 @@ Item {
         }
     }
 
+    // A program's progress fills its button green from the left, glossy in
+    // the upper half, as Windows 7 shows a download or a copy. An urgent
+    // program turns its button orange.
+    Rectangle {
+        x: body.x + 2
+        y: body.y + 2
+        width: Math.max(0, (body.width - 4) * (button.urgent ? 1 : button.progress))
+        height: body.height - 4
+        radius: Scheme.itemRadius - 1
+        visible: button.urgent || button.progress >= 0
+        opacity: 0.85
+        gradient: Gradient {
+            GradientStop { position: 0.0; color: button.urgent ? "#ffd08a" : "#8fe08a" }
+            GradientStop { position: 0.46; color: button.urgent ? "#f6a43c" : "#3fbf3a" }
+            GradientStop { position: 0.5; color: button.urgent ? "#e98a12" : "#25a51f" }
+            GradientStop { position: 1.0; color: button.urgent ? "#f3a640" : "#4cc443" }
+        }
+
+        Behavior on width {
+            NumberAnimation { duration: Settings.motion(Theme.fade * 2) }
+        }
+    }
+
     // The icon alone, for a pinned program that is not running.
     IconImage {
         anchors.centerIn: body
@@ -192,6 +221,34 @@ Item {
 
     /// How far the button stands aside while another one is dragged over the
     /// taskbar.
+    // A count (unread mail, messages) in a small red badge on the icon's
+    // upper right corner.
+    Rectangle {
+        visible: button.count > 0
+        x: body.x + (button.iconOnly ? body.width / 2 + 2 : 6 + Theme.taskIconSize - 8)
+        y: body.y + 2
+        z: 2
+        height: 14
+        width: Math.max(14, badgeText.implicitWidth + 8)
+        radius: 7
+        border.width: 1
+        border.color: "#80000000"
+        gradient: Gradient {
+            GradientStop { position: 0.0; color: "#f46a5e" }
+            GradientStop { position: 1.0; color: "#c4271b" }
+        }
+
+        Text {
+            id: badgeText
+            anchors.centerIn: parent
+            text: button.count > 99 ? "99+" : button.count
+            color: "#ffffff"
+            font.family: Theme.fontFamily
+            font.pixelSize: 10
+            font.bold: true
+        }
+    }
+
     property real shift: 0
     /// How far the button may be dragged left and right: to the ends of the
     /// row of buttons. The taskbar sets both.
