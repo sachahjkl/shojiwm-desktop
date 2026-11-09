@@ -57,6 +57,7 @@ FloatingWindow {
     readonly property var tasks: [
         { text: "Choose light or dark", page: "appearance", words: "dark light theme colour color scheme night appearance" },
         { text: "Change how much the glass blurs", page: "appearance", words: "glass blur transparency aero frosted taskbar window colour color" },
+        { text: "Change the desktop background on its own (slide show)", page: "background", words: "slide show slideshow wallpaper change rotate shuffle background folder" },
         { text: "Change desktop background", page: "background", words: "wallpaper picture image desktop background" },
         { text: "Change the size of desktop icons", page: "taskbar", words: "desktop icons size large small medium zoom" },
         { text: "Lock screen and its picture", page: "lockscreen", words: "lock screen picture password idle delay suspend sleep" },
@@ -1307,6 +1308,76 @@ FloatingWindow {
                 width: parent.width
                 selected: Settings.wallpaper
                 onChosen: function (path) { Settings.wallpaper = path; }
+            }
+
+            SubHeading { text: "Slide show" }
+
+            CpCheck {
+                label: "Change the picture on its own, from a folder"
+                checked: Settings.slideshowFolder.length > 0
+                onToggled: function (on) {
+                    Settings.slideshowFolder = on ? Apps.userDir("PICTURES", "Pictures") : "";
+                }
+            }
+
+            Grid {
+                columns: 2
+                columnSpacing: 12
+                rowSpacing: 8
+                leftPadding: 24
+                visible: Settings.slideshowFolder.length > 0
+                z: 5
+
+                Note { text: "Folder:"; height: 24; verticalAlignment: Text.AlignVCenter }
+                Rectangle {
+                    width: 320
+                    height: 24
+                    radius: Scheme.fieldRadius
+                    color: Scheme.field
+                    border.width: 1
+                    border.color: folderField.activeFocus ? Scheme.fieldFocus : Scheme.fieldBorder
+
+                    TextInput {
+                        id: folderField
+                        anchors.fill: parent
+                        anchors.leftMargin: 6
+                        anchors.rightMargin: 6
+                        verticalAlignment: TextInput.AlignVCenter
+                        text: Settings.slideshowFolder
+                        color: Scheme.text
+                        font.family: Theme.fontFamily
+                        font.pixelSize: Theme.fontSize
+                        selectByMouse: true
+                        clip: true
+                        onEditingFinished: {
+                            if (text.length > 0 && text !== Settings.slideshowFolder)
+                                Settings.slideshowFolder = text;
+                        }
+                    }
+                }
+
+                Note { text: "Change every:"; height: 24; verticalAlignment: Text.AlignVCenter }
+                CpCombo {
+                    readonly property var minutes: [1, 10, 30, 60, 360, 1440]
+                    width: 160
+                    z: open ? 10 : 1
+                    model: ["1 minute", "10 minutes", "30 minutes", "1 hour", "6 hours", "1 day"]
+                    currentIndex: Math.max(0, minutes.indexOf(Settings.slideshowMinutes))
+                    onActivated: function (index) { Settings.slideshowMinutes = minutes[index]; }
+                }
+
+                Item { width: 1; height: 1 }
+                CpCheck {
+                    label: "Shuffle"
+                    checked: Settings.slideshowShuffle
+                    onToggled: function (on) { Settings.slideshowShuffle = on; }
+                }
+
+                Item { width: 1; height: 1 }
+                CpButton {
+                    label: "Next picture"
+                    onClicked: Slideshow.next()
+                }
             }
         }
     }

@@ -29,6 +29,9 @@ Singleton {
     property alias displayChoices: adapter.displayChoices
     property alias extraClocks: adapter.extraClocks
     property alias showCpuMeter: adapter.showCpuMeter
+    property alias slideshowFolder: adapter.slideshowFolder
+    property alias slideshowMinutes: adapter.slideshowMinutes
+    property alias slideshowShuffle: adapter.slideshowShuffle
     property alias cpuMeterPlace: adapter.cpuMeterPlace
     property alias desktopIconSize: adapter.desktopIconSize
     property alias showDesktopIcons: adapter.showDesktopIcons
@@ -193,6 +196,12 @@ Singleton {
             /// The CPU Meter gadget on the first screen's desktop, and where:
             /// its distance from the right and top edges.
             property bool showCpuMeter: true
+            /// The desktop slide show: the folder its pictures come from
+            /// ("" for none), how often the picture changes, and in which
+            /// order.
+            property string slideshowFolder: ""
+            property int slideshowMinutes: 30
+            property bool slideshowShuffle: false
             property var cpuMeterPlace: ({ right: 24, top: 24 })
             property bool showFrequent: true
 

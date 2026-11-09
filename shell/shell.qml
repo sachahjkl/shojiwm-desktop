@@ -25,6 +25,8 @@ ShellRoot {
     property var lockState: LockState
     property var controlPanel: ControlPanelState
     property var shutdown: ShutdownState
+    // The desktop slide show changes the wallpaper on its own.
+    property var slideshow: Slideshow
 
     // ----- lock screen ------------------------------------------------------
 
