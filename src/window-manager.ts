@@ -187,10 +187,12 @@ export class FloatingWindowManager {
   private cascade = 0;
   /**
    * Where each program's last window was when it closed, by app id, with
-   * the screen it was on. The next window of that program opens there when
-   * none of its windows is open, as programs reopen where they were on
-   * Windows. Programs that make a new window each time they show (Papier)
-   * stay in place instead of walking along the cascade.
+   * the screen it was on. The next window of that program opens at that
+   * place when none of its windows is open, as programs reopen where they
+   * were on Windows, but on the screen the user is on: a program called up
+   * by a key (Papier) comes where the user looks. Programs that make a new
+   * window each time they show stay in place instead of walking along the
+   * cascade.
    */
   private lastPlace = new Map<string, { output: string; rect: Rect }>();
   /**
@@ -340,9 +342,10 @@ export class FloatingWindowManager {
   }
 
   /**
-   * The place the program's last window had, at this window's own size and
-   * kept inside the work area of its screen; null when there is none, or
-   * when another window of the program is open (that one keeps the place).
+   * The place the program's last window had, at this window's own size, on
+   * the screen the user is on: the same place in its work area as it had in
+   * its own screen's, kept inside. null when there is none, or when another
+   * window of the program is open (that one keeps the place).
    */
   private rememberedRect(window: WaylandWindow, natural: Rect): Rect | null {
     const appId = window.appId();
@@ -359,16 +362,20 @@ export class FloatingWindowManager {
         return null;
       }
     }
-    const area =
-      this.workArea(place.output) ?? this.workArea(this.outputOf(window));
+    const area = this.workArea(this.outputName());
     if (!area) {
       return null;
     }
+    // From the screen it was on to this one: the same offset in the work
+    // area. On the same screen, the same place.
+    const from = this.workArea(place.output) ?? area;
+    const x = area.x + (place.rect.x - from.x);
+    const y = area.y + (place.rect.y - from.y);
     const width = Math.min(natural.width, area.width);
     const height = Math.min(natural.height, area.height);
     return {
-      x: Math.round(clamp(place.rect.x, area.x, area.x + area.width - width)),
-      y: Math.round(clamp(place.rect.y, area.y, area.y + area.height - height)),
+      x: Math.round(clamp(x, area.x, area.x + area.width - width)),
+      y: Math.round(clamp(y, area.y, area.y + area.height - height)),
       width: Math.round(width),
       height: Math.round(height),
     };
