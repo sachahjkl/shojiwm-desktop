@@ -266,30 +266,34 @@ running one.
 
 ## Keys
 
-| Key                               | Action                                                                     |
-| --------------------------------- | -------------------------------------------------------------------------- |
-| `Super` (tap)                     | Show or hide the Start menu                                                |
-| `Super`+`Return`                  | Terminal                                                                   |
-| `Super`+`E`                       | File manager                                                               |
-| `Super`+`B`                       | Browser                                                                    |
-| `Alt`+`F4`                        | Close the focused window; on the desktop, Shut Down Windows                |
-| `Super`+`Shift`+`E`               | Shut Down Windows                                                          |
-| `Alt`+`Tab` / `Alt`+`Shift`+`Tab` | Switch window                                                              |
-| `Super`+`Up`                      | Maximise                                                                   |
-| `Super`+`Down`                    | Restore a maximised window, else minimise                                  |
-| `Super`+`Left` / `Super`+`Right`  | Snap to that side; again, to the next screen; from the other side, restore |
-| `Super`+`Shift`+`Left` / `Right`  | Move the window to the next screen that way                                |
-| `Super`+`Home`                    | Minimise the other windows, then bring them back                           |
-| `Print Screen`, `Ctrl`+`Print`    | Screenshot (`SHOJIWM_WIN7_SCREENSHOT`)                                     |
-| `Super`+`D`                       | The launcher (Vicinae)                                                     |
-| `Super`+`M`                       | Show the desktop, then put the windows back                                |
-| `Super`+`L`                       | Lock                                                                       |
-| `Super`+drag                      | Move a window from anywhere on it                                          |
-| `Super`+double click              | Maximise, and again to restore                                             |
-| `Super`+`Shift`+`R`               | Reload this configuration (built into ShojiWM)                             |
-| `Super`+`Shift`+`Q`               | Close the focused window                                                   |
-| `Super`+`Shift`+wheel             | Zoom the screen around the pointer; `Super`+`Shift`+`0` resets it          |
-| Volume, mute and player keys      | Volume of the default output (`wpctl`), microphone mute, `playerctl`       |
+| Key                               | Action                                                                                       |
+| --------------------------------- | -------------------------------------------------------------------------------------------- |
+| `Super` (tap)                     | Show or hide the Start menu                                                                  |
+| `Super`+`Return`                  | Terminal                                                                                     |
+| `Super`+`E`                       | File manager                                                                                 |
+| `Super`+`B`                       | Browser                                                                                      |
+| `Alt`+`F4`                        | Close the focused window; on the desktop, Shut Down Windows                                  |
+| `Super`+`Shift`+`E`               | Shut Down Windows                                                                            |
+| `Alt`+`Tab` / `Alt`+`Shift`+`Tab` | Switch window                                                                                |
+| `Super`+`Up`                      | Maximise                                                                                     |
+| `Super`+`Down`                    | Restore a maximised window, else minimise                                                    |
+| `Super`+`Left` / `Super`+`Right`  | Snap to that side; again, to the next screen; from the other side, restore                   |
+| `Super`+`Shift`+`Left` / `Right`  | Move the window to the next screen that way                                                  |
+| `Super`+`Home`                    | Minimise the other windows, then bring them back                                             |
+| `Print Screen`, `Ctrl`+`Print`    | Screenshot (`SHOJIWM_WIN7_SCREENSHOT`)                                                       |
+| `Super`+`D`                       | The launcher (Vicinae)                                                                       |
+| `Super`+`M`                       | Show the desktop, then put the windows back                                                  |
+| `Super`+`L`                       | Lock                                                                                         |
+| `Super`+drag                      | Move a window from anywhere on it                                                            |
+| `Super`+double click              | Maximise, and again to restore                                                               |
+| `Super`+`Shift`+`R`               | Reload this configuration (built into ShojiWM)                                               |
+| `Super`+`Shift`+`Q`               | Close the focused window                                                                     |
+| `Super`+`1` … `9`                 | The taskbar button at that place: start it, show it, put it away, or the next of its windows |
+| `Super`+`Shift`+`1` … `9`         | Another instance of that button's program                                                    |
+| `Super`+`R`                       | Run: the Start menu's search box                                                             |
+| `Ctrl`+`Shift`+`Escape`           | Task manager (`SHOJIWM_WIN7_TASK_MANAGER`, else `kitty btop`)                                |
+| `Super`+`Shift`+wheel             | Zoom the screen around the pointer; `Super`+`Shift`+`0` resets it                            |
+| Volume, mute and player keys      | Volume of the default output (`wpctl`), microphone mute, `playerctl`                         |
 
 ## The files
 

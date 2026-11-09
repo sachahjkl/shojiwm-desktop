@@ -46,6 +46,9 @@ import {
  * kitty.
  */
 const TERMINAL = COMPOSITOR.env.get("SHOJIWM_WIN7_TERMINAL") ?? "kitty";
+/** The task manager: SHOJIWM_WIN7_TASK_MANAGER, else btop in kitty. */
+const TASK_MANAGER =
+  COMPOSITOR.env.get("SHOJIWM_WIN7_TASK_MANAGER") ?? "kitty btop";
 const FILE_MANAGER = ["thunar"];
 const BROWSER = ["chromium", "--ozone-platform-hint=auto"];
 
@@ -384,6 +387,67 @@ if (EXTRA_KEYS) {
     );
   }
 }
+
+// Super+1 to Super+9: the taskbar button at that place, as Windows 7 does;
+// with Shift, another instance of it. ShojiWM matches the key's unshifted
+// symbol, so the digit row is bound both as digits (QWERTY) and as the
+// symbols AZERTY prints on it.
+const NUMBER_ROW: readonly (readonly string[])[] = [
+  ["1", "ampersand"],
+  ["2", "eacute"],
+  ["3", "quotedbl"],
+  ["4", "apostrophe"],
+  ["5", "parenleft"],
+  ["6", "minus"],
+  ["7", "egrave"],
+  ["8", "underscore"],
+  ["9", "ccedilla"],
+];
+NUMBER_ROW.forEach((keys, index) => {
+  const number = index + 1;
+  for (const key of keys) {
+    COMPOSITOR.key.bind(
+      `taskbar-${key}`,
+      `Super+${key}`,
+      once(() => {
+        COMPOSITOR.process.spawn({
+          command: `quickshell -p ${SHELL_PATH} ipc call taskbar activate ${number}`,
+        });
+      }),
+    );
+    COMPOSITOR.key.bind(
+      `taskbar-new-${key}`,
+      `Super+Shift+${key}`,
+      once(() => {
+        COMPOSITOR.process.spawn({
+          command: `quickshell -p ${SHELL_PATH} ipc call taskbar launchNew ${number}`,
+        });
+      }),
+    );
+  }
+});
+
+// Super+R: Run, which is the Start menu's search box: what is typed there
+// runs with Return when no program matches.
+COMPOSITOR.key.bind(
+  "run",
+  "Super+R",
+  once(() => {
+    const monitor = WINDOWS.outputName() ?? "";
+    COMPOSITOR.process.spawn({
+      command: `quickshell -p ${SHELL_PATH} ipc call startmenu openOn "${monitor}"`,
+    });
+  }),
+);
+
+// Ctrl+Shift+Escape: the task manager, btop in the terminal.
+COMPOSITOR.key.bind(
+  "task-manager",
+  "Ctrl+Shift+Escape",
+  once(() => {
+    COMPOSITOR.process.spawn({ command: TASK_MANAGER });
+  }),
+);
 
 // The media keys: the volume of the default output (the speaker in the
 // notification area follows it), the microphone, and the player through

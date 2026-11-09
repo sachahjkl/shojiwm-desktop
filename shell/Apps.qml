@@ -310,6 +310,42 @@ Singleton {
         return Quickshell.iconPath("application-x-executable", true);
     }
 
+    /// Super+1 to Super+9, as Windows 7: the Nth taskbar button (from 1).
+    /// Not running: start it. One window: show it, or put it away when it
+    /// is the active one. Several: the next one each time. `another` starts
+    /// a new instance instead (Super+Shift+N).
+    function activateButton(number, another) {
+        var group = root.groups[number - 1];
+        if (!group)
+            return;
+        if (another || group.windows.length === 0) {
+            if (another)
+                launch(group.entry);
+            else
+                activateGroup(group);
+            return;
+        }
+        if (group.windows.length === 1) {
+            toggleWindow(group.windows[0]);
+            return;
+        }
+        var active = -1;
+        for (var i = 0; i < group.windows.length; i++) {
+            if (group.windows[i].activated)
+                active = i;
+        }
+        var next = group.windows[(active + 1) % group.windows.length];
+        next.minimized = false;
+        next.activate();
+    }
+
+    IpcHandler {
+        target: "taskbar"
+
+        function activate(number: int): void { root.activateButton(number, false); }
+        function launchNew(number: int): void { root.activateButton(number, true); }
+    }
+
     /// A taskbar click: show the window, or put it away when it is the one
     /// you are already looking at.
     function toggleWindow(toplevel) {
