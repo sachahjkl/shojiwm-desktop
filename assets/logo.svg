@@ -1,0 +1,129 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <!-- The shojiwm-win7 logo: a glass window whose client is a shoji screen,
+       paper behind a wooden lattice, on a glossy sky tile. Drawn by hand. -->
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#8fdcff"/>
+      <stop offset="0.5" stop-color="#2f9be0"/>
+      <stop offset="1" stop-color="#0b4f96"/>
+    </linearGradient>
+    <radialGradient id="tile-glow" cx="0.5" cy="1.05" r="0.6">
+      <stop offset="0" stop-color="#9ff3ff" stop-opacity="0.75"/>
+      <stop offset="1" stop-color="#9ff3ff" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="tile-edge" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0.15"/>
+    </linearGradient>
+    <linearGradient id="glass" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#e9f8ff" stop-opacity="0.95"/>
+      <stop offset="0.45" stop-color="#b6e2f7" stop-opacity="0.85"/>
+      <stop offset="0.5" stop-color="#8ccbec" stop-opacity="0.85"/>
+      <stop offset="1" stop-color="#9fd6f2" stop-opacity="0.9"/>
+    </linearGradient>
+    <linearGradient id="paper" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fffdf6"/>
+      <stop offset="1" stop-color="#f1e3c4"/>
+    </linearGradient>
+    <radialGradient id="paper-light" cx="0.35" cy="0.3" r="0.8">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="wood" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#8a5a32"/>
+      <stop offset="1" stop-color="#5a361a"/>
+    </linearGradient>
+    <linearGradient id="view" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1f7fd0"/>
+      <stop offset="0.7" stop-color="#7fd3f7"/>
+      <stop offset="1" stop-color="#d9f6ff"/>
+    </linearGradient>
+    <radialGradient id="sun" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="0.35" stop-color="#fff6c8" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#fff6c8" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="panel-shadow" x="-10%" y="-10%" width="130%" height="120%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="4"/>
+      <feOffset dx="5"/>
+      <feComponentTransfer><feFuncA type="linear" slope="0.4"/></feComponentTransfer>
+      <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <linearGradient id="close" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f6a08c"/>
+      <stop offset="0.5" stop-color="#d9442b"/>
+      <stop offset="1" stop-color="#b52a14"/>
+    </linearGradient>
+    <linearGradient id="gloss" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.75"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0.05"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="10"/>
+      <feOffset dy="10"/>
+      <feComponentTransfer><feFuncA type="linear" slope="0.45"/></feComponentTransfer>
+      <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <clipPath id="tile-clip">
+      <rect x="24" y="24" width="464" height="464" rx="104"/>
+    </clipPath>
+  </defs>
+
+  <!-- The tile -->
+  <rect x="24" y="24" width="464" height="464" rx="104" fill="url(#tile)"/>
+  <rect x="24" y="24" width="464" height="464" rx="104" fill="url(#tile-glow)"/>
+
+  <!-- The window -->
+  <g filter="url(#shadow)">
+    <rect x="92" y="104" width="328" height="316" rx="22" fill="url(#glass)" stroke="#0d3d6e" stroke-opacity="0.85" stroke-width="5"/>
+    <rect x="98" y="110" width="316" height="304" rx="17" fill="none" stroke="#ffffff" stroke-opacity="0.7" stroke-width="3"/>
+    <!-- The close button -->
+    <rect x="330" y="116" width="70" height="34" rx="8" fill="url(#close)" stroke="#5e1408" stroke-opacity="0.8" stroke-width="3"/>
+    <rect x="334" y="119" width="62" height="14" rx="6" fill="#ffffff" fill-opacity="0.45"/>
+    <path d="M354 124 L376 142 M376 124 L354 142" stroke="#ffffff" stroke-width="6" stroke-linecap="round"/>
+    <!-- The client: a view of the sky, behind two shoji panels -->
+    <rect x="110" y="162" width="292" height="242" fill="url(#view)"/>
+    <ellipse cx="372" cy="214" rx="40" ry="40" fill="url(#sun)"/>
+    <path d="M300 404 L352 318 Q362 304 372 318 L402 366 V404 Z" fill="#3b67a8"/>
+    <path d="M338 338 L352 318 Q362 304 372 318 L386 340 L374 334 L362 344 L350 334 Z" fill="#ffffff"/>
+    <!-- The back panel, slid half open -->
+    <g>
+      <rect x="226" y="162" width="114" height="242" fill="url(#paper)"/>
+      <g fill="url(#wood)">
+        <rect x="226" y="162" width="114" height="12"/>
+        <rect x="226" y="392" width="114" height="12"/>
+        <rect x="328" y="162" width="12" height="242"/>
+        <rect x="280" y="174" width="7" height="218"/>
+        <rect x="238" y="214" width="90" height="7"/>
+        <rect x="238" y="258" width="90" height="7"/>
+        <rect x="238" y="302" width="90" height="7"/>
+        <rect x="238" y="346" width="90" height="7"/>
+      </g>
+    </g>
+    <!-- The front panel -->
+    <g filter="url(#panel-shadow)">
+      <rect x="110" y="162" width="146" height="242" fill="url(#paper)"/>
+      <rect x="110" y="162" width="146" height="242" fill="url(#paper-light)"/>
+      <g fill="url(#wood)">
+        <rect x="110" y="162" width="146" height="14"/>
+        <rect x="110" y="390" width="146" height="14"/>
+        <rect x="110" y="162" width="14" height="242"/>
+        <rect x="242" y="162" width="14" height="242"/>
+        <rect x="179" y="176" width="8" height="214"/>
+        <rect x="124" y="214" width="118" height="8"/>
+        <rect x="124" y="258" width="118" height="8"/>
+        <rect x="124" y="302" width="118" height="8"/>
+        <rect x="124" y="346" width="118" height="8"/>
+      </g>
+      <ellipse cx="229" cy="284" rx="5" ry="11" fill="#3a2210"/>
+    </g>
+    <rect x="92" y="104" width="328" height="316" rx="22" fill="none" stroke="#0d3d6e" stroke-opacity="0.85" stroke-width="5"/>
+  </g>
+
+  <!-- The gloss over the top half of the tile -->
+  <g clip-path="url(#tile-clip)">
+    <path d="M24 24 H488 V200 C400 250 250 262 24 232 Z" fill="url(#gloss)" opacity="0.7"/>
+  </g>
+  <rect x="27" y="27" width="458" height="458" rx="101" fill="none" stroke="url(#tile-edge)" stroke-width="5"/>
+  <rect x="24" y="24" width="464" height="464" rx="104" fill="none" stroke="#062f5c" stroke-opacity="0.6" stroke-width="2"/>
+</svg>
