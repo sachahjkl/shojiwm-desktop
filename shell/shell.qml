@@ -380,6 +380,9 @@ ShellRoot {
                 window: barWindow
                 menuOpen: StartMenuState.openOn === barWindow.modelData.name
                 onStartRequested: StartMenuState.toggle(barWindow.modelData.name)
+                adminMenuOpen: StartMenuState.adminMenuOn === barWindow.modelData.name
+                onAdminMenuRequested: StartMenuState.toggleAdminMenu(barWindow.modelData.name)
+                onAdminMenuDismissed: StartMenuState.adminMenuOn = ""
             }
         }
     }

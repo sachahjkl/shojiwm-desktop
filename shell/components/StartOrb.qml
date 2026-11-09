@@ -14,7 +14,10 @@ Item {
 
     property bool menuOpen: false
     signal activated
+    /// A right click: the power user's menu (AdminMenu).
+    signal menuRequested
 
+    readonly property bool hovered: area.containsMouse
     readonly property bool hot: area.containsMouse || orb.menuOpen
     readonly property real pictureSize: Math.ceil(Theme.orbSize * Screen.devicePixelRatio)
 
@@ -134,6 +137,12 @@ Item {
         id: area
         anchors.fill: parent
         hoverEnabled: true
-        onClicked: orb.activated()
+        acceptedButtons: Qt.LeftButton | Qt.RightButton
+        onClicked: function (mouse) {
+            if (mouse.button === Qt.RightButton)
+                orb.menuRequested();
+            else
+                orb.activated();
+        }
     }
 }

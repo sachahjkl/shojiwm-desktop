@@ -319,6 +319,18 @@ for (const [id, key] of [
     }),
   );
 }
+// Super+X: the Start orb's right-click menu on the focused screen, the
+// power user's menu Windows opens with Win+X.
+COMPOSITOR.key.bind(
+  "admin-menu",
+  "Super+X",
+  once(() => {
+    const monitor = WINDOWS.outputName() ?? "";
+    COMPOSITOR.process.spawn({
+      command: `quickshell -p ${SHELL_PATH} ipc call adminmenu toggleOn "${monitor}"`,
+    });
+  }),
+);
 // Super+Shift+D: the shell's launcher, the Start menu's search in the middle
 // of the focused screen.
 COMPOSITOR.key.bind(

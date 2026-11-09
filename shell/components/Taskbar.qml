@@ -14,6 +14,10 @@ Item {
     id: bar
 
     property bool menuOpen: false
+    /// The Start orb's right-click menu is open on this bar.
+    property bool adminMenuOpen: false
+    signal adminMenuRequested
+    signal adminMenuDismissed
     /// The layer-shell window this bar is drawn in. Popups anchor to it.
     property var window: null
 
@@ -46,12 +50,12 @@ Item {
     readonly property bool popupOpen: bar.jumpListGroup !== null || bar.trayMenuItem !== null
         || bar.calendarOpen || bar.clockMenuOpen || bar.trayOverflowOpen
         || bar.volumeOpen || bar.networkOpen || bar.notificationsOpen
-        || bar.actionCenterOpen
+        || bar.actionCenterOpen || bar.adminMenuOpen
     readonly property bool busy: bar.menuOpen || bar.previewGroup !== null
         || bar.jumpListGroup !== null || bar.trayMenuItem !== null
         || bar.calendarOpen || bar.clockMenuOpen || bar.trayOverflowOpen
         || bar.volumeOpen || bar.networkOpen || bar.notificationsOpen
-        || bar.actionCenterOpen
+        || bar.actionCenterOpen || bar.adminMenuOpen
     property bool clockMenuOpen: false
     property bool trayOverflowOpen: false
 
@@ -103,6 +107,8 @@ Item {
         bar.actionCenterOpen = false;
         bar.clockMenuOpen = false;
         bar.trayOverflowOpen = false;
+        if (bar.adminMenuOpen)
+            bar.adminMenuDismissed();
     }
 
     // ----- glass ------------------------------------------------------------
@@ -332,6 +338,10 @@ Item {
             bar.closePopups();
             bar.startRequested();
         }
+        onMenuRequested: {
+            bar.closePopups();
+            bar.adminMenuRequested();
+        }
     }
 
     // A pinned program with no window open keeps its narrow icon button; the
@@ -523,7 +533,7 @@ Item {
         running: bar.jumpListGroup !== null || bar.trayMenuItem !== null
             || bar.calendarOpen || bar.clockMenuOpen || bar.trayOverflowOpen
             || bar.volumeOpen || bar.networkOpen || bar.notificationsOpen
-            || bar.actionCenterOpen
+            || bar.actionCenterOpen || bar.adminMenuOpen
         repeat: true
         onTriggered: {
             if (bar.jumpListGroup !== null
@@ -571,6 +581,16 @@ Item {
         anchorWindow: bar.window
         group: bar.jumpListGroup
         onDismissed: bar.jumpListGroup = null
+    }
+
+    AdminMenu {
+        id: adminMenu
+
+        anchorWindow: bar.window
+        anchorRect: Qt.rect(orb.x, orb.y, orb.width, orb.height)
+        open: bar.adminMenuOpen
+        onDismissed: bar.adminMenuDismissed()
+        onLauncherRequested: StartMenuState.openLauncher(bar.window && bar.window.screen ? bar.window.screen.name : "")
     }
 
     ClockMenu {

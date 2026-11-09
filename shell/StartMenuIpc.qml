@@ -29,4 +29,13 @@ Singleton {
         function closeOn(screen: string): void { root.requested("close", screen); }
         function toggleOn(screen: string): void { root.requested("toggle", screen); }
     }
+
+    // The Start orb's right-click menu (Super+X).
+    IpcHandler {
+        target: "adminmenu"
+
+        function toggle(): void { StartMenuState.toggleAdminMenu(""); }
+        function toggleOn(screen: string): void { StartMenuState.toggleAdminMenu(screen); }
+        function close(): void { StartMenuState.adminMenuOn = ""; }
+    }
 }

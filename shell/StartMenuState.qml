@@ -13,6 +13,18 @@ Singleton {
 
     property string openOn: ""
 
+    /// The screen whose Start orb shows its right-click menu (AdminMenu),
+    /// by name; "" when none does.
+    property string adminMenuOn: ""
+
+    /// Opens or closes the orb's menu on a screen, by name ("": the main
+    /// screen). The Start menu closes.
+    function toggleAdminMenu(screen) {
+        var name = screen.length > 0 ? screen : firstScreen();
+        root.openOn = "";
+        root.adminMenuOn = root.adminMenuOn === name ? "" : name;
+    }
+
     /// The launcher (Super+Shift+D), on the screen named by
     /// `launcherScreen` (the focused one). It and the Start menu are never
     /// open together.
