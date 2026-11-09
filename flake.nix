@@ -53,8 +53,19 @@
     packages = forAllSystems (system: let
       pkgs = pkgsFor system;
 
-      # Taken from unstable: see the input.
-      inherit (nixpkgs-unstable.legacyPackages.${system}) vicinae;
+      # Taken from unstable: see the input. Its lists scroll by the wheel's
+      # step at once, as Windows 7's do: Vicinae has no setting for the
+      # smooth scrolling and inertia of its wheel handler, so both are off
+      # in the source.
+      vicinae = nixpkgs-unstable.legacyPackages.${system}.vicinae.overrideAttrs (old: {
+        postPatch =
+          (old.postPatch or "")
+          + ''
+            substituteInPlace vendor/kirigami-wheelhandler/wheelhandler.h \
+              --replace-fail "bool m_smoothScroll = true;" "bool m_smoothScroll = false;" \
+              --replace-fail "bool m_inertiaScroll = true;" "bool m_inertiaScroll = false;"
+          '';
+      });
 
       config = pkgs.stdenvNoCC.mkDerivation {
         pname = "shojiwm-win7";

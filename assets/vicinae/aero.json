@@ -7,9 +7,9 @@
     "dark": { "name": "aero-dark", "icon_theme": "auto" }
   },
   "launcher_window": {
-    // Nearly opaque. The compositor blurs the shell's own glass only, so
-    // the desktop shows through faintly, unblurred.
-    "opacity": 0.95,
+    // Opaque: the compositor blurs the shell's own glass only, so anything
+    // less shows the desktop through, unblurred.
+    "opacity": 1,
     "material": "none",
     "rounding": 6,
     "client_side_decorations": {
