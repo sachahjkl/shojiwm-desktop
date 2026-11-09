@@ -17,15 +17,6 @@ PopupWindow {
 
     signal dismissed
 
-    /// `true` while the pointer is over the panel. A removed card takes
-    /// the hover with it until the pointer moves, so the panel counts as
-    /// hovered for a moment after a removal.
-    readonly property bool pointerInside: hoverArea.hovered || grace.running
-
-    Timer {
-        id: grace
-        interval: 2000
-    }
     /// The time the ages count from, renewed while the panel is open.
     property real now: Date.now()
 
@@ -89,10 +80,6 @@ PopupWindow {
         border.color: Scheme.popupInnerLine
     }
 
-    HoverHandler {
-        id: hoverArea
-    }
-
     Item {
         id: header
 
@@ -126,7 +113,6 @@ PopupWindow {
                 hoverEnabled: true
                 cursorShape: Qt.PointingHandCursor
                 onClicked: {
-                    grace.restart();
                     NotificationHistory.clear();
                 }
             }
@@ -240,7 +226,6 @@ PopupWindow {
                     anchors.margins: -4
                     hoverEnabled: true
                     onClicked: {
-                        grace.restart();
                         NotificationHistory.remove(card.index);
                     }
                 }

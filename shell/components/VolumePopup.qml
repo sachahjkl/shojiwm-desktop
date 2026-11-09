@@ -14,9 +14,6 @@ PopupWindow {
 
     signal dismissed
 
-    /// `true` while the pointer is over the panel.
-    readonly property bool pointerInside: hoverArea.hovered
-
     readonly property int trackHeight: 150
 
     color: "transparent"
@@ -61,10 +58,6 @@ PopupWindow {
         color: "transparent"
         border.width: 1
         border.color: Scheme.popupInnerLine
-    }
-
-    HoverHandler {
-        id: hoverArea
     }
 
     Column {

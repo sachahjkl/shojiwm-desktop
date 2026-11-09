@@ -138,12 +138,8 @@ Singleton {
     /// Return in a search box: the row picked, else the text run as a
     /// command, as Run... does. `true` when something was done.
     function accept(pick) {
-        if (!root.active) {
-            var recentRow = root.rowAt(pick);
-            if (recentRow)
-                root.choose(recentRow);
-            return !!recentRow;
-        }
+        if (!root.active)
+            return false;
         var row = root.rowAt(Math.min(pick, root.pickCount - 1));
         if (row) {
             root.choose(row);

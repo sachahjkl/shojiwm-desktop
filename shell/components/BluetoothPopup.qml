@@ -20,8 +20,6 @@ PopupWindow {
 
     signal dismissed
 
-    /// `true` while the pointer is over the panel.
-    readonly property bool pointerInside: hoverArea.hovered
     /// The address of the unfolded device, or "".
     property string unfolded: ""
 
@@ -107,10 +105,6 @@ PopupWindow {
         color: "transparent"
         border.width: 1
         border.color: Scheme.popupInnerLine
-    }
-
-    HoverHandler {
-        id: hoverArea
     }
 
     component Heading: Text {

@@ -67,7 +67,18 @@ Item {
     readonly property int windowHeight: launcher.headerHeight + Theme.menuPadding
         + Math.max(launcher.maxListHeight, launcher.compactRows * StartMenuState.rowHeight)
 
+    /// Return: the row picked. Before anything is typed that is a program
+    /// of the list (Search.accept does nothing then: the Start menu shares
+    /// it, and there an empty box does nothing).
     function accept() {
+        if (!Search.active) {
+            var row = Search.rowAt(launcher.pick);
+            if (row) {
+                Search.choose(row);
+                launcher.dismissed();
+            }
+            return;
+        }
         if (Search.accept(launcher.pick))
             launcher.dismissed();
     }

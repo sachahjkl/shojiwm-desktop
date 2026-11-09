@@ -18,8 +18,6 @@ PopupWindow {
 
     signal dismissed
 
-    /// `true` while the pointer is over the panel.
-    readonly property bool pointerInside: hoverArea.hovered
     /// The SSID of the unfolded network, or "".
     property string unfolded: ""
 
@@ -65,10 +63,6 @@ PopupWindow {
         color: "transparent"
         border.width: 1
         border.color: Scheme.popupInnerLine
-    }
-
-    HoverHandler {
-        id: hoverArea
     }
 
     component Heading: Text {

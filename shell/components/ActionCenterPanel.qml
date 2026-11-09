@@ -15,8 +15,6 @@ PopupWindow {
 
     signal dismissed
 
-    readonly property bool pointerInside: hoverArea.hovered
-
     color: "transparent"
     visible: popup.open && popup.anchorItem !== null
 
@@ -55,10 +53,6 @@ PopupWindow {
         color: "transparent"
         border.width: 1
         border.color: Scheme.popupInnerLine
-    }
-
-    HoverHandler {
-        id: hoverArea
     }
 
     Column {

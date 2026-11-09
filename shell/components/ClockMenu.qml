@@ -39,10 +39,6 @@ PopupWindow {
         font.pixelSize: Theme.fontSize
     }
 
-    /// `true` while the pointer is over the menu. The taskbar closes a menu
-    /// the pointer has left.
-    readonly property bool pointerInside: hoverArea.hovered
-
     Rectangle {
         anchors.fill: parent
         radius: Scheme.popupRadius
@@ -62,10 +58,6 @@ PopupWindow {
         color: "transparent"
         border.width: 1
         border.color: Scheme.popupInnerLine
-    }
-
-    HoverHandler {
-        id: hoverArea
     }
 
     Column {

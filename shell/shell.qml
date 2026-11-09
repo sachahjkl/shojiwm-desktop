@@ -347,8 +347,9 @@ ShellRoot {
 
             // A layer-shell popup gets no press from outside itself: while one
             // of the bar's menus or panels is open, a clear window over this
-            // screen takes the next click outside and closes them, as Windows
-            // does.
+            // screen, above the bar, takes the next click outside and closes
+            // them, as Windows does. The bar stays out of it, so a click on
+            // another icon there opens its panel at once.
             PanelWindow {
                 screen: barWindow.modelData
                 visible: taskbar.popupOpen
@@ -358,6 +359,7 @@ ShellRoot {
                 anchors.bottom: true
                 anchors.left: true
                 anchors.right: true
+                margins.bottom: barWindow.implicitHeight
                 exclusionMode: ExclusionMode.Ignore
                 WlrLayershell.layer: WlrLayer.Top
                 WlrLayershell.namespace: "no_blur"

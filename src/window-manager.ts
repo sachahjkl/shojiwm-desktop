@@ -198,6 +198,11 @@ export class FloatingWindowManager {
    * gone has none any more when it closes.
    */
   private appIds = new Map<string, string>();
+  /**
+   * Windows whose close has started: they stay in windowsById until their
+   * close animation ends, but no longer hold their program's place.
+   */
+  private closing = new Set<string>();
   private currentOutput: string | undefined;
   /** Windows that "show desktop" minimised, so the next call restores them. */
   private hiddenByShowDesktop: string[] = [];
@@ -346,7 +351,11 @@ export class FloatingWindowManager {
       return null;
     }
     for (const other of this.windowsById.values()) {
-      if (other.id !== window.id && other.appId() === appId) {
+      if (
+        other.id !== window.id &&
+        !this.closing.has(other.id) &&
+        other.appId() === appId
+      ) {
         return null;
       }
     }
@@ -428,6 +437,7 @@ export class FloatingWindowManager {
 
   public onStartClose(window: WaylandWindow): void {
     this.rememberPlace(window);
+    this.closing.add(window.id);
     // The next window takes the keyboard now, as on Windows, from the most
     // recently used ones, before anything else can.
     this.mru = this.mru.filter((id) => id !== window.id);
@@ -461,6 +471,7 @@ export class FloatingWindowManager {
     // A window can also go without the close animation (onStartClose).
     this.rememberPlace(window);
     this.appIds.delete(window.id);
+    this.closing.delete(window.id);
     this.stack.remove(window);
     this.windowsById.delete(window.id);
     this.mru = this.mru.filter((id) => id !== window.id);

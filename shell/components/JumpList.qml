@@ -87,15 +87,8 @@ PopupWindow {
         border.color: Scheme.popupInnerLine
     }
 
-    /// `true` while the pointer is over the menu. The taskbar closes a menu
-    /// the pointer has left.
-    readonly property bool pointerInside: hoverArea.hovered
-
     // A hover handler, not a MouseArea: it sees the pointer over the rows
     // and icons too, which take the hover from a MouseArea under them.
-    HoverHandler {
-        id: hoverArea
-    }
 
     Column {
         id: column

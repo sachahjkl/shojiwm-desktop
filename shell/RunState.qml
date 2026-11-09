@@ -8,9 +8,7 @@ import Quickshell.Io
 // it, last first, and how a command runs.
 //
 // As Windows' Run, it keeps the last 26 commands; the field starts with the
-// last one. A folder, a file or an address opens with xdg-open; anything
-// else runs in a shell from the home folder, unless its program cannot be
-// found, which the dialog says instead.
+// last one. What a line does follows from its first word (see run()).
 Singleton {
     id: root
 
@@ -93,53 +91,65 @@ Singleton {
     /// The last command that could not be found, for the dialog to say so.
     property string notFound: ""
 
-    /// `~` and `~/...` in the user's home.
+    /// Run what was typed, as Windows' Run does with its first word: an
+    /// address opens; a path to an executable file runs, with the rest of the
+    /// line; another path that exists opens; a program found in PATH runs.
+    /// Anything else stays in the field, with Cannot find under it. A second
+    /// Run while the first is still checked waits for it.
+    function run(text) {
+        var command = String(text).trim();
+        if (command.length === 0 || check.running)
+            return;
+        root.notFound = "";
+        check.line = command;
+        check.command = ["sh", "-c", root.decide, "sh", command.split(/\s+/)[0]];
+        check.running = true;
+    }
+
+    // Prints what to do with the first word: open, run or missing.
+    readonly property string decide: [
+        "w=$1",
+        "case $w in \"~\") w=$HOME ;; \"~/\"*) w=$HOME/${w#\"~/\"} ;; esac",
+        "case $w in",
+        "  [a-zA-Z]*:*) echo open ;;",
+        "  /*|./*|../*|\"$HOME\"*)",
+        "    if [ -f \"$w\" ] && [ -x \"$w\" ]; then echo run",
+        "    elif [ -e \"$w\" ]; then echo open",
+        "    else echo missing; fi ;;",
+        "  *) if command -v -- \"$w\" >/dev/null; then echo run; else echo missing; fi ;;",
+        "esac"
+    ].join("\n")
+
+    /// `~` and `~/...` in the user's home, for xdg-open.
     function expandHome(text) {
         if (text === "~")
             return Apps.home;
         return text.startsWith("~/") ? Apps.home + text.slice(1) : text;
     }
 
-    /// An address or a path: opened, not run.
-    function isTarget(text) {
-        return /^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(text) || text.startsWith("/")
-            || text.startsWith("~") || text.startsWith("./");
-    }
-
-    /// Run what was typed: `true` when it started (the dialog closes),
-    /// `false` when its program cannot be found (the dialog says so).
-    function run(text) {
-        var command = String(text).trim();
-        if (command.length === 0)
-            return;
-        root.notFound = "";
-        if (root.isTarget(command)) {
-            root.remember(command);
-            Quickshell.execDetached(["xdg-open", root.expandHome(command)]);
-            root.close();
-            return;
-        }
-        // The program, the first word, must exist before the line runs.
-        check.command = ["sh", "-c",
-            "if command -v -- \"$1\" >/dev/null; then echo found; else echo missing; fi",
-            "sh", command.split(/\s+/)[0]];
-        check.line = command;
-        check.running = true;
-    }
-
+    // From the home folder, as the line runs (Apps.runTyped).
     Process {
         id: check
 
         property string line: ""
 
+        workingDirectory: Apps.home
+
         stdout: StdioCollector {
             onStreamFinished: {
-                if (String(text).trim() !== "found") {
+                var verdict = String(text).trim();
+                if (verdict === "missing") {
                     root.notFound = check.line;
                     return;
                 }
                 root.remember(check.line);
-                Apps.runTyped(check.line);
+                if (verdict === "open")
+                    Quickshell.execDetached({
+                        command: ["xdg-open", root.expandHome(check.line)],
+                        workingDirectory: Apps.home
+                    });
+                else
+                    Apps.runTyped(check.line);
                 root.close();
             }
         }

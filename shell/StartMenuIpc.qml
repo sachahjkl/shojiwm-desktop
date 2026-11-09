@@ -17,8 +17,9 @@ Singleton {
 
     /// `screen` is a connector name (eDP-1, DP-3). Empty means every screen.
     signal requested(string action, string screen)
-    /// The Bluetooth panel, asked over IPC (bluetooth open, close).
-    signal bluetoothRequested(bool open)
+    /// The Bluetooth panel, asked over IPC (bluetooth open, openOn, close):
+    /// on the screen named, "" for the main one.
+    signal bluetoothRequested(string screen, bool open)
 
     IpcHandler {
         target: "startmenu"
@@ -35,8 +36,9 @@ Singleton {
     IpcHandler {
         target: "bluetooth"
 
-        function open(): void { root.bluetoothRequested(true); }
-        function close(): void { root.bluetoothRequested(false); }
+        function open(): void { root.bluetoothRequested("", true); }
+        function openOn(screen: string): void { root.bluetoothRequested(screen, true); }
+        function close(): void { root.bluetoothRequested("", false); }
     }
 
     // The Start orb's right-click menu (Super+X).

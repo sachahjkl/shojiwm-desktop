@@ -38,9 +38,6 @@ PopupWindow {
     implicitWidth: Math.max(popup.columns * popup.cell + 16, customize.implicitWidth + 24)
     implicitHeight: column.implicitHeight + 16
 
-    /// `true` while the pointer is over the popover.
-    readonly property bool pointerInside: hoverArea.hovered
-
     Rectangle {
         anchors.fill: parent
         radius: Scheme.popupRadius
@@ -64,9 +61,6 @@ PopupWindow {
 
     // A hover handler, not a MouseArea: it sees the pointer over the rows
     // and icons too, which take the hover from a MouseArea under them.
-    HoverHandler {
-        id: hoverArea
-    }
 
     // An icon dragged here from the taskbar is hidden.
     DropArea {

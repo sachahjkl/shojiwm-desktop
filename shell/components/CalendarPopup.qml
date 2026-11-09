@@ -87,9 +87,6 @@ PopupWindow {
     implicitWidth: popup.cell * 7 + 24
     implicitHeight: body.implicitHeight + 24
 
-    /// `true` while the pointer is over the calendar.
-    readonly property bool pointerInside: hoverArea.hovered
-
     Rectangle {
         anchors.fill: parent
         radius: Scheme.popupRadius
@@ -113,9 +110,6 @@ PopupWindow {
 
     // A hover handler, not a MouseArea: it sees the pointer over the rows
     // and icons too, which take the hover from a MouseArea under them.
-    HoverHandler {
-        id: hoverArea
-    }
 
     Column {
         id: body

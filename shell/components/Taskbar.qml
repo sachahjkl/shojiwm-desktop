@@ -34,19 +34,15 @@ Item {
     property bool bluetoothOpen: false
     property bool notificationsOpen: false
     property bool actionCenterOpen: false
-    /// A menu, a panel or the thumbnails of the bar are open: an auto-hidden
-    /// bar stays up meanwhile.
     /// One of the bar's menus or panels is open: a click outside closes it
     /// (shell.qml).
     readonly property bool popupOpen: bar.jumpListGroup !== null || bar.trayMenuItem !== null
         || bar.calendarOpen || bar.clockMenuOpen || bar.trayOverflowOpen
         || bar.volumeOpen || bar.networkOpen || bar.bluetoothOpen || bar.notificationsOpen
         || bar.actionCenterOpen || bar.adminMenuOpen
-    readonly property bool busy: bar.menuOpen || bar.previewGroup !== null
-        || bar.jumpListGroup !== null || bar.trayMenuItem !== null
-        || bar.calendarOpen || bar.clockMenuOpen || bar.trayOverflowOpen
-        || bar.volumeOpen || bar.networkOpen || bar.bluetoothOpen || bar.notificationsOpen
-        || bar.actionCenterOpen || bar.adminMenuOpen
+    /// A menu, a panel or the thumbnails of the bar are open: an auto-hidden
+    /// bar stays up meanwhile.
+    readonly property bool busy: bar.menuOpen || bar.previewGroup !== null || bar.popupOpen
     property bool clockMenuOpen: false
     property bool trayOverflowOpen: false
 
@@ -613,9 +609,16 @@ Item {
     // The Bluetooth panel asked over IPC (quickshell ipc call bluetooth …).
     Connections {
         target: StartMenuIpc
-        function onBluetoothRequested(open) {
-            bar.closePopups();
-            bar.bluetoothOpen = open;
+        function onBluetoothRequested(screen, open) {
+            var mine = bar.window && bar.window.screen
+                && (screen.length > 0 ? bar.window.screen.name === screen
+                                      : Screens.isPrimary(bar.window.screen));
+            if (!open)
+                bar.bluetoothOpen = false;
+            else if (mine) {
+                bar.closePopups();
+                bar.bluetoothOpen = true;
+            }
         }
     }
 
