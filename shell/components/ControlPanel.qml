@@ -1962,6 +1962,46 @@ FloatingWindow {
                 }
             }
 
+            SubHeading { text: "Screen saver" }
+
+            Row {
+                spacing: 12
+                z: 6
+
+                CpCombo {
+                    readonly property var savers: ["none", "mystify"]
+                    width: 160
+                    model: ["(None)", "Mystify"]
+                    currentIndex: Math.max(0, savers.indexOf(Settings.screensaver))
+                    onActivated: function (index) { Settings.screensaver = savers[index]; }
+                }
+
+                Note {
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: "Wait:"
+                }
+
+                CpCombo {
+                    readonly property var minutes: [1, 2, 5, 10, 15, 30]
+                    width: 120
+                    z: 1
+                    model: ["1 minute", "2 minutes", "5 minutes", "10 minutes", "15 minutes", "30 minutes"]
+                    currentIndex: Math.max(0, minutes.indexOf(Settings.screensaverMinutes))
+                    onActivated: function (index) { Settings.screensaverMinutes = minutes[index]; }
+                }
+
+                CpButton {
+                    label: "Preview"
+                    visible: Settings.screensaver !== "none"
+                    onClicked: Settings.screensaverPreview = true
+                }
+            }
+
+            Note {
+                width: parent.width
+                text: "It runs while the computer is left alone, before the lock; the mouse or a key ends it."
+            }
+
             SubHeading { text: "Lock the computer" }
 
             Note { text: "After the mouse and the keyboard have been left alone for:" }

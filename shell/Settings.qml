@@ -36,6 +36,10 @@ Singleton {
     property alias desktopSystemIcons: adapter.desktopSystemIcons
     property alias glassColor: adapter.glassColor
     property alias wallpaperPosition: adapter.wallpaperPosition
+    property alias screensaver: adapter.screensaver
+    property alias screensaverMinutes: adapter.screensaverMinutes
+    /// The screen saver shows now, for the Control Panel's Preview; not kept.
+    property bool screensaverPreview: false
     property alias glassColorStrength: adapter.glassColorStrength
     property alias cpuMeterPlace: adapter.cpuMeterPlace
     property alias showClockGadget: adapter.showClockGadget
@@ -222,6 +226,10 @@ Singleton {
             /// How the wallpaper covers the screen, as Windows 7's Picture
             /// position: "fill", "fit", "stretch", "tile" or "center".
             property string wallpaperPosition: "fill"
+            /// The screen saver: "none" or "mystify", and the minutes
+            /// without input before it starts.
+            property string screensaver: "none"
+            property int screensaverMinutes: 5
             property real glassColorStrength: 0.35
             property var cpuMeterPlace: ({ right: 24, top: 24 })
             /// The Clock gadget, under the CPU Meter by default.

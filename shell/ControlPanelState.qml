@@ -26,6 +26,7 @@ Singleton {
         { text: "Change desktop background", page: "background", words: "wallpaper picture image desktop background" },
         { text: "Change the size of desktop icons", page: "taskbar", words: "desktop icons size large small medium zoom" },
         { text: "Lock screen and its picture", page: "lockscreen", words: "lock screen picture password idle delay suspend sleep" },
+        { text: "Change the screen saver", page: "lockscreen", words: "screen saver screensaver mystify idle wait preview" },
         { text: "Lock the computer after a delay", page: "lockscreen", words: "lock idle minutes delay timeout screensaver" },
         { text: "Change your account picture", page: "account", words: "account user picture avatar face photo profile" },
         { text: "Show or hide common icons on the desktop", page: "taskbar", words: "desktop icons computer user files control panel recycle bin show hide" },

@@ -56,6 +56,11 @@ ShellRoot {
         Scope {
             id: desktopScope
 
+            // The screen saver of this screen.
+            ScreenSaver {
+                screen: desktopScope.modelData
+            }
+
             required property var modelData
 
             PanelWindow {
@@ -96,11 +101,11 @@ ShellRoot {
                 Image {
                     anchors.fill: parent
                     source: Settings.wallpaperSource
-                    // Tile and Center keep the picture's own size.
+                    // Tile and Center keep the picture's own size (0).
                     sourceSize.width: Settings.wallpaperPosition === "tile"
-                        || Settings.wallpaperPosition === "center" ? undefined : parent.width
+                        || Settings.wallpaperPosition === "center" ? 0 : parent.width
                     sourceSize.height: Settings.wallpaperPosition === "tile"
-                        || Settings.wallpaperPosition === "center" ? undefined : parent.height
+                        || Settings.wallpaperPosition === "center" ? 0 : parent.height
                     fillMode: ({
                         fill: Image.PreserveAspectCrop,
                         fit: Image.PreserveAspectFit,
