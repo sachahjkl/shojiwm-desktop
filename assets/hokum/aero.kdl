@@ -1,7 +1,7 @@
 // Aero: the Windows 7 notification balloon, for Hokum.
 // A pale card with a thin dark outline and small corners, the app's icon and
 // a bold title on the first line, the message in dark text below. Windows 7
-// balloons stay light, so both appearances use the same colours.
+// balloons are light; the dark appearance uses the taskbar's smoked glass.
 name "Aero"
 
 tokens {
@@ -27,12 +27,15 @@ tokens {
     motion 0.2 0
 }
 
+// Dark appearance: the smoked glass of the Windows 7 taskbar, with light
+// text and a thin pale outline.
 tokens "dark" {
-    fill "#fdfdfe" "#e7ecf4"
-    text "#1e1e1e"
-    muted "#3c3c3c"
-    faint "#6d6d6d"
-    border 1 "#767676"
+    fill "#2b3a4c" "#1b2533"
+    text "#f2f5f9"
+    muted "#c9d2dd"
+    faint "#93a1b2"
+    border 1 "#7d93ab"
+    accent "#4d9be6"
 }
 
 template "card" {
@@ -44,7 +47,8 @@ template "card" {
     }
     col gap=4 indent=#true {
         if "body" { text "{body}" color="text" lines=6 }
-        if "value" { progress }
+        // The green bar of Windows 7 progress meters.
+        if "value" { progress color="#2fb13f" }
         if "image" { image width=64 height=64 radius=2 }
     }
     actions
