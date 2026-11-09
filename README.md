@@ -297,6 +297,10 @@ SHOJIWM_GREETER_USER=user SHOJIWM_GREETER_SESSIONS=/run/current-system/sw/share/
   fakegreet "quickshell -p shell/greeter.qml"
 ```
 
+`checks.<system>.greeter` runs it end to end in a VM: greetd starts Hyprland,
+Hyprland starts `greeter.qml`, a password is typed, the session starts and
+the greeter's Hyprland leaves.
+
 ## Install
 
 ### With Nix

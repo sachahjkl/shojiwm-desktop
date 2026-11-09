@@ -255,6 +255,13 @@
           touch "$out"
         '';
 
+      # The log-on screen in a VM: greetd, Hyprland, greeter.qml, a password,
+      # and the session it starts.
+      greeter = import ./tests/greeter.nix {
+        inherit pkgs;
+        win7 = self.packages.${system}.default;
+      };
+
       # The QML of the shell, checked against the Quickshell types. The
       # qmldir is written here only: Quickshell generates its own at run time.
       qmllint =
