@@ -455,18 +455,24 @@ Item {
 
             readonly property var action: Apps.powerAction(Apps.powerButtonAction)
 
+            // As wide as its label and a margin each side, as on Windows 7.
             PowerPart {
-                width: 104
+                width: Math.max(56, powerLabel.implicitWidth + 26)
                 leftRounded: true
                 danger: true
                 hot: buttonArea.containsMouse
                 pressed: buttonArea.pressed
 
                 // The label alone, as Windows 7 has it; Vista had the icon.
+                // White, set into the red glass by a dark line under it.
                 Text {
+                    id: powerLabel
+
                     anchors.centerIn: parent
                     text: power.action ? power.action.label : ""
                     color: "#ffffff"
+                    style: Text.Raised
+                    styleColor: "#8c4a0a05"
                     font.family: Theme.fontFamily
                     font.pixelSize: Theme.fontSize
                 }
