@@ -175,6 +175,9 @@ Singleton {
         id: file
 
         path: root.configHome + "/shojiwm/settings.json"
+        // Read before the first frame: the shell starts with the saved
+        // wallpaper and colour scheme, not with the defaults for a moment.
+        blockLoading: true
         watchChanges: true
         printErrors: false
         onFileChanged: reload()
@@ -253,6 +256,8 @@ Singleton {
             property string desktopIconSize: "medium"
             property bool showDesktopIcons: true
             property string desktopSort: "name"
+            /// The colour scheme last read from dconf, to start with (colorScheme).
+            property string lastColorScheme: "default"
             /// "Auto arrange icons": each screen's icons in columns, in sort order.
             property bool desktopAutoArrange: false
             /// "Align icons to grid": a moved icon snaps to the nearest free cell.
@@ -303,8 +308,14 @@ Singleton {
 
     /// The system's preference, as GNOME stores it and the settings portal
     /// passes it on: "default", "prefer-light" or "prefer-dark".
-    property string colorScheme: "default"
+    /// It starts as the last one seen, saved in settings.json, so the shell
+    /// does not show light for a moment until dconf answers.
+    property string colorScheme: adapter.lastColorScheme
     readonly property bool dark: colorScheme === "prefer-dark"
+    onColorSchemeChanged: {
+        if (adapter.lastColorScheme !== colorScheme)
+            adapter.lastColorScheme = colorScheme;
+    }
     /// `false` when dconf cannot be reached: the choice then holds for this
     /// shell only, until it restarts.
     property bool systemSchemeAvailable: false

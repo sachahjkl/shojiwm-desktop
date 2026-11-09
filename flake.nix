@@ -194,6 +194,11 @@
           cp "$icons/music.png" "$theme/aero/places/folder-music.png"
           cp "$icons/videos.png" "$theme/aero/places/folder-videos.png"
           cp "$icons/home.png" "$theme/aero/places/user-home.png"
+        # The file manager is the folder, as Windows 7's Explorer.
+        mkdir -p "$theme/aero/apps"
+        for name in org.xfce.thunar thunar system-file-manager; do
+          cp "$icons/folder.png" "$theme/aero/apps/$name.png"
+        done
           cp "$src/assets/icons-src/recycle-bin.svg" "$theme/scalable/places/user-trash.svg"
           cp "$src/assets/icons-src/recycle-bin-full.svg" "$theme/scalable/places/user-trash-full.svg"
           cp "$icons/LICENSE" "$theme/LICENSE"
@@ -202,11 +207,12 @@
             echo "Name=Aero"
             echo "Comment=shojiwm-win7: Oxygen with Windows 7's folders and Recycle Bin"
             echo "Inherits=oxygen,hicolor"
-            echo "Directories=''${directories}aero/places,scalable/places"
+            echo "Directories=''${directories}aero/places,aero/apps,scalable/places"
             for size in $sizes; do
               printf '\n[%sx%s/places]\nSize=%s\nContext=Places\nType=Fixed\n' "$size" "$size" "$size"
             done
             printf '\n[aero/places]\nSize=128\nMinSize=16\nMaxSize=512\nContext=Places\nType=Scalable\n'
+            printf '\n[aero/apps]\nSize=128\nMinSize=16\nMaxSize=512\nContext=Applications\nType=Scalable\n'
             printf '\n[scalable/places]\nSize=128\nMinSize=16\nMaxSize=512\nContext=Places\nType=Scalable\n'
           } > "$theme/index.theme"
         '';

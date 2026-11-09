@@ -1,4 +1,8 @@
 //@ pragma Env QSG_RENDER_LOOP=threaded
+// The icons of the session: shojiwm-win7's Aero theme (Oxygen, the yellow
+// folders, the glass Recycle Bin), whatever the Qt platform theme chooses
+// for other sessions.
+//@ pragma IconTheme Aero
 //@ pragma Env QSG_DISTANCEFIELD_ANTIALIASING=gray
 
 // Grey antialiasing, not subpixel: subpixel put red and blue fringes on
