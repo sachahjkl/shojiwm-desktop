@@ -579,6 +579,20 @@ Item {
         onDismissed: bar.networkOpen = false
     }
 
+    // The volume panel asked over IPC (quickshell ipc call volume …).
+    Connections {
+        target: Audio
+        function onPanelRequested(screen, devices) {
+            if (screen === "-") {
+                bar.volumeOpen = false;
+                return;
+            }
+            bar.closePopups();
+            bar.volumeOpen = true;
+            volumePopup.devicesOpen = devices;
+        }
+    }
+
     VolumePopup {
         id: volumePopup
 

@@ -2,6 +2,7 @@ pragma Singleton
 
 import QtQuick
 import Quickshell
+import Quickshell.Io
 import Quickshell.Services.Pipewire
 
 // The default audio output, for the speaker in the notification area and its
@@ -25,6 +26,28 @@ Singleton {
     readonly property string level: !root.ready || root.muted || root.percent === 0
         ? "muted"
         : root.percent < 34 ? "1" : root.percent < 67 ? "2" : "3"
+
+    /// The outputs to choose from: audio sinks that are not a program's
+    /// stream.
+    readonly property var outputs: Pipewire.nodes ? Pipewire.nodes.values.filter(function (node) {
+        return node && node.audio && node.isSink && !node.isStream;
+    }) : []
+
+    function useOutput(node) {
+        Pipewire.preferredDefaultAudioSink = node;
+    }
+
+    /// Asked over IPC: open the volume panel with the outputs listed, on a
+    /// screen ("" for every taskbar).
+    signal panelRequested(string screen, bool devices)
+
+    IpcHandler {
+        target: "volume"
+
+        function open(): void { root.panelRequested("", false); }
+        function openDevices(): void { root.panelRequested("", true); }
+        function close(): void { root.panelRequested("-", false); }
+    }
 
     /// The program that lists every stream, as the volume mixer of Windows.
     readonly property string mixer: "pwvucontrol"

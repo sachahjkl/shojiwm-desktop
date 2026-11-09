@@ -32,7 +32,14 @@ PopupWindow {
     anchor.adjustment: PopupAdjustment.SlideX | PopupAdjustment.FlipY
 
     // Wider while a player shows its controls at the top.
-    implicitWidth: media.visible ? 220 : 104
+    /// The outputs are listed under the device's name.
+    property bool devicesOpen: false
+    onVisibleChanged: {
+        if (!visible)
+            popup.devicesOpen = false;
+    }
+
+    implicitWidth: media.visible || popup.devicesOpen ? 220 : 104
     implicitHeight: body.implicitHeight + footer.height + 20
 
     Rectangle {
@@ -84,15 +91,77 @@ PopupWindow {
             source: Qt.resolvedUrl("../assets/" + (Scheme.dark ? "" : "ink-") + "speaker-3.svg")
         }
 
+        // The device's name; with more than one output, a click lists them
+        // to choose another, as the speaker's menu does on Windows.
         Text {
             width: parent.width - 12
             anchors.horizontalCenter: parent.horizontalCenter
             horizontalAlignment: Text.AlignHCenter
-            text: Audio.deviceName
-            color: Scheme.text
+            text: Audio.deviceName + (Audio.outputs.length > 1 ? (popup.devicesOpen ? "  ▴" : "  ▾") : "")
+            color: deviceArea.containsMouse ? Scheme.link : Scheme.text
             font.family: Theme.fontFamily
             font.pixelSize: Theme.fontSizeSmall
+            font.underline: deviceArea.containsMouse && Audio.outputs.length > 1
             elide: Text.ElideRight
+
+            MouseArea {
+                id: deviceArea
+                anchors.fill: parent
+                hoverEnabled: true
+                enabled: Audio.outputs.length > 1
+                cursorShape: Qt.PointingHandCursor
+                onClicked: popup.devicesOpen = !popup.devicesOpen
+            }
+        }
+
+        Column {
+            width: parent.width - 12
+            anchors.horizontalCenter: parent.horizontalCenter
+            visible: popup.devicesOpen
+            spacing: 1
+
+            Repeater {
+                model: Audio.outputs
+
+                delegate: Rectangle {
+                    id: output
+
+                    required property var modelData
+                    readonly property bool current: output.modelData === Audio.sink
+
+                    width: parent.width
+                    height: 24
+                    radius: Scheme.itemRadius
+                    color: output.current ? Scheme.selection
+                        : outputArea.containsMouse ? Scheme.hover : "transparent"
+                    border.width: output.current || outputArea.containsMouse ? 1 : 0
+                    border.color: Scheme.selectionBorder
+
+                    Text {
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.leftMargin: 6
+                        anchors.rightMargin: 6
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: output.modelData.nickname || output.modelData.description
+                        color: Scheme.text
+                        font.family: Theme.fontFamily
+                        font.pixelSize: Theme.fontSizeSmall
+                        font.bold: output.current
+                        elide: Text.ElideRight
+                    }
+
+                    MouseArea {
+                        id: outputArea
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        onClicked: {
+                            Audio.useOutput(output.modelData);
+                            popup.devicesOpen = false;
+                        }
+                    }
+                }
+            }
         }
 
         // The slider: a sunken track, the level filled in green, and a
