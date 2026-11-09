@@ -4,7 +4,8 @@ import ".."
 import "../theme.js" as Theme
 
 // The orb at the left end of the taskbar, in layers as on Windows 7: the
-// orb, the NixOS snowflake, then the glass over both. Three states: at rest
+// orb, the snowflake's glow and shadow, the NixOS snowflake, then the glass
+// over them. Three states: at rest
 // the snowflake glows faintly; under the pointer the orb lights up and the
 // snowflake glows; while the Start menu is open both stay lit and the
 // snowflake glows its brightest. A press pushes it in.
@@ -42,44 +43,69 @@ Item {
         }
     }
 
+    // The glow: the snowflake blurred and tinted pale cyan, under the crisp
+    // one. Faint at rest, wider and brighter under the pointer, brightest
+    // while the menu is open.
     Image {
-        id: logo
+        id: glowSource
 
         anchors.centerIn: parent
-        width: Math.round(orb.width * 0.56)
+        width: Math.round(orb.width * 0.6)
+        height: width
+        source: "../assets/start-orb-logo.svg"
+        sourceSize.width: Math.ceil(width * Screen.devicePixelRatio)
+        sourceSize.height: Math.ceil(height * Screen.devicePixelRatio)
+        visible: false
+    }
+
+    MultiEffect {
+        anchors.fill: glowSource
+        source: glowSource
+        blurEnabled: true
+        blurMax: 12
+        blur: 1
+        colorization: 1
+        colorizationColor: "#d8f6ff"
+        brightness: 0.4
+        scale: orb.menuOpen ? 1.3 : area.containsMouse ? 1.2 : 1.05
+        opacity: orb.menuOpen ? 1 : area.containsMouse ? 0.9 : 0.35
+
+        Behavior on scale {
+            NumberAnimation { duration: Settings.motion(Theme.fade) * 2 }
+        }
+        Behavior on opacity {
+            NumberAnimation { duration: Settings.motion(Theme.fade) * 2 }
+        }
+    }
+
+    // A soft dark shadow just under the snowflake: it sets the pale arms
+    // apart from the blue glass, as the relief of the Windows flag does.
+    MultiEffect {
+        anchors.fill: glowSource
+        anchors.verticalCenterOffset: 0.75
+        source: glowSource
+        blurEnabled: true
+        blurMax: 4
+        blur: 0.6
+        colorization: 1
+        colorizationColor: "#041a33"
+        brightness: -0.6
+        opacity: 0.7
+    }
+
+    // The snowflake itself, drawn straight from the SVG at the screen's
+    // pixel size, so it is as sharp as the icons beside it.
+    Image {
+        anchors.centerIn: parent
+        width: Math.round(orb.width * 0.6)
         height: width
         source: "../assets/start-orb-logo.svg"
         sourceSize.width: Math.ceil(width * Screen.devicePixelRatio)
         sourceSize.height: Math.ceil(height * Screen.devicePixelRatio)
         smooth: true
-        visible: false
-    }
-
-    // The snowflake and its glow: a shadow with no offset, in pale cyan.
-    MultiEffect {
-        anchors.fill: logo
-        source: logo
         scale: area.pressed ? 0.94 : 1
-        shadowEnabled: true
-        shadowColor: "#d8f6ff"
-        shadowHorizontalOffset: 0
-        shadowVerticalOffset: 0
-        blurMax: 12
-        shadowBlur: 1
-        shadowScale: orb.menuOpen ? 1.3 : area.containsMouse ? 1.2 : 1
-        shadowOpacity: orb.menuOpen ? 1 : area.containsMouse ? 0.95 : 0.4
-        brightness: area.pressed ? -0.15 : orb.menuOpen ? 0.3 : area.containsMouse ? 0.18 : 0
-        opacity: orb.hot ? 1 : 0.9
+        opacity: orb.hot ? 1 : 0.92
 
-        Behavior on shadowScale {
-            NumberAnimation { duration: Settings.motion(Theme.fade) * 2 }
-        }
-        Behavior on shadowOpacity {
-            NumberAnimation { duration: Settings.motion(Theme.fade) * 2 }
-        }
-        Behavior on brightness {
-            NumberAnimation { duration: Settings.motion(Theme.fade) }
-        }
         Behavior on scale {
             NumberAnimation { duration: Settings.motion(Theme.fade) }
         }
