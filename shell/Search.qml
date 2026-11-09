@@ -70,10 +70,11 @@ Singleton {
     property var files: []
 
     /// Before anything is typed: the programs started last, as many as the
-    /// Control Panel says (the launcher shows them; the Start menu shows its
-    /// own lists instead).
+    /// Control Panel says, then every program by name (the launcher shows
+    /// them; the Start menu shows its own lists instead).
     readonly property var recent: root.active
         ? [] : Apps.recentPrograms.slice(0, Math.max(0, Settings.launcherRecentCount))
+    readonly property var allPrograms: root.active ? [] : Apps.applications
 
     /// The results as rows: a heading over each group that has any, then
     /// its rows. `pick` numbers the rows that can be chosen; -1 is a heading.
@@ -88,6 +89,7 @@ Singleton {
                 out.push({ kind: kind, value: list[i], pick: pick++ });
         };
         group("Recent", "program", root.recent);
+        group("All Programs", "program", root.allPrograms);
         group("Programs", "program", root.programs);
         group("Control Panel", "task", root.tasks);
         group("Files", "file", root.files);
@@ -100,6 +102,15 @@ Singleton {
                 count++;
         }
         return count;
+    }
+
+    /// The position in `rows` of the row with that pick number, or -1.
+    function indexOfPick(pick) {
+        for (var i = 0; i < root.rows.length; i++) {
+            if (root.rows[i].pick === pick)
+                return i;
+        }
+        return -1;
     }
 
     /// The row with that pick number, or null.

@@ -55,6 +55,8 @@ Singleton {
     property alias desktopPlaces: adapter.desktopPlaces
     property alias showFrequent: adapter.showFrequent
     property alias launcherRecentCount: adapter.launcherRecentCount
+    property alias launcherWidth: adapter.launcherWidth
+    property alias launcherHeight: adapter.launcherHeight
     property alias powerButtonAction: adapter.powerButtonAction
     property alias shutdownDialogAction: adapter.shutdownDialogAction
     property alias peek: adapter.peek
@@ -254,6 +256,9 @@ Singleton {
             /// How many recently started programs the launcher lists before
             /// anything is typed; 0 for none.
             property int launcherRecentCount: 25
+            /// The launcher's size, as its edges were last dragged to.
+            property int launcherWidth: 560
+            property int launcherHeight: 520
 
             /// The desktop: the icon size in logical pixels (32 to 256), whether
             /// the icons show at all, and how they are sorted: "name", "size",

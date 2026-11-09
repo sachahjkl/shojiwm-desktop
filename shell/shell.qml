@@ -119,9 +119,9 @@ ShellRoot {
 
         color: "transparent"
         anchors.top: true
-        margins.top: Math.round((launcherWindow.screen ? launcherWindow.screen.height : 1080) * 0.22)
-        implicitWidth: 560
-        implicitHeight: launcher.fullHeight
+        margins.top: Math.round((launcherWindow.screen ? launcherWindow.screen.height : 1080) * 0.18)
+        implicitWidth: launcher.panelWidth
+        implicitHeight: launcher.panelHeight
         exclusionMode: ExclusionMode.Ignore
         WlrLayershell.layer: WlrLayer.Overlay
         WlrLayershell.namespace: "shojiwm-win7-launcher"
@@ -135,6 +135,8 @@ ShellRoot {
         Launcher {
             id: launcher
             anchors.fill: parent
+            screenWidth: launcherWindow.screen ? launcherWindow.screen.width : 1920
+            screenHeight: launcherWindow.screen ? launcherWindow.screen.height : 1080
             onDismissed: StartMenuState.closeLauncher()
         }
     }

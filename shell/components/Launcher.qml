@@ -1,18 +1,29 @@
 import QtQuick
+import QtQuick.Controls.Basic
 import Quickshell
 import ".."
 import "../theme.js" as Theme
 
-// The launcher (Super+Shift+D): the Start menu's search alone, in the middle
-// of the focused screen. Before anything is typed it lists the programs
-// started last (Search.recent). The same search (Search) and the same rows:
-// type, then Return starts the first program, opens the task or the file,
-// or runs what was typed. Up and Down pick a row; Escape or a click outside
-// closes it.
+// The launcher (Super+Shift+D): the Start menu's search alone, near the top
+// of the focused screen. The same search (Search) and the same rows: type,
+// then Return starts the first program, opens the task or the file, or runs
+// what was typed. Up and Down pick a row; Escape or a click outside closes
+// it.
+//
+// Under the field, a list: before anything is typed, the programs started
+// last (Search.recent), then every program; while typing, the results. The
+// sides and the bottom edge resize the panel, and the size is kept
+// (Settings.launcherWidth, launcherHeight: the list's height). A list of
+// height 0 is the field alone: then the results show under it while typing,
+// only as tall as they are.
 Item {
     id: launcher
 
     signal dismissed
+
+    /// The size of the screen it shows on, to keep the panel inside it.
+    property real screenWidth: 1920
+    property real screenHeight: 1080
 
     /// Called by the window each time it opens.
     function reset() {
@@ -20,20 +31,42 @@ Item {
         launcher.pick = 0;
         Search.query = "";
         field.forceActiveFocus();
+        results.positionViewAtBeginning();
     }
 
     /// The row Return chooses.
     property int pick: 0
-    /// The most rows the panel shows.
-    readonly property int maxRows: 14
-    /// The tallest the panel gets: the window is this tall, so it is not
+
+    readonly property int headerHeight: Theme.menuSearchHeight + 8 + Theme.menuPadding * 2
+    /// The list's height: 0 for the field alone.
+    readonly property int listHeight: Math.max(0, Math.min(Settings.launcherHeight, launcher.maxListHeight))
+    readonly property bool compact: launcher.listHeight === 0
+    /// The panel ends above the taskbar: it never runs off the screen.
+    readonly property int maxListHeight: Math.max(0, Math.round(launcher.screenHeight * 0.82)
+        - Theme.taskbarHeight - launcher.headerHeight - Theme.menuPadding - 8)
+    /// The most rows the compact panel grows to while typing.
+    readonly property int compactRows: 14
+
+    readonly property int panelWidth: Math.max(360, Math.min(Settings.launcherWidth,
+        Math.round(launcher.screenWidth * 0.9)))
+    /// The window's height: the tallest the panel gets, so the window is not
     /// resized at each key.
-    readonly property int fullHeight: Theme.menuSearchHeight + 8 + Theme.menuPadding * 3
-        + launcher.maxRows * StartMenuState.rowHeight
+    readonly property int panelHeight: launcher.headerHeight + Theme.menuPadding
+        + (launcher.compact ? launcher.compactRows * StartMenuState.rowHeight : launcher.listHeight)
 
     function accept() {
         if (Search.accept(launcher.pick))
             launcher.dismissed();
+    }
+
+    function movePick(by) {
+        launcher.pick = Math.max(0, Math.min(Search.pickCount - 1, launcher.pick + by));
+    }
+
+    onPickChanged: {
+        var index = Search.indexOfPick(launcher.pick);
+        if (index >= 0)
+            results.positionViewAtIndex(index, ListView.Contain);
     }
 
     // A click outside the panel closes it.
@@ -46,15 +79,17 @@ Item {
     Rectangle {
         id: panel
 
-        readonly property int rowsShown: Math.min(Search.rows.length
-            + (Search.active && Search.pickCount === 0 ? 1 : 0), launcher.maxRows)
-        readonly property bool listing: Search.active || Search.rows.length > 0
+        /// The compact panel shows its rows only while typing, as tall as
+        /// they are.
+        readonly property int compactRowsShown: Search.active
+            ? Math.min(Search.rows.length + (Search.pickCount === 0 ? 1 : 0), launcher.compactRows) : 0
 
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.top: parent.top
-        width: parent.width
-        height: searchBox.height + Theme.menuPadding * 2
-            + (panel.listing ? panel.rowsShown * StartMenuState.rowHeight + Theme.menuPadding : 0)
+        width: launcher.panelWidth
+        height: launcher.headerHeight + (launcher.compact
+            ? (panel.compactRowsShown > 0 ? panel.compactRowsShown * StartMenuState.rowHeight + Theme.menuPadding : 0)
+            : launcher.listHeight + Theme.menuPadding)
         radius: Scheme.popupRadius + 1
         color: Scheme.startGlassOutline
 
@@ -117,6 +152,7 @@ Item {
                 onTextChanged: {
                     launcher.pick = 0;
                     Search.query = text;
+                    results.positionViewAtBeginning();
                 }
 
                 Text {
@@ -137,23 +173,26 @@ Item {
                 }
                 Keys.onReturnPressed: launcher.accept()
                 Keys.onEnterPressed: launcher.accept()
-                Keys.onUpPressed: {
-                    if (launcher.pick > 0)
-                        launcher.pick -= 1;
-                }
-                Keys.onDownPressed: {
-                    if (launcher.pick < Search.pickCount - 1)
-                        launcher.pick += 1;
-                }
+                Keys.onUpPressed: launcher.movePick(-1)
+                Keys.onDownPressed: launcher.movePick(1)
                 Keys.onPressed: function (event) {
+                    var page = Math.max(1, Math.floor(results.height / StartMenuState.rowHeight) - 1);
                     if (event.key === Qt.Key_A && (event.modifiers & Qt.ControlModifier)) {
                         field.selectAll();
-                        event.accepted = true;
+                    } else if (event.key === Qt.Key_PageDown) {
+                        launcher.movePick(page);
+                    } else if (event.key === Qt.Key_PageUp) {
+                        launcher.movePick(-page);
+                    } else {
+                        return;
                     }
+                    event.accepted = true;
                 }
             }
         }
 
+        // The rows: a ListView makes only the ones in sight, so the list of
+        // every program costs no more than a screenful.
         ListView {
             id: results
 
@@ -162,15 +201,18 @@ Item {
             anchors.top: searchBox.bottom
             anchors.bottom: parent.bottom
             anchors.margins: Theme.menuPadding
-            visible: panel.listing
+            visible: launcher.compact ? Search.active : true
             clip: true
-            interactive: false
+            boundsBehavior: Flickable.StopAtBounds
             model: Search.rows
+            ScrollBar.vertical: AeroScrollBar { id: resultsBar }
+
+            readonly property real rowWidth: width - (resultsBar.visible ? resultsBar.width + 2 : 0)
 
             delegate: MenuRow {
                 required property var modelData
                 readonly property var row: modelData
-                width: results.width
+                width: results.rowWidth
                 heading: row.kind === "heading"
                 label: row.kind === "heading" ? row.label
                     : row.kind === "program" ? row.value.name
@@ -188,13 +230,67 @@ Item {
 
             // With nothing found, Return runs the text, as Run... does.
             footer: MenuRow {
-                width: results.width
+                width: results.rowWidth
                 visible: Search.active && Search.pickCount === 0
                 height: visible ? StartMenuState.rowHeight : 0
                 label: "Run “" + Search.query.trim() + "”"
                 icon: Qt.resolvedUrl("../assets/icons/run.png")
                 selected: true
                 onActivated: launcher.accept()
+            }
+        }
+
+        // ----- the edges that resize it -----------------------------------
+        //
+        // The panel is centred, with its top fixed: a side sets the width to
+        // twice the pointer's distance from the middle, the bottom edge sets
+        // the list's height from the pointer's height. The edge stays under
+        // the pointer.
+
+        component Edge: MouseArea {
+            /// Where the pointer is in the launcher's own coordinates.
+            function at(mouse) {
+                return mapToItem(launcher, mouse.x, mouse.y);
+            }
+            hoverEnabled: true
+        }
+
+        Edge {
+            anchors.left: parent.left
+            anchors.top: parent.top
+            anchors.bottom: parent.bottom
+            width: 8
+            cursorShape: Qt.SizeHorCursor
+            onPositionChanged: function (mouse) {
+                if (pressed)
+                    Settings.launcherWidth = Math.round(2 * (launcher.width / 2 - at(mouse).x));
+            }
+        }
+
+        Edge {
+            anchors.right: parent.right
+            anchors.top: parent.top
+            anchors.bottom: parent.bottom
+            width: 8
+            cursorShape: Qt.SizeHorCursor
+            onPositionChanged: function (mouse) {
+                if (pressed)
+                    Settings.launcherWidth = Math.round(2 * (at(mouse).x - launcher.width / 2));
+            }
+        }
+
+        Edge {
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.bottom: parent.bottom
+            anchors.leftMargin: 8
+            anchors.rightMargin: 8
+            height: 8
+            cursorShape: Qt.SizeVerCursor
+            onPositionChanged: function (mouse) {
+                if (pressed)
+                    Settings.launcherHeight = Math.max(0, Math.min(launcher.maxListHeight,
+                        Math.round(at(mouse).y - launcher.headerHeight - Theme.menuPadding)));
             }
         }
     }
