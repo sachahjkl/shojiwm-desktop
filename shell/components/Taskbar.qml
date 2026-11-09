@@ -43,8 +43,19 @@ Item {
         anchors.fill: parent
         keys: [Settings.trayDragType]
 
+        function preview(event) {
+            var at = trayArea.mapFromItem(bar, event.x, event.y);
+            trayArea.previewId = DragState.kind === "tray" ? String(DragState.data) : "";
+            trayArea.previewBefore = at.x >= 0 && at.x <= trayArea.width
+                ? trayArea.indexAt(at.x) : trayArea.shown.length;
+        }
+
+        onEntered: function (event) { preview(event); }
+        onPositionChanged: function (event) { preview(event); }
+        onExited: trayArea.previewBefore = -1
         onDropped: function (event) {
-            var id = String(event.getDataAsString(Settings.trayDragType));
+            trayArea.previewBefore = -1;
+            var id = DragState.kind === "tray" ? String(DragState.data) : "";
             if (id.length === 0)
                 return;
             var at = trayArea.mapFromItem(bar, event.x, event.y);

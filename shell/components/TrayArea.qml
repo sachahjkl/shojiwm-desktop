@@ -2,6 +2,7 @@ pragma ComponentBehavior: Bound
 
 import QtQuick
 import Quickshell.Services.SystemTray
+import Quickshell.Widgets
 import ".."
 import "../theme.js" as Theme
 
@@ -29,6 +30,82 @@ Item {
         }).map(function (entry) {
             return entry.item;
         });
+    }
+
+    // ----- the preview of a drop ------------------------------------------------
+    //
+    // While an icon is dragged over the taskbar, the icons stand aside where
+    // it would land and a faint copy of it shows the place. The taskbar sets
+    // both properties from its drop area.
+
+    /// The id of the icon dragged over the taskbar, or "".
+    property string previewId: ""
+    /// The shown icon the drop goes before, or -1 for no preview.
+    property int previewBefore: -1
+
+    readonly property real slot: Theme.trayIconSize + 8 + row.spacing
+    /// The index of the dragged icon among the shown ones, or -1 when it
+    /// comes from the popover.
+    readonly property int previewFrom: {
+        if (tray.previewBefore < 0)
+            return -1;
+        for (var i = 0; i < tray.shown.length; i++) {
+            if (String(tray.shown[i].id) === tray.previewId)
+                return i;
+        }
+        return -1;
+    }
+
+    /// How far the shown icon at `index` stands aside.
+    function shiftOf(index) {
+        var to = tray.previewBefore;
+        var from = tray.previewFrom;
+        if (to < 0)
+            return 0;
+        // From the popover: the icons before the place make room leftward,
+        // so the area keeps its width and the drop place does not move.
+        if (from < 0)
+            return index < to ? -tray.slot : 0;
+        if (index === from) {
+            // The dragged icon itself: its faint copy, at the place it
+            // would land.
+            var target = to > from ? to - 1 : to;
+            return (target - from) * tray.slot;
+        }
+        if (from < to && index > from && index < to)
+            return -tray.slot;
+        if (to <= index && index < from)
+            return tray.slot;
+        return 0;
+    }
+
+    /// The icon dragged in from the popover, for its faint copy.
+    readonly property var previewItem: {
+        if (tray.previewBefore < 0 || tray.previewFrom >= 0)
+            return null;
+        for (var i = 0; i < tray.items.length; i++) {
+            if (tray.items[i] && String(tray.items[i].id) === tray.previewId)
+                return tray.items[i];
+        }
+        return null;
+    }
+
+    implicitWidth: row.implicitWidth
+
+    // The faint copy of an icon dragged in from the popover, in the gap the
+    // others leave.
+    IconImage {
+        visible: tray.previewItem !== null
+        opacity: 0.45
+        implicitSize: Theme.trayIconSize
+        x: {
+            var before = tray.previewBefore;
+            var icon = before >= 0 && before < iconRepeater.count ? iconRepeater.itemAt(before) : null;
+            var right = icon ? icon.x : row.implicitWidth + row.spacing;
+            return right - tray.slot + (Theme.trayIconSize + 8 - Theme.trayIconSize) / 2;
+        }
+        anchors.verticalCenter: parent.verticalCenter
+        source: tray.previewItem && tray.previewItem.icon ? tray.previewItem.icon : ""
     }
 
     /// Where among the shown icons a drop at `x` (in this item) goes.
@@ -62,7 +139,6 @@ Item {
     /// The pointer entered or left one of the icons or the arrow.
     signal hoverChanged(bool inside)
 
-    implicitWidth: row.implicitWidth
     implicitHeight: row.implicitHeight
 
     Row {
@@ -121,7 +197,7 @@ Item {
                 keys: [Settings.trayDragType]
 
                 onDropped: function (event) {
-                    var id = String(event.getDataAsString(Settings.trayDragType));
+                    var id = DragState.kind === "tray" ? String(DragState.data) : "";
                     if (id.length === 0)
                         return;
                     event.acceptProposedAction();
@@ -138,10 +214,13 @@ Item {
 
             delegate: TrayIcon {
                 required property var modelData
+                required property int index
 
                 anchors.verticalCenter: parent ? parent.verticalCenter : undefined
                 item: modelData
                 inTaskbar: true
+                shift: tray.shiftOf(index)
+                ghost: tray.previewBefore >= 0 && index === tray.previewFrom
                 onMenuRequested: function (item, at) { tray.menuRequested(item, at); }
                 onHoverChanged: function (inside) { tray.hoverChanged(inside); }
                 onDraggingChanged: tray.dragging = dragging

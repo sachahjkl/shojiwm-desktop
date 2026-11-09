@@ -38,7 +38,9 @@ Rectangle {
         Drag.hotSpot.y: height / 2
         Drag.keys: [Settings.programDragType]
         Drag.mimeData: ({ [Settings.programDragType]: row.dragId })
+        Drag.onDragStarted: DragState.start("program", row.dragId)
         Drag.onDragFinished: {
+            DragState.finish();
             dragProxy.x = 0;
             dragProxy.y = 0;
         }

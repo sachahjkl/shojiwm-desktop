@@ -479,10 +479,14 @@ Item {
         keys: ["text/uri-list"]
 
         onDropped: function (event) {
-            if (!event.hasUrls)
+            // The shell's own icons are not read back through Wayland: see
+            // DragState.
+            var urls = DragState.kind === "files" ? DragState.data
+                : event.hasUrls ? event.urls : [];
+            if (urls.length === 0)
                 return;
             var copy = event.proposedAction === Qt.CopyAction;
-            desktop.dropFiles(event.urls, event.x, event.y, copy);
+            desktop.dropFiles(urls, event.x, event.y, copy);
             event.accept(copy ? Qt.CopyAction : Qt.MoveAction);
         }
     }
@@ -733,7 +737,9 @@ Item {
                 Drag.hotSpot.y: height / 2
                 Drag.keys: ["text/uri-list"]
                 Drag.mimeData: ({ "text/uri-list": desktop.pickedUrls().join("\r\n") })
+                Drag.onDragStarted: DragState.start("files", desktop.pickedUrls())
                 Drag.onDragFinished: {
+                    DragState.finish();
                     dragProxy.x = 0;
                     dragProxy.y = 0;
                 }

@@ -28,6 +28,19 @@ Item {
     /// The icon is on the taskbar: dragged off it and dropped where nothing
     /// takes it, it goes to the popover of hidden icons.
     property bool inTaskbar: false
+    /// How far the icon stands aside while another is dragged over the
+    /// taskbar, and whether it is the dragged one, shown faint where it would
+    /// land.
+    property real shift: 0
+    property bool ghost: false
+
+    opacity: icon.ghost ? 0.45 : 1
+    transform: Translate {
+        x: icon.shift
+        Behavior on x {
+            NumberAnimation { duration: Settings.motion(Theme.hoverIn); easing.type: Easing.OutCubic }
+        }
+    }
 
     width: Theme.trayIconSize + 8
     height: Theme.trayIconSize + 8
@@ -67,9 +80,13 @@ Item {
         Drag.hotSpot.y: height / 2
         Drag.keys: [Settings.trayDragType]
         Drag.mimeData: ({ [Settings.trayDragType]: icon.item ? String(icon.item.id) : "" })
-        Drag.onDragStarted: icon.dragging = true
+        Drag.onDragStarted: {
+            icon.dragging = true;
+            DragState.start("tray", icon.item ? String(icon.item.id) : "");
+        }
         Drag.onDragFinished: function (dropAction) {
             icon.dragging = false;
+            DragState.finish();
             if (icon.inTaskbar && dropAction === Qt.IgnoreAction && icon.item) {
                 var id = String(icon.item.id);
                 // After the drag has ended: the change removes this icon.

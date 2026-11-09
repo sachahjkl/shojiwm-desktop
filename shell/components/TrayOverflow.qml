@@ -74,7 +74,7 @@ PopupWindow {
         keys: [Settings.trayDragType]
 
         onDropped: function (event) {
-            var id = String(event.getDataAsString(Settings.trayDragType));
+            var id = DragState.kind === "tray" ? String(DragState.data) : "";
             if (id.length === 0)
                 return;
             event.acceptProposedAction();

@@ -53,17 +53,23 @@ Singleton {
     /// shell, or a .desktop file from the desktop or a file manager. "" for
     /// anything else.
     function droppedProgramId(event) {
-        if (event.formats.indexOf(Settings.programDragType) >= 0)
-            return String(event.getDataAsString(Settings.programDragType));
-        if (!event.hasUrls)
-            return "";
-        for (var i = 0; i < event.urls.length; i++) {
-            var name = decodeURIComponent(String(event.urls[i])).split("/").pop();
+        // The shell's own drags are not read back through Wayland: see
+        // DragState.
+        var urls = [];
+        if (DragState.kind === "program")
+            return String(DragState.data);
+        if (DragState.kind === "files")
+            urls = DragState.data;
+        else if (DragState.kind === "" && event.hasUrls)
+            urls = event.urls;
+        for (var i = 0; i < urls.length; i++) {
+            var name = decodeURIComponent(String(urls[i])).split("/").pop();
             if (name.endsWith(".desktop"))
                 return name;
         }
         return "";
     }
+
 
     // ----- windows ----------------------------------------------------------
 

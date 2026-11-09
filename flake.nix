@@ -172,6 +172,7 @@
           singleton LockState 1.0 LockState.qml
           singleton ControlPanelState 1.0 ControlPanelState.qml
           singleton ShutdownState 1.0 ShutdownState.qml
+          singleton DragState 1.0 DragState.qml
           EOF
           cd ./shell
           qmllint \
