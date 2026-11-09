@@ -2,6 +2,8 @@ pragma ComponentBehavior: Bound
 
 import QtQuick
 import QtQuick.Controls.Basic
+import Quickshell
+import Quickshell.Io
 import ".."
 import "../theme.js" as Theme
 
@@ -36,7 +38,8 @@ Item {
         menu.openFolder = "";
         menu.powerMenuOpen = false;
         menu.hoveredPlace = "";
-        results.currentIndex = 0;
+        menu.pick = 0;
+        menu.filesFound = [];
         search.forceActiveFocus();
     }
 
@@ -72,21 +75,99 @@ Item {
 
     readonly property var found: Apps.search(search.text)
     readonly property bool searching: search.text.trim().length > 0
+    /// The Control Panel tasks and the files that match, as Windows 7 lists
+    /// them under the programs.
+    readonly property var tasksFound: ControlPanelState.findTasks(search.text).slice(0, 5)
+    property var filesFound: []
+
+    /// The results as rows: a heading over each group that has any, then
+    /// its rows. `pick` numbers the rows that can be chosen; -1 is a heading.
+    readonly property var rows: {
+        var out = [];
+        var pick = 0;
+        var group = function (title, kind, list) {
+            if (list.length === 0)
+                return;
+            out.push({ kind: "heading", label: title, pick: -1 });
+            for (var i = 0; i < list.length; i++)
+                out.push({ kind: kind, value: list[i], pick: pick++ });
+        };
+        group("Programs", "program", menu.found);
+        group("Control Panel", "task", menu.tasksFound);
+        group("Files", "file", menu.filesFound);
+        return out;
+    }
+    readonly property int pickCount: {
+        var count = 0;
+        for (var i = 0; i < menu.rows.length; i++) {
+            if (menu.rows[i].pick >= 0)
+                count++;
+        }
+        return count;
+    }
+    /// The row Return chooses.
+    property int pick: 0
+
+    // The files: fd in your home folder, a moment after the last key, for
+    // names that hold what is typed. Hidden folders stay out.
+    Timer {
+        id: findFiles
+        interval: 250
+        onTriggered: {
+            var query = search.text.trim();
+            if (query.length < 2) {
+                menu.filesFound = [];
+                return;
+            }
+            fileFinder.running = false;
+            fileFinder.command = ["fd", "--max-results", "8", "--ignore-case",
+                                  "--fixed-strings", "--", query, Apps.home];
+            fileFinder.running = true;
+        }
+    }
+
+    Process {
+        id: fileFinder
+        stdout: StdioCollector {
+            onStreamFinished: {
+                menu.filesFound = String(text).split("\n").filter(function (line) {
+                    return line.length > 0;
+                }).map(function (line) { return line.replace(/\/$/, ""); });
+            }
+        }
+    }
 
     function launch(entry) {
         Apps.launch(entry);
         menu.dismissed();
     }
 
-    /// Return in the search box: the program picked, else run the text.
+    /// Choose a result row: start the program, open the task's page, or
+    /// open the file.
+    function choose(row) {
+        if (!row)
+            return;
+        if (row.kind === "program") {
+            menu.launch(row.value);
+        } else if (row.kind === "task") {
+            ControlPanelState.open(row.value.page);
+            menu.dismissed();
+        } else if (row.kind === "file") {
+            // The file's own program; a folder opens in the file manager.
+            Quickshell.execDetached(["xdg-open", row.value]);
+            menu.dismissed();
+        }
+    }
+
+    /// Return in the search box: the row picked, else run the text.
     function accept() {
         if (!menu.searching)
             return;
-        var found = menu.found;
-        if (found.length > 0) {
-            var index = Math.max(0, Math.min(results.currentIndex, found.length - 1));
-            menu.launch(found[index]);
-            return;
+        for (var i = 0; i < menu.rows.length; i++) {
+            if (menu.rows[i].pick === Math.min(menu.pick, menu.pickCount - 1)) {
+                menu.choose(menu.rows[i]);
+                return;
+            }
         }
         if (Apps.runTyped(search.text))
             menu.dismissed();
@@ -493,35 +574,38 @@ Item {
             anchors.margins: Theme.menuPadding
             visible: menu.searching
             clip: true
-            model: menu.found
-            currentIndex: 0
+            model: menu.rows
             boundsBehavior: Flickable.StopAtBounds
             ScrollBar.vertical: AeroScrollBar { id: resultsBar }
             readonly property real rowWidth: width - (resultsBar.visible ? resultsBar.width + 2 : 0)
-
-            header: MenuRow {
-                width: results.rowWidth
-                heading: true
-                label: menu.found.length > 0 ? "Programs" : "No program matches"
-            }
 
             delegate: MenuRow {
                 id: resultRow
                 required property var modelData
                 required property int index
+                readonly property var row: modelData
                 width: results.rowWidth
-                label: modelData ? modelData.name : ""
-                icon: Apps.entryIcon(modelData)
-                selected: index === results.currentIndex
-                onActivated: menu.launch(modelData)
-                onMenuRequested: (x, y) => menu.showProgramMenu(resultRow, modelData, x, y)
-                dragId: Apps.entryFileId(modelData)
+                heading: row.kind === "heading"
+                label: row.kind === "heading" ? row.label
+                    : row.kind === "program" ? row.value.name
+                    : row.kind === "task" ? row.value.text
+                    : row.value.substring(row.value.lastIndexOf("/") + 1)
+                icon: row.kind === "program" ? Apps.entryIcon(row.value)
+                    : row.kind === "task" ? Qt.resolvedUrl("../assets/icons/control-panel.png")
+                    : row.kind === "file" ? Apps.fileIcon(row.value) : ""
+                selected: row.pick >= 0 && row.pick === menu.pick
+                onActivated: menu.choose(row)
+                onMenuRequested: (x, y) => {
+                    if (row.kind === "program")
+                        menu.showProgramMenu(resultRow, row.value, x, y);
+                }
+                dragId: row.kind === "program" ? Apps.entryFileId(row.value) : ""
             }
 
             // With nothing found, Return runs the text, as Run... does.
             footer: MenuRow {
                 width: results.rowWidth
-                visible: menu.found.length === 0
+                visible: menu.pickCount === 0
                 height: visible ? Theme.menuRowHeight : 0
                 label: "Run “" + search.text.trim() + "”"
                 icon: Qt.resolvedUrl("../assets/icons/run.png")
@@ -608,7 +692,10 @@ Item {
                 focus: true
                 clip: true
 
-                onTextChanged: results.currentIndex = 0
+                onTextChanged: {
+                    menu.pick = 0;
+                    findFiles.restart();
+                }
 
                 Text {
                     anchors.fill: parent
@@ -631,12 +718,12 @@ Item {
                 Keys.onReturnPressed: menu.accept()
                 Keys.onEnterPressed: menu.accept()
                 Keys.onUpPressed: {
-                    if (menu.searching && results.currentIndex > 0)
-                        results.currentIndex -= 1;
+                    if (menu.searching && menu.pick > 0)
+                        menu.pick -= 1;
                 }
                 Keys.onDownPressed: {
-                    if (menu.searching && results.currentIndex < menu.found.length - 1)
-                        results.currentIndex += 1;
+                    if (menu.searching && menu.pick < menu.pickCount - 1)
+                        menu.pick += 1;
                 }
             }
         }
