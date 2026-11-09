@@ -33,6 +33,8 @@ Singleton {
     property alias slideshowMinutes: adapter.slideshowMinutes
     property alias slideshowShuffle: adapter.slideshowShuffle
     property alias cpuMeterPlace: adapter.cpuMeterPlace
+    property alias showClockGadget: adapter.showClockGadget
+    property alias clockGadgetPlace: adapter.clockGadgetPlace
     property alias desktopIconSize: adapter.desktopIconSize
     property alias showDesktopIcons: adapter.showDesktopIcons
     property alias desktopSort: adapter.desktopSort
@@ -203,6 +205,9 @@ Singleton {
             property int slideshowMinutes: 30
             property bool slideshowShuffle: false
             property var cpuMeterPlace: ({ right: 24, top: 24 })
+            /// The Clock gadget, under the CPU Meter by default.
+            property bool showClockGadget: true
+            property var clockGadgetPlace: ({ right: 52, top: 168 })
             property bool showFrequent: true
 
             /// The desktop: "large", "medium" or "small" icons, whether they

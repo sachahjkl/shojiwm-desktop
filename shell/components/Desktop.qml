@@ -364,8 +364,12 @@ Item {
             { separator: true },
             { label: "Screen resolution", icon: Qt.resolvedUrl("../assets/icons/computer.png"),
               run: function () { ControlPanelState.open("display"); } },
-            { label: "Gadgets", checked: Settings.showCpuMeter,
-              run: function () { Settings.showCpuMeter = !Settings.showCpuMeter; } },
+            { label: "Gadgets", children: [
+                { label: "CPU Meter", checked: Settings.showCpuMeter,
+                  run: function () { Settings.showCpuMeter = !Settings.showCpuMeter; } },
+                { label: "Clock", checked: Settings.showClockGadget,
+                  run: function () { Settings.showClockGadget = !Settings.showClockGadget; } }
+            ] },
             { label: "Personalize", icon: Qt.resolvedUrl("../assets/icons/control-panel.png"),
               run: function () { ControlPanelState.open("background"); } }
         ];

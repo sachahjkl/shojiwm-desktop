@@ -113,6 +113,33 @@ ShellRoot {
                     }
                 }
 
+                // The gadgets, on the first screen. A drag moves one; it
+                // keeps its distance from the right and top edges.
+                GadgetFrame {
+                    placeSetting: "cpuMeterPlace"
+                    active: Settings.showCpuMeter
+                        && desktopScope.modelData === Quickshell.screens[0]
+                    sourceComponent: CpuMeter {}
+                }
+
+                GadgetFrame {
+                    placeSetting: "clockGadgetPlace"
+                    active: Settings.showClockGadget
+                        && desktopScope.modelData === Quickshell.screens[0]
+                    sourceComponent: ClockGadget {}
+                }
+
+                // The sticky notes of this screen.
+                Repeater {
+                    model: StickyNotes.notes.filter(function (note) {
+                        return note.screen === desktopScope.modelData.name;
+                    })
+
+                    delegate: StickyNote {
+                        focusOnShow: modelData.id === StickyNotes.lastAdded
+                    }
+                }
+
                 // The CPU Meter gadget, on the first screen. A drag moves it;
                 // it keeps its distance from the right and top edges.
                 Loader {
