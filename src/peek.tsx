@@ -33,7 +33,7 @@ import {
   WIN_MINIMIZED,
   WIN_RECT,
 } from "./window-manager";
-import { setAnimations } from "./motion";
+import { setAnimationSpeed, setAnimations } from "./motion";
 import { setGlassLevel } from "./glass";
 
 /** The colours of a window while it is peeked through. */
@@ -82,6 +82,10 @@ export function createPeek(manager: FloatingWindowManager): Peek {
       params === null ||
       (params as { on?: unknown }).on !== false;
     setAnimations(on);
+    if (typeof params === "object" && params !== null) {
+      const speed = Number((params as { speed?: unknown }).speed);
+      setAnimationSpeed(speed);
+    }
     return on;
   });
   server.handle("glass", (params) => {

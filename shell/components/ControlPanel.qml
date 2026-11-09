@@ -69,6 +69,7 @@ FloatingWindow {
         { text: "Change the clock format", page: "clock", words: "clock time date format 24 12 hour" },
         { text: "See the time zone and time synchronization", page: "clock", words: "time zone timezone ntp synchronization sync server internet" },
         { text: "Turn off all unnecessary animations", page: "ease", words: "animations motion reduce reduced effects ease access accessibility" },
+        { text: "Change the animation speed", page: "ease", words: "animation speed fast faster slow slower motion duration" },
         { text: "About this desktop", page: "about", words: "about system version information" }
     ]
 
@@ -471,6 +472,120 @@ FloatingWindow {
                 text: "This is the system's own setting: GTK, libadwaita and the "
                     + "programs that read the settings portal follow it too. The "
                     + "shell's fades and the windows' animations stop at once."
+            }
+
+            SubHeading { text: "Animation speed" }
+
+            Note {
+                width: parent.width
+                text: "How fast windows open, close, minimise and snap, and how fast "
+                    + "the menus fade. 1x is the speed of Windows 7."
+            }
+
+            Row {
+                spacing: 12
+                enabled: Settings.animations
+                opacity: enabled ? 1 : 0.5
+
+                Text {
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: "Slower"
+                    color: Scheme.textMuted
+                    font.family: Theme.fontFamily
+                    font.pixelSize: Theme.fontSize
+                }
+
+                // A track from 0.25x to 3x in steps of 0.25x.
+                Item {
+                    id: speedSlider
+
+                    readonly property real low: 0.25
+                    readonly property real high: 3
+                    readonly property real fraction:
+                        (Settings.animationSpeed - low) / (high - low)
+
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: 260
+                    height: 24
+
+                    function setFrom(x) {
+                        var value = low + Math.max(0, Math.min(1, x / width)) * (high - low);
+                        Settings.animationSpeed = Math.round(value * 4) / 4;
+                    }
+
+                    Rectangle {
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: parent.width
+                        height: 4
+                        radius: 2
+                        color: Scheme.field
+                        border.width: 1
+                        border.color: Scheme.fieldBorder
+                    }
+
+                    // A tick at 1x.
+                    Rectangle {
+                        x: (1 - speedSlider.low) / (speedSlider.high - speedSlider.low)
+                            * speedSlider.width - 0.5
+                        y: parent.height - 5
+                        width: 1
+                        height: 5
+                        color: Scheme.fieldBorder
+                    }
+
+                    Rectangle {
+                        x: speedSlider.fraction * speedSlider.width - width / 2
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: 10
+                        height: 20
+                        radius: 2
+                        border.width: 1
+                        border.color: speedArea.containsMouse || speedArea.pressed
+                            ? Scheme.fieldFocus : Scheme.fieldBorder
+                        gradient: Gradient {
+                            GradientStop { position: 0.0; color: speedArea.containsMouse ? Scheme.buttonHotTop : Scheme.buttonTop }
+                            GradientStop { position: 1.0; color: speedArea.containsMouse ? Scheme.buttonHotBottom : Scheme.buttonBottom }
+                        }
+                    }
+
+                    MouseArea {
+                        id: speedArea
+                        anchors.fill: parent
+                        anchors.leftMargin: -6
+                        anchors.rightMargin: -6
+                        hoverEnabled: true
+                        preventStealing: true
+                        onPressed: function (event) { speedSlider.setFrom(event.x - 6); }
+                        onPositionChanged: function (event) {
+                            if (pressed)
+                                speedSlider.setFrom(event.x - 6);
+                        }
+                    }
+                }
+
+                Text {
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: "Faster"
+                    color: Scheme.textMuted
+                    font.family: Theme.fontFamily
+                    font.pixelSize: Theme.fontSize
+                }
+
+                Text {
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: Settings.animationSpeed.toFixed(2) + "x"
+                    color: Scheme.text
+                    font.family: Theme.fontFamily
+                    font.pixelSize: Theme.fontSize
+                    font.bold: true
+                }
+
+                CpLink {
+                    anchors.verticalCenter: parent.verticalCenter
+                    visible: Settings.animationSpeed !== 1
+                    text: "Reset"
+                    onClicked: Settings.animationSpeed = 1
+                }
             }
         }
     }

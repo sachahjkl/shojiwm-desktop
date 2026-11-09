@@ -25,6 +25,7 @@ Singleton {
     property alias combineWindows: adapter.combineWindows
     property alias taskbarCompact: adapter.taskbarCompact
     property alias glassBlur: adapter.glassBlur
+    property alias animationSpeed: adapter.animationSpeed
     property alias desktopIconSize: adapter.desktopIconSize
     property alias showDesktopIcons: adapter.showDesktopIcons
     property alias desktopSort: adapter.desktopSort
@@ -176,6 +177,8 @@ Singleton {
             /// The blur behind the glass of the caption bars, the taskbar
             /// and the menus: 0 for none, up to 4.
             property int glassBlur: 2
+            /// How fast every animation plays: 1 is normal, 2 twice as fast.
+            property real animationSpeed: 1
             property bool showFrequent: true
 
             /// The desktop: "large", "medium" or "small" icons, whether they
@@ -288,9 +291,10 @@ Singleton {
     property bool animations: true
     readonly property string animationsKey: "/org/gnome/desktop/interface/enable-animations"
 
-    /// The length of an animation: `ms`, or 0 when the system asks for none.
+    /// The length of an animation: `ms` at the chosen speed, or 0 when the
+    /// system asks for none.
     function motion(ms) {
-        return root.animations ? ms : 0;
+        return root.animations ? Math.round(ms / root.animationSpeed) : 0;
     }
 
     function setAnimations(on) {

@@ -36,7 +36,10 @@ Singleton {
     }
 
     function sendAnimations() {
-        return send("animations", { on: Settings.animations });
+        return send("animations", {
+            on: Settings.animations,
+            speed: Settings.animationSpeed
+        });
     }
 
     function sendGlass() {
@@ -46,6 +49,7 @@ Singleton {
     Connections {
         target: Settings
         function onAnimationsChanged() { root.sendAnimations(); }
+        function onAnimationSpeedChanged() { root.sendAnimations(); }
         function onGlassBlurChanged() { root.sendGlass(); }
     }
 
