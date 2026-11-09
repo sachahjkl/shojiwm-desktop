@@ -166,15 +166,15 @@ Item {
             onOverflowRequested: function (at) {
                 var open = !bar.trayOverflowOpen;
                 bar.closePopups();
-                bar.trayOverflowOpen = open;
                 trayOverflow.anchorRect = at;
+                bar.trayOverflowOpen = open;
             }
             onMenuRequested: function (item, at) {
                 bar.previewGroup = null;
                 bar.jumpListGroup = null;
-                bar.trayMenuItem = bar.trayMenuItem === item ? null : item;
                 trayMenu.anchorWindow = bar.window;
                 trayMenu.anchorRect = at;
+                bar.trayMenuItem = bar.trayMenuItem === item ? null : item;
             }
             onHoverChanged: function (inside) {
                 bar.pointerOnTray = inside;
@@ -247,8 +247,8 @@ Item {
             onMenuRequested: function (at) {
                 var open = !bar.clockMenuOpen;
                 bar.closePopups();
-                bar.clockMenuOpen = open;
                 clockMenu.anchorRect = at;
+                bar.clockMenuOpen = open;
             }
         }
 
@@ -403,8 +403,8 @@ Item {
                 onPreviewRequested: function (at) {
                     bar.jumpListGroup = null;
                     bar.trayMenuItem = null;
-                    bar.previewGroup = modelData;
                     thumbnails.anchorRect = at;
+                    bar.previewGroup = modelData;
                     hideThumbnails.stop();
                 }
                 onPreviewCancelled: hideThumbnails.restart()
@@ -414,9 +414,11 @@ Item {
                 onMenuRequested: function (at) {
                     bar.previewGroup = null;
                     bar.trayMenuItem = null;
+                    // The place first: a popup shown before it would open at
+                    // its last place and then move.
+                    jumpList.anchorRect = at;
                     bar.jumpListGroup =
                         bar.jumpListGroup === modelData ? null : modelData;
-                    jumpList.anchorRect = at;
                 }
             }
         }
@@ -584,9 +586,9 @@ Item {
         // An icon's menu opens on the icon, in the popover, which stays
         // open under it.
         onMenuRequested: function (item, at) {
-            bar.trayMenuItem = bar.trayMenuItem === item ? null : item;
             trayMenu.anchorWindow = trayOverflow;
             trayMenu.anchorRect = at;
+            bar.trayMenuItem = bar.trayMenuItem === item ? null : item;
         }
     }
 
