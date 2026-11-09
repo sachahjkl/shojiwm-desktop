@@ -14,9 +14,7 @@ Singleton {
     property string openOn: ""
 
     function open(screen) {
-        var screens = Quickshell.screens;
-        root.openOn = screen.length > 0 ? screen
-            : screens.length > 0 ? screens[0].name : "";
+        root.openOn = screen.length > 0 ? screen : Screens.primaryName;
     }
 
     function close() {

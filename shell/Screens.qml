@@ -1,0 +1,27 @@
+pragma Singleton
+
+import QtQuick
+import Quickshell
+
+// The main screen: the one Settings.primaryScreen names, when it is
+// connected, else the first screen Quickshell lists. It is not the screen
+// with the focus: it is where the shell puts what has no screen of its own.
+// The lock screen shows there alone; the Start menu and the Shut Down
+// dialog open there when asked without a screen; the gadgets stand there;
+// desktop icons without a place, or whose screen is gone, show there.
+Singleton {
+    id: root
+
+    readonly property string primaryName: {
+        var screens = Quickshell.screens;
+        for (var i = 0; i < screens.length; i++) {
+            if (screens[i].name === Settings.primaryScreen)
+                return Settings.primaryScreen;
+        }
+        return screens.length > 0 ? screens[0].name : "";
+    }
+
+    function isPrimary(screen) {
+        return !!screen && screen.name === root.primaryName;
+    }
+}

@@ -23,6 +23,7 @@ Singleton {
     property bool locked: false
 
     function lock() {
+        root.typed = "";
         root.locked = true;
     }
 
@@ -37,11 +38,14 @@ Singleton {
     property int failures: 0
 
     property string pendingPassword: ""
+    /// What is typed in the password field, shared by every screen's lock
+    /// surface: the keyboard can go to any of them.
+    property string typed: ""
 
     /// Check a password with PAM, as the "login" service of /etc/pam.d does.
     /// Only its success unlocks.
     function authenticate(password) {
-        if (root.busy || !root.locked)
+        if (root.busy || !root.locked || password.length === 0)
             return;
         root.pendingPassword = password;
         root.busy = true;
@@ -74,6 +78,7 @@ Singleton {
             root.pendingPassword = "";
             if (result === PamResult.Success) {
                 root.message = "";
+                root.typed = "";
                 root.locked = false;
             } else {
                 root.fail("The user name or password is incorrect.");

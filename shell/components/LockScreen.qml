@@ -11,7 +11,7 @@ import "../theme.js" as Theme
 // password replaces the field with the message and OK, as Windows does. The
 // red power button and its arrow sit in the bottom right corner.
 //
-// One per screen. The password is checked once, by LockState.
+// On the main screen only (shell.qml). The password is checked by LockState.
 Item {
     id: screen
 
@@ -155,6 +155,10 @@ Item {
                 clip: true
                 focus: true
                 enabled: !LockState.busy
+
+                // Shared with the other screens' surfaces (shell.qml).
+                text: LockState.typed
+                onTextChanged: LockState.typed = text
 
                 Keys.onReturnPressed: screen.submit()
                 Keys.onEnterPressed: screen.submit()

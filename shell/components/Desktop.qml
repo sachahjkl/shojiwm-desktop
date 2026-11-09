@@ -177,23 +177,13 @@ Item {
     //
     // Each icon has a place in Settings.desktopPlaces: a screen and the top
     // left of its cell. An icon without one, or whose screen is not
-    // connected, shows on the main screen in the first free cell. Its place
-    // is kept, so it goes back when its screen comes back.
+    // connected, shows on the main screen (Screens) in the first free cell.
+    // Its place is kept, so it goes back when its screen comes back.
 
     readonly property var screenNames: Quickshell.screens.map(function (screen) {
         return screen.name;
     })
-    /// The main screen: the top left one of the layout, whatever order the
-    /// screens are found in.
-    readonly property string firstScreen: {
-        var best = null;
-        for (var i = 0; i < Quickshell.screens.length; i++) {
-            var screen = Quickshell.screens[i];
-            if (!best || screen.y < best.y || (screen.y === best.y && screen.x < best.x))
-                best = screen;
-        }
-        return best ? best.name : "";
-    }
+    readonly property string firstScreen: Screens.primaryName
     /// The cells: the screen less the taskbar, filled in columns.
     readonly property int rows: Math.max(1, Math.floor((height - Theme.taskbarHeight - 4) / size.height))
     readonly property int columns: Math.max(1, Math.floor((width - 4) / size.width))

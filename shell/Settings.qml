@@ -49,6 +49,7 @@ Singleton {
     property alias desktopIconSize: adapter.desktopIconSize
     property alias showDesktopIcons: adapter.showDesktopIcons
     property alias desktopSort: adapter.desktopSort
+    property alias primaryScreen: adapter.primaryScreen
     property alias desktopAutoArrange: adapter.desktopAutoArrange
     property alias desktopAlignToGrid: adapter.desktopAlignToGrid
     property alias desktopPlaces: adapter.desktopPlaces
@@ -256,6 +257,8 @@ Singleton {
             property string desktopIconSize: "medium"
             property bool showDesktopIcons: true
             property string desktopSort: "name"
+            /// The main screen, by connector name; "" for the first one (Screens).
+            property string primaryScreen: ""
             /// The colour scheme last read from dconf, to start with (colorScheme).
             property string lastColorScheme: "default"
             /// "Auto arrange icons": each screen's icons in columns, in sort order.

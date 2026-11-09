@@ -312,6 +312,7 @@
           singleton StickyNotes 1.0 StickyNotes.qml
           singleton DefaultApps 1.0 DefaultApps.qml
           singleton Maintenance 1.0 Maintenance.qml
+          singleton Screens 1.0 Screens.qml
           EOF
           cd ./shell
           qmllint \

@@ -19,8 +19,7 @@ Singleton {
     readonly property int menuHeight: Settings.startMenuLargeIcons ? Theme.menuHeight : Theme.menuHeightSmall
 
     function firstScreen() {
-        var screens = Quickshell.screens;
-        return screens.length > 0 ? screens[0].name : "";
+        return Screens.primaryName;
     }
 
     function open(screen) {

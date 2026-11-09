@@ -37,14 +37,37 @@ ShellRoot {
     // ext-session-lock: while locked, the compositor shows these surfaces and
     // nothing else, and sends them every key. If the shell dies, the session
     // stays locked.
+    //
+    // The log-on screen shows on the main screen only; the others stay
+    // black. The compositor gives the keyboard to one of the surfaces: on
+    // another screen, what is typed still goes to the password (LockState).
     WlSessionLock {
         locked: LockState.locked
 
         WlSessionLockSurface {
-            color: "#0e3a63"
+            id: lockSurface
+
+            readonly property bool primary: Screens.isPrimary(lockSurface.screen)
+
+            color: lockSurface.primary ? "#0e3a63" : "#000000"
 
             LockScreen {
                 anchors.fill: parent
+                visible: lockSurface.primary
+            }
+
+            TextInput {
+                width: 1
+                height: 1
+                opacity: 0
+                visible: !lockSurface.primary
+                focus: !lockSurface.primary
+                echoMode: TextInput.Password
+                text: LockState.typed
+                onTextChanged: LockState.typed = text
+                Keys.onReturnPressed: LockState.authenticate(LockState.typed)
+                Keys.onEnterPressed: LockState.authenticate(LockState.typed)
+                Keys.onEscapePressed: LockState.typed = ""
             }
         }
     }
@@ -143,14 +166,14 @@ ShellRoot {
                 GadgetFrame {
                     placeSetting: "cpuMeterPlace"
                     active: Settings.showCpuMeter
-                        && desktopScope.modelData === Quickshell.screens[0]
+                        && Screens.isPrimary(desktopScope.modelData)
                     sourceComponent: CpuMeter {}
                 }
 
                 GadgetFrame {
                     placeSetting: "clockGadgetPlace"
                     active: Settings.showClockGadget
-                        && desktopScope.modelData === Quickshell.screens[0]
+                        && Screens.isPrimary(desktopScope.modelData)
                     sourceComponent: ClockGadget {}
                 }
             }

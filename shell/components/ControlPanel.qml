@@ -800,6 +800,17 @@ FloatingWindow {
                 }
             }
 
+            // As Windows 7's: where the lock screen, the gadgets and what has
+            // no screen of its own go (Screens).
+            CpCheck {
+                label: "Make this my main display"
+                checked: !!display.screen && Screens.primaryName === display.screen.name
+                onToggled: function (on) {
+                    if (display.screen)
+                        Settings.primaryScreen = on ? display.screen.name : "";
+                }
+            }
+
             Row {
                 spacing: 10
                 topPadding: 4
