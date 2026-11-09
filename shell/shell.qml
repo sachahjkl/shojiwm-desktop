@@ -24,6 +24,7 @@ ShellRoot {
     // Panel's IPC: singletons are only built when something names them.
     property var lockState: LockState
     property var controlPanel: ControlPanelState
+    property var shutdown: ShutdownState
 
     // ----- lock screen ------------------------------------------------------
 
@@ -258,6 +259,48 @@ ShellRoot {
             onOpenChanged: {
                 if (menuWindow.open)
                     startMenu.reset();
+            }
+        }
+    }
+
+    // ----- Shut Down Windows ------------------------------------------------
+    //
+    // Over everything, the screen dimmed and blurred behind the dialog.
+
+    Variants {
+        model: Quickshell.screens
+
+        PanelWindow {
+            id: shutdownWindow
+
+            required property var modelData
+            screen: modelData
+
+            readonly property bool open: ShutdownState.openOn === modelData.name
+
+            visible: open
+            color: "transparent"
+            anchors.top: true
+            anchors.bottom: true
+            anchors.left: true
+            anchors.right: true
+
+            exclusionMode: ExclusionMode.Ignore
+            WlrLayershell.layer: WlrLayer.Overlay
+            WlrLayershell.namespace: "shojiwm-win7-shutdown"
+            WlrLayershell.keyboardFocus: open ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
+
+            ShutdownDialog {
+                id: shutdownDialog
+                anchors.fill: parent
+                onDismissed: ShutdownState.close()
+            }
+
+            onOpenChanged: {
+                if (open) {
+                    StartMenuState.close();
+                    shutdownDialog.reset();
+                }
             }
         }
     }

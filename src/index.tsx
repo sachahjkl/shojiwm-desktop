@@ -231,11 +231,32 @@ COMPOSITOR.key.bind("files", "Super+E", () => {
 COMPOSITOR.key.bind("browser", "Super+B", () => {
   COMPOSITOR.process.spawn({ command: BROWSER });
 });
+/** Ask the shell for "Shut Down Windows" on the current monitor. */
+function openShutdownDialog(): void {
+  const monitor = WINDOWS.outputName() ?? "";
+  COMPOSITOR.process.spawn({
+    command: `quickshell -p ${SHELL_PATH} ipc call shutdown openOn "${monitor}"`,
+  });
+}
+
+// Alt+F4 closes the focused window; with none, as on the desktop, it asks
+// what the computer should do, as Windows 7 does.
+COMPOSITOR.key.bind("close-window", "Alt+F4", () => {
+  const window = WINDOWS.focusedWindow();
+  if (window) {
+    window.close();
+  } else {
+    openShutdownDialog();
+  }
+});
+// ShojiWM quits on Super+Shift+Q unless the configuration binds it: here it
+// closes the focused window, and the session ends from the power menu.
 COMPOSITOR.key.bind(
-  "close-window",
-  "Alt+F4",
+  "close-window-super",
+  "Super+Shift+Q",
   withFocused((window) => window.close()),
 );
+COMPOSITOR.key.bind("shutdown-dialog", "Super+Shift+E", openShutdownDialog);
 COMPOSITOR.key.bind("switch-window", "Alt+Tab", () => ALT_TAB.open(1));
 COMPOSITOR.key.bind("switch-window-back", "Alt+Shift+Tab", () =>
   ALT_TAB.open(-1),

@@ -73,6 +73,18 @@ Singleton {
     }
 
     function setTrayVisible(id, on) {
+        // Hiding one icon while every icon is shown: the others stay shown,
+        // now by choice, and this one goes to the popover.
+        if (!on && adapter.trayShowAll) {
+            var items = SystemTray.items ? SystemTray.items.values : [];
+            var shown = [];
+            for (var i = 0; i < items.length; i++) {
+                if (items[i] && String(items[i].id) !== String(id))
+                    shown.push(String(items[i].id));
+            }
+            adapter.trayShown = shown;
+            adapter.trayShowAll = false;
+        }
         adapter.trayShown = withMember(adapter.trayShown, id, on);
         adapter.trayHidden = withMember(adapter.trayHidden, id, !on);
     }

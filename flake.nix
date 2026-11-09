@@ -171,6 +171,7 @@
           singleton Scheme 1.0 Scheme.qml
           singleton LockState 1.0 LockState.qml
           singleton ControlPanelState 1.0 ControlPanelState.qml
+          singleton ShutdownState 1.0 ShutdownState.qml
           EOF
           cd ./shell
           qmllint \

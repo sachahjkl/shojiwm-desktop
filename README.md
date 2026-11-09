@@ -269,7 +269,8 @@ running one.
 | `Super`+`Return`                  | Terminal                                                                   |
 | `Super`+`E`                       | File manager                                                               |
 | `Super`+`B`                       | Browser                                                                    |
-| `Alt`+`F4`                        | Close the focused window                                                   |
+| `Alt`+`F4`                        | Close the focused window; on the desktop, Shut Down Windows                |
+| `Super`+`Shift`+`E`               | Shut Down Windows                                                          |
 | `Alt`+`Tab` / `Alt`+`Shift`+`Tab` | Switch window                                                              |
 | `Super`+`Up`                      | Maximise                                                                   |
 | `Super`+`Down`                    | Restore a maximised window, else minimise                                  |
@@ -283,7 +284,7 @@ running one.
 | `Super`+drag                      | Move a window from anywhere on it                                          |
 | `Super`+double click              | Maximise, and again to restore                                             |
 | `Super`+`Shift`+`R`               | Reload this configuration (built into ShojiWM)                             |
-| `Super`+`Shift`+`Q`               | Quit the session (built into ShojiWM)                                      |
+| `Super`+`Shift`+`Q`               | Close the focused window                                                   |
 
 ## The files
 
