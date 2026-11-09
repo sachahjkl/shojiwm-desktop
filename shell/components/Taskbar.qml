@@ -34,6 +34,27 @@ Item {
     property bool clockMenuOpen: false
     property bool trayOverflowOpen: false
 
+    // A notification-area icon dropped anywhere on the taskbar shows there:
+    // on the icons, at that place among them, which reorders them; elsewhere,
+    // at the end. Under everything else: the arrow's own drop area, which
+    // hides an icon, sits above it.
+    DropArea {
+        z: -1
+        anchors.fill: parent
+        keys: [Settings.trayDragType]
+
+        onDropped: function (event) {
+            var id = String(event.getDataAsString(Settings.trayDragType));
+            if (id.length === 0)
+                return;
+            var at = trayArea.mapFromItem(bar, event.x, event.y);
+            var x = at.x >= 0 && at.x <= trayArea.width ? at.x : trayArea.width;
+            event.acceptProposedAction();
+            // After the drag has ended: the change removes its source.
+            Qt.callLater(function () { trayArea.placeAt(id, x); });
+        }
+    }
+
     function closePopups() {
         bar.previewGroup = null;
         bar.jumpListGroup = null;

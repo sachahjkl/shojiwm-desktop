@@ -72,6 +72,16 @@ Singleton {
         return trayCount <= trayShownByDefault;
     }
 
+    /// Show the icon `id` at `index` among `order`, the ids shown now, left
+    /// to right; the taskbar keeps that order.
+    function placeTrayIcon(id, index, order) {
+        var list = order.filter(function (other) { return other !== String(id); });
+        index = Math.max(0, Math.min(list.length, index));
+        list.splice(index, 0, String(id));
+        adapter.trayShown = list;
+        adapter.trayHidden = withMember(adapter.trayHidden, id, false);
+    }
+
     function setTrayVisible(id, on) {
         // Hiding one icon while every icon is shown: the others stay shown,
         // now by choice, and this one goes to the popover.
