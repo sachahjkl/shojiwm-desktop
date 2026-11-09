@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>shojiwm-win7 - a Windows 7 Aero desktop for ShojiWM</title>
+<meta name="description" content="A Windows 7 Aero desktop for the ShojiWM Wayland compositor: glass window frames, a taskbar, a Start menu and a Control Panel. All artwork original.">
+<link rel="icon" type="image/svg+xml" href="logo.svg">
+<link rel="icon" type="image/png" sizes="512x512" href="logo.png">
+<link rel="apple-touch-icon" href="logo.png">
+<link rel="stylesheet" href="classic.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<div class="page">
+<header class="masthead">
+<img src="logo.svg" alt="" width="48" height="48">
+<a class="name" href="./">shojiwm-win7</a>
+<span class="tagline">a Windows 7 Aero desktop for the ShojiWM Wayland compositor</span>
+</header>
+<nav class="site" aria-label="Site">
+<a href="./" aria-current="page">home</a>
+<span class="sep" aria-hidden="true">-</span>
+<a href="#screenshots">screenshots</a>
+<span class="sep" aria-hidden="true">-</span>
+<a href="#install">install</a>
+<span class="sep" aria-hidden="true">-</span>
+<a href="https://github.com/sachahjkl/shojiwm-win7#readme">README</a>
+<span class="sep" aria-hidden="true">-</span>
+<a href="https://github.com/sachahjkl/shojiwm-win7">source code</a>
+<span class="sep" aria-hidden="true">-</span>
+<a href="https://github.com/bea4dev/ShojiWM">ShojiWM</a>
+</nav>
+<div class="columns">
+<main id="main">
+<h1>Welcome to shojiwm-win7</h1>
+<p>shojiwm-win7 is a configuration for <a href="https://github.com/bea4dev/ShojiWM">ShojiWM</a>, the Wayland
+  compositor you configure in TypeScript. The compositor draws the window frames: a blurred glass caption bar, the
+  caption buttons and a thin glossy border. A <a href="https://quickshell.org">Quickshell</a> shell draws the rest:
+  the taskbar, the Start menu, the notification area, the Control Panel and the lock screen.</p>
+<p>No file from Windows is copied, embedded or required. The artwork is original, except the colour icons, which come
+  from KDE's Oxygen icons (LGPL).</p>
+
+<figure class="lead">
+<a href="shots/desktop.png"><img src="shots/desktop.png" alt="The desktop: two glass windows, the desktop icons, and the taskbar with the orb, the buttons, the notification area and the clock" width="1280" height="800"></a>
+<figcaption>The desktop, captured from the configuration running in a headless session.</figcaption>
+</figure>
+
+<h2>What you get</h2>
+<ul>
+  <li>Glass window frames with Windows 7's caption buttons, Aero Snap, Aero Peek and Alt+Tab.</li>
+  <li>A taskbar with combined buttons, pinned programs, thumbnails, jump lists and button progress.</li>
+  <li>A Start menu with search, All Programs, your folders and a power button; a launcher and a Run dialog.</li>
+  <li>The notification area: network, volume, Bluetooth, notifications, Action Center, the clock and its calendar.</li>
+  <li>A Control Panel: background, colours, light and dark, screens, sound, default and startup programs.</li>
+  <li>Desktop icons, sticky notes, gadgets, a lock screen, a screen saver, and a log-on screen for greetd.</li>
+</ul>
+
+<h2 id="install">Install</h2>
+<p>You need ShojiWM from the <code>integration</code> branch of
+  <a href="https://github.com/sachahjkl/ShojiWM/blob/integration/FORK.md">sachahjkl/ShojiWM</a>, and Quickshell 0.3.0
+  or later. The <a href="https://github.com/sachahjkl/shojiwm-win7#requirements">README</a> lists the rest.</p>
+<p>With Nix, install the configuration into <code>~/.config/shojiwm</code>:</p>
+<pre><code>nix run github:sachahjkl/shojiwm-win7#install</code></pre>
+<p>Without Nix:</p>
+<pre><code>git clone https://github.com/sachahjkl/shojiwm-win7.git
+cd shojiwm-win7
+mkdir -p ~/.config/shojiwm
+rm -rf ~/.config/shojiwm/src ~/.config/shojiwm/assets ~/.config/shojiwm/shell
+cp -R src assets shell package.json tsconfig.json ~/.config/shojiwm/</code></pre>
+<p>Then start the ShojiWM session, or press <kbd>Super</kbd>+<kbd>Shift</kbd>+<kbd>R</kbd> to reload a running one.</p>
+</main>
+<aside aria-labelledby="news">
+<h2 id="news">News</h2>
+<div class="item">
+<time class="date" datetime="2026-11-09">2026-11-09</time>: <a href="https://github.com/sachahjkl/shojiwm-win7#the-log-on-screen">A log-on screen for greetd</a><br>
+The lock screen as a log-on screen, with <code>nixosModules.greeter</code> and a check that runs it in VMs.
+</div>
+<div class="item">
+<time class="date" datetime="2026-11-09">2026-11-09</time>: <a href="https://github.com/sachahjkl/shojiwm-win7#keys">The Run dialog and the orb menu</a><br>
+<code>Super</code>+<code>R</code> opens Run, with its history; <code>Super</code>+<code>X</code> or a right click on the orb opens the tools menu.
+</div>
+<div class="item">
+<time class="date" datetime="2026-11-09">2026-11-09</time>: <a href="https://github.com/sachahjkl/shojiwm-win7#what-you-get">A Bluetooth panel</a><br>
+The adapter, the paired devices and the devices in reach, in the notification area.
+</div>
+<p><a class="all" href="https://github.com/sachahjkl/shojiwm-win7/commits/main">- all changes -</a></p>
+</aside>
+</div>
+
+<h2 id="screenshots">Screenshots</h2>
+<p>Every picture is a capture of this configuration running. <code>tools/screenshots.sh</code> makes them on a machine
+  with no display: ShojiWM's nested backend inside Xvfb, Mesa in software, the keys and the pointer driven by xdotool.
+  Click a picture for its full size.</p>
+<div class="shots">
+<figure><a href="shots/start-menu.png"><img src="shots/start-menu.png" alt="The Start menu" width="1280" height="800" loading="lazy"></a><figcaption>The Start menu</figcaption></figure>
+<figure><a href="shots/start-menu-all.png"><img src="shots/start-menu-all.png" alt="All Programs in the Start menu" width="1280" height="800" loading="lazy"></a><figcaption>All Programs</figcaption></figure>
+<figure><a href="shots/launcher-search.png"><img src="shots/launcher-search.png" alt="The launcher while typing" width="1280" height="800" loading="lazy"></a><figcaption>The launcher</figcaption></figure>
+<figure><a href="shots/taskbar-thumbnail.png"><img src="shots/taskbar-thumbnail.png" alt="The thumbnails of a taskbar button" width="1280" height="800" loading="lazy"></a><figcaption>Taskbar thumbnails</figcaption></figure>
+<figure><a href="shots/jump-list.png"><img src="shots/jump-list.png" alt="A jump list with recent files" width="1280" height="800" loading="lazy"></a><figcaption>A jump list</figcaption></figure>
+<figure><a href="shots/desktop-menu.png"><img src="shots/desktop-menu.png" alt="The desktop's menu with View open" width="1280" height="800" loading="lazy"></a><figcaption>The desktop's menu</figcaption></figure>
+<figure><a href="shots/snap.png"><img src="shots/snap.png" alt="Aero Snap while dragging a window to the left edge" width="1280" height="800" loading="lazy"></a><figcaption>Aero Snap</figcaption></figure>
+<figure><a href="shots/peek.png"><img src="shots/peek.png" alt="Aero Peek: the windows as glass outlines" width="1280" height="800" loading="lazy"></a><figcaption>Aero Peek</figcaption></figure>
+<figure><a href="shots/alt-tab.png"><img src="shots/alt-tab.png" alt="The Alt+Tab panel" width="1280" height="800" loading="lazy"></a><figcaption>Alt+Tab</figcaption></figure>
+<figure><a href="shots/calendar.png"><img src="shots/calendar.png" alt="The calendar over the clock" width="1280" height="800" loading="lazy"></a><figcaption>The calendar</figcaption></figure>
+<figure><a href="shots/control-panel.png"><img src="shots/control-panel.png" alt="The Control Panel's home page" width="1280" height="800" loading="lazy"></a><figcaption>The Control Panel</figcaption></figure>
+<figure><a href="shots/start-menu-dark.png"><img src="shots/start-menu-dark.png" alt="The Start menu in dark" width="1280" height="800" loading="lazy"></a><figcaption>Dark</figcaption></figure>
+<figure><a href="shots/lock-screen.png"><img src="shots/lock-screen.png" alt="The lock screen" width="1280" height="800" loading="lazy"></a><figcaption>The lock screen</figcaption></figure>
+<figure><a href="shots/lock-screen-dark.png"><img src="shots/lock-screen-dark.png" alt="The lock screen in dark" width="1280" height="800" loading="lazy"></a><figcaption>The lock screen, dark</figcaption></figure>
+<figure><a href="shots/tray-menu.png"><img src="shots/tray-menu.png" alt="The menu of a notification-area item" width="1280" height="800" loading="lazy"></a><figcaption>A tray menu</figcaption></figure>
+<figure><a href="shots/taskbar-labels.png"><img src="shots/taskbar-labels.png" alt="The taskbar with labels on its buttons" width="1280" height="800" loading="lazy"></a><figcaption>Taskbar with labels</figcaption></figure>
+</div>
+
+<footer class="foot">
+shojiwm-win7 is made by <a href="https://sacha.house/">Sacha</a>. MIT licence.
+<span class="sep" aria-hidden="true">-</span> <a href="https://github.com/sachahjkl/shojiwm-win7">source code</a>
+<span class="sep" aria-hidden="true">-</span> <a href="https://github.com/sachahjkl/shojiwm-win7/issues">issues</a>
+</footer>
+</div>
+</body>
+</html>
