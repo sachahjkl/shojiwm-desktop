@@ -174,8 +174,8 @@ const CaptionTitle = ({ window }: { window: WaylandWindow }) => (
 );
 
 export interface FrameOptions {
-  /** The compiled blur that stands behind the glass. */
-  glass: CompiledEffectHandle;
+  /** The compiled blur that stands behind the glass; null for none. */
+  glass: CompiledEffectHandle | null;
   /** `true` while the blur must be left out (the Alt+Tab panel is open). */
   glassSuspended: boolean;
   onMinimize: () => void;
@@ -372,7 +372,7 @@ export function aeroFrame(
         },
       }}
     >
-      {options.glassSuspended ? (
+      {options.glassSuspended || !options.glass ? (
         <Box
           direction="column"
           paint={paint}

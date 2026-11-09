@@ -17,15 +17,7 @@ import {
   ManagedWindow,
   Solid,
   Windows,
-  backdropSource,
-  compileEffect,
-  compileLayerEffect,
   computed,
-  dualKawaseBlur,
-  layerSource,
-  loadShader,
-  shaderStage,
-  xrayBackdropSource,
   type CompositionRenderable,
   type DisplayConfigDraft,
   type OutputInfo,
@@ -34,6 +26,8 @@ import {
 import { aeroFrame } from "./decoration";
 import { createAltTab } from "./alt-tab";
 import { SHELL_SOCKET, createPeek } from "./peek";
+import { createZoom } from "./zoom";
+import { layerGlassEffect, windowGlassEffect } from "./glass";
 import {
   FloatingWindowManager,
   WIN_FULLSCREEN,
@@ -173,6 +167,7 @@ COMPOSITOR.rendering.framePacing = "throughput";
 const WINDOWS = new FloatingWindowManager();
 const ALT_TAB = createAltTab(WINDOWS);
 const PEEK = createPeek(WINDOWS);
+const ZOOM = createZoom();
 
 const FULLSCREEN_Z_INDEX = 2_000_000_000;
 
@@ -390,6 +385,31 @@ if (EXTRA_KEYS) {
   }
 }
 
+// The media keys: the volume of the default output (the speaker in the
+// notification area follows it), the microphone, and the player through
+// MPRIS. A held volume key repeats.
+const MEDIA_KEYS: Record<string, string> = {
+  XF86AudioRaiseVolume: "wpctl set-volume -l 1 @DEFAULT_AUDIO_SINK@ 2%+",
+  XF86AudioLowerVolume: "wpctl set-volume @DEFAULT_AUDIO_SINK@ 2%-",
+  XF86AudioMute: "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle",
+  XF86AudioMicMute: "wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle",
+  XF86AudioPlay: "playerctl play-pause",
+  XF86AudioPause: "playerctl pause",
+  XF86AudioStop: "playerctl stop",
+  XF86AudioNext: "playerctl next",
+  XF86AudioPrev: "playerctl previous",
+};
+for (const [key, command] of Object.entries(MEDIA_KEYS)) {
+  const action = () => {
+    COMPOSITOR.process.spawn({ command });
+  };
+  COMPOSITOR.key.bind(
+    `media:${key}`,
+    key,
+    key.endsWith("Volume") ? action : once(action),
+  );
+}
+
 // Super+D is the launcher, so showing the desktop moves to Super+M, the key
 // Windows 7 minimises everything with.
 COMPOSITOR.key.bind("show-desktop", "Super+M", () =>
@@ -400,66 +420,15 @@ COMPOSITOR.key.bind("show-desktop", "Super+M", () =>
 // Glass
 // ---------------------------------------------------------------------------
 
-/** The blur behind the caption bar of a window. */
-const WINDOW_GLASS = compileEffect({
-  input: backdropSource(),
-  capturePadding: 24,
-  invalidate: { kind: "on-source-damage-box", damagePadding: 8 },
-  pipeline: [dualKawaseBlur({ radius: 4, passes: 2 })],
-});
-
-/**
- * The blur behind a shell surface.
- *
- * The second stage clips the blur to the pixels the surface itself draws, so
- * the rounded corners of the Start menu have no blurred square behind them.
- */
-function layerGlass(
-  input: ReturnType<typeof backdropSource | typeof xrayBackdropSource>,
-) {
-  return compileLayerEffect({
-    input,
-    capturePadding: 24,
-    invalidate: { kind: "on-source-damage-box", damagePadding: 8 },
-    alpha: "preserve",
-    pipeline: [
-      dualKawaseBlur({ radius: 4, passes: 2 }),
-      shaderStage(loadShader("./assets/layer-mask.frag"), {
-        textures: { layer_mask: layerSource() },
-        uniforms: {
-          opacity_threshold: 0.25,
-          mask_feather: 0.04,
-        },
-      }),
-    ],
-  });
-}
-
-/** The Start menu shows the windows behind it, so it blurs the whole scene. */
-const MENU_GLASS = layerGlass(backdropSource());
-
-/**
- * The taskbar blurs only the wallpaper and the layers below the windows.
- *
- * Windows stay out of the taskbar's exclusive zone, so the result is the
- * same. `backdropSource()` reads the frame being composited, and ShojiWM
- * (9e778dc) then composites the taskbar onto itself on some frames: the
- * whole bar flashes lighter while the Start menu is open. The X-ray source
- * renders its own capture and does not read that frame.
- */
-const TASKBAR_GLASS = layerGlass(xrayBackdropSource());
-
 COMPOSITOR.effect.layer = (layer) => {
   const namespace = layer.namespace() ?? "";
-  if (namespace === "shojiwm-win7-taskbar") {
-    return { behind: TASKBAR_GLASS };
-  }
   // The shell's own glass surfaces. Other programs' layers (Vicinae, the
   // wallpaper, the shell's full-screen catchers named "no_blur") get none:
   // a blur costs a capture and a pass every frame they change, and Vicinae,
   // nearly opaque, would show little of it.
   if (namespace.startsWith("shojiwm-win7-")) {
-    return { behind: MENU_GLASS };
+    const glass = layerGlassEffect();
+    return glass ? { behind: glass } : {};
   }
   return {};
 };
@@ -511,7 +480,8 @@ function snapPreviewComposition(
 COMPOSITOR.rendering.composition = (output) =>
   ALT_TAB.compose(output) ??
   snapPreviewComposition(output) ??
-  PEEK.compose(output) ?? <DefaultComposition />;
+  PEEK.compose(output) ??
+  ZOOM.compose(output) ?? <DefaultComposition />;
 
 // ---------------------------------------------------------------------------
 // The frame of every window
@@ -567,7 +537,7 @@ COMPOSITOR.window.composition = (window: WaylandWindow) => {
       tiled={true}
     >
       {aeroFrame(window, {
-        glass: WINDOW_GLASS,
+        glass: windowGlassEffect(),
         glassSuspended: ALT_TAB.blurSuspended(),
         onMinimize: () => WINDOWS.setMinimized(window, true),
         onToggleMaximize: () => WINDOWS.toggleMaximized(window),

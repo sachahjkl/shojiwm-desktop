@@ -39,9 +39,14 @@ Singleton {
         return send("animations", { on: Settings.animations });
     }
 
+    function sendGlass() {
+        return send("glass", { level: Settings.glassBlur });
+    }
+
     Connections {
         target: Settings
         function onAnimationsChanged() { root.sendAnimations(); }
+        function onGlassBlurChanged() { root.sendGlass(); }
     }
 
 
@@ -52,8 +57,10 @@ Singleton {
         connected: root.path.length > 0
         // The compositor can be reloaded, which closes its end.
         onConnectedChanged: {
-            if (connected)
+            if (connected) {
                 root.sendAnimations();
+                root.sendGlass();
+            }
             else if (root.path.length > 0)
                 reconnect.restart();
         }

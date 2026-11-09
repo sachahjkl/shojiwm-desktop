@@ -24,6 +24,7 @@ Singleton {
     property alias userPicture: adapter.userPicture
     property alias combineWindows: adapter.combineWindows
     property alias taskbarCompact: adapter.taskbarCompact
+    property alias glassBlur: adapter.glassBlur
     property alias desktopIconSize: adapter.desktopIconSize
     property alias showDesktopIcons: adapter.showDesktopIcons
     property alias desktopSort: adapter.desktopSort
@@ -172,6 +173,9 @@ Singleton {
             /// Taskbar buttons show the icon alone, as Windows 7's "hide
             /// labels", which is its default too.
             property bool taskbarCompact: true
+            /// The blur behind the glass of the caption bars, the taskbar
+            /// and the menus: 0 for none, up to 4.
+            property int glassBlur: 2
             property bool showFrequent: true
 
             /// The desktop: "large", "medium" or "small" icons, whether they

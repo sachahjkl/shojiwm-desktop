@@ -36,7 +36,7 @@ FloatingWindow {
 
     readonly property var pages: ({
         "home": { title: "Control Panel Home", category: "" },
-        "appearance": { title: "Light or dark", category: "Appearance and Personalization" },
+        "appearance": { title: "Light, dark and glass", category: "Appearance and Personalization" },
         "background": { title: "Desktop Background", category: "Appearance and Personalization" },
         "lockscreen": { title: "Lock Screen", category: "Appearance and Personalization" },
         "account": { title: "Account Picture", category: "User Accounts" },
@@ -54,6 +54,7 @@ FloatingWindow {
 
     readonly property var tasks: [
         { text: "Choose light or dark", page: "appearance", words: "dark light theme colour color scheme night appearance" },
+        { text: "Change how much the glass blurs", page: "appearance", words: "glass blur transparency aero frosted taskbar window colour color" },
         { text: "Change desktop background", page: "background", words: "wallpaper picture image desktop background" },
         { text: "Change the size of desktop icons", page: "taskbar", words: "desktop icons size large small medium zoom" },
         { text: "Lock screen and its picture", page: "lockscreen", words: "lock screen picture password idle delay suspend sleep" },
@@ -649,6 +650,36 @@ FloatingWindow {
                     + "choice; only this desktop will, until it restarts. "
                     + "On NixOS: programs.dconf.enable = true (the shojiwm "
                     + "module of nixconfig sets it)."
+            }
+
+            SubHeading { text: "Glass" }
+
+            Note {
+                width: parent.width
+                text: "How much the caption bars, the taskbar and the menus blur "
+                    + "what is behind them. More blur costs more of the graphics card."
+            }
+
+            Flow {
+                width: parent.width
+                spacing: 16
+
+                Repeater {
+                    model: [
+                        { level: 0, label: "Clear" },
+                        { level: 1, label: "Light" },
+                        { level: 2, label: "Medium" },
+                        { level: 3, label: "Strong" },
+                        { level: 4, label: "Frosted" }
+                    ]
+
+                    delegate: CpRadio {
+                        required property var modelData
+                        label: modelData.label
+                        checked: Settings.glassBlur === modelData.level
+                        onClicked: Settings.glassBlur = modelData.level
+                    }
+                }
             }
         }
     }

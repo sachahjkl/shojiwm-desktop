@@ -34,6 +34,7 @@ import {
   WIN_RECT,
 } from "./window-manager";
 import { setAnimations } from "./motion";
+import { setGlassLevel } from "./glass";
 
 /** The colours of a window while it is peeked through. */
 const PEEK = {
@@ -82,6 +83,14 @@ export function createPeek(manager: FloatingWindowManager): Peek {
       (params as { on?: unknown }).on !== false;
     setAnimations(on);
     return on;
+  });
+  server.handle("glass", (params) => {
+    const value =
+      typeof params === "object" && params !== null
+        ? Number((params as { level?: unknown }).level)
+        : NaN;
+    setGlassLevel(value);
+    return true;
   });
   server.handle("show-desktop", () => {
     // The desktop is what the pointer was peeking at; show it for real.
