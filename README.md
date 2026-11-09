@@ -263,27 +263,27 @@ running one.
 
 ## Keys
 
-| Key                               | Action                                           |
-| --------------------------------- | ------------------------------------------------ |
-| `Super` (tap)                     | Show or hide the Start menu                      |
-| `Super`+`Return`                  | Terminal                                         |
-| `Super`+`E`                       | File manager                                     |
-| `Super`+`B`                       | Browser                                          |
-| `Alt`+`F4`                        | Close the focused window                         |
-| `Alt`+`Tab` / `Alt`+`Shift`+`Tab` | Switch window                                    |
-| `Super`+`Up`                      | Maximise                                         |
-| `Super`+`Down`                    | Restore a maximised window, else minimise        |
-| `Super`+`Left` / `Super`+`Right`  | Put the window against that side                 |
-| `Super`+`Shift`+`Left` / `Right`  | Move the window to the next screen that way      |
-| `Super`+`Home`                    | Minimise the other windows, then bring them back |
-| `Print Screen`, `Ctrl`+`Print`    | Screenshot (`SHOJIWM_WIN7_SCREENSHOT`)           |
-| `Super`+`D`                       | The launcher (Vicinae)                           |
-| `Super`+`M`                       | Show the desktop, then put the windows back      |
-| `Super`+`L`                       | Lock                                             |
-| `Super`+drag                      | Move a window from anywhere on it                |
-| `Super`+double click              | Maximise, and again to restore                   |
-| `Super`+`Shift`+`R`               | Reload this configuration (built into ShojiWM)   |
-| `Super`+`Shift`+`Q`               | Quit the session (built into ShojiWM)            |
+| Key                               | Action                                                                     |
+| --------------------------------- | -------------------------------------------------------------------------- |
+| `Super` (tap)                     | Show or hide the Start menu                                                |
+| `Super`+`Return`                  | Terminal                                                                   |
+| `Super`+`E`                       | File manager                                                               |
+| `Super`+`B`                       | Browser                                                                    |
+| `Alt`+`F4`                        | Close the focused window                                                   |
+| `Alt`+`Tab` / `Alt`+`Shift`+`Tab` | Switch window                                                              |
+| `Super`+`Up`                      | Maximise                                                                   |
+| `Super`+`Down`                    | Restore a maximised window, else minimise                                  |
+| `Super`+`Left` / `Super`+`Right`  | Snap to that side; again, to the next screen; from the other side, restore |
+| `Super`+`Shift`+`Left` / `Right`  | Move the window to the next screen that way                                |
+| `Super`+`Home`                    | Minimise the other windows, then bring them back                           |
+| `Print Screen`, `Ctrl`+`Print`    | Screenshot (`SHOJIWM_WIN7_SCREENSHOT`)                                     |
+| `Super`+`D`                       | The launcher (Vicinae)                                                     |
+| `Super`+`M`                       | Show the desktop, then put the windows back                                |
+| `Super`+`L`                       | Lock                                                                       |
+| `Super`+drag                      | Move a window from anywhere on it                                          |
+| `Super`+double click              | Maximise, and again to restore                                             |
+| `Super`+`Shift`+`R`               | Reload this configuration (built into ShojiWM)                             |
+| `Super`+`Shift`+`Q`               | Quit the session (built into ShojiWM)                                      |
 
 ## The files
 
