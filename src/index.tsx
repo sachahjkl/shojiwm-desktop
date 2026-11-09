@@ -223,10 +223,22 @@ function toggleStartMenu(): void {
 }
 
 /**
- * Keys that start or close something act when the key is let go: a held key,
- * or a keyboard that sends its press again, acts once.
+ * Keys that start or close something act once per 600 ms: a keyboard that
+ * sends a press again, or a key pressed twice by mistake, does it once. A
+ * binding on release would miss a key let go after its modifier.
  */
-const ONCE = { on: "release" } as const;
+const SETTLE_MS = 600;
+function once(action: () => void): () => void {
+  let last = -Infinity;
+  return () => {
+    const now = Date.now();
+    if (now - last < SETTLE_MS) {
+      return;
+    }
+    last = now;
+    action();
+  };
+}
 
 COMPOSITOR.key.bind("start-menu", "Super", toggleStartMenu, {
   on: "release",
@@ -235,26 +247,23 @@ COMPOSITOR.key.bind("start-menu", "Super", toggleStartMenu, {
 COMPOSITOR.key.bind(
   "terminal",
   "Super+Return",
-  () => {
+  once(() => {
     COMPOSITOR.process.spawn({ command: TERMINAL });
-  },
-  ONCE,
+  }),
 );
 COMPOSITOR.key.bind(
   "files",
   "Super+E",
-  () => {
+  once(() => {
     COMPOSITOR.process.spawn({ command: FILE_MANAGER });
-  },
-  ONCE,
+  }),
 );
 COMPOSITOR.key.bind(
   "browser",
   "Super+B",
-  () => {
+  once(() => {
     COMPOSITOR.process.spawn({ command: BROWSER });
-  },
-  ONCE,
+  }),
 );
 /** Ask the shell for "Shut Down Windows" on the current monitor. */
 function openShutdownDialog(): void {
@@ -269,29 +278,26 @@ function openShutdownDialog(): void {
 COMPOSITOR.key.bind(
   "close-window",
   "Alt+F4",
-  () => {
+  once(() => {
     const window = WINDOWS.focusedWindow();
     if (window) {
       window.close();
     } else {
       openShutdownDialog();
     }
-  },
-  ONCE,
+  }),
 );
 // ShojiWM quits on Super+Shift+Q unless the configuration binds it: here it
 // closes the focused window, and the session ends from the power menu.
 COMPOSITOR.key.bind(
   "close-window-super",
   "Super+Shift+Q",
-  withFocused((window) => window.close()),
-  ONCE,
+  once(withFocused((window) => window.close())),
 );
 COMPOSITOR.key.bind(
   "shutdown-dialog",
   "Super+Shift+E",
-  openShutdownDialog,
-  ONCE,
+  once(openShutdownDialog),
 );
 COMPOSITOR.key.bind("switch-window", "Alt+Tab", () => ALT_TAB.open(1));
 COMPOSITOR.key.bind("switch-window-back", "Alt+Shift+Tab", () =>
@@ -332,11 +338,15 @@ COMPOSITOR.key.bind(
   "Super+Right",
   withFocused((window) => WINDOWS.snapKey(window, "right")),
 );
-COMPOSITOR.key.bind("lock", "Super+L", () => {
-  COMPOSITOR.process.spawn({
-    command: `quickshell -p ${SHELL_PATH} ipc call lock lock`,
-  });
-});
+COMPOSITOR.key.bind(
+  "lock",
+  "Super+L",
+  once(() => {
+    COMPOSITOR.process.spawn({
+      command: `quickshell -p ${SHELL_PATH} ipc call lock lock`,
+    });
+  }),
+);
 // Print Screen and Ctrl+Print Screen: the command in SHOJIWM_WIN7_SCREENSHOT,
 // else the whole screen to the clipboard, as Windows 7 does. The variable is
 // read from the session's environment, so a new value needs a new session.
@@ -350,19 +360,17 @@ for (const [id, key] of [
   COMPOSITOR.key.bind(
     id,
     key,
-    () => {
+    once(() => {
       COMPOSITOR.process.spawn({ command: SCREENSHOT });
-    },
-    ONCE,
+    }),
   );
 }
 COMPOSITOR.key.bind(
   "launcher",
   "Super+D",
-  () => {
+  once(() => {
     COMPOSITOR.process.spawn({ command: `${VICINAE} toggle` });
-  },
-  ONCE,
+  }),
 );
 // More keys from SHOJIWM_WIN7_KEYS: a JSON object of shortcut to shell
 // command, for programs that would register a global shortcut through a
@@ -375,10 +383,9 @@ if (EXTRA_KEYS) {
     COMPOSITOR.key.bind(
       `extra:${shortcut}`,
       shortcut,
-      () => {
+      once(() => {
         COMPOSITOR.process.spawn({ command });
-      },
-      ONCE,
+      }),
     );
   }
 }

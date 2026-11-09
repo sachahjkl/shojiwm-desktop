@@ -178,6 +178,12 @@ export class FloatingWindowManager {
   private readonly windowsById = new Map<string, WaylandWindow>();
   /** Window ids, most recently focused first. Drives Alt+Tab. */
   private mru: string[] = [];
+  /**
+   * The window chosen to take the keyboard when a closing window goes. It is
+   * chosen when the close starts; the compositor can hand the keyboard to
+   * the window under the pointer before the close animation ends.
+   */
+  private afterClose: string | null = null;
   private cascade = 0;
   private currentOutput: string | undefined;
   /** Windows that "show desktop" minimised, so the next call restores them. */
@@ -350,6 +356,15 @@ export class FloatingWindowManager {
   }
 
   public onStartClose(window: WaylandWindow): void {
+    // The next window takes the keyboard now, as on Windows, from the most
+    // recently used ones, before anything else can.
+    this.mru = this.mru.filter((id) => id !== window.id);
+    const next = this.recentWindows().find(
+      (other) => !other.state[WIN_MINIMIZED](),
+    );
+    this.afterClose = next?.id ?? null;
+    next?.focus();
+
     window.setCloseAnimationDuration(motion(TIMING.close));
     window.scheduleAnimation({
       channel: CLOSE_CHANNEL,
@@ -374,6 +389,17 @@ export class FloatingWindowManager {
     this.stack.remove(window);
     this.windowsById.delete(window.id);
     this.mru = this.mru.filter((id) => id !== window.id);
+    // The window chosen when the close started, even if the keyboard went
+    // elsewhere during the animation.
+    const chosen = this.afterClose
+      ? this.windowsById.get(this.afterClose)
+      : undefined;
+    this.afterClose = null;
+    if (chosen && !chosen.state[WIN_MINIMIZED]()) {
+      this.mru = [chosen.id, ...this.mru.filter((id) => id !== chosen.id)];
+      chosen.focus();
+      return;
+    }
     this.focusTopWindow();
   }
 
