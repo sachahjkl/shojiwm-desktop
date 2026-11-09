@@ -1,13 +1,14 @@
-# The log-on screen end to end, in a VM: greetd starts Hyprland with the
-# greeter's Lua configuration, Hyprland starts greeter.qml, a password is
-# typed, and the session starts once the greeter's Hyprland has left. The
-# nixconfig module of the author starts it the same way.
+# The log-on screen end to end, in VMs, through nixosModules.greeter:
+#
+#   - machine: greetd starts the greeter's Hyprland, which starts
+#     greeter.qml; the password is typed; the session starts once that
+#     Hyprland has left, and the session chosen is kept;
+#   - fallback: Quickshell dies before any log-on; greetd then shows its
+#     text log-on, which starts the default session.
 {
   pkgs,
-  win7,
+  module,
 }: let
-  inherit (pkgs) lib;
-
   # A session that only leaves a mark.
   session =
     (pkgs.writeTextDir "share/wayland-sessions/marker.desktop" ''
@@ -18,64 +19,60 @@
       Type=Application
     '')
     // {providedSessions = ["marker"];};
+
+  node = {
+    imports = [module];
+    virtualisation = {
+      memorySize = 3072;
+      cores = 2;
+      qemu.options = ["-vga none" "-device virtio-gpu-pci"];
+    };
+    hardware.graphics.enable = true;
+    users.users.alice = {
+      isNormalUser = true;
+      password = "secret";
+      description = "Alice Liddell";
+    };
+    programs.hyprland.enable = true;
+    services.displayManager.sessionPackages = [session];
+    services.shojiwm-win7-greeter = {
+      enable = true;
+      user = "alice";
+      defaultSession = "marker";
+    };
+    fonts.packages = [pkgs.inter];
+  };
 in
   pkgs.testers.runNixOSTest {
     name = "shojiwm-win7-greeter";
-    nodes.machine = {config, ...}: let
-      greeterSession = pkgs.writeShellScript "shojiwm-win7-greeter" ''
-        export SHOJIWM_GREETER_USER=alice
-        export SHOJIWM_GREETER_SESSIONS=${config.services.displayManager.sessionData.desktops}/share/wayland-sessions
-        export SHOJIWM_GREETER_DEFAULT_SESSION=marker
-        ${lib.getExe pkgs.quickshell} -p ${win7}/shell/greeter.qml > /tmp/qs.log 2>&1
-        ${pkgs.hyprland}/bin/hyprctl dispatch 'hl.dsp.exit()'
-      '';
-      greeterHyprland = pkgs.writeText "greeter.lua" ''
-        hl.on("hyprland.start", function()
-            hl.exec_cmd("${greeterSession}")
-        end)
-        hl.config({
-            misc = { disable_hyprland_logo = true, force_default_wallpaper = 0 },
-            animations = { enabled = false },
-            ecosystem = { no_update_news = true },
-        })
-      '';
-    in {
-      virtualisation = {
-        memorySize = 3072;
-        cores = 2;
-        qemu.options = ["-vga none" "-device virtio-gpu-pci"];
-      };
-      hardware.graphics.enable = true;
-      users.users.alice = {
-        isNormalUser = true;
-        password = "secret";
-        description = "Alice Liddell";
-      };
-      programs.hyprland.enable = true;
-      services.displayManager.sessionPackages = [session];
-      services.greetd = {
-        enable = true;
-        settings.default_session.command = "${pkgs.hyprland}/bin/start-hyprland -- --config ${greeterHyprland}";
-      };
-      users.users.greeter = {
-        home = "/var/lib/greeter";
-        createHome = true;
-      };
-      fonts.packages = [pkgs.inter];
+    nodes = {
+      machine = node;
+      fallback = node;
     };
 
     testScript = ''
-      try:
-          machine.wait_for_unit("greetd.service")
-          machine.wait_until_succeeds("grep -q 'Configuration Loaded' /tmp/qs.log", timeout=120)
-          machine.sleep(3)
-          machine.screenshot("greeter")
-          machine.send_chars("secret\n")
-          machine.wait_for_file("/tmp/session-started", timeout=60)
-          machine.wait_until_fails("pgrep -u greeter -x Hyprland", timeout=30)
-          machine.succeed("find /var/lib/greeter/.local/state -name last-session -exec grep -qx marker {} +")
-      finally:
-          print(machine.execute("grep -v '^$' /tmp/qs.log | tail -40")[1])
-          print(machine.execute("journalctl -b --no-pager -o cat | grep -i 'greetd\\|hyprland' | tail -20")[1])
+      greeter_up = "pgrep -u greeter -f 'quickshell -p /etc/shojiwm-win7/greeter/greeter.qml'"
+
+      # The log-on screen logs on.
+      machine.wait_for_unit("greetd.service")
+      machine.wait_until_succeeds(greeter_up, timeout=120)
+      machine.sleep(10)
+      machine.screenshot("greeter")
+      machine.send_chars("secret\n")
+      machine.wait_for_file("/tmp/session-started", timeout=60)
+      machine.wait_until_fails("pgrep -u greeter -x Hyprland", timeout=30)
+      # The state folder follows the stable path, so it outlives updates.
+      machine.succeed("find /var/lib/greeter/.local/state -name last-session -exec grep -qx marker {} +")
+
+      # A log-on screen that dies gives way to the text log-on.
+      fallback.wait_for_unit("greetd.service")
+      fallback.wait_until_succeeds(greeter_up, timeout=120)
+      fallback.succeed("pkill -KILL -u greeter -x quickshell || pkill -KILL -u greeter -f 'quickshell -p'")
+      fallback.wait_until_succeeds("pgrep -u greeter -x agreety", timeout=60)
+      fallback.wait_until_tty_matches("1", "login:", timeout=30)
+      fallback.send_chars("alice\n")
+      fallback.wait_until_tty_matches("1", "assword", timeout=30)
+      fallback.send_chars("secret\n")
+      fallback.wait_for_file("/tmp/session-started", timeout=60)
     '';
   }

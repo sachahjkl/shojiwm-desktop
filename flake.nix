@@ -205,6 +205,18 @@
       };
     });
 
+    # The Windows 7 log-on screen as the display manager (greetd): see
+    # nix/greeter.nix and services.shojiwm-win7-greeter.
+    nixosModules.greeter = {
+      config,
+      lib,
+      pkgs,
+      ...
+    }:
+      import ./nix/greeter.nix {
+        package = self.packages.${pkgs.stdenv.hostPlatform.system}.default;
+      } {inherit config lib pkgs;};
+
     checks = forAllSystems (system: let
       pkgs = pkgsFor system;
 
@@ -261,7 +273,7 @@
       # and the session it starts.
       greeter = import ./tests/greeter.nix {
         inherit pkgs;
-        win7 = self.packages.${system}.default;
+        module = self.nixosModules.greeter;
       };
 
       # The QML of the shell, checked against the Quickshell types. The

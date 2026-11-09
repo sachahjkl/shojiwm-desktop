@@ -278,9 +278,30 @@ and the session to start in the bottom-left corner. It remembers the last
 session chosen. If PAM asks a second question after the password (a one-time
 code), the field asks it.
 
-Run it with `quickshell -p greeter.qml` in a compositor with wlr-layer-shell
-that greetd starts as the greeter account, and stop the compositor when
-Quickshell exits. It reads:
+On NixOS, `nixosModules.greeter` sets it up: greetd, a Hyprland of its own
+with your screens, and the greeter account.
+
+```nix
+imports = [inputs.shojiwm-win7.nixosModules.greeter];
+services.displayManager.ly.enable = false; # or whichever display manager you had
+services.shojiwm-win7-greeter = {
+  enable = true;
+  user = "alice";
+  defaultSession = "shojiwm-uwsm";
+  mainScreen = "HDMI-A-1";
+  monitors = [{output = "HDMI-A-1"; mode = "3840x2160@60"; position = "0x0"; scale = 1.875;}];
+};
+```
+
+If the log-on screen leaves without starting a session (a crash, or
+Ctrl+Alt+Delete on a log-on screen that drew nothing), greetd shows its text
+log-on, which starts the default session. Keep `/var/lib/greeter` if your
+root is not persistent: the last session chosen lives there.
+
+Elsewhere, run `quickshell -p greeter.qml` in a compositor with
+wlr-layer-shell that greetd starts as the greeter account, from a path that
+does not change (Quickshell names its state folder after it), and stop the
+compositor when Quickshell exits. It reads:
 
 | Variable                          | Value                                                                        |
 | --------------------------------- | ---------------------------------------------------------------------------- |
@@ -299,9 +320,10 @@ SHOJIWM_GREETER_USER=user SHOJIWM_GREETER_SESSIONS=/run/current-system/sw/share/
   fakegreet "quickshell -p shell/greeter.qml"
 ```
 
-`checks.<system>.greeter` runs it end to end in a VM: greetd starts Hyprland,
-Hyprland starts `greeter.qml`, a password is typed, the session starts and
-the greeter's Hyprland leaves.
+`checks.<system>.greeter` runs the module end to end in VMs: a password
+typed into the log-on screen starts the session, the greeter's Hyprland
+leaves and the session chosen is kept; and a log-on screen killed gives way
+to the text log-on, which starts the default session.
 
 ## Install
 
