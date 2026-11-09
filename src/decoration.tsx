@@ -21,9 +21,7 @@ import {
   Popup,
   ShaderEffect,
   WindowBorder,
-  animationVariable,
   computed,
-  easeOutCubic,
   paintShader,
   useState,
   type CompiledEffectHandle,
@@ -33,8 +31,7 @@ import {
   type WaylandWindow,
 } from "shoji_wm";
 import type { CompositionRenderable } from "shoji_wm/types";
-import { motion } from "./motion";
-import { CAPTION_BUTTON, COLOR, FONT, FRAME, TIMING } from "./theme";
+import { CAPTION_BUTTON, COLOR, FONT, FRAME } from "./theme";
 import { WIN_MAXIMIZED } from "./window-manager";
 
 /** Which picture a caption button shows. */
@@ -72,17 +69,7 @@ const Tooltip = ({ text }: { text: string | ReadonlySignal<string> }) => (
   </Popup>
 );
 
-/** The glow of each caption button under the pointer, per window. */
-const HOVER = {
-  min: animationVariable("caption-hover-min"),
-  max: animationVariable("caption-hover-max"),
-  close: animationVariable("caption-hover-close"),
-} as const;
-
 interface CaptionButtonProps {
-  window: WaylandWindow;
-  /** Which of the three places the button is in. */
-  slot: keyof typeof HOVER;
   /** `min`, `max`, `restore` or `close`, or a signal picking between them. */
   kind: string | ReadonlySignal<string>;
   width: number;
@@ -97,8 +84,6 @@ interface CaptionButtonProps {
  * takes the clicks and reports hover and press.
  */
 const CaptionButton = ({
-  window,
-  slot,
   kind,
   width,
   label,
@@ -106,22 +91,23 @@ const CaptionButton = ({
   enabled,
   onClick,
 }: CaptionButtonProps) => {
+  const [hover, setHover] = useState(false);
   const [pressed, setPressed] = useState(false);
 
   const usable = computed(() => enabled?.() ?? true);
-  const name = computed(() => (typeof kind === "string" ? kind : kind()));
-  const lit = computed(() => focused() && usable());
-  // The picture at rest; the hover and press pictures are layers over it.
-  // The hover one fades in quickly and out slowly, as the taskbar does.
-  const rest = computed(() => buttonSrc(name(), lit() ? "" : "-inactive"));
-  const glow = window.animation.variable(HOVER[slot]);
-  const layer = {
-    position: "absolute",
-    inset: 0,
-    width,
-    height: FRAME.buttonHeight,
-    pointerEvents: "none",
-  } as const;
+  const src = computed(() => {
+    const name = typeof kind === "string" ? kind : kind();
+    if (!focused()) {
+      return buttonSrc(name, "-inactive");
+    }
+    if (!usable()) {
+      return buttonSrc(name, "-inactive");
+    }
+    if (pressed()) {
+      return buttonSrc(name, "-press");
+    }
+    return buttonSrc(name, hover() ? "-hover" : "");
+  });
 
   return (
     <Box
@@ -132,28 +118,19 @@ const CaptionButton = ({
         flexShrink: 0,
       }}
     >
-      <Image src={rest} fit="fill" style={layer} />
       <Image
-        src={computed(() => buttonSrc(name(), "-hover"))}
-        fit="fill"
-        style={{ ...layer, opacity: computed(() => (usable() ? glow() : 0)) }}
-      />
-      <Image
-        src={computed(() => buttonSrc(name(), "-press"))}
+        src={src}
         fit="fill"
         style={{
-          ...layer,
-          opacity: computed(() => (pressed() && usable() ? 1 : 0)),
+          position: "absolute",
+          inset: 0,
+          width,
+          height: FRAME.buttonHeight,
+          pointerEvents: "none",
         }}
       />
       <Button
-        onHoverChange={(hovered: boolean) => {
-          void window.animation.start(HOVER[slot], {
-            to: hovered ? 1 : 0,
-            duration: motion(hovered ? TIMING.hoverIn : TIMING.hoverOut),
-            easing: easeOutCubic,
-          });
-        }}
+        onHoverChange={setHover}
         onActiveChange={setPressed}
         onClick={() => {
           if (usable()) {
@@ -336,8 +313,6 @@ export function aeroFrame(
         style={{ height: FRAME.buttonHeight, flexShrink: 0 }}
       >
         <CaptionButton
-          window={window}
-          slot="min"
           kind="min"
           width={CAPTION_BUTTON.minimize}
           label="Minimize"
@@ -345,8 +320,6 @@ export function aeroFrame(
           onClick={options.onMinimize}
         />
         <CaptionButton
-          window={window}
-          slot="max"
           kind={maximized((on: boolean) => (on ? "restore" : "max"))}
           width={CAPTION_BUTTON.maximize}
           label={"Maximize"}
@@ -355,8 +328,6 @@ export function aeroFrame(
           onClick={options.onToggleMaximize}
         />
         <CaptionButton
-          window={window}
-          slot="close"
           kind="close"
           width={CAPTION_BUTTON.close}
           label="Close"
