@@ -32,7 +32,9 @@ Item {
             Text {
                 anchors.centerIn: parent
                 text: check.checked ? "✔" : ""
-                color: "#1e4f7c"
+                // Dark on the light box, light on the dark scheme's box: the
+                // dark blue tick vanished on it.
+                color: area.containsMouse || !Scheme.dark ? "#1e4f7c" : "#9cd0ff"
                 font.pixelSize: 11
             }
         }
