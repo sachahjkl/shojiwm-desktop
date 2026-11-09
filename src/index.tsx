@@ -122,15 +122,29 @@ COMPOSITOR.process.once("launcher", {
 // Decoration policy
 // ---------------------------------------------------------------------------
 
+// Programs that keep their own title bar, by app id: Ghostty's has its tabs.
+const OWN_TITLE_BAR = new Set(["com.mitchellh.ghostty"]);
+
 // Draw the Aero frame for every client that lets us, and keep the client's
-// own title bar when it insists on one (Firefox, GTK header bars).
-COMPOSITOR.window.decoration.configure((_window, context) => ({
-  mode: context.clientPreference ?? "server",
+// own title bar when it insists on one (Firefox, GTK header bars) or is one
+// of OWN_TITLE_BAR. ShojiWM asks again when the app id changes.
+COMPOSITOR.window.decoration.configure((window, context) => ({
+  mode: OWN_TITLE_BAR.has(window.appId() ?? "")
+    ? "client"
+    : (context.clientPreference ?? "server"),
 }));
 
 // GTK 3 applications such as Thunar pick their title bar once, from this
-// default, and ignore later per-window answers.
-COMPOSITOR.window.decoration.kdeDefaultMode(() => "server");
+// default, and ignore later per-window answers. Ghostty does too: told
+// "client" here, it draws its own title bar.
+COMPOSITOR.window.decoration.kdeDefaultMode((client) => {
+  const program = (client.executable ?? client.command[0] ?? "")
+    .split("/")
+    .pop();
+  return program === "ghostty" || program === ".ghostty-wrapped"
+    ? "client"
+    : "server";
+});
 
 // Triple buffering.
 COMPOSITOR.rendering.framePacing = "throughput";
