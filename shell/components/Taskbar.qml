@@ -28,6 +28,7 @@ Item {
     property bool pointerOnVolume: false
     property bool pointerOnNetwork: false
     property bool pointerOnNotifications: false
+    property bool pointerOnActionCenter: false
 
     // What each popup is showing, or null.
     property var previewGroup: null
@@ -37,6 +38,7 @@ Item {
     property bool volumeOpen: false
     property bool networkOpen: false
     property bool notificationsOpen: false
+    property bool actionCenterOpen: false
     property bool clockMenuOpen: false
     property bool trayOverflowOpen: false
 
@@ -85,6 +87,7 @@ Item {
         bar.volumeOpen = false;
         bar.networkOpen = false;
         bar.notificationsOpen = false;
+        bar.actionCenterOpen = false;
         bar.clockMenuOpen = false;
         bar.trayOverflowOpen = false;
     }
@@ -169,6 +172,19 @@ Item {
             onHoverChanged: function (inside) {
                 bar.pointerOnTray = inside;
             }
+        }
+
+        ActionCenterIcon {
+            id: actionCenterIcon
+
+            anchors.verticalCenter: parent.verticalCenter
+            active: bar.actionCenterOpen
+            onClicked: {
+                var open = !bar.actionCenterOpen;
+                bar.closePopups();
+                bar.actionCenterOpen = open;
+            }
+            onHoveredChanged: bar.pointerOnActionCenter = actionCenterIcon.hovered
         }
 
         NotificationIcon {
@@ -492,6 +508,7 @@ Item {
         running: bar.jumpListGroup !== null || bar.trayMenuItem !== null
             || bar.calendarOpen || bar.clockMenuOpen || bar.trayOverflowOpen
             || bar.volumeOpen || bar.networkOpen || bar.notificationsOpen
+            || bar.actionCenterOpen
         repeat: true
         onTriggered: {
             if (bar.jumpListGroup !== null
@@ -503,6 +520,9 @@ Item {
             if (bar.calendarOpen
                 && !calendar.pointerInside && !bar.pointerOnClock)
                 bar.calendarOpen = false;
+            if (bar.actionCenterOpen
+                && !actionCenterPanel.pointerInside && !bar.pointerOnActionCenter)
+                bar.actionCenterOpen = false;
             if (bar.notificationsOpen
                 && !notificationPanel.pointerInside && !bar.pointerOnNotifications)
                 bar.notificationsOpen = false;
@@ -560,6 +580,22 @@ Item {
             bar.trayMenuItem = bar.trayMenuItem === item ? null : item;
             trayMenu.anchorWindow = trayOverflow;
             trayMenu.anchorRect = at;
+        }
+    }
+
+    ActionCenterPanel {
+        id: actionCenterPanel
+
+        anchorItem: actionCenterIcon
+        open: bar.actionCenterOpen
+        onDismissed: bar.actionCenterOpen = false
+    }
+
+    Connections {
+        target: Maintenance
+        function onPanelRequested(open) {
+            bar.closePopups();
+            bar.actionCenterOpen = open;
         }
     }
 

@@ -184,6 +184,7 @@
           singleton Slideshow 1.0 Slideshow.qml
           singleton StickyNotes 1.0 StickyNotes.qml
           singleton DefaultApps 1.0 DefaultApps.qml
+          singleton Maintenance 1.0 Maintenance.qml
           EOF
           cd ./shell
           qmllint \
