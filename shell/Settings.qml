@@ -251,10 +251,10 @@ Singleton {
             property var clockGadgetPlace: ({ right: 52, top: 168 })
             property bool showFrequent: true
 
-            /// The desktop: "large", "medium" or "small" icons, whether they
-            /// show at all, and how they are sorted: "name", "size", "type"
-            /// or "date".
-            property string desktopIconSize: "medium"
+            /// The desktop: the icon size in logical pixels (32 to 256), whether
+            /// the icons show at all, and how they are sorted: "name", "size",
+            /// "type" or "date".
+            property int desktopIconSize: 48
             property bool showDesktopIcons: true
             property string desktopSort: "name"
             /// The main screen, by connector name; "" for the first one (Screens).

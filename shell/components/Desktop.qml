@@ -64,19 +64,18 @@ Item {
 
     readonly property string folder: Apps.userDir("DESKTOP", "Desktop")
 
-    readonly property var sizes: ({
-        "large": { icon: 64, width: 96 },
-        "medium": { icon: 48, width: 78 },
-        "small": { icon: 32, width: 78 }
-    })
+    /// The icon sizes Ctrl+wheel steps through, up to 256 as on Windows 7.
+    /// The View menu's Small, Medium and Large are 32, 48 and 64.
+    readonly property var iconSizes: [32, 40, 48, 56, 64, 80, 96, 128, 160, 192, 256]
     /// One cell: the icon, two lines of its name, and a gap before the
     /// next icon, so a name never touches the icon under it.
     readonly property var size: {
-        var chosen = sizes[Settings.desktopIconSize] || sizes.medium;
+        var icon = Math.max(iconSizes[0], Math.min(iconSizes[iconSizes.length - 1],
+                                                   Settings.desktopIconSize));
         return {
-            icon: chosen.icon,
-            width: chosen.width,
-            height: 6 + chosen.icon + 4 + 2 * Math.ceil(nameMetrics.height) + 12
+            icon: icon,
+            width: Math.max(78, icon + 32),
+            height: 6 + icon + 4 + 2 * Math.ceil(nameMetrics.height) + 12
         };
     }
 
@@ -89,11 +88,12 @@ Item {
     /// One size up (`step` 1) or down (-1), as Ctrl+wheel and Ctrl+plus or
     /// minus do on Windows.
     function zoom(step) {
-        var order = ["small", "medium", "large"];
-        var index = order.indexOf(Settings.desktopIconSize);
-        if (index < 0)
-            index = 1;
-        Settings.desktopIconSize = order[Math.max(0, Math.min(order.length - 1, index + step))];
+        var index = 0;
+        for (var i = 0; i < iconSizes.length; i++) {
+            if (Math.abs(iconSizes[i] - size.icon) < Math.abs(iconSizes[index] - size.icon))
+                index = i;
+        }
+        Settings.desktopIconSize = iconSizes[Math.max(0, Math.min(iconSizes.length - 1, index + step))];
     }
 
     // ----- what is on the desktop ---------------------------------------------
@@ -561,9 +561,9 @@ Item {
     function desktopEntries() {
         return [
             { label: "View", children: [
-                radio("Large icons", "desktopIconSize", "large"),
-                radio("Medium icons", "desktopIconSize", "medium"),
-                radio("Small icons", "desktopIconSize", "small"),
+                radio("Large icons", "desktopIconSize", 64),
+                radio("Medium icons", "desktopIconSize", 48),
+                radio("Small icons", "desktopIconSize", 32),
                 { separator: true },
                 { label: "Auto arrange icons", checked: Settings.desktopAutoArrange,
                   run: function () { Settings.desktopAutoArrange = !Settings.desktopAutoArrange; } },
@@ -885,8 +885,9 @@ Item {
                     y: 6
                     width: desktop.size.icon
                     height: desktop.size.icon
-                    sourceSize.width: desktop.size.icon * 2
-                    sourceSize.height: desktop.size.icon * 2
+                    // The screen's pixels, so a big icon stays sharp.
+                    sourceSize.width: Math.ceil(desktop.size.icon * Screen.devicePixelRatio)
+                    sourceSize.height: Math.ceil(desktop.size.icon * Screen.devicePixelRatio)
                     fillMode: Image.PreserveAspectFit
                     asynchronous: true
                     smooth: true

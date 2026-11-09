@@ -441,7 +441,7 @@ ShojiWM package, the QML against the Quickshell types, and the formatters.
   background surface (`surface_under` in `state.rs`), so a popup of the
   wallpaper would be drawn over a window and give it its clicks. The
   overlay also closes the menu on a click anywhere else, and on Escape.
-- Settings: `desktopIconSize`, `showDesktopIcons`, `desktopSort`.
+- Settings: `desktopIconSize` (pixels, 32 to 256), `showDesktopIcons`, `desktopSort`.
 
 ### Fourteenth pass: the orb
 
