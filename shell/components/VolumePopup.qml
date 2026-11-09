@@ -31,7 +31,8 @@ PopupWindow {
     anchor.margins.bottom: Theme.popupGap + 2
     anchor.adjustment: PopupAdjustment.SlideX | PopupAdjustment.FlipY
 
-    implicitWidth: 104
+    // Wider while a player shows its controls at the top.
+    implicitWidth: media.visible ? 220 : 104
     implicitHeight: body.implicitHeight + footer.height + 20
 
     Rectangle {
@@ -67,6 +68,12 @@ PopupWindow {
         anchors.right: parent.right
         anchors.topMargin: 10
         spacing: 8
+
+        MediaControls {
+            id: media
+            width: parent.width - 20
+            anchors.horizontalCenter: parent.horizontalCenter
+        }
 
         // The device: its icon and its name.
         Image {
