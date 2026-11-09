@@ -241,6 +241,14 @@ the resting gradient.
 Optional: `systemd` for the shut-down button, and any status-notifier
 application for the notification area.
 
+### The Aero icon theme
+
+`packages.<system>.icon-theme` installs the icon theme "Aero": Oxygen with
+the desktop's yellow folders, its libraries and the glass Recycle Bin, so a
+file manager such as Thunar shows the same icons as the desktop. Install it
+with `kdePackages.oxygen-icons`, which it inherits, and choose it for the
+session (`org.gnome.desktop.interface icon-theme`).
+
 ### Global shortcuts
 
 Programs such as Hex, OBS or Discord bind their keys through the
