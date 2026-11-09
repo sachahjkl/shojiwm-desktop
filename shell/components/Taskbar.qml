@@ -43,11 +43,17 @@ Item {
         anchors.fill: parent
         keys: [Settings.trayDragType]
 
-        function preview(event) {
+        /// Where a drop at this point falls in the tray area: left of the
+        /// icons (the arrow has its own drop area) is the first place, right
+        /// of them the last.
+        function trayX(event) {
             var at = trayArea.mapFromItem(bar, event.x, event.y);
+            return Math.max(0, Math.min(trayArea.width, at.x));
+        }
+
+        function preview(event) {
             trayArea.previewId = DragState.kind === "tray" ? String(DragState.data) : "";
-            trayArea.previewBefore = at.x >= 0 && at.x <= trayArea.width
-                ? trayArea.indexAt(at.x) : trayArea.shown.length;
+            trayArea.previewBefore = trayArea.indexAt(trayX(event));
         }
 
         onEntered: function (event) { preview(event); }
@@ -58,8 +64,7 @@ Item {
             var id = DragState.kind === "tray" ? String(DragState.data) : "";
             if (id.length === 0)
                 return;
-            var at = trayArea.mapFromItem(bar, event.x, event.y);
-            var x = at.x >= 0 && at.x <= trayArea.width ? at.x : trayArea.width;
+            var x = trayX(event);
             event.acceptProposedAction();
             // After the drag has ended: the change removes its source.
             Qt.callLater(function () { trayArea.placeAt(id, x); });
