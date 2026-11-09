@@ -3,7 +3,8 @@ pragma Singleton
 import QtQuick
 import Quickshell
 
-// The main screen: the one Settings.primaryScreen names, when it is
+// The main screen: the one Settings.primaryScreen (else
+// SHOJIWM_WIN7_PRIMARY_SCREEN) names, when it is
 // connected, else the first screen Quickshell lists. It is not the screen
 // with the focus: it is where the shell puts what has no screen of its own.
 // The lock screen shows there alone; the Start menu and the Shut Down
@@ -12,11 +13,17 @@ import Quickshell
 Singleton {
     id: root
 
+    /// The main screen asked for: the Control Panel's choice, else
+    /// SHOJIWM_WIN7_PRIMARY_SCREEN (the log-on screen has no settings of its
+    /// own), by connector name.
+    readonly property string wanted: Settings.primaryScreen
+        || Quickshell.env("SHOJIWM_WIN7_PRIMARY_SCREEN") || ""
+
     readonly property string primaryName: {
         var screens = Quickshell.screens;
         for (var i = 0; i < screens.length; i++) {
-            if (screens[i].name === Settings.primaryScreen)
-                return Settings.primaryScreen;
+            if (screens[i].name === root.wanted)
+                return root.wanted;
         }
         return screens.length > 0 ? screens[0].name : "";
     }

@@ -11,9 +11,20 @@ import "../theme.js" as Theme
 // password replaces the field with the message and OK, as Windows does. The
 // red power button and its arrow sit in the bottom right corner.
 //
-// On the main screen only (shell.qml). The password is checked by LockState.
+// On the main screen only. The lock screen (shell.qml) checks the password
+// with LockState; the log-on screen (greeter.qml) with GreeterState.
 Item {
     id: screen
+
+    /// What checks the password: an object with `authenticate(password)`,
+    /// `busy`, `message`, `failures` (it counts up on each failure) and
+    /// `typed` (the field's text, shared with the other screens). It may
+    /// have `prompt` and `promptEcho`: a question after the password, that
+    /// the field asks instead of "Password".
+    property var auth: LockState
+    /// The account's name and picture.
+    property string userName: Apps.userName
+    property url picture: Settings.userPictureSource
 
     // ----- the picture behind ---------------------------------------------------
 
@@ -87,7 +98,7 @@ Item {
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.verticalCenter: parent.verticalCenter
         anchors.verticalCenterOffset: -50
-        source: Settings.userPictureSource
+        source: screen.picture
     }
 
     ShadowText {
@@ -96,7 +107,7 @@ Item {
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.top: tile.bottom
         anchors.topMargin: 14
-        text: Apps.userName
+        text: screen.userName
         font.pixelSize: 22
     }
 
@@ -147,18 +158,19 @@ Item {
                 anchors.leftMargin: 6
                 anchors.rightMargin: 6
                 verticalAlignment: TextInput.AlignVCenter
-                echoMode: TextInput.Password
+                echoMode: screen.auth.prompt && screen.auth.promptEcho
+                    ? TextInput.Normal : TextInput.Password
                 passwordCharacter: "\u25CF"
                 color: Settings.dark ? "#e8f1f9" : "#000000"
                 font.family: Theme.fontFamily
                 font.pixelSize: Theme.fontSize
                 clip: true
                 focus: true
-                enabled: !LockState.busy
+                enabled: !screen.auth.busy
 
                 // Shared with the other screens' surfaces (shell.qml).
-                text: LockState.typed
-                onTextChanged: LockState.typed = text
+                text: screen.auth.typed
+                onTextChanged: screen.auth.typed = text
 
                 Keys.onReturnPressed: screen.submit()
                 Keys.onEnterPressed: screen.submit()
@@ -167,7 +179,7 @@ Item {
                 Text {
                     anchors.fill: parent
                     verticalAlignment: Text.AlignVCenter
-                    text: "Password"
+                    text: screen.auth.prompt || "Password"
                     color: Settings.dark ? "#7f94a6" : "#6d6d6d"
                     font: password.font
                     visible: password.text.length === 0
@@ -214,7 +226,7 @@ Item {
         anchors.top: entry.bottom
         anchors.topMargin: 14
         text: "Welcome"
-        visible: LockState.busy
+        visible: screen.auth.busy
         font.pixelSize: Theme.fontSize + 4
     }
 
@@ -241,7 +253,7 @@ Item {
 
             ShadowText {
                 anchors.verticalCenter: parent.verticalCenter
-                text: LockState.message
+                text: screen.auth.message
                 font.pixelSize: Theme.fontSize + 4
             }
         }
@@ -352,13 +364,15 @@ Item {
     }
 
     function submit() {
-        if (password.text.length === 0 || LockState.busy)
+        if (password.text.length === 0 || screen.auth.busy)
             return;
-        LockState.authenticate(password.text);
+        screen.auth.authenticate(password.text);
     }
 
     Connections {
-        target: LockState
+        target: screen.auth
+        // GreeterState has no `locked`.
+        ignoreUnknownSignals: true
         function onFailuresChanged() {
             password.text = "";
             screen.showingError = true;

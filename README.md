@@ -267,6 +267,36 @@ xdg.portal = {
 };
 ```
 
+### The log-on screen
+
+`shell/greeter.qml` is the lock screen as a log-on screen for
+[greetd](https://sr.ht/~kennylevinsen/greetd/): the same picture, clock,
+account picture and password field on the main screen, black on the others,
+and the session to start in the bottom-left corner. It remembers the last
+session chosen. If PAM asks a second question after the password (a one-time
+code), the field asks it.
+
+Run it with `quickshell -p greeter.qml` in a compositor with wlr-layer-shell
+that greetd starts as the greeter account, and stop the compositor when
+Quickshell exits. It reads:
+
+| Variable                          | Value                                                                        |
+| --------------------------------- | ---------------------------------------------------------------------------- |
+| `SHOJIWM_GREETER_USER`            | The account to log on.                                                       |
+| `SHOJIWM_GREETER_SESSIONS`        | The folder of the sessions' `.desktop` files (`share/wayland-sessions`).     |
+| `SHOJIWM_GREETER_DEFAULT_SESSION` | The session chosen the first time: its file name without `.desktop`.         |
+| `SHOJIWM_WIN7_PRIMARY_SCREEN`     | The connector of the main screen (`HDMI-A-1`). Without it, the first screen. |
+
+The account picture is AccountsService's (`/var/lib/AccountsService/icons/`):
+the greeter cannot read `~/.face`. To try it without logging out, run it
+under greetd's `fakegreet`, which accepts the account `user`, the password
+`password`, then `9`:
+
+```sh
+SHOJIWM_GREETER_USER=user SHOJIWM_GREETER_SESSIONS=/run/current-system/sw/share/wayland-sessions \
+  fakegreet "quickshell -p shell/greeter.qml"
+```
+
 ## Install
 
 ### With Nix

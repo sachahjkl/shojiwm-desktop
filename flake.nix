@@ -289,6 +289,7 @@
           singleton Maintenance 1.0 Maintenance.qml
           singleton Screens 1.0 Screens.qml
           singleton Search 1.0 Search.qml
+          singleton GreeterState 1.0 GreeterState.qml
           EOF
           cd ./shell
           qmllint \
