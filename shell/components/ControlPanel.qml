@@ -1266,6 +1266,145 @@ FloatingWindow {
                     }
                 }
             }
+
+            Note {
+                width: parent.width
+                text: "The colour of the taskbar's and the Start menu's glass:"
+            }
+
+            Flow {
+                width: parent.width
+                spacing: 8
+
+                Repeater {
+                    model: [
+                        { color: "", name: "Plain glass" },
+                        { color: "#3b8fd6", name: "Sky" },
+                        { color: "#1f5aa8", name: "Twilight" },
+                        { color: "#1aa2a8", name: "Sea" },
+                        { color: "#4fa83d", name: "Leaf" },
+                        { color: "#9cc93a", name: "Lime" },
+                        { color: "#e8c22f", name: "Sun" },
+                        { color: "#e8892f", name: "Pumpkin" },
+                        { color: "#e0607e", name: "Blush" },
+                        { color: "#a64fb3", name: "Violet" },
+                        { color: "#b49bd9", name: "Lavender" },
+                        { color: "#a69b85", name: "Taupe" },
+                        { color: "#6b4a2f", name: "Chocolate" },
+                        { color: "#6b7b8c", name: "Slate" },
+                        { color: "#e6eef2", name: "Frost" }
+                    ]
+
+                    delegate: Rectangle {
+                        id: swatch
+
+                        required property var modelData
+                        readonly property bool chosen: Settings.glassColor === swatch.modelData.color
+
+                        width: 40
+                        height: 40
+                        radius: 4
+                        border.width: swatch.chosen ? 2 : 1
+                        border.color: swatch.chosen ? Scheme.fieldFocus
+                            : swatchArea.containsMouse ? Scheme.selectionBorder : Scheme.fieldBorder
+                        // The glass of the taskbar under the colour, as the
+                        // swatches of Windows 7 show it.
+                        gradient: Gradient {
+                            GradientStop { position: 0.0; color: "#7fa3c4" }
+                            GradientStop { position: 1.0; color: "#1d3550" }
+                        }
+
+                        Rectangle {
+                            anchors.fill: parent
+                            anchors.margins: 3
+                            radius: 2
+                            color: swatch.modelData.color.length > 0 ? swatch.modelData.color : "transparent"
+                            opacity: 0.75
+                        }
+
+                        MouseArea {
+                            id: swatchArea
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            onClicked: Settings.glassColor = swatch.modelData.color
+                        }
+                    }
+                }
+            }
+
+            Text {
+                text: "Colour: " + ({ "": "Plain glass", "#3b8fd6": "Sky", "#1f5aa8": "Twilight",
+                    "#1aa2a8": "Sea", "#4fa83d": "Leaf", "#9cc93a": "Lime", "#e8c22f": "Sun",
+                    "#e8892f": "Pumpkin", "#e0607e": "Blush", "#a64fb3": "Violet",
+                    "#b49bd9": "Lavender", "#a69b85": "Taupe", "#6b4a2f": "Chocolate",
+                    "#6b7b8c": "Slate", "#e6eef2": "Frost" })[Settings.glassColor] || Settings.glassColor
+                color: Scheme.text
+                font.family: Theme.fontFamily
+                font.pixelSize: Theme.fontSize
+            }
+
+            Row {
+                spacing: 12
+                visible: Settings.glassColor.length > 0
+
+                Note {
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: "Colour intensity:"
+                }
+
+                // From faint to strong, as Windows 7's intensity slider.
+                Item {
+                    id: strength
+
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: 220
+                    height: 24
+
+                    function setFrom(x) {
+                        Settings.glassColorStrength = Math.round(
+                            (0.1 + Math.max(0, Math.min(1, x / width)) * 0.8) * 100) / 100;
+                    }
+
+                    Rectangle {
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: parent.width
+                        height: 4
+                        radius: 2
+                        color: Scheme.field
+                        border.width: 1
+                        border.color: Scheme.fieldBorder
+                    }
+
+                    Rectangle {
+                        x: (Settings.glassColorStrength - 0.1) / 0.8 * strength.width - width / 2
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: 10
+                        height: 20
+                        radius: 2
+                        border.width: 1
+                        border.color: strengthArea.containsMouse || strengthArea.pressed
+                            ? Scheme.fieldFocus : Scheme.fieldBorder
+                        gradient: Gradient {
+                            GradientStop { position: 0.0; color: strengthArea.containsMouse ? Scheme.buttonHotTop : Scheme.buttonTop }
+                            GradientStop { position: 1.0; color: strengthArea.containsMouse ? Scheme.buttonHotBottom : Scheme.buttonBottom }
+                        }
+                    }
+
+                    MouseArea {
+                        id: strengthArea
+                        anchors.fill: parent
+                        anchors.leftMargin: -6
+                        anchors.rightMargin: -6
+                        hoverEnabled: true
+                        preventStealing: true
+                        onPressed: function (event) { strength.setFrom(event.x - 6); }
+                        onPositionChanged: function (event) {
+                            if (pressed)
+                                strength.setFrom(event.x - 6);
+                        }
+                    }
+                }
+            }
         }
     }
 

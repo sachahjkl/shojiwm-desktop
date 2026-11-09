@@ -235,6 +235,16 @@ Item {
             border.width: 1
             border.color: Scheme.startGlassHighlight
         }
+
+        // The colour of the glass chosen in the Control Panel, over it.
+        Rectangle {
+            anchors.fill: parent
+            anchors.margins: 1
+            radius: Scheme.menuRadius
+            visible: Settings.glassColor.length > 0
+            color: Settings.glassColor.length > 0 ? Settings.glassColor : "transparent"
+            opacity: Settings.glassColorStrength
+        }
     }
 
     // The places column, dark, down the right hand side.

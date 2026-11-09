@@ -20,6 +20,7 @@ Singleton {
     // Control Panel's search box and the Start menu's find them.
     readonly property var tasks: [
         { text: "Choose light or dark", page: "appearance", words: "dark light theme colour color scheme night appearance" },
+        { text: "Change the colour of the taskbar and the Start menu", page: "appearance", words: "window color colour glass tint taskbar start menu intensity personalize" },
         { text: "Change how much the glass blurs", page: "appearance", words: "glass blur transparency aero frosted taskbar window colour color" },
         { text: "Change the desktop background on its own (slide show)", page: "background", words: "slide show slideshow wallpaper change rotate shuffle background folder" },
         { text: "Change desktop background", page: "background", words: "wallpaper picture image desktop background" },

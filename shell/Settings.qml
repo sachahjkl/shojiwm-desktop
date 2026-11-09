@@ -34,6 +34,8 @@ Singleton {
     property alias slideshowShuffle: adapter.slideshowShuffle
     property alias jumpPins: adapter.jumpPins
     property alias desktopSystemIcons: adapter.desktopSystemIcons
+    property alias glassColor: adapter.glassColor
+    property alias glassColorStrength: adapter.glassColorStrength
     property alias cpuMeterPlace: adapter.cpuMeterPlace
     property alias showClockGadget: adapter.showClockGadget
     property alias clockGadgetPlace: adapter.clockGadgetPlace
@@ -212,6 +214,11 @@ Singleton {
             /// The system icons on the desktop beside the Recycle Bin:
             /// "computer", "userfiles", "controlpanel".
             property list<string> desktopSystemIcons: ["computer"]
+            /// The colour of the taskbar's and the Start menu's glass, as
+            /// Windows 7's Window Color: "" for the plain glass, else a
+            /// colour laid over it at this strength (0 to 1).
+            property string glassColor: ""
+            property real glassColorStrength: 0.35
             property var cpuMeterPlace: ({ right: 24, top: 24 })
             /// The Clock gadget, under the CPU Meter by default.
             property bool showClockGadget: true

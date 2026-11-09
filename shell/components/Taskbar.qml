@@ -104,6 +104,14 @@ Item {
         }
     }
 
+    // The colour of the glass chosen in the Control Panel, over it.
+    Rectangle {
+        anchors.fill: parent
+        visible: Settings.glassColor.length > 0
+        color: Settings.glassColor.length > 0 ? Settings.glassColor : "transparent"
+        opacity: Settings.glassColorStrength
+    }
+
     // The top edge of a Windows 7 taskbar is a dark hairline with a lit one
     // under it, in that order (measured on the reference desktop: #313030
     // then #a6a7a4).
