@@ -1842,6 +1842,25 @@ FloatingWindow {
                 onChosen: function (path) { Settings.wallpaper = path; }
             }
 
+            Row {
+                spacing: 12
+                // The open list draws over the slide show below.
+                z: 5
+
+                Note {
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: "Picture position:"
+                }
+
+                CpCombo {
+                    readonly property var positions: ["fill", "fit", "stretch", "tile", "center"]
+                    width: 160
+                    model: ["Fill", "Fit", "Stretch", "Tile", "Center"]
+                    currentIndex: Math.max(0, positions.indexOf(Settings.wallpaperPosition))
+                    onActivated: function (index) { Settings.wallpaperPosition = positions[index]; }
+                }
+            }
+
             SubHeading { text: "Slide show" }
 
             CpCheck {

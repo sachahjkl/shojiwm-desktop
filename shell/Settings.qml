@@ -35,6 +35,7 @@ Singleton {
     property alias jumpPins: adapter.jumpPins
     property alias desktopSystemIcons: adapter.desktopSystemIcons
     property alias glassColor: adapter.glassColor
+    property alias wallpaperPosition: adapter.wallpaperPosition
     property alias glassColorStrength: adapter.glassColorStrength
     property alias cpuMeterPlace: adapter.cpuMeterPlace
     property alias showClockGadget: adapter.showClockGadget
@@ -218,6 +219,9 @@ Singleton {
             /// Windows 7's Window Color: "" for the plain glass, else a
             /// colour laid over it at this strength (0 to 1).
             property string glassColor: ""
+            /// How the wallpaper covers the screen, as Windows 7's Picture
+            /// position: "fill", "fit", "stretch", "tile" or "center".
+            property string wallpaperPosition: "fill"
             property real glassColorStrength: 0.35
             property var cpuMeterPlace: ({ right: 24, top: 24 })
             /// The Clock gadget, under the CPU Meter by default.

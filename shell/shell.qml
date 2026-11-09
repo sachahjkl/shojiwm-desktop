@@ -86,12 +86,28 @@ ShellRoot {
                     }
                 }
 
+                // Under a picture that does not cover the screen (Fit,
+                // Center), the dark blue of Windows 7's background colour.
+                Rectangle {
+                    anchors.fill: parent
+                    color: "#1d3550"
+                }
+
                 Image {
                     anchors.fill: parent
                     source: Settings.wallpaperSource
-                    sourceSize.width: parent.width * 1.0
-                    sourceSize.height: parent.height * 1.0
-                    fillMode: Image.PreserveAspectCrop
+                    // Tile and Center keep the picture's own size.
+                    sourceSize.width: Settings.wallpaperPosition === "tile"
+                        || Settings.wallpaperPosition === "center" ? undefined : parent.width
+                    sourceSize.height: Settings.wallpaperPosition === "tile"
+                        || Settings.wallpaperPosition === "center" ? undefined : parent.height
+                    fillMode: ({
+                        fill: Image.PreserveAspectCrop,
+                        fit: Image.PreserveAspectFit,
+                        stretch: Image.Stretch,
+                        tile: Image.Tile,
+                        center: Image.Pad
+                    })[Settings.wallpaperPosition] ?? Image.PreserveAspectCrop
                     smooth: true
                 }
 
