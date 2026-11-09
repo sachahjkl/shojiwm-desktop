@@ -72,7 +72,7 @@ PopupWindow {
     Rectangle {
         anchors.fill: parent
         anchors.margins: 1
-        radius: Math.max(0, Scheme.popupRadius - 1)
+        radius: Scheme.corner(Math.max(0, Scheme.popupRadius - 1))
         color: "transparent"
         border.width: 1
         border.color: Scheme.popupInnerLine
@@ -204,7 +204,7 @@ PopupWindow {
                     anchors.topMargin: 1
                     width: 20
                     height: 17
-                    radius: 3
+                    radius: Scheme.corner(3)
                     visible: card.hovered
                     border.width: 1
                     border.color: closeArea.containsMouse ? "#7a1a12" : "transparent"

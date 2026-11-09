@@ -49,7 +49,7 @@ PopupWindow {
     Rectangle {
         anchors.fill: parent
         anchors.margins: 1
-        radius: Math.max(0, Scheme.popupRadius - 1)
+        radius: Scheme.corner(Math.max(0, Scheme.popupRadius - 1))
         color: "transparent"
         border.width: 1
         border.color: Scheme.popupInnerLine

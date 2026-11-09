@@ -1,4 +1,5 @@
 import QtQuick
+import ".."
 
 // The account picture in the frame the Windows 7 log-on screen puts round
 // it, measured on a Windows 7 Ultimate screenshot at 800 x 600 (116 px round
@@ -33,14 +34,14 @@ Item {
         anchors.margins: -2
         anchors.topMargin: 0
         anchors.bottomMargin: -Math.max(1, Math.round(3 * tile.k))
-        radius: tile.r + 2
+        radius: Scheme.corner(tile.r + 2)
         color: "#38001a33"
     }
 
     // The outer line.
     Rectangle {
         anchors.fill: parent
-        radius: tile.r
+        radius: Scheme.corner(tile.r)
         color: tile.dark ? "#06121c" : "#1b5f8c"
     }
 
@@ -48,7 +49,7 @@ Item {
     Rectangle {
         anchors.fill: parent
         anchors.margins: 1
-        radius: Math.max(0, tile.r - 1)
+        radius: Scheme.corner(Math.max(0, tile.r - 1))
         color: tile.dark ? "#7f9db4" : "#b8ecff"
     }
 
@@ -56,7 +57,7 @@ Item {
     Rectangle {
         anchors.fill: parent
         anchors.margins: 2
-        radius: Math.max(0, tile.r - 2)
+        radius: Scheme.corner(Math.max(0, tile.r - 2))
         gradient: tile.dark ? smoked : glass
     }
 
@@ -84,7 +85,7 @@ Item {
     Rectangle {
         anchors.fill: parent
         anchors.margins: tile.band - 2
-        radius: Math.max(1, 2 * tile.k)
+        radius: Scheme.corner(Math.max(1, 2 * tile.k))
         color: tile.dark ? "#5f7d95" : "#a8d8f0"
     }
     Rectangle {

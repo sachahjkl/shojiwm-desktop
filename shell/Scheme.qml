@@ -15,11 +15,20 @@ Singleton {
 
     // ----- shapes ---------------------------------------------------------------
 
-    readonly property int popupRadius: 4
-    readonly property int menuRadius: 5
-    readonly property int itemRadius: 3
-    readonly property int fieldRadius: 2
-    readonly property int buttonRadius: 3
+    /// The square variant of the theme (Settings.squareCorners).
+    readonly property bool square: Settings.squareCorners
+
+    /// A corner's radius: `radius` in the rounded theme, 0 in the square
+    /// one. Every rounded corner goes through it; a circle does not.
+    function corner(radius) {
+        return square ? 0 : radius;
+    }
+
+    readonly property int popupRadius: corner(4)
+    readonly property int menuRadius: corner(5)
+    readonly property int itemRadius: corner(3)
+    readonly property int fieldRadius: corner(2)
+    readonly property int buttonRadius: corner(3)
     /// The frame round a picked item.
     readonly property int selectionBorderWidth: 1
 

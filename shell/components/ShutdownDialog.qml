@@ -140,7 +140,7 @@ Item {
         anchors.centerIn: parent
         width: 440
         height: page.height + caption.height + 9
-        radius: 7
+        radius: Scheme.corner(7)
         border.width: 1
         border.color: "#b3000000"
         gradient: Gradient {
@@ -152,7 +152,7 @@ Item {
         Rectangle {
             anchors.fill: parent
             anchors.margins: 1
-            radius: 6
+            radius: Scheme.corner(6)
             color: "transparent"
             border.width: 1
             border.color: "#59ffffff"
@@ -266,7 +266,7 @@ Item {
 
                     width: parent.width
                     height: 24
-                    radius: 2
+                    radius: Scheme.corner(2)
                     color: Scheme.field
                     border.width: 1
                     border.color: fieldArea.containsMouse || dialog.listOpen
@@ -278,7 +278,7 @@ Item {
                         y: 3
                         width: parent.width - dropButton.width - 8
                         height: parent.height - 6
-                        radius: 1
+                        radius: Scheme.corner(1)
                         color: dialog.listOpen || dialog.focusAt !== 0 ? "transparent" : "#3399ff"
 
                         Text {

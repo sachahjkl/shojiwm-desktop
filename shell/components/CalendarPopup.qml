@@ -102,7 +102,7 @@ PopupWindow {
     Rectangle {
         anchors.fill: parent
         anchors.margins: 1
-        radius: Math.max(0, Scheme.popupRadius - 1)
+        radius: Scheme.corner(Math.max(0, Scheme.popupRadius - 1))
         color: "transparent"
         border.width: 1
         border.color: Scheme.popupInnerLine
@@ -201,7 +201,7 @@ PopupWindow {
                     Rectangle {
                         anchors.fill: parent
                         anchors.margins: 1
-                        radius: 2
+                        radius: Scheme.corner(2)
                         color: day.isToday ? Scheme.selection
                             : dayArea.containsMouse ? Scheme.hover : "transparent"
                         border.width: day.isToday || dayArea.containsMouse ? 1 : 0

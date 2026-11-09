@@ -25,6 +25,7 @@ Singleton {
     property alias combineWindows: adapter.combineWindows
     property alias taskbarCompact: adapter.taskbarCompact
     property alias glassBlur: adapter.glassBlur
+    property alias squareCorners: adapter.squareCorners
     property alias animationSpeed: adapter.animationSpeed
     property alias displayChoices: adapter.displayChoices
     property alias extraClocks: adapter.extraClocks
@@ -208,6 +209,10 @@ Singleton {
             /// The blur behind the glass of the caption bars, the taskbar
             /// and the menus: 0 for none, up to 4.
             property int glassBlur: 2
+            /// The square variant of the theme: windows, menus, buttons and
+            /// fields have square corners. What is round by nature (the
+            /// Start orb, radio buttons, the gadgets' dials) stays round.
+            property bool squareCorners: false
             /// How fast every animation plays: 1 is normal, 2 twice as fast.
             property real animationSpeed: 1
             /// The Control Panel's mode and scale per screen, by connector:

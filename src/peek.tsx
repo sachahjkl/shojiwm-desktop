@@ -36,6 +36,7 @@ import {
   WIN_RECT,
 } from "./window-manager";
 import { setAnimationSpeed, setAnimations } from "./motion";
+import { setSquareCorners } from "./corners";
 import { setGlassColour, setGlassLevel } from "./glass";
 import { type DisplayChoice, screens, setDisplayChoices } from "./display";
 import { serveShortcuts } from "./shortcuts";
@@ -104,6 +105,14 @@ export function createPeek(manager: FloatingWindowManager): Peek {
       const choice = params as { colour?: unknown; strength?: unknown };
       setGlassColour(choice.colour, choice.strength);
     }
+    return true;
+  });
+  server.handle("corners", (params) => {
+    setSquareCorners(
+      typeof params === "object" &&
+        params !== null &&
+        (params as { square?: unknown }).square === true,
+    );
     return true;
   });
   server.handle("screens", () => screens());

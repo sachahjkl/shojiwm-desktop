@@ -76,6 +76,10 @@ Singleton {
         });
     }
 
+    function sendCorners() {
+        return send("corners", { square: Settings.squareCorners });
+    }
+
     function sendGlass() {
         return send("glass", {
             level: Settings.glassBlur,
@@ -89,6 +93,7 @@ Singleton {
         function onAnimationsChanged() { root.sendAnimations(); }
         function onAnimationSpeedChanged() { root.sendAnimations(); }
         function onGlassBlurChanged() { root.sendGlass(); }
+        function onSquareCornersChanged() { root.sendCorners(); }
         function onGlassColorChanged() { root.sendGlass(); }
         function onGlassColorStrengthChanged() { root.sendGlass(); }
         function onDisplayChoicesChanged() { root.sendDisplay(); }
@@ -108,6 +113,7 @@ Singleton {
             if (connected) {
                 root.sendAnimations();
                 root.sendGlass();
+                root.sendCorners();
                 root.sendDisplay();
             }
             else if (root.path.length > 0)

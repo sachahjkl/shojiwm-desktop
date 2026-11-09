@@ -515,7 +515,7 @@ FloatingWindow {
                         anchors.verticalCenter: parent.verticalCenter
                         width: parent.width
                         height: 4
-                        radius: 2
+                        radius: Scheme.corner(2)
                         color: Scheme.field
                         border.width: 1
                         border.color: Scheme.fieldBorder
@@ -536,7 +536,7 @@ FloatingWindow {
                         anchors.verticalCenter: parent.verticalCenter
                         width: 10
                         height: 20
-                        radius: 2
+                        radius: Scheme.corner(2)
                         border.width: 1
                         border.color: speedArea.containsMouse || speedArea.pressed
                             ? Scheme.fieldFocus : Scheme.fieldBorder
@@ -672,7 +672,7 @@ FloatingWindow {
 
                 width: parent.width
                 height: 150
-                radius: 3
+                radius: Scheme.corner(3)
                 color: Scheme.dark ? "#141b22" : "#f3f6f9"
                 border.width: 1
                 border.color: Scheme.fieldBorder
@@ -712,7 +712,7 @@ FloatingWindow {
                             y: tile.modelData.y * layoutArea.k + 2
                             width: tile.modelData.width / tile.modelData.scale * layoutArea.k - 4
                             height: tile.modelData.height / tile.modelData.scale * layoutArea.k - 4
-                            radius: 2
+                            radius: Scheme.corner(2)
                             border.width: tile.chosen ? 2 : 1
                             border.color: tile.chosen ? Scheme.fieldFocus : "#5d7489"
                             gradient: Gradient {
@@ -839,7 +839,7 @@ FloatingWindow {
                 width: parent.width
                 height: confirmRow.implicitHeight + 20
                 visible: DisplaySettings.confirming
-                radius: 3
+                radius: Scheme.corner(3)
                 color: Scheme.dark ? "#2a3a1c" : "#fff8d6"
                 border.width: 1
                 border.color: Scheme.dark ? "#6b7f3c" : "#e0c66b"
@@ -1606,7 +1606,7 @@ FloatingWindow {
 
                         Rectangle {
                             anchors.fill: parent
-                            radius: 4
+                            radius: Scheme.corner(4)
                             color: choice.isChosen ? Scheme.selection
                                 : choiceArea.containsMouse ? Scheme.hover : "transparent"
                             border.width: choice.isChosen || choiceArea.containsMouse ? 1 : 0
@@ -1619,7 +1619,7 @@ FloatingWindow {
                             y: 12
                             width: parent.width - 32
                             height: 96
-                            radius: 4
+                            radius: Scheme.corner(4)
                             border.width: 1
                             border.color: "#5d7489"
                             color: choice.modelData.dark ? "#1e262e" : "#ffffff"
@@ -1627,7 +1627,7 @@ FloatingWindow {
                             Rectangle {
                                 width: parent.width
                                 height: 18
-                                radius: 4
+                                radius: Scheme.corner(4)
                                 gradient: Gradient {
                                     GradientStop { position: 0.0; color: "#a6c8e6" }
                                     GradientStop { position: 1.0; color: "#6f9cc4" }
@@ -1645,7 +1645,7 @@ FloatingWindow {
                                         required property int index
                                         width: 120 - index * 18
                                         height: 6
-                                        radius: 3
+                                        radius: Scheme.corner(3)
                                         color: choice.modelData.dark ? "#5d7489" : "#c3d3e0"
                                     }
                                 }
@@ -1679,6 +1679,31 @@ FloatingWindow {
                     + "choice; only this desktop will, until it restarts. "
                     + "On NixOS: programs.dconf.enable = true (the shojiwm "
                     + "module of nixconfig sets it)."
+            }
+
+            SubHeading { text: "Corners" }
+
+            Note {
+                width: parent.width
+                text: "The shape of the windows, menus, buttons and fields. What is "
+                    + "round by nature, as the Start button, stays round."
+            }
+
+            Flow {
+                width: parent.width
+                spacing: 16
+
+                CpRadio {
+                    label: "Rounded"
+                    checked: !Settings.squareCorners
+                    onClicked: Settings.squareCorners = false
+                }
+
+                CpRadio {
+                    label: "Square"
+                    checked: Settings.squareCorners
+                    onClicked: Settings.squareCorners = true
+                }
             }
 
             SubHeading { text: "Glass" }
@@ -1747,7 +1772,7 @@ FloatingWindow {
 
                         width: 40
                         height: 40
-                        radius: 4
+                        radius: Scheme.corner(4)
                         border.width: swatch.chosen ? 2 : 1
                         border.color: swatch.chosen ? Scheme.fieldFocus
                             : swatchArea.containsMouse ? Scheme.selectionBorder : Scheme.fieldBorder
@@ -1761,7 +1786,7 @@ FloatingWindow {
                         Rectangle {
                             anchors.fill: parent
                             anchors.margins: 3
-                            radius: 2
+                            radius: Scheme.corner(2)
                             color: swatch.modelData.color.length > 0 ? swatch.modelData.color : "transparent"
                             opacity: 0.75
                         }
@@ -1813,7 +1838,7 @@ FloatingWindow {
                         anchors.verticalCenter: parent.verticalCenter
                         width: parent.width
                         height: 4
-                        radius: 2
+                        radius: Scheme.corner(2)
                         color: Scheme.field
                         border.width: 1
                         border.color: Scheme.fieldBorder
@@ -1824,7 +1849,7 @@ FloatingWindow {
                         anchors.verticalCenter: parent.verticalCenter
                         width: 10
                         height: 20
-                        radius: 2
+                        radius: Scheme.corner(2)
                         border.width: 1
                         border.color: strengthArea.containsMouse || strengthArea.pressed
                             ? Scheme.fieldFocus : Scheme.fieldBorder
@@ -2101,7 +2126,7 @@ FloatingWindow {
                 Rectangle {
                     width: 96
                     height: 96
-                    radius: 6
+                    radius: Scheme.corner(6)
                     color: "#ffffff"
                     border.width: 1
                     border.color: Scheme.fieldBorder

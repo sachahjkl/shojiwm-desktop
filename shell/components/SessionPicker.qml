@@ -33,7 +33,7 @@ Item {
 
         width: label.implicitWidth + 40
         height: 28
-        radius: 3
+        radius: Scheme.corner(3)
         color: area.containsMouse || picker.open ? "#40ffffff" : "#1fffffff"
         border.width: 1
         border.color: area.containsMouse || picker.open ? "#99ffffff" : "#59ffffff"

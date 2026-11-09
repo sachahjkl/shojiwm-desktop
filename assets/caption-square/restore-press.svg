@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="27" height="18" viewBox="0 0 27 18" shape-rendering="crispEdges">
+<!-- Drawn by tools/make-caption-svgs.py from docs/aero-measurements.md. -->
+<defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0.0000" stop-color="#cfe3f2" stop-opacity="0.85"/><stop offset="0.2353" stop-color="#b9d6ea" stop-opacity="0.85"/><stop offset="0.4118" stop-color="#a4c8e0" stop-opacity="0.85"/><stop offset="0.4706" stop-color="#a4c8e0" stop-opacity="0.85"/><stop offset="0.4706" stop-color="#255a84" stop-opacity="0.9"/><stop offset="0.5882" stop-color="#24597f" stop-opacity="0.92"/><stop offset="0.7647" stop-color="#36708f" stop-opacity="0.85"/><stop offset="0.8824" stop-color="#6fa6c6" stop-opacity="0.6"/><stop offset="0.9412" stop-color="#6fa6c6" stop-opacity="0.6"/><stop offset="1" stop-color="#6fa6c6" stop-opacity="0.6"/></linearGradient><clipPath id="c"><path d="M0,0 H27 V18 H0 Z" shape-rendering="auto"/></clipPath></defs>
+<g clip-path="url(#c)">
+<rect x="1" y="0" width="26" height="17" fill="url(#g)"/>
+<rect x="1" y="0" width="1" height="17" fill="#ffffff" fill-opacity="0.7"/>
+<rect x="26" y="0" width="1" height="17" fill="#ffffff" fill-opacity="0.7"/>
+<rect x="0" y="0" width="1" height="18" fill="#242c35"/>
+<rect x="0" y="17" width="27" height="1" fill="#242c35"/>
+<g shape-rendering="auto"><rect x="10" y="2" width="10" height="10" fill="#535666"/><rect x="11" y="3" width="8" height="8" fill="#ffffff"/><path d="M8,4 h10 v10 h-10 Z M9,5 h8 v8 h-8 Z" fill="#535666" fill-rule="evenodd"/><path d="M9,5 h8 v8 h-8 Z M11,7 h4 v4 h-4 Z" fill="#ffffff" fill-rule="evenodd"/><path d="M11,7 h4 v4 h-4 Z M12,8 h2 v2 h-2 Z" fill="#535666" fill-rule="evenodd"/></g>
+</g>
+
+</svg>

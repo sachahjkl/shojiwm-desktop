@@ -330,6 +330,35 @@ Item {
         setPlaces(Settings.desktopAutoArrange ? changes : keepPlaces(changes));
     }
 
+    /// The icon a drag would drop into: the Recycle Bin or a folder under
+    /// the pointer. It lights up as a picked icon does, as on Windows 7.
+    property string dropTargetKey: ""
+
+    /// The key of the trash or folder icon under (x, y) that a drag can drop
+    /// into, or "": not one of the icons being dragged.
+    function dropTargetAt(x, y) {
+        var target = itemAt(x, y);
+        if (!target || (target.kind !== "trash" && target.kind !== "folder"))
+            return "";
+        if (DragState.kind === "desktop" && DragState.data.keys.indexOf(target.key) >= 0)
+            return "";
+        return target.key;
+    }
+
+    /// Where a drag over empty desktop would put its (first) icon, for the
+    /// pale place drawn there; null when it would drop into an icon.
+    property var landing: null
+
+    /// The top left the drop at (x, y) gives the icon under the pointer, as
+    /// placeDragged and dropFiles place it: the shell's own icons keep where
+    /// they were taken, files come centred under the pointer.
+    function landingAt(x, y) {
+        var point = DragState.kind === "desktop"
+            ? onScreen(x - DragState.data.grab.x, y - DragState.data.grab.y)
+            : onScreen(x - size.width / 2, y - size.height / 3);
+        return Settings.desktopAlignToGrid ? cellPoint(cellAt(point.x, point.y)) : point;
+    }
+
     // Whether the Recycle Bin has anything in it, for its icon. Files are
     // trashed where their mount allows it: ~/.local/share/Trash for $HOME's
     // own device, a .Trash-<uid> at the top of another mount. trash:///
@@ -766,7 +795,19 @@ Item {
         anchors.fill: parent
         keys: ["text/uri-list", "application/x-shojiwm-desktop-icons"]
 
+        onPositionChanged: function (event) {
+            desktop.dropTargetKey = desktop.dropTargetAt(event.x, event.y);
+            desktop.landing = desktop.dropTargetKey.length > 0
+                ? null : desktop.landingAt(event.x, event.y);
+        }
+        onExited: {
+            desktop.dropTargetKey = "";
+            desktop.landing = null;
+        }
+
         onDropped: function (event) {
+            desktop.dropTargetKey = "";
+            desktop.landing = null;
             var copy = event.proposedAction === Qt.CopyAction;
             // The shell's own icons are not read back through Wayland: see
             // DragState. Dropped on the Recycle Bin or a folder, their files
@@ -794,6 +835,20 @@ Item {
 
     // ----- the icons ------------------------------------------------------------
 
+    // The place a drag over empty desktop would drop at: a pale plate the
+    // size of an icon's, under the icons.
+    Rectangle {
+        visible: desktop.landing !== null && Settings.showDesktopIcons
+        x: (desktop.landing ? desktop.landing.x : 0) + 2
+        y: (desktop.landing ? desktop.landing.y : 0) + 2
+        width: desktop.size.width - 4
+        height: desktop.size.height - 4
+        radius: Scheme.corner(3)
+        color: "#1affffff"
+        border.width: 1
+        border.color: "#80ffffff"
+    }
+
     Item {
         anchors.fill: parent
         visible: Settings.showDesktopIcons
@@ -807,6 +862,8 @@ Item {
                 required property var modelData
                 readonly property var item: modelData
                 readonly property bool isPicked: desktop.picked[modelData.key] === true
+                /// A drag is over this trash or folder: dropping puts it there.
+                readonly property bool isDropTarget: desktop.dropTargetKey === modelData.key
                 readonly property bool editing: desktop.renameKey === modelData.key
                 readonly property point at: desktop.positions[modelData.key] || Qt.point(2, 2)
                 /// Where the pointer took the icon, in the cell, for a drag.
@@ -897,13 +954,13 @@ Item {
                     width: parent.width - 4
                     height: Math.min(cell.height + (cell.isPicked ? 40 : 0),
                         picture.height + 8 + (cell.editing ? field.height : name.height) + 6)
-                    radius: 3
-                    visible: cell.isPicked || iconArea.containsMouse
-                    color: cell.isPicked
-                        ? (iconArea.containsMouse ? "#5c9fd2f7" : "#4d86c0ec")
+                    radius: Scheme.corner(3)
+                    visible: cell.isPicked || cell.isDropTarget || iconArea.containsMouse
+                    color: cell.isPicked || cell.isDropTarget
+                        ? (iconArea.containsMouse || cell.isDropTarget ? "#5c9fd2f7" : "#4d86c0ec")
                         : "#26ffffff"
                     border.width: 1
-                    border.color: cell.isPicked ? "#a6cfeaff" : "#59ffffff"
+                    border.color: cell.isPicked || cell.isDropTarget ? "#a6cfeaff" : "#59ffffff"
                 }
 
                 Image {
@@ -920,6 +977,12 @@ Item {
                     asynchronous: true
                     smooth: true
                     source: cell.iconSource
+                    // It grows a little under a drag it would take.
+                    scale: cell.isDropTarget ? 1.12 : 1
+
+                    Behavior on scale {
+                        NumberAnimation { duration: Settings.motion(120); easing.type: Easing.OutCubic }
+                    }
                 }
 
                 // The shortcut arrow, in the bottom left corner of the icon.
@@ -929,7 +992,7 @@ Item {
                     y: picture.y + picture.height - height
                     width: Math.round(desktop.size.icon / 3)
                     height: width
-                    radius: 1
+                    radius: Scheme.corner(1)
                     color: "#ffffff"
                     border.width: 1
                     border.color: "#8c9aa6"

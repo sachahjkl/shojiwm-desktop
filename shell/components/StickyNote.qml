@@ -30,7 +30,7 @@ Item {
         anchors.leftMargin: 3
         anchors.rightMargin: -3
         anchors.bottomMargin: -4
-        radius: 2
+        radius: Scheme.corner(2)
         color: "#40000000"
     }
 
@@ -38,7 +38,7 @@ Item {
         id: sheet
 
         anchors.fill: parent
-        radius: 1
+        radius: Scheme.corner(1)
         border.width: 1
         border.color: "#b8a24a"
         gradient: Gradient {

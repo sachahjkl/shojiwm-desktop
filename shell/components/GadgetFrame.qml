@@ -60,7 +60,7 @@ Loader {
 
                 width: 20
                 height: 20
-                radius: 3
+                radius: Scheme.corner(3)
                 color: buttonArea.containsMouse ? "#66ffffff" : "#33000000"
                 border.width: 1
                 border.color: "#80ffffff"
