@@ -372,7 +372,8 @@ running one.
 | `Super`+`1` … `9`                 | The taskbar button at that place: start it, show it, put it away, or the next of its windows          |
 | `Super`+`Shift`+`1` … `9`         | Another instance of that button's program                                                             |
 | `Super`+`V`                       | Clipboard history: the command in `SHOJIWM_WIN7_CLIPBOARD`, for example `papier toggle`               |
-| `Super`+`R`                       | Run: the Start menu's search box                                                                      |
+| `Super`+`R`                       | The Run dialog, on the focused screen: its history (26), completion from it, Down or F4 for the list  |
+| `Super`+`X`                       | The Start orb's menu (also a right click on the orb): terminals, tools, power actions                 |
 | `Ctrl`+`Shift`+`Escape`           | Task manager (`SHOJIWM_WIN7_TASK_MANAGER`, else Mission Center); also in the clock's right-click menu |
 | `Super`+`Shift`+wheel             | Zoom the screen around the pointer; `Super`+`Shift`+`0` resets it                                     |
 | Volume, mute and player keys      | Volume of the default output (`wpctl`), microphone mute, `playerctl`                                  |

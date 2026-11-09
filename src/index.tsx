@@ -411,15 +411,15 @@ if (CLIPBOARD) {
   );
 }
 
-// Super+R: Run, which is the Start menu's search box: what is typed there
-// runs with Return when no program matches.
+// Super+R: the Run dialog, above the focused screen's Start button, with
+// its history.
 COMPOSITOR.key.bind(
   "run",
   "Super+R",
   once(() => {
     const monitor = WINDOWS.outputName() ?? "";
     COMPOSITOR.process.spawn({
-      command: `quickshell -p ${SHELL_PATH} ipc call startmenu openOn "${monitor}"`,
+      command: `quickshell -p ${SHELL_PATH} ipc call run toggleOn "${monitor}"`,
     });
   }),
 );

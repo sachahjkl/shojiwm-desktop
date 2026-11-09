@@ -19,6 +19,7 @@ PopupWindow {
 
     signal dismissed
     signal launcherRequested
+    signal runRequested
 
     color: "transparent"
     visible: popup.open
@@ -70,7 +71,7 @@ PopupWindow {
         } },
         { label: "Run", run: function () {
             popup.dismissed();
-            popup.launcherRequested();
+            popup.runRequested();
         } },
         { separator: true },
         { label: "Lock", run: function () { popup.power("lock"); } },

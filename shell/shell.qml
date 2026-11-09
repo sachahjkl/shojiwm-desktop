@@ -30,6 +30,7 @@ ShellRoot {
     property var lockState: LockState
     property var controlPanel: ControlPanelState
     property var shutdown: ShutdownState
+    property var run: RunState
     // The desktop slide show changes the wallpaper on its own.
     property var slideshow: Slideshow
 
@@ -520,6 +521,46 @@ ShellRoot {
                     StartMenuState.close();
                     shutdownDialog.reset();
                 }
+            }
+        }
+    }
+
+    // ----- the Run dialog --------------------------------------------------------
+
+    // Super+R, the Start menu's Run... and the orb's menu: above the Start
+    // button of the screen asked for, with the keyboard.
+    Variants {
+        model: Quickshell.screens
+
+        PanelWindow {
+            id: runWindow
+
+            required property var modelData
+            screen: modelData
+
+            readonly property bool open: RunState.openOn === modelData.name
+
+            visible: open
+            color: "transparent"
+            anchors.top: true
+            anchors.bottom: true
+            anchors.left: true
+            anchors.right: true
+
+            exclusionMode: ExclusionMode.Ignore
+            WlrLayershell.layer: WlrLayer.Overlay
+            WlrLayershell.namespace: "shojiwm-win7-run"
+            WlrLayershell.keyboardFocus: open ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
+
+            RunDialog {
+                id: runDialog
+                anchors.fill: parent
+                onDismissed: RunState.close()
+            }
+
+            onOpenChanged: {
+                if (open)
+                    runDialog.reset();
             }
         }
     }

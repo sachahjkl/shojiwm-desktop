@@ -414,9 +414,10 @@ Item {
                                 return;
                             }
                             if (place.modelData.run) {
-                                // Run... is the search box, which runs what
-                                // it does not find.
-                                search.forceActiveFocus();
+                                // The Run dialog, on this menu's screen.
+                                var screen = StartMenuState.openOn;
+                                menu.dismissed();
+                                RunState.open(screen);
                                 return;
                             }
                             if (place.modelData.panel)

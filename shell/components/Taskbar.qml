@@ -591,6 +591,7 @@ Item {
         open: bar.adminMenuOpen
         onDismissed: bar.adminMenuDismissed()
         onLauncherRequested: StartMenuState.openLauncher(bar.window && bar.window.screen ? bar.window.screen.name : "")
+        onRunRequested: RunState.open(bar.window && bar.window.screen ? bar.window.screen.name : "")
     }
 
     ClockMenu {
