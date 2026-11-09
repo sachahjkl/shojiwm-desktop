@@ -11,7 +11,9 @@ import Quickshell.Io
 // Notify calls programs make on the session bus and prints each one as a
 // line of JSON. Notifications that only show a level (volume, brightness:
 // the x-canonical-private-synchronous or x-dunst-stack-tag hints) and the
-// transient ones stay out of the list.
+// transient ones stay out of the list. The list is kept in
+// $XDG_STATE_HOME/shojiwm-win7/notifications.json, so it outlives a restart
+// of the shell and a new session.
 Singleton {
     id: root
 
@@ -21,6 +23,19 @@ Singleton {
     property int unread: 0
     property bool doNotDisturb: false
     readonly property int keep: 100
+    readonly property string stateDir: (Quickshell.env("XDG_STATE_HOME")
+        || (Quickshell.env("HOME") + "/.local/state")) + "/shojiwm-win7"
+    /// The list is read from the file before it is written back.
+    property bool loaded: false
+
+    /// Write the list (and the unseen count) to the file.
+    function save() {
+        if (root.loaded)
+            store.setText(JSON.stringify({ unread: root.unread, entries: root.entries }) + "\n");
+    }
+
+    onEntriesChanged: root.save()
+    onUnreadChanged: root.save()
 
     function add(line) {
         var message;
@@ -82,6 +97,38 @@ Singleton {
         if (date.toDateString() === today.toDateString())
             return Qt.formatTime(date, "HH:mm");
         return Qt.formatDate(date, Qt.locale().dateFormat(Locale.ShortFormat));
+    }
+
+    // The folder, then the file.
+    Process {
+        command: ["mkdir", "-p", root.stateDir]
+        running: true
+        onRunningChanged: {
+            if (!running)
+                store.path = root.stateDir + "/notifications.json";
+        }
+    }
+
+    FileView {
+        id: store
+
+        printErrors: false
+        onLoaded: {
+            // Read once: a reload after a write would add the list again.
+            if (root.loaded)
+                return;
+            try {
+                var saved = JSON.parse(store.text());
+                if (Array.isArray(saved.entries)) {
+                    // What came while the file was read stays on top.
+                    root.entries = root.entries.concat(saved.entries).slice(0, root.keep);
+                    root.unread += Number(saved.unread) || 0;
+                }
+            } catch (error) {
+            }
+            root.loaded = true;
+        }
+        onLoadFailed: root.loaded = true
     }
 
     Process {
