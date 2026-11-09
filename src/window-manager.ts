@@ -188,8 +188,12 @@ export class FloatingWindowManager {
   private currentOutput: string | undefined;
   /** Windows that "show desktop" minimised, so the next call restores them. */
   private hiddenByShowDesktop: string[] = [];
-  /** The window being dragged, and the rectangle its drag started from. */
-  private moveDrag: { id: string; base: Rect } | null = null;
+  /**
+   * The window being dragged, and the rectangle its drag started from.
+   * `base` stays null for a maximised window until the pointer moves past
+   * a click: a click on its caption bar leaves it maximised.
+   */
+  private moveDrag: { id: string; base: Rect | null } | null = null;
   /** The last caption press that neither moved nor dragged the window. */
   private lastCaptionClick: {
     id: string;
@@ -449,7 +453,7 @@ export class FloatingWindowManager {
       window.focus();
       this.moveDrag = {
         id: window.id,
-        base: this.moveBaseRect(event),
+        base: window.state[WIN_MAXIMIZED]() ? null : this.moveBaseRect(event),
       };
     }
 
@@ -458,18 +462,33 @@ export class FloatingWindowManager {
       return;
     }
 
+    // A maximised window is restored only once the press becomes a drag.
+    if (drag.base === null) {
+      if (this.isClick(event)) {
+        if (event.phase === "end" || event.phase === "cancel") {
+          this.moveDrag = null;
+          if (event.phase === "end") {
+            this.noteClick(event);
+          }
+        }
+        return;
+      }
+      drag.base = this.moveBaseRect(event);
+    }
+    const base = drag.base;
+
     if (event.phase === "cancel") {
-      window.state[WIN_RECT].set(drag.base);
+      window.state[WIN_RECT].set(base);
       this.moveDrag = null;
       this.setSnapPreview(null);
       return;
     }
 
     window.state[WIN_RECT].set({
-      x: drag.base.x + (event.currentRect.x - event.startRect.x),
-      y: drag.base.y + (event.currentRect.y - event.startRect.y),
-      width: drag.base.width,
-      height: drag.base.height,
+      x: base.x + (event.currentRect.x - event.startRect.x),
+      y: base.y + (event.currentRect.y - event.startRect.y),
+      width: base.width,
+      height: base.height,
     });
 
     this.setSnapPreview(this.snapZoneAt(event));
@@ -479,24 +498,37 @@ export class FloatingWindowManager {
       this.setSnapPreview(null);
       this.moveDrag = null;
 
-      // A click that did not move the window can be the first half of a
-      // double click: on the caption bar, or anywhere with Super held.
-      if (
-        (event.source === "ssd" || event.source === "modifier") &&
-        Math.abs(event.delta.x) <= CLICK_SLACK_PX &&
-        Math.abs(event.delta.y) <= CLICK_SLACK_PX
-      ) {
-        this.lastCaptionClick = {
-          id: window.id,
-          at: event.timestamp,
-          x: event.startPointer.x,
-          y: event.startPointer.y,
-        };
-      }
+      this.noteClick(event);
 
       if (zone) {
         this.applySnap(window, zone.kind);
       }
+    }
+  }
+
+  /** `true` while the pointer has not moved past a click. */
+  private isClick(event: WindowMoveEvent): boolean {
+    return (
+      Math.abs(event.delta.x) <= CLICK_SLACK_PX &&
+      Math.abs(event.delta.y) <= CLICK_SLACK_PX
+    );
+  }
+
+  /**
+   * A click that did not move the window can be the first half of a double
+   * click: on the caption bar, or anywhere with Super held.
+   */
+  private noteClick(event: WindowMoveEvent): void {
+    if (
+      (event.source === "ssd" || event.source === "modifier") &&
+      this.isClick(event)
+    ) {
+      this.lastCaptionClick = {
+        id: event.window.id,
+        at: event.timestamp,
+        x: event.startPointer.x,
+        y: event.startPointer.y,
+      };
     }
   }
 
