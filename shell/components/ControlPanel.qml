@@ -2043,7 +2043,120 @@ FloatingWindow {
         Column {
             spacing: 10
 
-            Heading { text: "About this desktop" }
+            Heading { text: "View basic information about your computer" }
+
+            // What Windows 7's System page shows, read from the system: the
+            // edition, the processor, the memory, the system type, the
+            // computer's name, and how long it has been on.
+            Process {
+                id: systemInfo
+                command: ["sh", "-c",
+                    ". /etc/os-release 2>/dev/null; echo \"$PRETTY_NAME\";"
+                    + " grep -m1 'model name' /proc/cpuinfo | cut -d: -f2- | sed 's/^ *//';"
+                    + " nproc; awk '/MemTotal/ {print $2}' /proc/meminfo; uname -m;"
+                    + " cat /proc/sys/kernel/hostname; uname -r; cut -d' ' -f1 /proc/uptime"]
+                running: true
+                stdout: StdioCollector {
+                    onStreamFinished: systemFacts.lines = String(text).split("\n")
+                }
+            }
+
+            Item {
+                id: systemFacts
+                property var lines: []
+                readonly property string uptime: {
+                    var seconds = Number(lines[7]) || 0;
+                    var days = Math.floor(seconds / 86400);
+                    var hours = Math.floor(seconds % 86400 / 3600);
+                    var minutes = Math.floor(seconds % 3600 / 60);
+                    return (days > 0 ? days + " d " : "") + hours + " h " + minutes + " min";
+                }
+                width: 1
+                height: 1
+            }
+
+            SubHeading { text: "Edition" }
+
+            Repeater {
+                model: [
+                    ["Operating system", systemFacts.lines[0] || ""],
+                    ["Kernel", systemFacts.lines[6] ? "Linux " + systemFacts.lines[6] : ""]
+                ]
+
+                delegate: Row {
+                    required property var modelData
+                    spacing: 12
+
+                    Text {
+                        width: 160
+                        text: modelData[0] + ":"
+                        color: Scheme.textMuted
+                        font.family: Theme.fontFamily
+                        font.pixelSize: Theme.fontSize
+                    }
+                    Text {
+                        text: modelData[1]
+                        color: Scheme.text
+                        font.family: Theme.fontFamily
+                        font.pixelSize: Theme.fontSize
+                    }
+                }
+            }
+
+            SubHeading { text: "System" }
+
+            Repeater {
+                model: [
+                    ["Processor", (systemFacts.lines[1] || "")
+                        + (systemFacts.lines[2] ? "  (" + systemFacts.lines[2] + " threads)" : "")],
+                    ["Installed memory (RAM)", systemFacts.lines[3]
+                        ? (Number(systemFacts.lines[3]) / 1048576).toFixed(1) + " GB" : ""],
+                    ["System type", systemFacts.lines[4] === "x86_64" ? "64-bit Operating System (x86_64)"
+                        : systemFacts.lines[4] || ""],
+                    ["Up for", systemFacts.uptime]
+                ]
+
+                delegate: Row {
+                    required property var modelData
+                    spacing: 12
+
+                    Text {
+                        width: 160
+                        text: modelData[0] + ":"
+                        color: Scheme.textMuted
+                        font.family: Theme.fontFamily
+                        font.pixelSize: Theme.fontSize
+                    }
+                    Text {
+                        text: modelData[1]
+                        color: Scheme.text
+                        font.family: Theme.fontFamily
+                        font.pixelSize: Theme.fontSize
+                    }
+                }
+            }
+
+            SubHeading { text: "Computer name" }
+
+            Row {
+                spacing: 12
+
+                Text {
+                    width: 160
+                    text: "Computer name:"
+                    color: Scheme.textMuted
+                    font.family: Theme.fontFamily
+                    font.pixelSize: Theme.fontSize
+                }
+                Text {
+                    text: systemFacts.lines[5] || ""
+                    color: Scheme.text
+                    font.family: Theme.fontFamily
+                    font.pixelSize: Theme.fontSize
+                }
+            }
+
+            SubHeading { text: "This desktop" }
 
             Repeater {
                 model: [
