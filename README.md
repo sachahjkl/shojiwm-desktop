@@ -251,7 +251,9 @@ On NixOS:
 ```nix
 xdg.portal = {
   extraPortals = [inputs.shojiwm-win7.packages.${system}.portal];
-  config.ShojiWM."org.freedesktop.impl.portal.GlobalShortcuts" = "shojiwm-win7";
+  # The desktop name in lowercase: xdg-desktop-portal reads
+  # shojiwm-portals.conf.
+  config.shojiwm."org.freedesktop.impl.portal.GlobalShortcuts" = "shojiwm-win7";
 };
 ```
 
