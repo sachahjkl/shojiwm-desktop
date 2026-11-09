@@ -1,4 +1,5 @@
 import QtQuick
+import ".."
 import "../theme.js" as Theme
 
 // The orb at the left end of the taskbar. It lights up under the pointer and
