@@ -185,9 +185,15 @@ def rect_hollow(x, y, w, h, fill, hole):
     return f'<path d="{outer} {inner}" fill="{fill}" fill-rule="evenodd"/>'
 
 
-def runs_to_rects(pixels, colour):
-    """Merge a set of (x, y) pixels into one rectangle per horizontal run."""
-    out = []
+def runs_to_path(pixels, colour):
+    """Merge a set of (x, y) pixels into one path, a subpath per horizontal run.
+
+    One path, not a rectangle per run: at a fractional scale the renderer
+    smooths the edges of each shape on its own, and the seams between two
+    rows let the button's fill show through as thin lines across the glyph.
+    The renderer covers a single path as a whole, so its rows join.
+    """
+    runs = []
     for y in sorted({p[1] for p in pixels}):
         row = sorted(x for x, py in pixels if py == y)
         start = previous = None
@@ -198,12 +204,10 @@ def runs_to_rects(pixels, colour):
             if x is not None and x == previous + 1:
                 previous = x
                 continue
-            out.append(
-                f'<rect x="{start}" y="{y}" width="{previous - start + 1}"'
-                f' height="1" fill="{colour}"/>'
-            )
+            width = previous - start + 1
+            runs.append(f"M{start},{y}h{width}v1h-{width}Z")
             start = previous = x
-    return "".join(out)
+    return f'<path d="{"".join(runs)}" fill="{colour}"/>'
 
 
 # The two outer bottom corners of the group are rounded, as on Windows 7: the
@@ -303,7 +307,9 @@ def glyph_close(cell_w, line, fill):
         for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
             if (px + dx, py + dy) not in white:
                 dark.add((px + dx, py + dy))
-    return runs_to_rects(dark, line) + runs_to_rects(white, fill)
+    # The outline also lies under the strokes, so no seam between the two
+    # shows the button's fill.
+    return runs_to_path(dark | white, line) + runs_to_path(white, fill)
 
 
 GLYPHS = {
