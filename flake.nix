@@ -180,6 +180,7 @@
           singleton Network 1.0 Network.qml
           singleton NotificationHistory 1.0 NotificationHistory.qml
           singleton WorldClocks 1.0 WorldClocks.qml
+          singleton SystemStats 1.0 SystemStats.qml
           EOF
           cd ./shell
           qmllint \

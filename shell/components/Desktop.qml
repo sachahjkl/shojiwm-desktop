@@ -357,7 +357,9 @@ Item {
               run: desktop.openTerminal },
             { separator: true },
             { label: "Screen resolution", icon: Qt.resolvedUrl("../assets/icons/computer.png"),
-              run: function () { ControlPanelState.open("about"); } },
+              run: function () { ControlPanelState.open("display"); } },
+            { label: "Gadgets", checked: Settings.showCpuMeter,
+              run: function () { Settings.showCpuMeter = !Settings.showCpuMeter; } },
             { label: "Personalize", icon: Qt.resolvedUrl("../assets/icons/control-panel.png"),
               run: function () { ControlPanelState.open("background"); } }
         ];

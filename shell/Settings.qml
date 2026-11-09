@@ -28,6 +28,8 @@ Singleton {
     property alias animationSpeed: adapter.animationSpeed
     property alias displayChoices: adapter.displayChoices
     property alias extraClocks: adapter.extraClocks
+    property alias showCpuMeter: adapter.showCpuMeter
+    property alias cpuMeterPlace: adapter.cpuMeterPlace
     property alias desktopIconSize: adapter.desktopIconSize
     property alias showDesktopIcons: adapter.showDesktopIcons
     property alias desktopSort: adapter.desktopSort
@@ -188,6 +190,10 @@ Singleton {
             /// Up to two more clocks, as Windows 7's Additional Clocks:
             /// [{ zone: "America/New_York", label: "New York" }].
             property var extraClocks: []
+            /// The CPU Meter gadget on the first screen's desktop, and where:
+            /// its distance from the right and top edges.
+            property bool showCpuMeter: true
+            property var cpuMeterPlace: ({ right: 24, top: 24 })
             property bool showFrequent: true
 
             /// The desktop: "large", "medium" or "small" icons, whether they

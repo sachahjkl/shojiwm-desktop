@@ -89,6 +89,39 @@ ShellRoot {
                     id: desktopIcons
                     anchors.fill: parent
                 }
+
+                // The CPU Meter gadget, on the first screen. A drag moves it;
+                // it keeps its distance from the right and top edges.
+                Loader {
+                    id: gadget
+
+                    readonly property var place: Settings.cpuMeterPlace || { right: 24, top: 24 }
+                    active: Settings.showCpuMeter
+                        && desktopScope.modelData === Quickshell.screens[0]
+                    x: parent.width - width - gadget.place.right
+                    y: gadget.place.top
+
+                    sourceComponent: CpuMeter {
+                        MouseArea {
+                            anchors.fill: parent
+                            cursorShape: pressed ? Qt.ClosedHandCursor : Qt.ArrowCursor
+                            property point grab
+                            onPressed: function (event) { grab = Qt.point(event.x, event.y); }
+                            onPositionChanged: function (event) {
+                                if (!pressed)
+                                    return;
+                                var at = mapToItem(wallpaperWindow.contentItem, event.x, event.y);
+                                var area = wallpaperWindow.contentItem;
+                                Settings.cpuMeterPlace = {
+                                    right: Math.round(Math.max(0, Math.min(area.width - width,
+                                        area.width - (at.x - grab.x) - width))),
+                                    top: Math.round(Math.max(0, Math.min(area.height - height,
+                                        at.y - grab.y)))
+                                };
+                            }
+                        }
+                    }
+                }
             }
 
             // The desktop's right-click menu, over everything while it is
