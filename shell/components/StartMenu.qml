@@ -445,13 +445,16 @@ Item {
 
         // ----- the power button, in the corner --------------------------------
 
+        // Glass, as on Windows 7, at the foot of the places, lined up with
+        // them on the left.
         Row {
             id: power
 
-            anchors.right: parent.right
+            anchors.left: parent.left
             anchors.bottom: parent.bottom
-            anchors.margins: Theme.menuPadding
-            height: 28
+            anchors.leftMargin: Theme.menuPadding + 2
+            anchors.bottomMargin: Theme.menuPadding + 2
+            height: 25
 
             readonly property var action: Apps.powerAction(Apps.powerButtonAction)
 
@@ -459,12 +462,12 @@ Item {
             PowerPart {
                 width: Math.max(56, powerLabel.implicitWidth + 26)
                 leftRounded: true
-                danger: true
+                glass: true
                 hot: buttonArea.containsMouse
                 pressed: buttonArea.pressed
 
                 // The label alone, as Windows 7 has it; Vista had the icon.
-                // White, set into the red glass by a dark line under it.
+                // White, set into the glass by a dark line under it.
                 Text {
                     id: powerLabel
 
@@ -472,7 +475,7 @@ Item {
                     text: power.action ? power.action.label : ""
                     color: "#ffffff"
                     style: Text.Raised
-                    styleColor: "#8c4a0a05"
+                    styleColor: "#99000000"
                     font.family: Theme.fontFamily
                     font.pixelSize: Theme.fontSize
                 }
@@ -493,7 +496,7 @@ Item {
 
                 width: 20
                 rightRounded: true
-                danger: true
+                glass: true
                 hot: arrowArea.containsMouse || menu.powerMenuOpen
                 pressed: arrowArea.pressed || menu.powerMenuOpen
 

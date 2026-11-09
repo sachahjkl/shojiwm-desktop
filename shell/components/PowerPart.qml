@@ -59,6 +59,17 @@ Item {
                 GradientStop { position: 0.0; color: part.fillTop }
                 GradientStop { position: 1.0; color: part.fillBottom }
             }
+
+            // On glass, the light rim inside the outline, all round.
+            Rectangle {
+                visible: part.glass
+                anchors.fill: parent
+                anchors.margins: 1
+                radius: Math.max(0, Scheme.buttonRadius - 1)
+                color: "transparent"
+                border.width: 1
+                border.color: part.pressed ? "#33ffffff" : part.hot ? "#99ffffff" : "#66ffffff"
+            }
         }
     }
 
