@@ -1,7 +1,6 @@
 pragma ComponentBehavior: Bound
 
 import QtQuick
-import QtQuick.Controls.Basic
 import ".."
 import "../theme.js" as Theme
 
@@ -35,17 +34,65 @@ Item {
         "lock": "Locks the computer. Your programs keep running."
     })
 
+    /// The index of the chosen action.
+    property int current: 0
+    /// The list of actions is open under the field.
+    property bool listOpen: false
+
     /// Cleared each time the dialog opens.
     function reset() {
-        choice.currentIndex = 0;
-        choice.forceActiveFocus();
+        dialog.current = 0;
+        dialog.listOpen = false;
+        keys.forceActiveFocus();
     }
 
     function accept() {
-        var action = dialog.actions[choice.currentIndex];
+        var action = dialog.actions[dialog.current];
         dialog.dismissed();
         if (action)
             Apps.runPower(action.id);
+    }
+
+    /// Return: picks in the open list, else confirms.
+    function confirm() {
+        if (dialog.listOpen)
+            dialog.listOpen = false;
+        else
+            dialog.accept();
+    }
+
+    function move(by) {
+        dialog.current = Math.max(0, Math.min(dialog.actions.length - 1, dialog.current + by));
+    }
+
+    // The keys: Up and Down change the choice, Return confirms (or picks
+    // in the open list), Escape closes the list, then the dialog. Alt+Down,
+    // F4 and Space open the list, as in a Windows combo box.
+    Item {
+        id: keys
+        focus: true
+        Keys.onUpPressed: dialog.move(-1)
+        Keys.onDownPressed: function (event) {
+            if (event.modifiers & Qt.AltModifier)
+                dialog.listOpen = !dialog.listOpen;
+            else
+                dialog.move(1);
+        }
+        Keys.onReturnPressed: dialog.confirm()
+        Keys.onEnterPressed: dialog.confirm()
+        Keys.onSpacePressed: dialog.listOpen = !dialog.listOpen
+        Keys.onPressed: function (event) {
+            if (event.key === Qt.Key_F4 && !(event.modifiers & Qt.AltModifier)) {
+                dialog.listOpen = !dialog.listOpen;
+                event.accepted = true;
+            }
+        }
+        Keys.onEscapePressed: {
+            if (dialog.listOpen)
+                dialog.listOpen = false;
+            else
+                dialog.dismissed();
+        }
     }
 
     // The dimmed screen. The compositor blurs what is under it.
@@ -59,24 +106,38 @@ Item {
         }
     }
 
-    // The window: a glass frame round a white page.
+    // The window: a glass frame round the page, as Windows 7 draws a
+    // dialog: the caption on the glass, a banner, the question, and the
+    // buttons on a band at the bottom.
     Rectangle {
         id: frame
 
         anchors.centerIn: parent
-        width: 420
+        width: 440
         height: page.height + caption.height + 9
         radius: 7
         border.width: 1
         border.color: "#b3000000"
         gradient: Gradient {
-            GradientStop { position: 0.0; color: "#e6b9d1ea" }
-            GradientStop { position: 1.0; color: "#e68fb3d6" }
+            GradientStop { position: 0.0; color: Scheme.dark ? "#f0566f88" : "#e6b9d1ea" }
+            GradientStop { position: 1.0; color: Scheme.dark ? "#f0324a60" : "#e68fb3d6" }
         }
 
-        // Swallow clicks, so a click in the window does not close it.
+        // The light line inside the outline.
+        Rectangle {
+            anchors.fill: parent
+            anchors.margins: 1
+            radius: 6
+            color: "transparent"
+            border.width: 1
+            border.color: "#59ffffff"
+        }
+
+        // Swallow clicks, so a click in the window does not close it, and
+        // close the list.
         MouseArea {
             anchors.fill: parent
+            onPressed: dialog.listOpen = false
         }
 
         Text {
@@ -86,7 +147,7 @@ Item {
             height: 28
             verticalAlignment: Text.AlignVCenter
             text: "Shut Down Windows"
-            color: "#1e395b"
+            color: Scheme.dark ? "#ffffff" : "#1e395b"
             font.family: Theme.fontFamily
             font.pixelSize: Theme.fontSize
         }
@@ -97,56 +158,169 @@ Item {
             x: 8
             y: caption.height
             width: parent.width - 16
-            height: content.implicitHeight + 28
+            height: banner.height + content.implicitHeight + footer.height + 28
             color: Scheme.page
             border.width: 1
             border.color: "#80000000"
 
-            Column {
-                id: content
+            // The banner: deep blue glass with a light sweep, your picture and
+            // your name.
+            Rectangle {
+                id: banner
 
-                x: 16
-                y: 14
-                width: parent.width - 32
-                spacing: 12
+                x: 1
+                y: 1
+                width: parent.width - 2
+                height: 64
+                // The sweep is wider than the banner.
+                clip: true
+                gradient: Gradient {
+                    GradientStop { position: 0.0; color: "#1c4f86" }
+                    GradientStop { position: 0.55; color: "#0f3768" }
+                    GradientStop { position: 1.0; color: "#0a2850" }
+                }
 
-                Row {
-                    spacing: 12
-
-                    Image {
-                        width: 48
-                        height: 48
-                        source: "../assets/start-orb.svg"
-                        sourceSize.width: 96
-                        sourceSize.height: 96
-                    }
-
-                    Text {
-                        anchors.verticalCenter: parent.verticalCenter
-                        text: "What do you want the computer to do?"
-                        color: Scheme.pageHeading
-                        font.family: Theme.fontFamily
-                        font.pixelSize: Theme.fontSize + 2
+                // The sweep of light across the banner.
+                Rectangle {
+                    x: -40
+                    y: 30
+                    width: parent.width * 1.4
+                    height: 90
+                    radius: 45
+                    rotation: -6
+                    // Soft at both edges, so the sweep has no hard line.
+                    gradient: Gradient {
+                        GradientStop { position: 0.0; color: "#007fc0ff" }
+                        GradientStop { position: 0.12; color: "#407fc0ff" }
+                        GradientStop { position: 0.55; color: "#00ffffff" }
                     }
                 }
 
-                ComboBox {
-                    id: choice
+                // Your account picture, in the frame of the Start menu's.
+                UserTile {
+                    anchors.verticalCenter: parent.verticalCenter
+                    x: 16
+                    width: 48
+                    height: 48
+                    source: Settings.userPictureSource
+                    dark: true
+                }
+
+                Text {
+                    anchors.verticalCenter: parent.verticalCenter
+                    x: 76
+                    text: Apps.userName.length > 0 ? Apps.userName : "Shut Down"
+                    color: "#ffffff"
+                    style: Text.Raised
+                    styleColor: "#40000000"
+                    font.family: Theme.fontFamily
+                    font.pixelSize: 22
+                    font.weight: Font.Light
+                }
+            }
+
+            Column {
+                id: content
+
+                x: 20
+                y: banner.height + 16
+                width: parent.width - 40
+                spacing: 10
+
+                Text {
+                    text: "What do you want the computer to do?"
+                    color: Scheme.pageHeading
+                    font.family: Theme.fontFamily
+                    font.pixelSize: Theme.fontSize + 2
+                }
+
+                // The combo box: the choice in a field, and the drop button
+                // at its right end.
+                Rectangle {
+                    id: field
 
                     width: parent.width
-                    model: dialog.actions.map(function (action) { return action.label; })
-                    font.family: Theme.fontFamily
-                    font.pixelSize: Theme.fontSize
+                    height: 24
+                    radius: 2
+                    color: Scheme.field
+                    border.width: 1
+                    border.color: fieldArea.containsMouse || dialog.listOpen
+                        ? Scheme.fieldFocus : Scheme.fieldBorder
 
-                    Keys.onReturnPressed: dialog.accept()
-                    Keys.onEnterPressed: dialog.accept()
-                    Keys.onEscapePressed: dialog.dismissed()
+                    // The choice, selected as Windows shows a focused combo.
+                    Rectangle {
+                        x: 3
+                        y: 3
+                        width: parent.width - dropButton.width - 8
+                        height: parent.height - 6
+                        radius: 1
+                        color: dialog.listOpen ? "transparent" : "#3399ff"
+
+                        Text {
+                            anchors.left: parent.left
+                            anchors.leftMargin: 4
+                            anchors.verticalCenter: parent.verticalCenter
+                            text: {
+                                var action = dialog.actions[dialog.current];
+                                return action ? action.label : "";
+                            }
+                            color: dialog.listOpen ? Scheme.text : "#ffffff"
+                            font.family: Theme.fontFamily
+                            font.pixelSize: Theme.fontSize
+                        }
+                    }
+
+                    Rectangle {
+                        id: dropButton
+
+                        anchors.right: parent.right
+                        anchors.top: parent.top
+                        anchors.bottom: parent.bottom
+                        anchors.margins: 1
+                        width: 18
+                        border.width: fieldArea.containsMouse || dialog.listOpen ? 1 : 0
+                        border.color: Scheme.selectionBorder
+                        gradient: Gradient {
+                            GradientStop {
+                                position: 0.0
+                                color: dialog.listOpen ? Scheme.buttonPressedTop
+                                    : fieldArea.containsMouse ? Scheme.buttonHotTop : Scheme.field
+                            }
+                            GradientStop {
+                                position: 1.0
+                                color: dialog.listOpen ? Scheme.buttonPressedBottom
+                                    : fieldArea.containsMouse ? Scheme.buttonHotBottom : Scheme.field
+                            }
+                        }
+
+                        Image {
+                            anchors.centerIn: parent
+                            width: 8
+                            height: 5
+                            sourceSize: Qt.size(16, 10)
+                            source: "../assets/" + (Scheme.dark ? "" : "ink-") + "combo-arrow.svg"
+                        }
+                    }
+
+                    MouseArea {
+                        id: fieldArea
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        onClicked: {
+                            dialog.listOpen = !dialog.listOpen;
+                            keys.forceActiveFocus();
+                        }
+                        onWheel: function (event) {
+                            dialog.move(event.angleDelta.y > 0 ? -1 : 1);
+                        }
+                    }
                 }
 
                 Text {
                     width: parent.width
+                    height: Math.max(implicitHeight, 34)
                     text: {
-                        var action = dialog.actions[choice.currentIndex];
+                        var action = dialog.actions[dialog.current];
                         return action ? dialog.descriptions[action.id] || "" : "";
                     }
                     color: Scheme.text
@@ -154,9 +328,29 @@ Item {
                     font.family: Theme.fontFamily
                     font.pixelSize: Theme.fontSize
                 }
+            }
+
+            // The band with the buttons.
+            Rectangle {
+                id: footer
+
+                x: 1
+                width: parent.width - 2
+                height: 44
+                anchors.bottom: parent.bottom
+                anchors.bottomMargin: 1
+                color: Scheme.dark ? "#1a232c" : "#f0f0f0"
+
+                Rectangle {
+                    width: parent.width
+                    height: 1
+                    color: Scheme.dark ? "#33ffffff" : "#dfdfdf"
+                }
 
                 Row {
                     anchors.right: parent.right
+                    anchors.rightMargin: 12
+                    anchors.verticalCenter: parent.verticalCenter
                     spacing: 8
 
                     CpButton {
@@ -168,6 +362,73 @@ Item {
                         label: "Cancel"
                         onClicked: dialog.dismissed()
                     }
+                }
+            }
+
+            // The open list, over the description and the band.
+            Rectangle {
+                id: list
+
+                visible: dialog.listOpen
+                x: content.x
+                y: content.y + field.y + field.height
+                width: field.width
+                height: column.height + 2
+                color: Scheme.field
+                border.width: 1
+                border.color: Scheme.fieldFocus
+
+                Column {
+                    id: column
+
+                    x: 1
+                    y: 1
+                    width: parent.width - 2
+
+                    Repeater {
+                        model: dialog.actions
+
+                        delegate: Rectangle {
+                            id: row
+
+                            required property var modelData
+                            required property int index
+
+                            readonly property bool lit: rowArea.containsMouse
+                                || (!list.hovered && row.index === dialog.current)
+
+                            width: column.width
+                            height: 22
+                            color: row.lit ? "#3399ff" : "transparent"
+
+                            Text {
+                                anchors.left: parent.left
+                                anchors.leftMargin: 6
+                                anchors.verticalCenter: parent.verticalCenter
+                                text: row.modelData.label
+                                color: row.lit ? "#ffffff" : Scheme.text
+                                font.family: Theme.fontFamily
+                                font.pixelSize: Theme.fontSize
+                            }
+
+                            MouseArea {
+                                id: rowArea
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                onClicked: {
+                                    dialog.current = row.index;
+                                    dialog.listOpen = false;
+                                    keys.forceActiveFocus();
+                                }
+                            }
+                        }
+                    }
+                }
+
+                readonly property bool hovered: listHover.hovered
+
+                HoverHandler {
+                    id: listHover
                 }
             }
         }
