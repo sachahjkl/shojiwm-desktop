@@ -257,8 +257,8 @@ Item {
         //
         // The panel is centred, with its top fixed: a side sets the width to
         // twice the pointer's distance from the middle, the bottom edge sets
-        // the list's height from the pointer's height. The edge stays under
-        // the pointer.
+        // the list's height from the pointer's height, a bottom corner both.
+        // The edge stays under the pointer.
 
         component Edge: MouseArea {
             /// Where the pointer is in the launcher's own coordinates.
@@ -312,6 +312,39 @@ Item {
                 if (pressed)
                     launcher.dragListHeight = Math.max(0, Math.min(launcher.maxListHeight,
                         Math.round(at(mouse).y - launcher.headerHeight - Theme.menuPadding)));
+            }
+        }
+
+        // The bottom corners: the width and the list's height together.
+        Edge {
+            anchors.left: parent.left
+            anchors.bottom: parent.bottom
+            width: 12
+            height: 12
+            cursorShape: Qt.SizeBDiagCursor
+            onPositionChanged: function (mouse) {
+                if (!pressed)
+                    return;
+                var point = at(mouse);
+                launcher.dragWidth = Math.round(2 * (launcher.width / 2 - point.x));
+                launcher.dragListHeight = Math.max(0, Math.min(launcher.maxListHeight,
+                    Math.round(point.y - launcher.headerHeight - Theme.menuPadding)));
+            }
+        }
+
+        Edge {
+            anchors.right: parent.right
+            anchors.bottom: parent.bottom
+            width: 12
+            height: 12
+            cursorShape: Qt.SizeFDiagCursor
+            onPositionChanged: function (mouse) {
+                if (!pressed)
+                    return;
+                var point = at(mouse);
+                launcher.dragWidth = Math.round(2 * (point.x - launcher.width / 2));
+                launcher.dragListHeight = Math.max(0, Math.min(launcher.maxListHeight,
+                    Math.round(point.y - launcher.headerHeight - Theme.menuPadding)));
             }
         }
     }
