@@ -32,6 +32,7 @@ Singleton {
     property alias slideshowFolder: adapter.slideshowFolder
     property alias slideshowMinutes: adapter.slideshowMinutes
     property alias slideshowShuffle: adapter.slideshowShuffle
+    property alias jumpPins: adapter.jumpPins
     property alias cpuMeterPlace: adapter.cpuMeterPlace
     property alias showClockGadget: adapter.showClockGadget
     property alias clockGadgetPlace: adapter.clockGadgetPlace
@@ -204,6 +205,9 @@ Singleton {
             property string slideshowFolder: ""
             property int slideshowMinutes: 30
             property bool slideshowShuffle: false
+            /// The files pinned to a program's jump list, by .desktop file
+            /// name: { "org.gnome.TextEditor.desktop": ["/home/…/notes.txt"] }.
+            property var jumpPins: ({})
             property var cpuMeterPlace: ({ right: 24, top: 24 })
             /// The Clock gadget, under the CPU Meter by default.
             property bool showClockGadget: true

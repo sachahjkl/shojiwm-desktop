@@ -23,7 +23,8 @@ PopupWindow {
     readonly property var entry: group ? group.entry : null
     readonly property var actions: entry && entry.actions ? entry.actions : []
     readonly property int windowCount: group ? group.windows.length : 0
-    readonly property var recent: popup.visible ? Apps.recentFor(entry) : []
+    readonly property var pinnedFiles: popup.visible ? Apps.pinnedFilesFor(entry) : []
+    readonly property var recent: popup.visible ? Apps.recentUnpinned(entry) : []
 
     color: "transparent"
     visible: group !== null
@@ -52,6 +53,8 @@ PopupWindow {
             texts.push(String(actions[i].name));
         for (var k = 0; k < recent.length; k++)
             texts.push(String(recent[k].name));
+        for (var m = 0; m < pinnedFiles.length; m++)
+            texts.push(String(pinnedFiles[m].name));
         var width = 0;
         for (var j = 0; j < texts.length; j++)
             width = Math.max(width, metrics.advanceWidth(texts[j]));
@@ -107,6 +110,31 @@ PopupWindow {
         MenuItemRow {
             width: column.width
             heading: true
+            label: "Pinned"
+            visible: popup.pinnedFiles.length > 0
+        }
+
+        Repeater {
+            model: popup.pinnedFiles
+
+            delegate: MenuItemRow {
+                required property var modelData
+
+                width: column.width
+                label: modelData ? modelData.name : ""
+                icon: modelData ? Apps.fileIcon(modelData.name) : ""
+                pinState: "unpin"
+                onPinClicked: Apps.setFilePinned(popup.entry, modelData.path, false)
+                onActivated: {
+                    Apps.openWith(popup.entry, modelData.path);
+                    popup.dismissed();
+                }
+            }
+        }
+
+        MenuItemRow {
+            width: column.width
+            heading: true
             label: "Recent"
             visible: popup.recent.length > 0
         }
@@ -120,6 +148,8 @@ PopupWindow {
                 width: column.width
                 label: modelData ? modelData.name : ""
                 icon: modelData ? Apps.fileIcon(modelData.name) : ""
+                pinState: "pin"
+                onPinClicked: Apps.setFilePinned(popup.entry, modelData.path, true)
                 onActivated: {
                     Apps.openWith(popup.entry, modelData.path);
                     popup.dismissed();

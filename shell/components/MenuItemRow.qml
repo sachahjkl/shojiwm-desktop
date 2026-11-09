@@ -24,6 +24,9 @@ Item {
     readonly property bool hovered: area.containsMouse
 
     signal activated
+    /// "pin" or "unpin" for a jump list file, "" for any other line.
+    property string pinState: ""
+    signal pinClicked
 
     implicitHeight: separator ? 7 : Theme.popupItemHeight
 
@@ -119,5 +122,40 @@ Item {
         hoverEnabled: !row.separator && !row.heading
         enabled: !row.separator && !row.heading && row.itemEnabled
         onClicked: row.activated()
+    }
+
+    // The pin of a jump list file, at the right end under the pointer, as
+    // Windows 7 shows it: leaning to pin the file, upright to unpin it.
+    Item {
+        anchors.right: parent.right
+        anchors.rightMargin: 4
+        anchors.verticalCenter: parent.verticalCenter
+        width: 22
+        height: parent.height - 4
+        visible: row.pinState.length > 0 && (row.hovered || pinArea.containsMouse)
+
+        Rectangle {
+            anchors.fill: parent
+            radius: 2
+            color: pinArea.containsMouse ? Scheme.hover : "transparent"
+            border.width: pinArea.containsMouse ? 1 : 0
+            border.color: Scheme.selectionBorder
+        }
+
+        Image {
+            anchors.centerIn: parent
+            width: 14
+            height: 14
+            sourceSize: Qt.size(28, 28)
+            source: Qt.resolvedUrl("../assets/" + (Scheme.dark ? "" : "ink-")
+                + (row.pinState === "unpin" ? "pin-on" : "pin") + ".svg")
+        }
+
+        MouseArea {
+            id: pinArea
+            anchors.fill: parent
+            hoverEnabled: true
+            onClicked: row.pinClicked()
+        }
     }
 }

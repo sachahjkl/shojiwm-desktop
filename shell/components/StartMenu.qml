@@ -80,7 +80,8 @@ Item {
     // them in place of the places column; a click opens one with the program.
 
     property var jumpEntry: null
-    readonly property var jumpRecent: menu.jumpEntry ? Apps.recentFor(menu.jumpEntry) : []
+    readonly property var jumpPinned: menu.jumpEntry ? Apps.pinnedFilesFor(menu.jumpEntry) : []
+    readonly property var jumpRecent: menu.jumpEntry ? Apps.recentUnpinned(menu.jumpEntry) : []
 
     Timer {
         id: jumpDelay
@@ -94,7 +95,7 @@ Item {
             jumpDelay.stop();
             return;
         }
-        if (Apps.recentFor(entry).length > 0) {
+        if (Apps.recentFor(entry).length > 0 || Apps.pinnedFilesFor(entry).length > 0) {
             jumpDelay.entry = entry;
             jumpDelay.restart();
         } else {
@@ -261,8 +262,33 @@ Item {
             MenuRow {
                 width: parent.width
                 heading: true
+                label: "Pinned"
+                visible: menu.jumpPinned.length > 0
+            }
+
+            Repeater {
+                model: menu.jumpPinned
+
+                delegate: MenuRow {
+                    required property var modelData
+                    width: parent.width
+                    label: modelData.name
+                    icon: Apps.fileIcon(modelData.name)
+                    labelColor: Scheme.placesText
+                    pinState: "unpin"
+                    onPinClicked: Apps.setFilePinned(menu.jumpEntry, modelData.path, false)
+                    onActivated: {
+                        Apps.openWith(menu.jumpEntry, modelData.path);
+                        menu.dismissed();
+                    }
+                }
+            }
+
+            MenuRow {
+                width: parent.width
+                heading: true
                 label: "Recent"
-                labelColor: Scheme.placesText
+                visible: menu.jumpRecent.length > 0
             }
 
             Repeater {
@@ -274,6 +300,8 @@ Item {
                     label: modelData.name
                     icon: Apps.fileIcon(modelData.name)
                     labelColor: Scheme.placesText
+                    pinState: "pin"
+                    onPinClicked: Apps.setFilePinned(menu.jumpEntry, modelData.path, true)
                     onActivated: {
                         Apps.openWith(menu.jumpEntry, modelData.path);
                         menu.dismissed();
@@ -542,6 +570,7 @@ Item {
                         onMenuRequested: (x, y) => menu.showProgramMenu(pinnedRow, modelData, x, y)
                         dragId: Apps.entryFileId(modelData)
                         hasArrow: Apps.recentFor(modelData).length > 0
+                            || Apps.pinnedFilesFor(modelData).length > 0
                         selected: menu.jumpEntry === modelData
                         onHoveredChanged: menu.hoverProgram(modelData, hovered)
                     }
@@ -574,6 +603,7 @@ Item {
                         onMenuRequested: (x, y) => menu.showProgramMenu(frequentRow, modelData, x, y)
                         dragId: Apps.entryFileId(modelData)
                         hasArrow: Apps.recentFor(modelData).length > 0
+                            || Apps.pinnedFilesFor(modelData).length > 0
                         selected: menu.jumpEntry === modelData
                         onHoveredChanged: menu.hoverProgram(modelData, hovered)
                     }

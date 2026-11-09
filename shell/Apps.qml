@@ -752,6 +752,35 @@ Singleton {
     }
 
     /// The files a program opened most recently, newest first.
+    /// The files pinned to a program's jump list, in the order pinned.
+    function pinnedFilesFor(entry) {
+        var paths = (Settings.jumpPins || {})[entryFileId(entry)] || [];
+        return paths.map(function (path) {
+            return { name: path.substring(path.lastIndexOf("/") + 1), path: path };
+        });
+    }
+
+    /// The recent files of a program, without the pinned ones.
+    function recentUnpinned(entry) {
+        var pinned = ((Settings.jumpPins || {})[entryFileId(entry)] || []);
+        return recentFor(entry).filter(function (file) {
+            return pinned.indexOf(file.path) < 0;
+        });
+    }
+
+    function setFilePinned(entry, path, on) {
+        var all = Object.assign({}, Settings.jumpPins || {});
+        var id = entryFileId(entry);
+        var list = (all[id] || []).filter(function (other) { return other !== path; });
+        if (on)
+            list.push(path);
+        if (list.length > 0)
+            all[id] = list;
+        else
+            delete all[id];
+        Settings.jumpPins = all;
+    }
+
     function recentFor(entry) {
         if (!entry)
             return [];
