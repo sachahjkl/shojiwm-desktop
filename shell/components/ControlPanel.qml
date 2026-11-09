@@ -2556,118 +2556,91 @@ FloatingWindow {
                 height: 1
             }
 
-            SubHeading { text: "Edition" }
+            // One line of facts: the label in a column of one width, so the
+            // values line up through every section.
+            component InfoRow: Row {
+                property string label: ""
+                property string value: ""
 
-            Repeater {
-                model: [
-                    ["Operating system", systemFacts.lines[0] || ""],
-                    ["Kernel", systemFacts.lines[6] ? "Linux " + systemFacts.lines[6] : ""]
-                ]
-
-                delegate: Row {
-                    required property var modelData
-                    spacing: 12
-
-                    Text {
-                        width: 160
-                        text: modelData[0] + ":"
-                        color: Scheme.textMuted
-                        font.family: Theme.fontFamily
-                        font.pixelSize: Theme.fontSize
-                    }
-                    Text {
-                        text: modelData[1]
-                        color: Scheme.text
-                        font.family: Theme.fontFamily
-                        font.pixelSize: Theme.fontSize
-                    }
-                }
-            }
-
-            SubHeading { text: "System" }
-
-            Repeater {
-                model: [
-                    ["Processor", (systemFacts.lines[1] || "")
-                        + (systemFacts.lines[2] ? "  (" + systemFacts.lines[2] + " threads)" : "")],
-                    ["Installed memory (RAM)", systemFacts.lines[3]
-                        ? (Number(systemFacts.lines[3]) / 1048576).toFixed(1) + " GB" : ""],
-                    ["System type", systemFacts.lines[4] === "x86_64" ? "64-bit Operating System (x86_64)"
-                        : systemFacts.lines[4] || ""],
-                    ["Up for", systemFacts.uptime]
-                ]
-
-                delegate: Row {
-                    required property var modelData
-                    spacing: 12
-
-                    Text {
-                        width: 160
-                        text: modelData[0] + ":"
-                        color: Scheme.textMuted
-                        font.family: Theme.fontFamily
-                        font.pixelSize: Theme.fontSize
-                    }
-                    Text {
-                        text: modelData[1]
-                        color: Scheme.text
-                        font.family: Theme.fontFamily
-                        font.pixelSize: Theme.fontSize
-                    }
-                }
-            }
-
-            SubHeading { text: "Computer name" }
-
-            Row {
                 spacing: 12
 
                 Text {
-                    width: 160
-                    text: "Computer name:"
+                    width: 190
+                    text: parent.label + ":"
                     color: Scheme.textMuted
                     font.family: Theme.fontFamily
                     font.pixelSize: Theme.fontSize
                 }
+
                 Text {
-                    text: systemFacts.lines[5] || ""
+                    text: parent.value
                     color: Scheme.text
                     font.family: Theme.fontFamily
                     font.pixelSize: Theme.fontSize
                 }
             }
 
-            SubHeading { text: "This desktop" }
+            SubHeading { text: "Edition" }
 
-            Repeater {
-                model: [
-                    ["Desktop", "shojiwm-win7"],
-                    ["Compositor", "ShojiWM"],
-                    ["Shell", "Quickshell"],
-                    ["Launcher", "Vicinae (Super+D)"],
-                    ["User", Apps.userName + " (" + Apps.loginName + ")"],
-                    ["Settings file", Settings.configHome + "/shojiwm/settings.json"]
-                ]
+            // The system's facts on the left and its logo on the right, as
+            // Windows 7 shows the Windows logo beside its edition.
+            Item {
+                width: parent.width
+                height: Math.max(editionFacts.implicitHeight, 96)
 
-                delegate: Row {
-                    required property var modelData
-                    spacing: 12
+                Column {
+                    id: editionFacts
+                    spacing: 6
 
-                    Text {
-                        width: 120
-                        text: modelData[0]
-                        color: Scheme.textMuted
-                        font.family: Theme.fontFamily
-                        font.pixelSize: Theme.fontSize
-                    }
-                    Text {
-                        text: modelData[1]
-                        color: Scheme.text
-                        font.family: Theme.fontFamily
-                        font.pixelSize: Theme.fontSize
+                    InfoRow { label: "Operating system"; value: systemFacts.lines[0] || "" }
+                    InfoRow {
+                        label: "Kernel"
+                        value: systemFacts.lines[6] ? "Linux " + systemFacts.lines[6] : ""
                     }
                 }
+
+                Image {
+                    anchors.right: parent.right
+                    anchors.rightMargin: 24
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: 96
+                    height: 96
+                    sourceSize: Qt.size(192, 192)
+                    source: Qt.resolvedUrl("../assets/nixos-snowflake.svg")
+                }
             }
+
+            SubHeading { text: "System" }
+
+            InfoRow {
+                label: "Processor"
+                value: (systemFacts.lines[1] || "")
+                    + (systemFacts.lines[2] ? "  (" + systemFacts.lines[2] + " threads)" : "")
+            }
+            InfoRow {
+                label: "Installed memory (RAM)"
+                value: systemFacts.lines[3]
+                    ? (Number(systemFacts.lines[3]) / 1048576).toFixed(1) + " GB" : ""
+            }
+            InfoRow {
+                label: "System type"
+                value: systemFacts.lines[4] === "x86_64" ? "64-bit Operating System (x86_64)"
+                    : systemFacts.lines[4] || ""
+            }
+            InfoRow { label: "Up for"; value: systemFacts.uptime }
+
+            SubHeading { text: "Computer name" }
+
+            InfoRow { label: "Computer name"; value: systemFacts.lines[5] || "" }
+
+            SubHeading { text: "This desktop" }
+
+            InfoRow { label: "Desktop"; value: "shojiwm-win7" }
+            InfoRow { label: "Compositor"; value: "ShojiWM" }
+            InfoRow { label: "Shell"; value: "Quickshell" }
+            InfoRow { label: "Launcher"; value: "Vicinae (Super+D)" }
+            InfoRow { label: "User"; value: Apps.userName + " (" + Apps.loginName + ")" }
+            InfoRow { label: "Settings file"; value: Settings.configHome + "/shojiwm/settings.json" }
         }
     }
 }

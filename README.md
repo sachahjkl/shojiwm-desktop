@@ -501,6 +501,9 @@ The artwork in `assets/` and `shell/assets/` is original SVG, written by hand
 for this repository, except `shell/assets/icons/`. It imitates a visual
 style; it copies no file, no icon and no font from Microsoft.
 
+`shell/assets/nixos-snowflake.svg` is the NixOS logo from the NixOS artwork
+(nixos-icons), CC-BY-4.0, shown on the Control Panel's System page.
+
 `shell/assets/icons/` holds icons built by `tools/fetch-icons.sh` from
 KDE's [Oxygen icons](https://invent.kde.org/frameworks/oxygen-icons),
 LGPL-3.0-or-later: glossy icons of the Windows 7 era, with Oxygen's yellow
