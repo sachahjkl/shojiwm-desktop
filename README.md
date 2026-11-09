@@ -291,6 +291,7 @@ running one.
 | `Super`+`Shift`+`Q`               | Close the focused window                                                                     |
 | `Super`+`1` … `9`                 | The taskbar button at that place: start it, show it, put it away, or the next of its windows |
 | `Super`+`Shift`+`1` … `9`         | Another instance of that button's program                                                    |
+| `Super`+`V`                       | Clipboard history (cliphist, shown in Vicinae); the chosen entry is copied again             |
 | `Super`+`R`                       | Run: the Start menu's search box                                                             |
 | `Ctrl`+`Shift`+`Escape`           | Task manager (`SHOJIWM_WIN7_TASK_MANAGER`, else `kitty btop`)                                |
 | `Super`+`Shift`+wheel             | Zoom the screen around the pointer; `Super`+`Shift`+`0` resets it                            |

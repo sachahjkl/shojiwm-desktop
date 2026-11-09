@@ -97,6 +97,16 @@ COMPOSITOR.process.once("shell", {
 // three of which this configuration already does; it could also replace the
 // Aero theme. It is marked as seen, the first time only, in the state file
 // Vicinae itself writes when the window is finished.
+// Clipboard history: cliphist keeps what is copied, text and pictures,
+// through wl-paste over the wlr data-control protocol. Vicinae's own history
+// needs ext-data-control, which ShojiWM does not offer.
+for (const type of ["text", "image"]) {
+  COMPOSITOR.process.once(`clipboard-${type}`, {
+    command: `exec wl-paste --type ${type} --watch cliphist store`,
+    runPolicy: "once-per-session",
+  });
+}
+
 COMPOSITOR.process.once("launcher", {
   command:
     `config="$HOME/.config/shojiwm/vicinae.json"; ` +
@@ -388,6 +398,21 @@ NUMBER_ROW.forEach((keys, index) => {
     );
   }
 });
+
+// Super+V: the clipboard history in Vicinae; the chosen entry is copied
+// again. A closed list copies nothing.
+COMPOSITOR.key.bind(
+  "clipboard-history",
+  "Super+V",
+  once(() => {
+    COMPOSITOR.process.spawn({
+      command:
+        `choice=$(cliphist list | ${VICINAE} dmenu -n Clipboard ` +
+        `-p "Search what you copied") && [ -n "$choice" ] && ` +
+        `printf '%s\n' "$choice" | cliphist decode | wl-copy`,
+    });
+  }),
+);
 
 // Super+R: Run, which is the Start menu's search box: what is typed there
 // runs with Return when no program matches.
