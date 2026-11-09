@@ -38,6 +38,16 @@ Singleton {
         return null;
     }
 
+    /// The screen with this connector name, else the main screen.
+    function named(name) {
+        var screens = Quickshell.screens;
+        for (var i = 0; i < screens.length; i++) {
+            if (screens[i].name === name)
+                return screens[i];
+        }
+        return root.primary;
+    }
+
     function isPrimary(screen) {
         return !!screen && screen.name === root.primaryName;
     }

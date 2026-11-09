@@ -2221,6 +2221,27 @@ FloatingWindow {
                 onToggled: function (on) { Settings.showFrequent = on; }
             }
 
+            Row {
+                spacing: 10
+                z: 5
+
+                Note {
+                    text: "Programs started last in the launcher (Windows+Shift+D):"
+                    height: 24
+                    verticalAlignment: Text.AlignVCenter
+                }
+
+                CpCombo {
+                    readonly property var counts: [0, 10, 15, 20, 25, 30, 40, 50]
+
+                    width: 80
+                    z: open ? 10 : 1
+                    model: counts.map(function (count) { return count === 0 ? "None" : String(count); })
+                    currentIndex: Math.max(0, counts.indexOf(Settings.launcherRecentCount))
+                    onActivated: function (index) { Settings.launcherRecentCount = counts[index]; }
+                }
+            }
+
             Note { text: "The power button:" }
 
             Flow {

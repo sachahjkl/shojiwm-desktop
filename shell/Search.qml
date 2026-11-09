@@ -69,6 +69,12 @@ Singleton {
         ? ControlPanelState.findTasks(root.query).slice(0, 5) : []
     property var files: []
 
+    /// Before anything is typed: the programs started last, as many as the
+    /// Control Panel says (the launcher shows them; the Start menu shows its
+    /// own lists instead).
+    readonly property var recent: root.active
+        ? [] : Apps.recentPrograms.slice(0, Math.max(0, Settings.launcherRecentCount))
+
     /// The results as rows: a heading over each group that has any, then
     /// its rows. `pick` numbers the rows that can be chosen; -1 is a heading.
     readonly property var rows: {
@@ -81,6 +87,7 @@ Singleton {
             for (var i = 0; i < list.length; i++)
                 out.push({ kind: kind, value: list[i], pick: pick++ });
         };
+        group("Recent", "program", root.recent);
         group("Programs", "program", root.programs);
         group("Control Panel", "task", root.tasks);
         group("Files", "file", root.files);
@@ -120,8 +127,12 @@ Singleton {
     /// Return in a search box: the row picked, else the text run as a
     /// command, as Run... does. `true` when something was done.
     function accept(pick) {
-        if (!root.active)
-            return false;
+        if (!root.active) {
+            var recentRow = root.rowAt(pick);
+            if (recentRow)
+                root.choose(recentRow);
+            return !!recentRow;
+        }
         var row = root.rowAt(Math.min(pick, root.pickCount - 1));
         if (row) {
             root.choose(row);

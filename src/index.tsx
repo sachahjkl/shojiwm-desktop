@@ -320,13 +320,14 @@ for (const [id, key] of [
   );
 }
 // Super+Shift+D: the shell's launcher, the Start menu's search in the middle
-// of the main screen.
+// of the focused screen.
 COMPOSITOR.key.bind(
   "launcher",
   "Super+Shift+D",
   once(() => {
+    const monitor = WINDOWS.outputName() ?? "";
     COMPOSITOR.process.spawn({
-      command: `quickshell -p ${SHELL_PATH} ipc call launcher toggle`,
+      command: `quickshell -p ${SHELL_PATH} ipc call launcher toggleOn "${monitor}"`,
     });
   }),
 );

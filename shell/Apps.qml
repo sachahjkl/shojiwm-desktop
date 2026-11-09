@@ -465,6 +465,47 @@ Singleton {
         counts[entry.id] = (counts[entry.id] || 0) + 1;
         root.launchCounts = counts;
         countsFile.setText(JSON.stringify(counts));
+
+        var recent = root.recentProgramIds.filter(function (id) {
+            return id !== entry.id;
+        });
+        recent.unshift(entry.id);
+        root.recentProgramIds = recent.slice(0, root.recentProgramsKept);
+        recentProgramsFile.setText(JSON.stringify(root.recentProgramIds));
+    }
+
+    // ----- the programs started last ----------------------------------------
+
+    /// How many program ids the history keeps, more than the launcher shows.
+    readonly property int recentProgramsKept: 100
+
+    /// The programs started from the shell, last first, by entry id.
+    property var recentProgramIds: []
+
+    FileView {
+        id: recentProgramsFile
+
+        path: Quickshell.statePath("launch-recent.json")
+        printErrors: false
+        onLoaded: {
+            try {
+                var parsed = JSON.parse(recentProgramsFile.text());
+                root.recentProgramIds = Array.isArray(parsed) ? parsed : [];
+            } catch (error) {
+                root.recentProgramIds = [];
+            }
+        }
+    }
+
+    /// The programs started last, last first, that are still installed.
+    readonly property var recentPrograms: {
+        var list = [];
+        for (var i = 0; i < root.recentProgramIds.length; i++) {
+            var entry = DesktopEntries.byId(root.recentProgramIds[i]);
+            if (entry && !entry.noDisplay)
+                list.push(entry);
+        }
+        return list;
     }
 
     /// The programs started most often, most first, leaving out the pinned

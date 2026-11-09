@@ -4,9 +4,11 @@ import ".."
 import "../theme.js" as Theme
 
 // The launcher (Super+Shift+D): the Start menu's search alone, in the middle
-// of the main screen. The same search (Search) and the same rows: type, then
-// Return starts the first program, opens the task or the file, or runs what
-// was typed. Up and Down pick a row; Escape or a click outside closes it.
+// of the focused screen. Before anything is typed it lists the programs
+// started last (Search.recent). The same search (Search) and the same rows:
+// type, then Return starts the first program, opens the task or the file,
+// or runs what was typed. Up and Down pick a row; Escape or a click outside
+// closes it.
 Item {
     id: launcher
 
@@ -46,12 +48,13 @@ Item {
 
         readonly property int rowsShown: Math.min(Search.rows.length
             + (Search.active && Search.pickCount === 0 ? 1 : 0), launcher.maxRows)
+        readonly property bool listing: Search.active || Search.rows.length > 0
 
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.top: parent.top
         width: parent.width
         height: searchBox.height + Theme.menuPadding * 2
-            + (Search.active ? panel.rowsShown * StartMenuState.rowHeight + Theme.menuPadding : 0)
+            + (panel.listing ? panel.rowsShown * StartMenuState.rowHeight + Theme.menuPadding : 0)
         radius: Scheme.popupRadius + 1
         color: Scheme.startGlassOutline
 
@@ -159,7 +162,7 @@ Item {
             anchors.top: searchBox.bottom
             anchors.bottom: parent.bottom
             anchors.margins: Theme.menuPadding
-            visible: Search.active
+            visible: panel.listing
             clip: true
             interactive: false
             model: Search.rows
@@ -186,7 +189,7 @@ Item {
             // With nothing found, Return runs the text, as Run... does.
             footer: MenuRow {
                 width: results.width
-                visible: Search.pickCount === 0
+                visible: Search.active && Search.pickCount === 0
                 height: visible ? StartMenuState.rowHeight : 0
                 label: "Run “" + Search.query.trim() + "”"
                 icon: Qt.resolvedUrl("../assets/icons/run.png")

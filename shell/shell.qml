@@ -75,20 +75,23 @@ ShellRoot {
 
     // ----- launcher -------------------------------------------------------------
 
-    // The launcher (Super+Shift+D), in the middle of the main screen: a
+    // The launcher (Super+Shift+D), in the middle of the focused screen: a
     // full-screen catcher without glass that closes it on a click outside,
     // and the panel itself, as tall as it ever gets so that it is not
-    // resized at each key.
+    // resized at each key. openOn and toggleOn take the screen's connector
+    // name; open and toggle use the main screen.
     IpcHandler {
         target: "launcher"
 
-        function open(): void { StartMenuState.openLauncher(); }
+        function open(): void { StartMenuState.openLauncher(""); }
+        function openOn(screen: string): void { StartMenuState.openLauncher(screen); }
         function close(): void { StartMenuState.closeLauncher(); }
-        function toggle(): void { StartMenuState.toggleLauncher(); }
+        function toggle(): void { StartMenuState.toggleLauncher(""); }
+        function toggleOn(screen: string): void { StartMenuState.toggleLauncher(screen); }
     }
 
     PanelWindow {
-        screen: Screens.primary
+        screen: Screens.named(StartMenuState.launcherScreen)
         visible: StartMenuState.launcherOpen
 
         color: "transparent"
@@ -111,7 +114,7 @@ ShellRoot {
     PanelWindow {
         id: launcherWindow
 
-        screen: Screens.primary
+        screen: Screens.named(StartMenuState.launcherScreen)
         visible: StartMenuState.launcherOpen
 
         color: "transparent"
