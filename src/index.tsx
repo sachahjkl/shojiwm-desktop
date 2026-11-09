@@ -25,7 +25,9 @@ import {
   layerSource,
   loadShader,
   shaderStage,
+  xrayBackdropSource,
   type CompositionRenderable,
+  type DisplayConfigDraft,
   type OutputInfo,
   type WaylandWindow,
 } from "shoji_wm";
@@ -58,6 +60,16 @@ const VICINAE = "vicinae";
 
 /** Where the Quickshell shell lives, as a shell word. */
 const SHELL_PATH = "~/.config/shojiwm/shell";
+
+// The outputs: their mode, position and scale, as a JSON `DisplayConfigDraft`
+// in SHOJIWM_WIN7_OUTPUTS, for example
+// {"DP-2": {"resolution": {"width": 2560, "height": 1440}, "scale": 1.25}}.
+// Without it, ShojiWM picks the best mode at scale 1.
+const OUTPUTS = COMPOSITOR.env.get("SHOJIWM_WIN7_OUTPUTS");
+if (OUTPUTS) {
+  const layout = JSON.parse(OUTPUTS) as DisplayConfigDraft;
+  COMPOSITOR.output.configure(() => layout);
+}
 
 COMPOSITOR.env.apply({
   QT_QPA_PLATFORM: "wayland;xcb",
@@ -246,34 +258,56 @@ const WINDOW_GLASS = compileEffect({
 });
 
 /**
- * The blur behind the taskbar and the Start menu.
+ * The blur behind a shell surface.
  *
  * The second stage clips the blur to the pixels the surface itself draws, so
  * the rounded corners of the Start menu have no blurred square behind them.
  */
-const LAYER_GLASS = compileLayerEffect({
-  input: backdropSource(),
-  capturePadding: 24,
-  invalidate: { kind: "on-source-damage-box", damagePadding: 8 },
-  alpha: "preserve",
-  pipeline: [
-    dualKawaseBlur({ radius: 4, passes: 2 }),
-    shaderStage(loadShader("./assets/layer-mask.frag"), {
-      textures: { layer_mask: layerSource() },
-      uniforms: {
-        opacity_threshold: 0.25,
-        mask_feather: 0.04,
-      },
-    }),
-  ],
-});
+function layerGlass(
+  input: ReturnType<typeof backdropSource | typeof xrayBackdropSource>,
+) {
+  return compileLayerEffect({
+    input,
+    capturePadding: 24,
+    invalidate: { kind: "on-source-damage-box", damagePadding: 8 },
+    alpha: "preserve",
+    pipeline: [
+      dualKawaseBlur({ radius: 4, passes: 2 }),
+      shaderStage(loadShader("./assets/layer-mask.frag"), {
+        textures: { layer_mask: layerSource() },
+        uniforms: {
+          opacity_threshold: 0.25,
+          mask_feather: 0.04,
+        },
+      }),
+    ],
+  });
+}
+
+/** The Start menu shows the windows behind it, so it blurs the whole scene. */
+const MENU_GLASS = layerGlass(backdropSource());
+
+/**
+ * The taskbar blurs only the wallpaper and the layers below the windows.
+ *
+ * Windows stay out of the taskbar's exclusive zone, so the result is the
+ * same. `backdropSource()` reads the frame being composited, and ShojiWM
+ * (9e778dc) then composites the taskbar onto itself on some frames: the
+ * whole bar flashes lighter while the Start menu is open. The X-ray source
+ * renders its own capture and does not read that frame.
+ */
+const TASKBAR_GLASS = layerGlass(xrayBackdropSource());
 
 COMPOSITOR.effect.layer = (layer) => {
-  // The wallpaper has nothing behind it to blur.
-  if (layer.namespace() === "no_blur") {
-    return {};
+  switch (layer.namespace()) {
+    // The wallpaper has nothing behind it to blur.
+    case "no_blur":
+      return {};
+    case "shojiwm-win7-taskbar":
+      return { behind: TASKBAR_GLASS };
+    default:
+      return { behind: MENU_GLASS };
   }
-  return { behind: LAYER_GLASS };
 };
 
 /**
