@@ -268,12 +268,12 @@ COMPOSITOR.key.bind(
 COMPOSITOR.key.bind(
   "snap-left",
   "Super+Left",
-  withFocused((window) => WINDOWS.snap(window, "left")),
+  withFocused((window) => WINDOWS.snapKey(window, "left")),
 );
 COMPOSITOR.key.bind(
   "snap-right",
   "Super+Right",
-  withFocused((window) => WINDOWS.snap(window, "right")),
+  withFocused((window) => WINDOWS.snapKey(window, "right")),
 );
 COMPOSITOR.key.bind("lock", "Super+L", () => {
   COMPOSITOR.process.spawn({

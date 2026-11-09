@@ -50,6 +50,11 @@ export const WIN_FULLSCREEN_RECT = createWindowState<ManagedWindowRect | null>(
   "fullscreenRestoreRect",
   { default: null },
 );
+/** The side the window is snapped to with Aero Snap, or null. */
+export const WIN_SNAPPED = createWindowState<"left" | "right" | null>(
+  "snapped",
+  { default: null },
+);
 export const WIN_MINIMIZED = createWindowState<boolean>("minimized", {
   default: false,
 });
@@ -548,6 +553,7 @@ export class FloatingWindowManager {
    */
   private moveBaseRect(event: WindowMoveEvent): Rect {
     const window = event.window;
+    window.state[WIN_SNAPPED].set(null);
     if (!window.state[WIN_MAXIMIZED]()) {
       return snapshotRect(event.startRect);
     }
@@ -575,6 +581,9 @@ export class FloatingWindowManager {
     const window = event.window;
     if (!window.isResizable() || window.state[WIN_FULLSCREEN]()) {
       return;
+    }
+    if (event.phase === "start") {
+      window.state[WIN_SNAPPED].set(null);
     }
     if (event.phase === "start" && window.state[WIN_MAXIMIZED]()) {
       window.state[WIN_MAXIMIZED].set(false);
@@ -636,6 +645,7 @@ export class FloatingWindowManager {
         window.state[WIN_RECT].set(area);
       }
       window.state[WIN_MAXIMIZED].set(true);
+      window.state[WIN_SNAPPED].set(null);
       return;
     }
 
@@ -733,14 +743,18 @@ export class FloatingWindowManager {
    * Aero Snap: put the window against one side of the work area, or send it
    * back to the size it had before.
    */
-  public snap(window: WaylandWindow, side: "left" | "right"): void {
-    const area = this.workArea(this.outputOf(window));
+  public snap(
+    window: WaylandWindow,
+    side: "left" | "right",
+    outputName: string | undefined = this.outputOf(window),
+  ): void {
+    const area = this.workArea(outputName);
     if (!area) {
       return;
     }
     if (window.state[WIN_MAXIMIZED]()) {
       this.setMaximized(window, false);
-    } else {
+    } else if (window.state[WIN_SNAPPED]() === null) {
       window.state[WIN_RESTORE_RECT].set(
         snapshotRect(window.state[WIN_RECT]()),
       );
@@ -752,6 +766,45 @@ export class FloatingWindowManager {
       width,
       height: area.height,
     });
+    window.state[WIN_SNAPPED].set(side);
+    if (outputName) {
+      this.currentOutput = outputName;
+    }
+  }
+
+  /**
+   * Super+Left or Right, as Windows 7: snap the window to that side; from
+   * the other side, put it back; from that side already, snap it to the far
+   * side of the next screen that way.
+   */
+  public snapKey(window: WaylandWindow, side: "left" | "right"): void {
+    const snapped = window.state[WIN_SNAPPED]();
+    if (snapped === side) {
+      const next = this.outputBeside(window, side === "left" ? -1 : 1);
+      if (next) {
+        this.snap(window, side === "left" ? "right" : "left", next);
+      }
+      return;
+    }
+    if (snapped !== null) {
+      this.restore(window);
+      return;
+    }
+    this.snap(window, side);
+  }
+
+  /** The name of the next output left (-1) or right (1) of the window's. */
+  private outputBeside(
+    window: WaylandWindow,
+    step: 1 | -1,
+  ): string | undefined {
+    const outputs = [...COMPOSITOR.output.outputs].sort(
+      (a, b) => a.position.x - b.position.x || a.position.y - b.position.y,
+    );
+    const from = outputs.findIndex(
+      (output) => output.name === this.outputOf(window),
+    );
+    return from < 0 ? undefined : outputs[from + step]?.name;
   }
 
   /**
@@ -858,6 +911,7 @@ export class FloatingWindowManager {
     if (rect) {
       window.state[WIN_RECT].set(snapshotRect(rect));
     }
+    window.state[WIN_SNAPPED].set(null);
   }
 
   /**
