@@ -23,16 +23,6 @@ Item {
 
     signal startRequested
 
-    // Whether the pointer is on the button or the icon a menu belongs to. A
-    // layer-shell popup is told nothing about presses outside itself, so the
-    // menus close on their own once the pointer is away from both.
-    property bool pointerOnButton: false
-    property bool pointerOnTray: false
-    property bool pointerOnClock: false
-    property bool pointerOnVolume: false
-    property bool pointerOnNetwork: false
-    property bool pointerOnNotifications: false
-    property bool pointerOnActionCenter: false
 
     // What each popup is showing, or null.
     property var previewGroup: null
@@ -41,6 +31,7 @@ Item {
     property bool calendarOpen: false
     property bool volumeOpen: false
     property bool networkOpen: false
+    property bool bluetoothOpen: false
     property bool notificationsOpen: false
     property bool actionCenterOpen: false
     /// A menu, a panel or the thumbnails of the bar are open: an auto-hidden
@@ -49,12 +40,12 @@ Item {
     /// (shell.qml).
     readonly property bool popupOpen: bar.jumpListGroup !== null || bar.trayMenuItem !== null
         || bar.calendarOpen || bar.clockMenuOpen || bar.trayOverflowOpen
-        || bar.volumeOpen || bar.networkOpen || bar.notificationsOpen
+        || bar.volumeOpen || bar.networkOpen || bar.bluetoothOpen || bar.notificationsOpen
         || bar.actionCenterOpen || bar.adminMenuOpen
     readonly property bool busy: bar.menuOpen || bar.previewGroup !== null
         || bar.jumpListGroup !== null || bar.trayMenuItem !== null
         || bar.calendarOpen || bar.clockMenuOpen || bar.trayOverflowOpen
-        || bar.volumeOpen || bar.networkOpen || bar.notificationsOpen
+        || bar.volumeOpen || bar.networkOpen || bar.bluetoothOpen || bar.notificationsOpen
         || bar.actionCenterOpen || bar.adminMenuOpen
     property bool clockMenuOpen: false
     property bool trayOverflowOpen: false
@@ -103,6 +94,7 @@ Item {
         bar.calendarOpen = false;
         bar.volumeOpen = false;
         bar.networkOpen = false;
+        bar.bluetoothOpen = false;
         bar.notificationsOpen = false;
         bar.actionCenterOpen = false;
         bar.clockMenuOpen = false;
@@ -188,9 +180,6 @@ Item {
                 trayMenu.anchorRect = at;
                 bar.trayMenuItem = bar.trayMenuItem === item ? null : item;
             }
-            onHoverChanged: function (inside) {
-                bar.pointerOnTray = inside;
-            }
         }
 
         ActionCenterIcon {
@@ -203,7 +192,6 @@ Item {
                 bar.closePopups();
                 bar.actionCenterOpen = open;
             }
-            onHoveredChanged: bar.pointerOnActionCenter = actionCenterIcon.hovered
         }
 
         NotificationIcon {
@@ -216,7 +204,18 @@ Item {
                 bar.closePopups();
                 bar.notificationsOpen = open;
             }
-            onHoveredChanged: bar.pointerOnNotifications = notificationIcon.hovered
+        }
+
+        BluetoothIcon {
+            id: bluetoothIcon
+
+            anchors.verticalCenter: parent.verticalCenter
+            active: bar.bluetoothOpen
+            onClicked: {
+                var open = !bar.bluetoothOpen;
+                bar.closePopups();
+                bar.bluetoothOpen = open;
+            }
         }
 
         NetworkIcon {
@@ -229,7 +228,6 @@ Item {
                 bar.closePopups();
                 bar.networkOpen = open;
             }
-            onHoveredChanged: bar.pointerOnNetwork = networkIcon.hovered
         }
 
         VolumeIcon {
@@ -242,7 +240,6 @@ Item {
                 bar.closePopups();
                 bar.volumeOpen = open;
             }
-            onHoveredChanged: bar.pointerOnVolume = volumeIcon.hovered
         }
 
         Clock {
@@ -255,7 +252,6 @@ Item {
                 bar.closePopups();
                 bar.calendarOpen = open;
             }
-            onHoveredChanged: bar.pointerOnClock = clock.hovered
             onMenuRequested: function (at) {
                 var open = !bar.clockMenuOpen;
                 bar.closePopups();
@@ -424,9 +420,6 @@ Item {
                     hideThumbnails.stop();
                 }
                 onPreviewCancelled: hideThumbnails.restart()
-                onHoverChanged: function (inside) {
-                    bar.pointerOnButton = inside;
-                }
                 onMenuRequested: function (at) {
                     bar.previewGroup = null;
                     bar.trayMenuItem = null;
@@ -525,48 +518,6 @@ Item {
         }
     }
 
-    // A menu the pointer has left closes on its own: a layer-shell popup gets
-    // no press from outside itself.
-    Timer {
-        id: hideMenus
-        interval: 900
-        running: bar.jumpListGroup !== null || bar.trayMenuItem !== null
-            || bar.calendarOpen || bar.clockMenuOpen || bar.trayOverflowOpen
-            || bar.volumeOpen || bar.networkOpen || bar.notificationsOpen
-            || bar.actionCenterOpen || bar.adminMenuOpen
-        repeat: true
-        onTriggered: {
-            if (bar.jumpListGroup !== null
-                && !jumpList.pointerInside && !bar.pointerOnButton)
-                bar.jumpListGroup = null;
-            if (bar.trayMenuItem !== null && !trayMenu.pointerInside
-                && !bar.pointerOnTray && !trayOverflow.pointerInside)
-                bar.trayMenuItem = null;
-            if (bar.calendarOpen
-                && !calendar.pointerInside && !bar.pointerOnClock)
-                bar.calendarOpen = false;
-            if (bar.actionCenterOpen
-                && !actionCenterPanel.pointerInside && !bar.pointerOnActionCenter)
-                bar.actionCenterOpen = false;
-            if (bar.notificationsOpen
-                && !notificationPanel.pointerInside && !bar.pointerOnNotifications)
-                bar.notificationsOpen = false;
-            if (bar.networkOpen
-                && !networkPopup.pointerInside && !bar.pointerOnNetwork)
-                bar.networkOpen = false;
-            if (bar.volumeOpen
-                && !volumePopup.pointerInside && !bar.pointerOnVolume)
-                bar.volumeOpen = false;
-            if (bar.clockMenuOpen
-                && !clockMenu.pointerInside && !bar.pointerOnClock)
-                bar.clockMenuOpen = false;
-            if (bar.trayOverflowOpen && bar.trayMenuItem === null
-                && !trayOverflow.pointerInside && !bar.pointerOnTray
-                && !trayOverflow.dragging && !trayArea.dragging)
-                bar.trayOverflowOpen = false;
-        }
-    }
-
     ThumbnailPopup {
         id: thumbnails
 
@@ -643,12 +594,29 @@ Item {
         onDismissed: bar.notificationsOpen = false
     }
 
+    BluetoothPopup {
+        id: bluetoothPopup
+
+        anchorItem: bluetoothIcon
+        open: bar.bluetoothOpen
+        onDismissed: bar.bluetoothOpen = false
+    }
+
     NetworkPopup {
         id: networkPopup
 
         anchorItem: networkIcon
         open: bar.networkOpen
         onDismissed: bar.networkOpen = false
+    }
+
+    // The Bluetooth panel asked over IPC (quickshell ipc call bluetooth …).
+    Connections {
+        target: StartMenuIpc
+        function onBluetoothRequested(open) {
+            bar.closePopups();
+            bar.bluetoothOpen = open;
+        }
     }
 
     // The volume panel asked over IPC (quickshell ipc call volume …).

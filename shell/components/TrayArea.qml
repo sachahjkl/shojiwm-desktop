@@ -14,7 +14,13 @@ import "../theme.js" as Theme
 Item {
     id: tray
 
-    readonly property var items: SystemTray.items ? SystemTray.items.values : []
+    /// The programs' icons, but for blueman's: the shell draws its own
+    /// Bluetooth icon and panel when there is an adapter (BluetoothIcon), and
+    /// without one there is nothing to show. Its applet keeps running, for
+    /// its pairing agent.
+    readonly property var items: (SystemTray.items ? SystemTray.items.values : []).filter(function (item) {
+        return item && String(item.id) !== "blueman";
+    })
     /// The icons on the taskbar, left to right: in the order they were put
     /// there, then the ones shown by default.
     readonly property var shown: {
