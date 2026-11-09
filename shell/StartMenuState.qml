@@ -13,6 +13,26 @@ Singleton {
 
     property string openOn: ""
 
+    /// The launcher (Super+Shift+D), on the main screen. It and the Start
+    /// menu are never open together.
+    property bool launcherOpen: false
+
+    function openLauncher() {
+        root.openOn = "";
+        root.launcherOpen = true;
+    }
+
+    function closeLauncher() {
+        root.launcherOpen = false;
+    }
+
+    function toggleLauncher() {
+        if (root.launcherOpen)
+            root.closeLauncher();
+        else
+            root.openLauncher();
+    }
+
     /// The sizes of the menu, large or compact (Settings.startMenuLargeIcons).
     readonly property int rowHeight: Settings.startMenuLargeIcons ? Theme.menuRowHeight : Theme.menuRowHeightSmall
     readonly property int iconSize: Settings.startMenuLargeIcons ? Theme.menuIconSize : Theme.menuIconSizeSmall
@@ -23,6 +43,7 @@ Singleton {
     }
 
     function open(screen) {
+        root.launcherOpen = false;
         root.openOn = screen.length > 0 ? screen : firstScreen();
     }
 

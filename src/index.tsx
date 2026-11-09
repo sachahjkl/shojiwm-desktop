@@ -54,11 +54,10 @@ const FILE_MANAGER = ["thunar"];
 const BROWSER = ["chromium", "--ozone-platform-hint=auto"];
 
 /**
- * The launcher Super+Shift+D opens: Vicinae, a fast search for programs, files and
- * commands. The Nix package of this configuration writes the path of its own
- * Vicinae here, so it is a dependency rather than something to install.
+ * The clipboard history Super+V opens: the command in SHOJIWM_WIN7_CLIPBOARD,
+ * else none.
  */
-const VICINAE = "vicinae";
+const CLIPBOARD = COMPOSITOR.env.get("SHOJIWM_WIN7_CLIPBOARD") ?? "";
 
 /** Where the Quickshell shell lives, as a shell word. */
 const SHELL_PATH = "~/.config/shojiwm/shell";
@@ -84,28 +83,6 @@ COMPOSITOR.process.once("shell", {
     // Where the shell asks for Aero Peek and the show-desktop toggle.
     SHOJIWM_WIN7_SOCKET: SHELL_SOCKET,
   },
-});
-
-// The launcher, kept running so Super+Shift+D shows it at once.
-//
-// It reads ~/.config/shojiwm/vicinae.json, written once here if it is
-// missing. That file imports assets/vicinae/aero.json, so what Vicinae's own
-// settings write lands in it and the theme stays underneath. The Aero theme
-// is found through XDG_DATA_DIRS, in assets/vicinae/vicinae/themes.
-//
-// Vicinae's welcome window sets a theme, a hotkey and a start at login, all
-// three of which this configuration already does; it could also replace the
-// Aero theme. It is marked as seen, the first time only, in the state file
-// Vicinae itself writes when the window is finished.
-COMPOSITOR.process.once("launcher", {
-  command:
-    `config="$HOME/.config/shojiwm/vicinae.json"; ` +
-    `[ -e "$config" ] || printf '{\\n  "imports": ["assets/vicinae/aero.json"]\\n}\\n' >"$config"; ` +
-    `state="\${XDG_STATE_HOME:-$HOME/.local/state}/vicinae"; mkdir -p "$state"; ` +
-    `[ -e "$state/onboarding.json" ] || printf '{"version":1,"completedAt":""}\\n' >"$state/onboarding.json"; ` +
-    `XDG_DATA_DIRS="$HOME/.config/shojiwm/assets/vicinae:\${XDG_DATA_DIRS:-/usr/local/share:/usr/share}" ` +
-    `exec ${VICINAE} server --config "$config"`,
-  runPolicy: "once-per-session",
 });
 
 // ---------------------------------------------------------------------------
@@ -339,11 +316,15 @@ for (const [id, key] of [
     }),
   );
 }
+// Super+Shift+D: the shell's launcher, the Start menu's search in the middle
+// of the main screen.
 COMPOSITOR.key.bind(
   "launcher",
   "Super+Shift+D",
   once(() => {
-    COMPOSITOR.process.spawn({ command: `${VICINAE} toggle` });
+    COMPOSITOR.process.spawn({
+      command: `quickshell -p ${SHELL_PATH} ipc call launcher toggle`,
+    });
   }),
 );
 // More keys from SHOJIWM_WIN7_KEYS: a JSON object of shortcut to shell
@@ -402,19 +383,17 @@ NUMBER_ROW.forEach((keys, index) => {
   }
 });
 
-// Super+V: Vicinae's clipboard history. Vicinae keeps what is copied, text
-// and pictures, through the ext-data-control protocol. Upstream ShojiWM does
-// not offer it yet: the integration branch of sachahjkl/ShojiWM does (see
-// its FORK.md).
-COMPOSITOR.key.bind(
-  "clipboard-history",
-  "Super+V",
-  once(() => {
-    COMPOSITOR.process.spawn({
-      command: `${VICINAE} vicinae://extensions/vicinae/clipboard/history`,
-    });
-  }),
-);
+// Super+V: the clipboard history, SHOJIWM_WIN7_CLIPBOARD (for example
+// "papier toggle"). Without it, the key does nothing.
+if (CLIPBOARD) {
+  COMPOSITOR.key.bind(
+    "clipboard-history",
+    "Super+V",
+    once(() => {
+      COMPOSITOR.process.spawn({ command: CLIPBOARD });
+    }),
+  );
+}
 
 // Super+R: Run, which is the Start menu's search box: what is typed there
 // runs with Return when no program matches.
@@ -477,10 +456,9 @@ for (const key of ["D", "M"]) {
 
 COMPOSITOR.effect.layer = (layer) => {
   const namespace = layer.namespace() ?? "";
-  // The shell's own glass surfaces. Other programs' layers (Vicinae, the
-  // wallpaper, the shell's full-screen catchers named "no_blur") get none:
-  // a blur costs a capture and a pass every frame they change, and Vicinae,
-  // nearly opaque, would show little of it.
+  // The shell's own glass surfaces. Other programs' layers and the shell's
+  // full-screen catchers named "no_blur" get none: a blur costs a capture
+  // and a pass every frame they change.
   if (namespace.startsWith("shojiwm-win7-")) {
     const glass = layerGlassEffect();
     return glass ? { behind: glass } : {};

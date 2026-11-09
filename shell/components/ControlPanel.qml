@@ -1563,7 +1563,7 @@ FloatingWindow {
             Note {
                 width: parent.width
                 text: "This is the system's own setting: programs that follow it "
-                    + "(GTK, libadwaita, Qt, Firefox, Chromium, Vicinae) change "
+                    + "(GTK, libadwaita, Qt, Firefox, Chromium) change "
                     + "with it, and so do the menus of this desktop. "
                     + "The taskbar and the window frames stay dark glass, as "
                     + "on Windows 7."
@@ -2675,7 +2675,7 @@ FloatingWindow {
             InfoRow { label: "Desktop"; value: "shojiwm-win7" }
             InfoRow { label: "Compositor"; value: "ShojiWM" }
             InfoRow { label: "Shell"; value: "Quickshell" }
-            InfoRow { label: "Launcher"; value: "Vicinae (Super+Shift+D)" }
+            InfoRow { label: "Launcher"; value: "The Start menu's search (Super+Shift+D)" }
             InfoRow { label: "User"; value: Apps.userName + " (" + Apps.loginName + ")" }
             InfoRow { label: "Settings file"; value: Settings.configHome + "/shojiwm/settings.json" }
         }

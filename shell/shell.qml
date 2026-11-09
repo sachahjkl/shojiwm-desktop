@@ -10,6 +10,7 @@
 
 import QtQuick
 import Quickshell
+import Quickshell.Io
 import Quickshell.Wayland
 import "components"
 import "theme.js" as Theme
@@ -69,6 +70,69 @@ ShellRoot {
                 Keys.onEnterPressed: LockState.authenticate(LockState.typed)
                 Keys.onEscapePressed: LockState.typed = ""
             }
+        }
+    }
+
+    // ----- launcher -------------------------------------------------------------
+
+    // The launcher (Super+Shift+D), in the middle of the main screen: a
+    // full-screen catcher without glass that closes it on a click outside,
+    // and the panel itself, as tall as it ever gets so that it is not
+    // resized at each key.
+    IpcHandler {
+        target: "launcher"
+
+        function open(): void { StartMenuState.openLauncher(); }
+        function close(): void { StartMenuState.closeLauncher(); }
+        function toggle(): void { StartMenuState.toggleLauncher(); }
+    }
+
+    PanelWindow {
+        screen: Screens.primary
+        visible: StartMenuState.launcherOpen
+
+        color: "transparent"
+        anchors.top: true
+        anchors.bottom: true
+        anchors.left: true
+        anchors.right: true
+        exclusionMode: ExclusionMode.Ignore
+        WlrLayershell.layer: WlrLayer.Overlay
+        WlrLayershell.namespace: "no_blur"
+        WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
+
+        MouseArea {
+            anchors.fill: parent
+            acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
+            onPressed: StartMenuState.closeLauncher()
+        }
+    }
+
+    PanelWindow {
+        id: launcherWindow
+
+        screen: Screens.primary
+        visible: StartMenuState.launcherOpen
+
+        color: "transparent"
+        anchors.top: true
+        margins.top: Math.round((launcherWindow.screen ? launcherWindow.screen.height : 1080) * 0.22)
+        implicitWidth: 560
+        implicitHeight: launcher.fullHeight
+        exclusionMode: ExclusionMode.Ignore
+        WlrLayershell.layer: WlrLayer.Overlay
+        WlrLayershell.namespace: "shojiwm-win7-launcher"
+        WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
+
+        onVisibleChanged: {
+            if (visible)
+                launcher.reset();
+        }
+
+        Launcher {
+            id: launcher
+            anchors.fill: parent
+            onDismissed: StartMenuState.closeLauncher()
         }
     }
 

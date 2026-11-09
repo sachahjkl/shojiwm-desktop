@@ -29,7 +29,6 @@ if [ "${1:-}" != "--inner" ]; then
     "nixpkgs#foot" \
     "nixpkgs#dbus" \
     "nixpkgs#copyq" \
-    "$repo#vicinae" \
     "nixpkgs#dconf" \
     "nixpkgs#glib" \
     -c bash "${BASH_SOURCE[0]}" --inner

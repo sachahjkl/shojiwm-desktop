@@ -21,6 +21,16 @@ Singleton {
         return screens.length > 0 ? screens[0].name : "";
     }
 
+    /// The main screen itself, or null when there is none.
+    readonly property var primary: {
+        var screens = Quickshell.screens;
+        for (var i = 0; i < screens.length; i++) {
+            if (screens[i].name === root.primaryName)
+                return screens[i];
+        }
+        return null;
+    }
+
     function isPrimary(screen) {
         return !!screen && screen.name === root.primaryName;
     }

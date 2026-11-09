@@ -104,6 +104,9 @@ actions or a typed command was actually run.
 
 ## Fourth pass: launcher and polish
 
+(Later: Vicinae is gone. The launcher is the shell's own, `shell/components/Launcher.qml`
+over `shell/Search.qml`, on `Super`+`Shift`+`D`; `Super`+`D` shows the desktop.)
+
 1. **Vicinae on `Super`+`D`.** `src/index.tsx` starts `vicinae server` once
    per session with `~/.config/shojiwm/vicinae.json` (written if missing; it
    imports `assets/vicinae/aero.json`, so Vicinae's own settings window writes

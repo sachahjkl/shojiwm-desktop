@@ -415,23 +415,6 @@ Singleton {
     /// The programs the taskbar pins, in the order of `taskbarPinnedIds`.
     readonly property var taskbarPinned: entriesOf(taskbarPinnedIds)
 
-    /// The programs whose name or description contains `query`.
-    function search(query) {
-        var needle = String(query).trim().toLowerCase();
-        if (needle.length === 0)
-            return applications;
-        var found = [];
-        for (var i = 0; i < applications.length; i++) {
-            var entry = applications[i];
-            var haystack = String(entry.name) + " "
-                + String(entry.genericName || "") + " "
-                + String(entry.comment || "");
-            if (haystack.toLowerCase().indexOf(needle) >= 0)
-                found.push(entry);
-        }
-        return found;
-    }
-
     function launch(entry) {
         if (!entry)
             return;

@@ -361,7 +361,7 @@ Singleton {
     }
 
     /// Set the preference for every program. The colour scheme is what GTK 4,
-    /// libadwaita, Qt, the browsers and Vicinae read. GTK 3 programs read the
+    /// libadwaita, Qt and the browsers read. GTK 3 programs read the
     /// theme instead: it moves to the light or dark variant of the theme in
     /// use, when that variant is installed (Arc and Arc-Dark, Adwaita and
     /// Adwaita-dark, Foo-Light and Foo-Dark), and is left alone otherwise.

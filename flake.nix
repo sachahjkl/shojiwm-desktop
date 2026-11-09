@@ -4,11 +4,6 @@
   inputs = {
     nixpkgs.url = "https://flakehub.com/f/NixOS/nixpkgs/0.2605";
 
-    # The rolling unstable branch, for the programs that move fast and are
-    # best taken at their latest: Vicinae. Make it follow your own unstable
-    # nixpkgs with `inputs.nixpkgs-unstable.follows`.
-    nixpkgs-unstable.url = "https://flakehub.com/f/NixOS/nixpkgs/0.1";
-
     git-hooks = {
       url = "https://flakehub.com/f/cachix/git-hooks.nix/0.1";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -25,7 +20,6 @@
   outputs = {
     self,
     nixpkgs,
-    nixpkgs-unstable,
     git-hooks,
     shojiwm-src,
   }: let
@@ -53,20 +47,6 @@
     packages = forAllSystems (system: let
       pkgs = pkgsFor system;
 
-      # Taken from unstable: see the input. Its lists scroll by the wheel's
-      # step at once, as Windows 7's do: Vicinae has no setting for the
-      # smooth scrolling and inertia of its wheel handler, so both are off
-      # in the source.
-      vicinae = nixpkgs-unstable.legacyPackages.${system}.vicinae.overrideAttrs (old: {
-        postPatch =
-          (old.postPatch or "")
-          + ''
-            substituteInPlace vendor/kirigami-wheelhandler/wheelhandler.h \
-              --replace-fail "bool m_smoothScroll = true;" "bool m_smoothScroll = false;" \
-              --replace-fail "bool m_inertiaScroll = true;" "bool m_inertiaScroll = false;"
-          '';
-      });
-
       config = pkgs.stdenvNoCC.mkDerivation {
         pname = "shojiwm-win7";
         inherit version;
@@ -79,11 +59,6 @@
           runHook preInstall
           mkdir -p "$out"
           cp -R src assets shell package.json tsconfig.json "$out/"
-          # Vicinae is the launcher Super+D opens: point the config at this
-          # one, so installing the configuration installs it too.
-          substituteInPlace "$out/src/index.tsx" \
-            --replace-fail 'const VICINAE = "vicinae";' \
-              'const VICINAE = "${vicinae}/bin/vicinae";'
           # dconf for the light or dark preference, gdbus for logind's Lock,
           # gio for the desktop's files.
           substituteInPlace "$out/shell/tools.js" \
@@ -218,7 +193,7 @@
         '';
     in {
       default = config;
-      inherit config icon-theme install portal vicinae;
+      inherit config icon-theme install portal;
     });
 
     apps = forAllSystems (system: {
@@ -313,6 +288,7 @@
           singleton DefaultApps 1.0 DefaultApps.qml
           singleton Maintenance 1.0 Maintenance.qml
           singleton Screens 1.0 Screens.qml
+          singleton Search 1.0 Search.qml
           EOF
           cd ./shell
           qmllint \

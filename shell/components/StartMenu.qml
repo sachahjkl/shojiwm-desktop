@@ -39,7 +39,7 @@ Item {
         menu.powerMenuOpen = false;
         menu.hoveredPlace = "";
         menu.pick = 0;
-        menu.filesFound = [];
+        Search.query = "";
         menu.jumpEntry = null;
         menu.recentOpen = false;
         search.forceActiveFocus();
@@ -178,103 +178,26 @@ Item {
         }
     }
 
-    readonly property var found: Apps.search(search.text)
+    // The search: Search, shared with the launcher. The search box sets
+    // its query while this menu is open.
     readonly property bool searching: search.text.trim().length > 0
-    /// The Control Panel tasks and the files that match, as Windows 7 lists
-    /// them under the programs.
-    readonly property var tasksFound: ControlPanelState.findTasks(search.text).slice(0, 5)
-    property var filesFound: []
-
-    /// The results as rows: a heading over each group that has any, then
-    /// its rows. `pick` numbers the rows that can be chosen; -1 is a heading.
-    readonly property var rows: {
-        var out = [];
-        var pick = 0;
-        var group = function (title, kind, list) {
-            if (list.length === 0)
-                return;
-            out.push({ kind: "heading", label: title, pick: -1 });
-            for (var i = 0; i < list.length; i++)
-                out.push({ kind: kind, value: list[i], pick: pick++ });
-        };
-        group("Programs", "program", menu.found);
-        group("Control Panel", "task", menu.tasksFound);
-        group("Files", "file", menu.filesFound);
-        return out;
-    }
-    readonly property int pickCount: {
-        var count = 0;
-        for (var i = 0; i < menu.rows.length; i++) {
-            if (menu.rows[i].pick >= 0)
-                count++;
-        }
-        return count;
-    }
     /// The row Return chooses.
     property int pick: 0
-
-    // The files: fd in your home folder, a moment after the last key, for
-    // names that hold what is typed. Hidden folders stay out.
-    Timer {
-        id: findFiles
-        interval: 250
-        onTriggered: {
-            var query = search.text.trim();
-            if (query.length < 2) {
-                menu.filesFound = [];
-                return;
-            }
-            fileFinder.running = false;
-            fileFinder.command = ["fd", "--max-results", "8", "--ignore-case",
-                                  "--fixed-strings", "--", query, Apps.home];
-            fileFinder.running = true;
-        }
-    }
-
-    Process {
-        id: fileFinder
-        stdout: StdioCollector {
-            onStreamFinished: {
-                menu.filesFound = String(text).split("\n").filter(function (line) {
-                    return line.length > 0;
-                }).map(function (line) { return line.replace(/\/$/, ""); });
-            }
-        }
-    }
 
     function launch(entry) {
         Apps.launch(entry);
         menu.dismissed();
     }
 
-    /// Choose a result row: start the program, open the task's page, or
-    /// open the file.
+    /// Choose a result row (Search.choose), and close.
     function choose(row) {
-        if (!row)
-            return;
-        if (row.kind === "program") {
-            menu.launch(row.value);
-        } else if (row.kind === "task") {
-            ControlPanelState.open(row.value.page);
-            menu.dismissed();
-        } else if (row.kind === "file") {
-            // The file's own program; a folder opens in the file manager.
-            Quickshell.execDetached(["xdg-open", row.value]);
-            menu.dismissed();
-        }
+        Search.choose(row);
+        menu.dismissed();
     }
 
     /// Return in the search box: the row picked, else run the text.
     function accept() {
-        if (!menu.searching)
-            return;
-        for (var i = 0; i < menu.rows.length; i++) {
-            if (menu.rows[i].pick === Math.min(menu.pick, menu.pickCount - 1)) {
-                menu.choose(menu.rows[i]);
-                return;
-            }
-        }
-        if (Apps.runTyped(search.text))
+        if (Search.accept(menu.pick))
             menu.dismissed();
     }
 
@@ -792,7 +715,7 @@ Item {
             anchors.margins: Theme.menuPadding
             visible: menu.searching
             clip: true
-            model: menu.rows
+            model: Search.rows
             boundsBehavior: Flickable.StopAtBounds
             ScrollBar.vertical: AeroScrollBar { id: resultsBar }
             readonly property real rowWidth: width - (resultsBar.visible ? resultsBar.width + 2 : 0)
@@ -823,7 +746,7 @@ Item {
             // With nothing found, Return runs the text, as Run... does.
             footer: MenuRow {
                 width: results.rowWidth
-                visible: menu.pickCount === 0
+                visible: Search.pickCount === 0
                 height: visible ? StartMenuState.rowHeight : 0
                 label: "Run “" + search.text.trim() + "”"
                 icon: Qt.resolvedUrl("../assets/icons/run.png")
@@ -913,7 +836,7 @@ Item {
                 onTextChanged: {
                     menu.pick = 0;
                     menu.jumpEntry = null;
-                    findFiles.restart();
+                    Search.query = text;
                 }
 
                 Text {
@@ -948,7 +871,7 @@ Item {
                         menu.pick -= 1;
                 }
                 Keys.onDownPressed: {
-                    if (menu.searching && menu.pick < menu.pickCount - 1)
+                    if (menu.searching && menu.pick < Search.pickCount - 1)
                         menu.pick += 1;
                 }
             }
