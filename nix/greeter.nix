@@ -77,7 +77,11 @@
   greeter = pkgs.writeShellScript "shojiwm-win7-greeter-or-text" ''
     mark="$XDG_RUNTIME_DIR/shojiwm-win7-greeter-launched"
     rm -f "$mark"
-    ${pkgs.hyprland}/bin/start-hyprland -- --config ${hyprlandConfig}
+    # Hyprland writes its banner and log to its output: to the journal
+    # (journalctl -t shojiwm-win7-greeter), not over the log-on screen's
+    # terminal before it draws.
+    ${pkgs.systemd}/bin/systemd-cat -t shojiwm-win7-greeter -- \
+      ${pkgs.hyprland}/bin/start-hyprland -- --config ${hyprlandConfig}
     if [ -e "$mark" ]; then
       exit 0
     fi
