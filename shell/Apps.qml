@@ -16,16 +16,32 @@ import "theme.js" as Theme
 Singleton {
     id: root
 
-    // The programs the places open. Change these to the programs you use.
-    /// The terminal: the command in SHOJIWM_WIN7_TERMINAL, run by a shell,
-    /// else kitty.
-    readonly property string terminal: Quickshell.env("SHOJIWM_WIN7_TERMINAL") || "kitty"
-    /// The task manager: the command in SHOJIWM_WIN7_TASK_MANAGER, run by a
-    /// shell, else inspecteur. Ctrl+Shift+Escape opens the same one.
-    readonly property string taskManager: Quickshell.env("SHOJIWM_WIN7_TASK_MANAGER") || "inspecteur"
-    /// The system monitor the CPU Meter's button opens: the command in
-    /// SHOJIWM_WIN7_SYSTEM_MONITOR, run by a shell, else btop in kitty.
-    readonly property string systemMonitor: Quickshell.env("SHOJIWM_WIN7_SYSTEM_MONITOR") || "kitty btop"
+    // The programs the desktop starts, each a command line run by a shell:
+    // the Control Panel's choice (Default Programs, Settings.programs), else
+    // the session's. The compositor's keys use the same (CompositorIpc).
+
+    /// The session's programs: SHOJIWM_WIN7_<NAME> of the session's
+    /// environment, else these defaults.
+    readonly property var sessionPrograms: ({
+        terminal: Quickshell.env("SHOJIWM_WIN7_TERMINAL") || "kitty",
+        taskManager: Quickshell.env("SHOJIWM_WIN7_TASK_MANAGER") || "inspecteur",
+        systemMonitor: Quickshell.env("SHOJIWM_WIN7_SYSTEM_MONITOR") || "kitty btop",
+        clipboard: Quickshell.env("SHOJIWM_WIN7_CLIPBOARD") || "",
+        screenshot: Quickshell.env("SHOJIWM_WIN7_SCREENSHOT") || "grim - | wl-copy --type image/png"
+    })
+
+    /// The command of a program now, by its key.
+    function program(key) {
+        var chosen = Settings.programs[key];
+        return chosen && chosen.length > 0 ? chosen : root.sessionPrograms[key];
+    }
+
+    /// The terminal. Super+Enter opens it too.
+    readonly property string terminal: root.program("terminal")
+    /// The task manager. Ctrl+Shift+Escape opens the same one.
+    readonly property string taskManager: root.program("taskManager")
+    /// The system monitor the CPU Meter's button opens.
+    readonly property string systemMonitor: root.program("systemMonitor")
     readonly property string fileManager: "thunar"
     readonly property string browser: "chromium"
     /// The programs pinned to the Start menu, and the ones that keep a button

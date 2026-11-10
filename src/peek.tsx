@@ -38,6 +38,7 @@ import {
 } from "./window-manager";
 import { setAnimationSpeed, setAnimations } from "./motion";
 import { setSquareCorners } from "./corners";
+import { setPrograms } from "./programs";
 import { setGlassColour, setGlassLevel } from "./glass";
 import { type DisplayChoice, screens, setDisplayChoices } from "./display";
 import { serveShortcuts } from "./shortcuts";
@@ -118,6 +119,10 @@ export function createPeek(manager: FloatingWindowManager): Peek {
         params !== null &&
         (params as { square?: unknown }).square === true,
     );
+    return true;
+  });
+  server.handle("programs", (params) => {
+    setPrograms(params);
     return true;
   });
   server.handle("screens", () => screens());

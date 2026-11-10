@@ -26,6 +26,7 @@ import { aeroFrame } from "./decoration";
 import { createAltTab } from "./alt-tab";
 import { SHELL_SOCKET, createPeek } from "./peek";
 import { createZoom } from "./zoom";
+import { program } from "./programs";
 // The screens: SHOJIWM_WIN7_OUTPUTS and the Control Panel's choices.
 import "./display";
 import { layerGlassEffect, popupGlassEffect, windowGlassEffect } from "./glass";
@@ -42,22 +43,12 @@ import {
 // ---------------------------------------------------------------------------
 
 /**
- * The terminal, the file manager and the browser the keys start. The
- * terminal is the command in SHOJIWM_WIN7_TERMINAL, run by a shell, else
- * kitty.
+ * The file manager and the browser the keys start. The terminal, the task
+ * manager, the clipboard history and the screenshot are the Control Panel's
+ * choices (src/programs.ts).
  */
-const TERMINAL = COMPOSITOR.env.get("SHOJIWM_WIN7_TERMINAL") ?? "kitty";
-/** The task manager: SHOJIWM_WIN7_TASK_MANAGER, else inspecteur. */
-const TASK_MANAGER =
-  COMPOSITOR.env.get("SHOJIWM_WIN7_TASK_MANAGER") ?? "inspecteur";
 const FILE_MANAGER = ["thunar"];
 const BROWSER = ["chromium", "--ozone-platform-hint=auto"];
-
-/**
- * The clipboard history Super+V opens: the command in SHOJIWM_WIN7_CLIPBOARD,
- * else none.
- */
-const CLIPBOARD = COMPOSITOR.env.get("SHOJIWM_WIN7_CLIPBOARD") ?? "";
 
 /** Where the Quickshell shell lives, as a shell word. */
 const SHELL_PATH = "~/.config/shojiwm/shell";
@@ -202,7 +193,7 @@ COMPOSITOR.key.bind(
   "terminal",
   "Super+Return",
   once(() => {
-    COMPOSITOR.process.spawn({ command: TERMINAL });
+    COMPOSITOR.process.spawn({ command: program("terminal") });
   }),
 );
 COMPOSITOR.key.bind(
@@ -301,12 +292,8 @@ COMPOSITOR.key.bind(
     });
   }),
 );
-// Print Screen and Ctrl+Print Screen: the command in SHOJIWM_WIN7_SCREENSHOT,
-// else the whole screen to the clipboard, as Windows 7 does. The variable is
-// read from the session's environment, so a new value needs a new session.
-const SCREENSHOT =
-  COMPOSITOR.env.get("SHOJIWM_WIN7_SCREENSHOT") ??
-  "grim - | wl-copy --type image/png";
+// Print Screen and Ctrl+Print Screen: the Control Panel's screenshot program,
+// by default the whole screen to the clipboard, as Windows 7 does.
 for (const [id, key] of [
   ["screenshot", "Print"],
   ["screenshot-ctrl", "Ctrl+Print"],
@@ -315,7 +302,7 @@ for (const [id, key] of [
     id,
     key,
     once(() => {
-      COMPOSITOR.process.spawn({ command: SCREENSHOT });
+      COMPOSITOR.process.spawn({ command: program("screenshot") });
     }),
   );
 }
@@ -399,17 +386,18 @@ NUMBER_ROW.forEach((keys, index) => {
   }
 });
 
-// Super+V: the clipboard history, SHOJIWM_WIN7_CLIPBOARD (for example
-// "papier toggle"). Without it, the key does nothing.
-if (CLIPBOARD) {
-  COMPOSITOR.key.bind(
-    "clipboard-history",
-    "Super+V",
-    once(() => {
-      COMPOSITOR.process.spawn({ command: CLIPBOARD });
-    }),
-  );
-}
+// Super+V: the clipboard history the Control Panel chooses (for example
+// "papier toggle"). Without one, the key does nothing.
+COMPOSITOR.key.bind(
+  "clipboard-history",
+  "Super+V",
+  once(() => {
+    const command = program("clipboard");
+    if (command) {
+      COMPOSITOR.process.spawn({ command });
+    }
+  }),
+);
 
 // Super+R: the Run dialog, above the focused screen's Start button, with
 // its history.
@@ -429,7 +417,7 @@ COMPOSITOR.key.bind(
   "task-manager",
   "Ctrl+Shift+Escape",
   once(() => {
-    COMPOSITOR.process.spawn({ command: TASK_MANAGER });
+    COMPOSITOR.process.spawn({ command: program("taskManager") });
   }),
 );
 

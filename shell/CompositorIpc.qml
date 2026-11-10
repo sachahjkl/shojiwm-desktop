@@ -30,6 +30,7 @@ Singleton {
             root.sendAnimations();
             root.sendGlass();
             root.sendCorners();
+            root.sendPrograms();
             root.sendDisplay();
         }
     }
@@ -91,6 +92,16 @@ Singleton {
         });
     }
 
+    /// The programs the compositor's keys start (src/programs.ts).
+    function sendPrograms() {
+        return send("programs", {
+            terminal: Apps.program("terminal"),
+            taskManager: Apps.program("taskManager"),
+            clipboard: Apps.program("clipboard"),
+            screenshot: Apps.program("screenshot")
+        });
+    }
+
     function sendCorners() {
         return send("corners", { square: Settings.squareCorners });
     }
@@ -109,6 +120,7 @@ Singleton {
         function onAnimationSpeedChanged() { root.sendAnimations(); }
         function onGlassBlurChanged() { root.sendGlass(); }
         function onSquareCornersChanged() { root.sendCorners(); }
+        function onProgramsChanged() { root.sendPrograms(); }
         function onGlassColorChanged() { root.sendGlass(); }
         function onGlassColorStrengthChanged() { root.sendGlass(); }
         function onDisplayChoicesChanged() { root.sendDisplay(); }

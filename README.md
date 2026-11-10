@@ -225,7 +225,7 @@ the resting gradient.
   and labels' `textShadow` (the caption titles). Upstream ShojiWM runs it
   without these.
 - **[inspecteur](https://inspecteur.sacha.house)** (`inspecteur`), the task
-  manager, unless `SHOJIWM_WIN7_TASK_MANAGER` names another.
+  manager, unless the Control Panel's Default Programs names another.
 - **Quickshell 0.3.0 or later** — it draws the taskbar, the Start menu and the
   wallpaper.
 - **A font.** The text is set in **Inter**, and falls back to Noto Sans and
@@ -375,37 +375,37 @@ running one.
 
 ## Keys
 
-| Key                               | Action                                                                                               |
-| --------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| `Super` (tap)                     | Show or hide the Start menu                                                                          |
-| `Super`+`Return`                  | Terminal                                                                                             |
-| `Super`+`E`                       | File manager                                                                                         |
-| `Super`+`B`                       | Browser                                                                                              |
-| `Alt`+`F4`                        | Close the focused window; on the desktop, Shut Down Windows                                          |
-| `Super`+`Shift`+`E`               | Shut Down Windows                                                                                    |
-| `Alt`+`Tab` / `Alt`+`Shift`+`Tab` | Switch window                                                                                        |
-| `Super`+`Up`                      | Maximise                                                                                             |
-| `Super`+`Down`                    | Restore a maximised window, else minimise                                                            |
-| `Super`+`Left` / `Super`+`Right`  | Snap to that side; again, to the next screen; from the other side, restore                           |
-| `Super`+`Shift`+`Left` / `Right`  | Move the window to the next screen that way                                                          |
-| `Super`+`Home`                    | Minimise the other windows, then bring them back                                                     |
-| `Print Screen`, `Ctrl`+`Print`    | Screenshot (`SHOJIWM_WIN7_SCREENSHOT`)                                                               |
-| `Super`+`D`                       | Show the desktop, then put the windows back                                                          |
-| `Super`+`Shift`+`D`               | The launcher: the Start menu's search, on the focused screen                                         |
-| `Super`+`M`                       | The same as `Super`+`D`                                                                              |
-| `Super`+`L`                       | Lock                                                                                                 |
-| `Super`+drag                      | Move a window from anywhere on it                                                                    |
-| `Super`+double click              | Maximise, and again to restore                                                                       |
-| `Super`+`Shift`+`R`               | Reload this configuration (built into ShojiWM)                                                       |
-| `Super`+`Shift`+`Q`               | Close the focused window                                                                             |
-| `Super`+`1` … `9`                 | The taskbar button at that place: start it, show it, put it away, or the next of its windows         |
-| `Super`+`Shift`+`1` … `9`         | Another instance of that button's program                                                            |
-| `Super`+`V`                       | Clipboard history: the command in `SHOJIWM_WIN7_CLIPBOARD`, for example `papier toggle`              |
-| `Super`+`R`                       | The Run dialog, on the focused screen: its history (26), completion from it, Down or F4 for the list |
-| `Super`+`X`                       | The Start orb's menu (also a right click on the orb): terminals, tools, power actions                |
-| `Ctrl`+`Shift`+`Escape`           | Task manager (`SHOJIWM_WIN7_TASK_MANAGER`, else inspecteur); also in the clock's right-click menu    |
-| `Super`+`Shift`+wheel             | Zoom the screen around the pointer; `Super`+`Shift`+`0` resets it                                    |
-| Volume, mute and player keys      | Volume of the default output (`wpctl`), microphone mute, `playerctl`                                 |
+| Key                               | Action                                                                                                |
+| --------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| `Super` (tap)                     | Show or hide the Start menu                                                                           |
+| `Super`+`Return`                  | Terminal                                                                                              |
+| `Super`+`E`                       | File manager                                                                                          |
+| `Super`+`B`                       | Browser                                                                                               |
+| `Alt`+`F4`                        | Close the focused window; on the desktop, Shut Down Windows                                           |
+| `Super`+`Shift`+`E`               | Shut Down Windows                                                                                     |
+| `Alt`+`Tab` / `Alt`+`Shift`+`Tab` | Switch window                                                                                         |
+| `Super`+`Up`                      | Maximise                                                                                              |
+| `Super`+`Down`                    | Restore a maximised window, else minimise                                                             |
+| `Super`+`Left` / `Super`+`Right`  | Snap to that side; again, to the next screen; from the other side, restore                            |
+| `Super`+`Shift`+`Left` / `Right`  | Move the window to the next screen that way                                                           |
+| `Super`+`Home`                    | Minimise the other windows, then bring them back                                                      |
+| `Print Screen`, `Ctrl`+`Print`    | Screenshot (the Control Panel's Default Programs; by default the whole screen to the clipboard)       |
+| `Super`+`D`                       | Show the desktop, then put the windows back                                                           |
+| `Super`+`Shift`+`D`               | The launcher: the Start menu's search, on the focused screen                                          |
+| `Super`+`M`                       | The same as `Super`+`D`                                                                               |
+| `Super`+`L`                       | Lock                                                                                                  |
+| `Super`+drag                      | Move a window from anywhere on it                                                                     |
+| `Super`+double click              | Maximise, and again to restore                                                                        |
+| `Super`+`Shift`+`R`               | Reload this configuration (built into ShojiWM)                                                        |
+| `Super`+`Shift`+`Q`               | Close the focused window                                                                              |
+| `Super`+`1` … `9`                 | The taskbar button at that place: start it, show it, put it away, or the next of its windows          |
+| `Super`+`Shift`+`1` … `9`         | Another instance of that button's program                                                             |
+| `Super`+`V`                       | Clipboard history: the command Default Programs names, for example `papier toggle`                    |
+| `Super`+`R`                       | The Run dialog, on the focused screen: its history (26), completion from it, Down or F4 for the list  |
+| `Super`+`X`                       | The Start orb's menu (also a right click on the orb): terminals, tools, power actions                 |
+| `Ctrl`+`Shift`+`Escape`           | Task manager (Default Programs, else inspecteur); also in the bar's and the clock's right-click menus |
+| `Super`+`Shift`+wheel             | Zoom the screen around the pointer; `Super`+`Shift`+`0` resets it                                     |
+| Volume, mute and player keys      | Volume of the default output (`wpctl`), microphone mute, `playerctl`                                  |
 
 ## The files
 
@@ -473,8 +473,14 @@ running one.
   Hyprland monitor rules `name,mode,position,scale` separated by `;`, for
   example `DP-2,2560x1440@180,0x0,1.25;HDMI-A-1,preferred,auto,1.875`.
   Without it, ShojiWM uses the best mode of each screen at scale 1.
-- **Terminal:** set `SHOJIWM_WIN7_TERMINAL` to the command that opens one;
-  kitty without it.
+- **Programs:** the Control Panel's Default Programs chooses the terminal,
+  the task manager, the system monitor, the clipboard history and the
+  screenshot: an installed program or any command. "As the session sets
+  it" takes `SHOJIWM_WIN7_TERMINAL`, `SHOJIWM_WIN7_TASK_MANAGER`,
+  `SHOJIWM_WIN7_SYSTEM_MONITOR`, `SHOJIWM_WIN7_CLIPBOARD` or
+  `SHOJIWM_WIN7_SCREENSHOT` from the session's environment (a NixOS
+  configuration's defaults), else kitty, inspecteur, btop in kitty, none,
+  and the whole screen to the clipboard.
 - **More keys:** set `SHOJIWM_WIN7_KEYS` to a JSON object of shortcut to
   shell command, for example `{"Ctrl+Shift+u": "papier toggle"}`, for
   programs that do not use the GlobalShortcuts portal.

@@ -24,6 +24,60 @@ Singleton {
         { label: "PDF documents", types: ["application/pdf"] }
     ]
 
+    /// The programs the desktop starts (Settings.programs, Apps.program): the
+    /// installed programs offered for each are the ones whose .desktop file
+    /// has one of `categories`; clipboard and screenshot have none to offer,
+    /// only a command.
+    readonly property var programKinds: [
+        { key: "terminal", label: "Terminal", categories: ["TerminalEmulator"],
+          note: "Super+Enter" },
+        { key: "taskManager", label: "Task manager", categories: ["Monitor"],
+          note: "Ctrl+Shift+Escape" },
+        { key: "systemMonitor", label: "System monitor", categories: ["Monitor"],
+          note: "CPU Meter's button" },
+        { key: "clipboard", label: "Clipboard history", categories: [],
+          note: "Super+V" },
+        { key: "screenshot", label: "Screenshot", categories: [],
+          note: "Print Screen" }
+    ]
+
+    /// The command line that starts an installed program, as a shell reads
+    /// it: its .desktop file's command, in the terminal when it says so.
+    function commandOf(entry) {
+        var words = (entry.command || []).map(function (word) {
+            return /^[A-Za-z0-9_\/.:=+,@%-]+$/.test(word) ? word : "'" + String(word).replace(/'/g, "'\\''") + "'";
+        });
+        var line = words.join(" ");
+        return entry.runInTerminal ? Apps.sessionPrograms.terminal + " -e " + line : line;
+    }
+
+    /// The installed programs a kind offers: { name, command }, by name.
+    function programChoices(kind) {
+        var all = DesktopEntries.applications ? DesktopEntries.applications.values : [];
+        var out = [];
+        for (var i = 0; i < all.length; i++) {
+            var entry = all[i];
+            if (entry.noDisplay || !entry.command || entry.command.length === 0)
+                continue;
+            var categories = entry.categories || [];
+            if (!kind.categories.some(function (c) { return categories.indexOf(c) >= 0; }))
+                continue;
+            out.push({ name: String(entry.name), command: root.commandOf(entry) });
+        }
+        out.sort(function (a, b) { return a.name.localeCompare(b.name); });
+        return out;
+    }
+
+    /// Chooses a program's command; "" goes back to the session's.
+    function setProgram(key, command) {
+        var programs = Object.assign({}, Settings.programs);
+        if (command.length > 0)
+            programs[key] = command;
+        else
+            delete programs[key];
+        Settings.programs = programs;
+    }
+
     /// By the first type of each kind: { current: "app.desktop", candidates: [...] }.
     property var state: ({})
 

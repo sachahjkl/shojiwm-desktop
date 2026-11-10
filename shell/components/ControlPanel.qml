@@ -1286,6 +1286,142 @@ FloatingWindow {
                     }
                 }
             }
+
+            Heading { text: "Choose the programs the desktop starts" }
+
+            Note {
+                width: parent.width
+                text: "The terminal, the task manager and the others the keys and the taskbar start. "
+                    + "\"As the session sets it\" keeps the one your system's configuration names."
+            }
+
+            Repeater {
+                model: DefaultApps.programKinds
+
+                delegate: Column {
+                    id: programRow
+
+                    required property var modelData
+                    required property int index
+
+                    readonly property string chosen: Settings.programs[programRow.modelData.key] || ""
+                    readonly property var choices: DefaultApps.programChoices(programRow.modelData)
+                    /// The choice shown: 0 the session's, 1.. an installed program,
+                    /// the last another command.
+                    readonly property int shown: {
+                        if (programRow.chosen.length === 0)
+                            return 0;
+                        for (var i = 0; i < programRow.choices.length; i++) {
+                            if (programRow.choices[i].command === programRow.chosen)
+                                return i + 1;
+                        }
+                        return programRow.choices.length + 1;
+                    }
+                    /// "Another command…" was picked: its field shows even before
+                    /// anything is typed.
+                    property bool editing: false
+                    readonly property bool custom: programRow.editing
+                        || programRow.shown === programRow.choices.length + 1
+
+                    spacing: 4
+                    // The open lists draw over the rows below.
+                    z: 50 - programRow.index
+
+                    Row {
+                        spacing: 12
+
+                        Text {
+                            anchors.verticalCenter: parent.verticalCenter
+                            width: 120
+                            text: programRow.modelData.label
+                            color: Scheme.text
+                            font.family: Theme.fontFamily
+                            font.pixelSize: Theme.fontSize
+                        }
+
+                        CpCombo {
+                            anchors.verticalCenter: parent.verticalCenter
+                            width: 280
+                            model: ["As the session sets it"]
+                                .concat(programRow.choices.map(function (c) { return c.name; }))
+                                .concat(["Another command\u2026"])
+                            currentIndex: programRow.editing ? programRow.choices.length + 1 : programRow.shown
+                            onActivated: function (index) {
+                                programRow.editing = false;
+                                if (index === 0)
+                                    DefaultApps.setProgram(programRow.modelData.key, "");
+                                else if (index <= programRow.choices.length)
+                                    DefaultApps.setProgram(programRow.modelData.key, programRow.choices[index - 1].command);
+                                else
+                                    programRow.editing = true;
+                            }
+                        }
+
+                        Text {
+                            anchors.verticalCenter: parent.verticalCenter
+                            text: programRow.modelData.note
+                            color: Scheme.textMuted
+                            font.family: Theme.fontFamily
+                            font.pixelSize: Theme.fontSizeSmall
+                        }
+                    }
+
+                    // The command that runs: the session's, the program's, or the
+                    // one typed here (Enter keeps it).
+                    Row {
+                        spacing: 12
+
+                        Item { width: 120; height: 1 }
+
+                        Rectangle {
+                            visible: programRow.custom
+                            width: 420
+                            height: 24
+                            radius: Scheme.fieldRadius
+                            color: Scheme.field
+                            border.width: 1
+                            border.color: commandField.activeFocus ? Scheme.fieldFocus : Scheme.fieldBorder
+
+                            TextInput {
+                                id: commandField
+                                anchors.fill: parent
+                                anchors.leftMargin: 6
+                                anchors.rightMargin: 6
+                                verticalAlignment: TextInput.AlignVCenter
+                                text: programRow.chosen
+                                color: Scheme.text
+                                font.family: Theme.fontFamily
+                                font.pixelSize: Theme.fontSize
+                                selectByMouse: true
+                                clip: true
+                                onAccepted: {
+                                    DefaultApps.setProgram(programRow.modelData.key, text.trim());
+                                    programRow.editing = false;
+                                }
+
+                                Text {
+                                    anchors.fill: parent
+                                    verticalAlignment: Text.AlignVCenter
+                                    visible: commandField.text.length === 0
+                                    text: "A command, then Enter"
+                                    color: Scheme.placeholder
+                                    font: commandField.font
+                                }
+                            }
+                        }
+
+                        Text {
+                            visible: !programRow.custom
+                            width: 420
+                            elide: Text.ElideMiddle
+                            text: Apps.program(programRow.modelData.key) || "None"
+                            color: Scheme.textMuted
+                            font.family: Theme.fontFamily
+                            font.pixelSize: Theme.fontSizeSmall
+                        }
+                    }
+                }
+            }
         }
     }
 
