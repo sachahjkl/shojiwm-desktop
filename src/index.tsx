@@ -47,9 +47,9 @@ import {
  * kitty.
  */
 const TERMINAL = COMPOSITOR.env.get("SHOJIWM_WIN7_TERMINAL") ?? "kitty";
-/** The task manager: SHOJIWM_WIN7_TASK_MANAGER, else Mission Center. */
+/** The task manager: SHOJIWM_WIN7_TASK_MANAGER, else inspecteur. */
 const TASK_MANAGER =
-  COMPOSITOR.env.get("SHOJIWM_WIN7_TASK_MANAGER") ?? "missioncenter";
+  COMPOSITOR.env.get("SHOJIWM_WIN7_TASK_MANAGER") ?? "inspecteur";
 const FILE_MANAGER = ["thunar"];
 const BROWSER = ["chromium", "--ozone-platform-hint=auto"];
 

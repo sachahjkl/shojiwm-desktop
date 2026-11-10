@@ -21,8 +21,8 @@ Singleton {
     /// else kitty.
     readonly property string terminal: Quickshell.env("SHOJIWM_WIN7_TERMINAL") || "kitty"
     /// The task manager: the command in SHOJIWM_WIN7_TASK_MANAGER, run by a
-    /// shell, else Mission Center. Ctrl+Shift+Escape opens the same one.
-    readonly property string taskManager: Quickshell.env("SHOJIWM_WIN7_TASK_MANAGER") || "missioncenter"
+    /// shell, else inspecteur. Ctrl+Shift+Escape opens the same one.
+    readonly property string taskManager: Quickshell.env("SHOJIWM_WIN7_TASK_MANAGER") || "inspecteur"
     /// The system monitor the CPU Meter's button opens: the command in
     /// SHOJIWM_WIN7_SYSTEM_MONITOR, run by a shell, else btop in kitty.
     readonly property string systemMonitor: Quickshell.env("SHOJIWM_WIN7_SYSTEM_MONITOR") || "kitty btop"
