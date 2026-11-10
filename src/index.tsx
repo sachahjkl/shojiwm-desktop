@@ -115,7 +115,8 @@ COMPOSITOR.rendering.framePacing = "throughput";
 // ---------------------------------------------------------------------------
 
 const WINDOWS = new FloatingWindowManager();
-const ALT_TAB = createAltTab(WINDOWS);
+// (PEEK is read when the panel changes, after both are made)
+const ALT_TAB = createAltTab(WINDOWS, (titles) => PEEK.tell("alt-tab", titles));
 const PEEK = createPeek(WINDOWS);
 const ZOOM = createZoom();
 

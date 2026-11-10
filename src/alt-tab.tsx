@@ -5,6 +5,11 @@
  * per window, drawn in a grid over a translucent card. While it is open an
  * input grab takes the keyboard and the pointer, so Tab, the arrow keys, the
  * wheel and a click all pick a window without reaching the windows below.
+ *
+ * A composition draws no text: each window's title, under its thumbnail, is
+ * the shell's (AltTabTitles.qml), on the overlay layer, which the panel's
+ * composition draws over itself. The panel tells the shell where its cells
+ * are and their titles (`announce`).
  */
 
 import {
@@ -29,7 +34,10 @@ import type { FloatingWindowManager } from "./window-manager";
 /** Sizes of the panel, in logical pixels. */
 const PANEL = {
   cellWidth: 168,
+  /** The thumbnail's part of a cell. */
   cellHeight: 126,
+  /** The title's part, under the thumbnail. */
+  titleHeight: 22,
   gap: 8,
   padding: 16,
   /** Space kept between a thumbnail and the edge of its cell. */
@@ -78,8 +86,8 @@ function panelLayout(output: OutputInfo, count: number): PanelLayout {
 
   const width =
     PANEL.padding * 2 + columns * PANEL.cellWidth + (columns - 1) * PANEL.gap;
-  const height =
-    PANEL.padding * 2 + rows * PANEL.cellHeight + (rows - 1) * PANEL.gap;
+  const cellHeight = PANEL.cellHeight + PANEL.titleHeight;
+  const height = PANEL.padding * 2 + rows * cellHeight + (rows - 1) * PANEL.gap;
   const x = Math.round((outputWidth - width) / 2);
   const y = Math.round((outputHeight - height) / 2);
 
@@ -89,13 +97,21 @@ function panelLayout(output: OutputInfo, count: number): PanelLayout {
     const row = Math.floor(index / columns);
     cells.push({
       x: x + PANEL.padding + column * (PANEL.cellWidth + PANEL.gap),
-      y: y + PANEL.padding + row * (PANEL.cellHeight + PANEL.gap),
+      y: y + PANEL.padding + row * (cellHeight + PANEL.gap),
       width: PANEL.cellWidth,
-      height: PANEL.cellHeight,
+      height: cellHeight,
     });
   }
 
   return { x, y, width, height, cells };
+}
+
+/** What the shell draws over the panel: each cell's title, in the output's logical pixels. */
+export interface AltTabTitles {
+  output: string;
+  selected: number;
+  titleHeight: number;
+  cells: { x: number; y: number; width: number; title: string }[];
 }
 
 export interface AltTab {
@@ -109,8 +125,33 @@ export interface AltTab {
   selectedWindowId: ReadonlySignal<string | null>;
 }
 
-export function createAltTab(manager: FloatingWindowManager): AltTab {
-  const [session, setSession] = signal<Session | null>(null);
+export function createAltTab(
+  manager: FloatingWindowManager,
+  announce: (titles: AltTabTitles | null) => void,
+): AltTab {
+  const [session, setPanel] = signal<Session | null>(null);
+
+  /** Sets the panel's state and tells the shell its titles (null: closed). */
+  function setSession(next: Session | null): void {
+    setPanel(next);
+    const output = next ? COMPOSITOR.output.get(next.outputName) : undefined;
+    if (!next || !output) {
+      announce(null);
+      return;
+    }
+    const cells = panelLayout(output, next.windows.length).cells;
+    announce({
+      output: next.outputName,
+      selected: next.index,
+      titleHeight: PANEL.titleHeight,
+      cells: next.windows.map((window, index) => ({
+        x: cells[index].x,
+        y: cells[index].y + PANEL.cellHeight,
+        width: cells[index].width,
+        title: window.title.peek(),
+      })),
+    });
+  }
   let grab: InputGrab | null = null;
   let layout: PanelLayout | null = null;
 
@@ -269,7 +310,8 @@ export function createAltTab(manager: FloatingWindowManager): AltTab {
     });
 
     const boxWidth = cell.width - PANEL.cellInset * 2;
-    const boxHeight = cell.height - PANEL.cellInset * 2;
+    // (the thumbnail's part of the cell: the title is under it)
+    const boxHeight = PANEL.cellHeight - PANEL.cellInset * 2;
     const scale = Math.min(
       boxWidth / Math.max(1, textureWidth),
       boxHeight / Math.max(1, textureHeight),
@@ -282,7 +324,7 @@ export function createAltTab(manager: FloatingWindowManager): AltTab {
       <TextureView
         texture={texture}
         x={Math.round(cell.x + (cell.width - width) / 2)}
-        y={Math.round(cell.y + (cell.height - height) / 2)}
+        y={Math.round(cell.y + (PANEL.cellHeight - height) / 2)}
         width={width}
         height={height}
       />
@@ -305,7 +347,7 @@ export function createAltTab(manager: FloatingWindowManager): AltTab {
         <Windows />
         <Solid color="#0a1c2b4d" />
         {/* The panel goes over the taskbar, as the one on Windows does. */}
-        <Layers layers={["top", "overlay"]} />
+        <Layers layers={["top"]} />
         <Solid
           color="#ffffff59"
           x={panel.x - 1}
@@ -332,6 +374,8 @@ export function createAltTab(manager: FloatingWindowManager): AltTab {
         {current.windows.map((window, index) =>
           thumbnail(output, window, panel.cells[index]),
         )}
+        {/* The titles (the shell's, on the overlay layer) over the panel. */}
+        <Layers layers={["overlay"]} />
         <LayerPopups />
       </>
     );

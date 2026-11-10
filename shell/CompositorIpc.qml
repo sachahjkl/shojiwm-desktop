@@ -59,11 +59,21 @@ Singleton {
         root.socket.flush();
     }
 
+    /// The Alt+Tab panel while it is open: { output, selected, titleHeight,
+    /// cells: [{ x, y, width, title }] } in the output's logical pixels; null
+    /// when it is closed. AltTabTitles.qml draws the titles.
+    property var altTab: null
+
     function answer(line) {
         var message;
         try {
             message = JSON.parse(line);
         } catch (error) {
+            return;
+        }
+        // The compositor's own events: the Alt+Tab panel's titles (src/alt-tab.tsx).
+        if (message.event === "alt-tab") {
+            root.altTab = message.payload || null;
             return;
         }
         if (message.id === undefined || !root.pending[message.id])

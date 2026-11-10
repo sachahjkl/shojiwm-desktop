@@ -535,6 +535,14 @@ ShellRoot {
         }
     }
 
+    // ----- the Alt+Tab panel's titles ---------------------------------------------
+
+    Variants {
+        model: Quickshell.screens
+
+        AltTabTitles {}
+    }
+
     // ----- the Start orb's menu --------------------------------------------------
 
     // A right click on the orb, or Super+X: over the screen it is asked on,

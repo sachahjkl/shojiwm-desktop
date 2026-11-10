@@ -69,6 +69,8 @@ function numberOf(value: MaybeSignal<number>): number {
 export interface Peek {
   /** The output composition while peeking, or null. */
   compose(output: OutputInfo): CompositionRenderable | null;
+  /** Pushes an event to the shell (its socket's clients). */
+  tell(event: string, payload: unknown): void;
 }
 
 export function createPeek(manager: FloatingWindowManager): Peek {
@@ -231,5 +233,10 @@ export function createPeek(manager: FloatingWindowManager): Peek {
     );
   }
 
-  return { compose };
+  return {
+    compose,
+    tell(event, payload) {
+      server.broadcast(event, payload);
+    },
+  };
 }
