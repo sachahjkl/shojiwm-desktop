@@ -515,7 +515,7 @@ FloatingWindow {
                         anchors.verticalCenter: parent.verticalCenter
                         width: parent.width
                         height: 4
-                        radius: 2
+                        radius: Scheme.corner(2)
                         color: Scheme.field
                         border.width: 1
                         border.color: Scheme.fieldBorder
@@ -536,7 +536,7 @@ FloatingWindow {
                         anchors.verticalCenter: parent.verticalCenter
                         width: 10
                         height: 20
-                        radius: 2
+                        radius: Scheme.corner(2)
                         border.width: 1
                         border.color: speedArea.containsMouse || speedArea.pressed
                             ? Scheme.fieldFocus : Scheme.fieldBorder
@@ -672,7 +672,7 @@ FloatingWindow {
 
                 width: parent.width
                 height: 150
-                radius: 3
+                radius: Scheme.corner(3)
                 color: Scheme.dark ? "#141b22" : "#f3f6f9"
                 border.width: 1
                 border.color: Scheme.fieldBorder
@@ -712,7 +712,7 @@ FloatingWindow {
                             y: tile.modelData.y * layoutArea.k + 2
                             width: tile.modelData.width / tile.modelData.scale * layoutArea.k - 4
                             height: tile.modelData.height / tile.modelData.scale * layoutArea.k - 4
-                            radius: 2
+                            radius: Scheme.corner(2)
                             border.width: tile.chosen ? 2 : 1
                             border.color: tile.chosen ? Scheme.fieldFocus : "#5d7489"
                             gradient: Gradient {
@@ -839,7 +839,7 @@ FloatingWindow {
                 width: parent.width
                 height: confirmRow.implicitHeight + 20
                 visible: DisplaySettings.confirming
-                radius: 3
+                radius: Scheme.corner(3)
                 color: Scheme.dark ? "#2a3a1c" : "#fff8d6"
                 border.width: 1
                 border.color: Scheme.dark ? "#6b7f3c" : "#e0c66b"
@@ -1286,6 +1286,142 @@ FloatingWindow {
                     }
                 }
             }
+
+            Heading { text: "Choose the programs the desktop starts" }
+
+            Note {
+                width: parent.width
+                text: "The terminal, the task manager and the others the keys and the taskbar start. "
+                    + "\"As the session sets it\" keeps the one your system's configuration names."
+            }
+
+            Repeater {
+                model: DefaultApps.programKinds
+
+                delegate: Column {
+                    id: programRow
+
+                    required property var modelData
+                    required property int index
+
+                    readonly property string chosen: Settings.programs[programRow.modelData.key] || ""
+                    readonly property var choices: DefaultApps.programChoices(programRow.modelData)
+                    /// The choice shown: 0 the session's, 1.. an installed program,
+                    /// the last another command.
+                    readonly property int shown: {
+                        if (programRow.chosen.length === 0)
+                            return 0;
+                        for (var i = 0; i < programRow.choices.length; i++) {
+                            if (programRow.choices[i].command === programRow.chosen)
+                                return i + 1;
+                        }
+                        return programRow.choices.length + 1;
+                    }
+                    /// "Another command…" was picked: its field shows even before
+                    /// anything is typed.
+                    property bool editing: false
+                    readonly property bool custom: programRow.editing
+                        || programRow.shown === programRow.choices.length + 1
+
+                    spacing: 4
+                    // The open lists draw over the rows below.
+                    z: 50 - programRow.index
+
+                    Row {
+                        spacing: 12
+
+                        Text {
+                            anchors.verticalCenter: parent.verticalCenter
+                            width: 120
+                            text: programRow.modelData.label
+                            color: Scheme.text
+                            font.family: Theme.fontFamily
+                            font.pixelSize: Theme.fontSize
+                        }
+
+                        CpCombo {
+                            anchors.verticalCenter: parent.verticalCenter
+                            width: 280
+                            model: ["As the session sets it"]
+                                .concat(programRow.choices.map(function (c) { return c.name; }))
+                                .concat(["Another command\u2026"])
+                            currentIndex: programRow.editing ? programRow.choices.length + 1 : programRow.shown
+                            onActivated: function (index) {
+                                programRow.editing = false;
+                                if (index === 0)
+                                    DefaultApps.setProgram(programRow.modelData.key, "");
+                                else if (index <= programRow.choices.length)
+                                    DefaultApps.setProgram(programRow.modelData.key, programRow.choices[index - 1].command);
+                                else
+                                    programRow.editing = true;
+                            }
+                        }
+
+                        Text {
+                            anchors.verticalCenter: parent.verticalCenter
+                            text: programRow.modelData.note
+                            color: Scheme.textMuted
+                            font.family: Theme.fontFamily
+                            font.pixelSize: Theme.fontSizeSmall
+                        }
+                    }
+
+                    // The command that runs: the session's, the program's, or the
+                    // one typed here (Enter keeps it).
+                    Row {
+                        spacing: 12
+
+                        Item { width: 120; height: 1 }
+
+                        Rectangle {
+                            visible: programRow.custom
+                            width: 420
+                            height: 24
+                            radius: Scheme.fieldRadius
+                            color: Scheme.field
+                            border.width: 1
+                            border.color: commandField.activeFocus ? Scheme.fieldFocus : Scheme.fieldBorder
+
+                            TextInput {
+                                id: commandField
+                                anchors.fill: parent
+                                anchors.leftMargin: 6
+                                anchors.rightMargin: 6
+                                verticalAlignment: TextInput.AlignVCenter
+                                text: programRow.chosen
+                                color: Scheme.text
+                                font.family: Theme.fontFamily
+                                font.pixelSize: Theme.fontSize
+                                selectByMouse: true
+                                clip: true
+                                onAccepted: {
+                                    DefaultApps.setProgram(programRow.modelData.key, text.trim());
+                                    programRow.editing = false;
+                                }
+
+                                Text {
+                                    anchors.fill: parent
+                                    verticalAlignment: Text.AlignVCenter
+                                    visible: commandField.text.length === 0
+                                    text: "A command, then Enter"
+                                    color: Scheme.placeholder
+                                    font: commandField.font
+                                }
+                            }
+                        }
+
+                        Text {
+                            visible: !programRow.custom
+                            width: 420
+                            elide: Text.ElideMiddle
+                            text: Apps.program(programRow.modelData.key) || "None"
+                            color: Scheme.textMuted
+                            font.family: Theme.fontFamily
+                            font.pixelSize: Theme.fontSizeSmall
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -1606,7 +1742,7 @@ FloatingWindow {
 
                         Rectangle {
                             anchors.fill: parent
-                            radius: 4
+                            radius: Scheme.corner(4)
                             color: choice.isChosen ? Scheme.selection
                                 : choiceArea.containsMouse ? Scheme.hover : "transparent"
                             border.width: choice.isChosen || choiceArea.containsMouse ? 1 : 0
@@ -1619,7 +1755,7 @@ FloatingWindow {
                             y: 12
                             width: parent.width - 32
                             height: 96
-                            radius: 4
+                            radius: Scheme.corner(4)
                             border.width: 1
                             border.color: "#5d7489"
                             color: choice.modelData.dark ? "#1e262e" : "#ffffff"
@@ -1627,7 +1763,7 @@ FloatingWindow {
                             Rectangle {
                                 width: parent.width
                                 height: 18
-                                radius: 4
+                                radius: Scheme.corner(4)
                                 gradient: Gradient {
                                     GradientStop { position: 0.0; color: "#a6c8e6" }
                                     GradientStop { position: 1.0; color: "#6f9cc4" }
@@ -1645,7 +1781,7 @@ FloatingWindow {
                                         required property int index
                                         width: 120 - index * 18
                                         height: 6
-                                        radius: 3
+                                        radius: Scheme.corner(3)
                                         color: choice.modelData.dark ? "#5d7489" : "#c3d3e0"
                                     }
                                 }
@@ -1679,6 +1815,31 @@ FloatingWindow {
                     + "choice; only this desktop will, until it restarts. "
                     + "On NixOS: programs.dconf.enable = true (the shojiwm "
                     + "module of nixconfig sets it)."
+            }
+
+            SubHeading { text: "Corners" }
+
+            Note {
+                width: parent.width
+                text: "The shape of the windows, menus, buttons and fields. What is "
+                    + "round by nature, as the Start button, stays round."
+            }
+
+            Flow {
+                width: parent.width
+                spacing: 16
+
+                CpRadio {
+                    label: "Rounded"
+                    checked: !Settings.squareCorners
+                    onClicked: Settings.squareCorners = false
+                }
+
+                CpRadio {
+                    label: "Square"
+                    checked: Settings.squareCorners
+                    onClicked: Settings.squareCorners = true
+                }
             }
 
             SubHeading { text: "Glass" }
@@ -1747,7 +1908,7 @@ FloatingWindow {
 
                         width: 40
                         height: 40
-                        radius: 4
+                        radius: Scheme.corner(4)
                         border.width: swatch.chosen ? 2 : 1
                         border.color: swatch.chosen ? Scheme.fieldFocus
                             : swatchArea.containsMouse ? Scheme.selectionBorder : Scheme.fieldBorder
@@ -1761,7 +1922,7 @@ FloatingWindow {
                         Rectangle {
                             anchors.fill: parent
                             anchors.margins: 3
-                            radius: 2
+                            radius: Scheme.corner(2)
                             color: swatch.modelData.color.length > 0 ? swatch.modelData.color : "transparent"
                             opacity: 0.75
                         }
@@ -1813,7 +1974,7 @@ FloatingWindow {
                         anchors.verticalCenter: parent.verticalCenter
                         width: parent.width
                         height: 4
-                        radius: 2
+                        radius: Scheme.corner(2)
                         color: Scheme.field
                         border.width: 1
                         border.color: Scheme.fieldBorder
@@ -1824,7 +1985,7 @@ FloatingWindow {
                         anchors.verticalCenter: parent.verticalCenter
                         width: 10
                         height: 20
-                        radius: 2
+                        radius: Scheme.corner(2)
                         border.width: 1
                         border.color: strengthArea.containsMouse || strengthArea.pressed
                             ? Scheme.fieldFocus : Scheme.fieldBorder
@@ -2101,7 +2262,7 @@ FloatingWindow {
                 Rectangle {
                     width: 96
                     height: 96
-                    radius: 6
+                    radius: Scheme.corner(6)
                     color: "#ffffff"
                     border.width: 1
                     border.color: Scheme.fieldBorder

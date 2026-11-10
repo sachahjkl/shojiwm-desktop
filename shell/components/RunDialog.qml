@@ -57,7 +57,7 @@ Item {
         y: parent.height - Theme.taskbarHeight - height - 12
         width: 420
         height: page.height + caption.height + 9
-        radius: 7
+        radius: Scheme.corner(7)
         border.width: 1
         border.color: "#b3000000"
         gradient: Gradient {
@@ -69,7 +69,7 @@ Item {
         Rectangle {
             anchors.fill: parent
             anchors.margins: 1
-            radius: 6
+            radius: Scheme.corner(6)
             color: "transparent"
             border.width: 1
             border.color: "#59ffffff"

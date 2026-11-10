@@ -23,7 +23,7 @@ Item {
         anchors.leftMargin: 2
         anchors.rightMargin: -2
         anchors.bottomMargin: -4
-        radius: 14
+        radius: Scheme.corner(14)
         color: "#55000000"
     }
 
@@ -31,7 +31,7 @@ Item {
         id: plate
 
         anchors.fill: parent
-        radius: 14
+        radius: Scheme.corner(14)
         border.width: 1
         border.color: "#cc0b1620"
         gradient: Gradient {
@@ -44,7 +44,7 @@ Item {
         Rectangle {
             anchors.fill: parent
             anchors.margins: 1
-            radius: 13
+            radius: Scheme.corner(13)
             color: "transparent"
             border.width: 1
             border.color: "#40ffffff"
@@ -55,7 +55,7 @@ Item {
             y: 2
             width: parent.width - 4
             height: parent.height * 0.45
-            radius: 12
+            radius: Scheme.corner(12)
             gradient: Gradient {
                 GradientStop { position: 0.0; color: "#38ffffff" }
                 GradientStop { position: 1.0; color: "#00ffffff" }

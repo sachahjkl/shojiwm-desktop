@@ -16,17 +16,35 @@ import "theme.js" as Theme
 Singleton {
     id: root
 
-    // The programs the places open. Change these to the programs you use.
-    /// The terminal: the command in SHOJIWM_WIN7_TERMINAL, run by a shell,
-    /// else kitty.
-    readonly property string terminal: Quickshell.env("SHOJIWM_WIN7_TERMINAL") || "kitty"
-    /// The task manager: the command in SHOJIWM_WIN7_TASK_MANAGER, run by a
-    /// shell, else Mission Center. Ctrl+Shift+Escape opens the same one.
-    readonly property string taskManager: Quickshell.env("SHOJIWM_WIN7_TASK_MANAGER") || "missioncenter"
-    /// The system monitor the CPU Meter's button opens: the command in
-    /// SHOJIWM_WIN7_SYSTEM_MONITOR, run by a shell, else btop in kitty.
-    readonly property string systemMonitor: Quickshell.env("SHOJIWM_WIN7_SYSTEM_MONITOR") || "kitty btop"
-    readonly property string fileManager: "thunar"
+    // The programs the desktop starts, each a command line run by a shell:
+    // the Control Panel's choice (Default Programs, Settings.programs), else
+    // the session's. The compositor's keys use the same (CompositorIpc).
+
+    /// The session's programs: SHOJIWM_WIN7_<NAME> of the session's
+    /// environment, else these defaults.
+    readonly property var sessionPrograms: ({
+        terminal: Quickshell.env("SHOJIWM_WIN7_TERMINAL") || "kitty",
+        fileManager: Quickshell.env("SHOJIWM_WIN7_FILE_MANAGER") || "thunar",
+        taskManager: Quickshell.env("SHOJIWM_WIN7_TASK_MANAGER") || "inspecteur",
+        systemMonitor: Quickshell.env("SHOJIWM_WIN7_SYSTEM_MONITOR") || "inspecteur --section performance",
+        clipboard: Quickshell.env("SHOJIWM_WIN7_CLIPBOARD") || "",
+        screenshot: Quickshell.env("SHOJIWM_WIN7_SCREENSHOT") || "grim - | wl-copy --type image/png"
+    })
+
+    /// The command of a program now, by its key.
+    function program(key) {
+        var chosen = Settings.programs[key];
+        return chosen && chosen.length > 0 ? chosen : root.sessionPrograms[key];
+    }
+
+    /// The terminal. Super+Enter opens it too.
+    readonly property string terminal: root.program("terminal")
+    /// The task manager. Ctrl+Shift+Escape opens the same one.
+    readonly property string taskManager: root.program("taskManager")
+    /// The system monitor the CPU Meter's button opens.
+    readonly property string systemMonitor: root.program("systemMonitor")
+    /// The file manager. Super+E opens it too.
+    readonly property string fileManager: root.program("fileManager")
     readonly property string browser: "chromium"
     /// The programs pinned to the Start menu, and the ones that keep a button
     /// on the taskbar while they are closed, left to right. Kept in
@@ -678,7 +696,8 @@ Singleton {
 
     /// Open one of the places of the Start menu in the file manager.
     function openPath(path) {
-        Quickshell.execDetached([root.fileManager, path]);
+        // (a command line: the shell gives it the folder as its last word)
+        Quickshell.execDetached(["sh", "-c", root.fileManager + ' "$1"', "sh", path]);
     }
 
     function run(command) {

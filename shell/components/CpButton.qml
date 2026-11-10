@@ -52,7 +52,7 @@ Rectangle {
         anchors.margins: 3
         visible: button.focused
         color: "transparent"
-        radius: 1
+        radius: Scheme.corner(1)
         border.width: 1
         border.color: Scheme.dark ? "#99ffffff" : "#99000000"
     }

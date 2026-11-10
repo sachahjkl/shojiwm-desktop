@@ -1,4 +1,5 @@
 import QtQuick
+import ".."
 import "../theme.js" as Theme
 
 // A button of the Windows 7 log-on screen (OK, Cancel): dark blue glass, a
@@ -14,7 +15,7 @@ Item {
 
     Rectangle {
         anchors.fill: parent
-        radius: 3
+        radius: Scheme.corner(3)
         border.width: 1
         border.color: "#0b2238"
         gradient: Gradient {
@@ -41,7 +42,7 @@ Item {
     Rectangle {
         anchors.fill: parent
         anchors.margins: 1
-        radius: 2
+        radius: Scheme.corner(2)
         color: "transparent"
         border.width: 1
         border.color: area.containsMouse ? "#b3d9eeff" : "#7fa8cdee"

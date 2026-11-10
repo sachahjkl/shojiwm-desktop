@@ -114,7 +114,7 @@ Item {
         height: launcher.headerHeight + (launcher.compact
             ? (panel.compactRowsShown > 0 ? panel.compactRowsShown * StartMenuState.rowHeight + Theme.menuPadding : 0)
             : launcher.listHeight + Theme.menuPadding)
-        radius: Scheme.popupRadius + 1
+        radius: Scheme.corner(Scheme.popupRadius + 1)
         color: Scheme.startGlassOutline
 
         // The click on the panel itself stays here.

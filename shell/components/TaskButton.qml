@@ -108,7 +108,7 @@ Item {
 
                 anchors.fill: parent
                 anchors.margins: 1
-                radius: Scheme.itemRadius - 1
+                radius: Scheme.corner(Scheme.itemRadius - 1)
                 antialiasing: true
                 opacity: shown ? 1 : 0
                 border.width: 1
@@ -138,7 +138,7 @@ Item {
         y: body.y + 2
         width: Math.max(0, (body.width - 4) * (button.urgent ? 1 : button.progress))
         height: body.height - 4
-        radius: Scheme.itemRadius - 1
+        radius: Scheme.corner(Scheme.itemRadius - 1)
         visible: button.urgent || button.progress >= 0
         opacity: 0.85
         gradient: Gradient {
@@ -229,7 +229,7 @@ Item {
         z: 2
         height: 14
         width: Math.max(14, badgeText.implicitWidth + 8)
-        radius: 7
+        radius: Scheme.corner(7)
         border.width: 1
         border.color: "#80000000"
         gradient: Gradient {

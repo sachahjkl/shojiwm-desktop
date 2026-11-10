@@ -6,7 +6,7 @@ import "../theme.js" as Theme
 // The network icon of the notification area, as Windows 7 draws it: a screen
 // for a wired connection, bars for a wireless one, a yellow mark when the
 // connection has no Internet, and a red mark when there is none. A click
-// opens the network panel.
+// opens the network panel, a right click its menu (Taskbar.qml).
 Item {
     id: icon
 
@@ -14,6 +14,8 @@ Item {
     property bool active: false
     readonly property bool hovered: area.containsMouse
     signal clicked
+    /// A right click; `at` is where the icon is in its window.
+    signal menuRequested(rect at)
 
     readonly property string glyph: Network.primary && Network.primary.type === "wifi"
         ? "network-wifi-" + Network.bars
@@ -64,7 +66,13 @@ Item {
         hoverEnabled: true
         // The tooltip waits for the next rest of the pointer.
         onContainsMouseChanged: if (!containsMouse) tipTimer.shown = false
-        onClicked: icon.clicked()
+        acceptedButtons: Qt.LeftButton | Qt.RightButton
+        onClicked: function (event) {
+            if (event.button === Qt.RightButton)
+                icon.menuRequested(Qt.rect(icon.mapToItem(null, 0, 0).x, icon.mapToItem(null, 0, 0).y, icon.width, icon.height));
+            else
+                icon.clicked();
+        }
     }
 
     // The tooltip of Windows 7: the network and its access.

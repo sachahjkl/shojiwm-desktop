@@ -5,8 +5,8 @@ import "../theme.js" as Theme
 
 // The speaker of the notification area: its waves show the level, a red
 // mark shows a muted output. A click opens the volume panel, the wheel
-// changes the volume, a middle click mutes, and a right click opens the
-// mixer.
+// changes the volume, a middle click mutes, and a right click opens its
+// menu (Taskbar.qml).
 Item {
     id: icon
 
@@ -14,6 +14,8 @@ Item {
     property bool active: false
     readonly property bool hovered: area.containsMouse
     signal clicked
+    /// A right click; `at` is where the icon is in its window.
+    signal menuRequested(rect at)
 
     implicitWidth: Theme.trayIconSize + 8
     implicitHeight: Theme.taskbarHeight - Theme.taskbarPadding * 2
@@ -49,7 +51,7 @@ Item {
             if (event.button === Qt.MiddleButton)
                 Audio.toggleMute();
             else if (event.button === Qt.RightButton)
-                Audio.openMixer();
+                icon.menuRequested(Qt.rect(icon.mapToItem(null, 0, 0).x, icon.mapToItem(null, 0, 0).y, icon.width, icon.height));
             else
                 icon.clicked();
         }

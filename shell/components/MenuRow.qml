@@ -128,7 +128,7 @@ Rectangle {
 
         Rectangle {
             anchors.fill: parent
-            radius: 2
+            radius: Scheme.corner(2)
             color: pinArea.containsMouse ? Scheme.hover : "transparent"
             border.width: pinArea.containsMouse ? 1 : 0
             border.color: Scheme.selectionBorder

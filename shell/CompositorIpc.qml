@@ -17,13 +17,29 @@ Singleton {
     readonly property string path: Quickshell.env("SHOJIWM_WIN7_SOCKET") || ""
     /// `false` when the shell was started some other way: the callers then
     /// fall back to what the shell can do on its own.
-    readonly property bool available: socket.connected
+    readonly property bool available: root.socket !== null && root.socket.connected
+    /// The current try's Socket (see `line`).
+    readonly property Socket socket: line.item as Socket
+
+    // Once the line is up, the compositor gets the settings it draws with.
+    // Not from the Socket's own connected change: a local socket can connect
+    // while the Loader still builds it, before `socket` names it, and what
+    // is sent then is lost.
+    onAvailableChanged: {
+        if (available) {
+            root.sendAnimations();
+            root.sendGlass();
+            root.sendCorners();
+            root.sendPrograms();
+            root.sendDisplay();
+        }
+    }
 
     function send(method, params) {
-        if (!socket.connected)
+        if (!root.available)
             return false;
-        socket.write(JSON.stringify({ method: method, params: params }) + "\n");
-        socket.flush();
+        root.socket.write(JSON.stringify({ method: method, params: params }) + "\n");
+        root.socket.flush();
         return true;
     }
 
@@ -33,21 +49,31 @@ Singleton {
     property var pending: ({})
 
     function request(method, params, callback) {
-        if (!socket.connected) {
+        if (!root.available) {
             callback(null);
             return;
         }
         root.lastId += 1;
         root.pending[root.lastId] = callback;
-        socket.write(JSON.stringify({ id: root.lastId, method: method, params: params }) + "\n");
-        socket.flush();
+        root.socket.write(JSON.stringify({ id: root.lastId, method: method, params: params }) + "\n");
+        root.socket.flush();
     }
+
+    /// The Alt+Tab panel while it is open: { output, selected, titleHeight,
+    /// cells: [{ x, y, width, title }] } in the output's logical pixels; null
+    /// when it is closed. AltTabTitles.qml draws the titles.
+    property var altTab: null
 
     function answer(line) {
         var message;
         try {
             message = JSON.parse(line);
         } catch (error) {
+            return;
+        }
+        // The compositor's own events: the Alt+Tab panel's titles (src/alt-tab.tsx).
+        if (message.event === "alt-tab") {
+            root.altTab = message.payload || null;
             return;
         }
         if (message.id === undefined || !root.pending[message.id])
@@ -76,6 +102,21 @@ Singleton {
         });
     }
 
+    /// The programs the compositor's keys start (src/programs.ts).
+    function sendPrograms() {
+        return send("programs", {
+            terminal: Apps.program("terminal"),
+            fileManager: Apps.program("fileManager"),
+            taskManager: Apps.program("taskManager"),
+            clipboard: Apps.program("clipboard"),
+            screenshot: Apps.program("screenshot")
+        });
+    }
+
+    function sendCorners() {
+        return send("corners", { square: Settings.squareCorners });
+    }
+
     function sendGlass() {
         return send("glass", {
             level: Settings.glassBlur,
@@ -89,35 +130,40 @@ Singleton {
         function onAnimationsChanged() { root.sendAnimations(); }
         function onAnimationSpeedChanged() { root.sendAnimations(); }
         function onGlassBlurChanged() { root.sendGlass(); }
+        function onSquareCornersChanged() { root.sendCorners(); }
+        function onProgramsChanged() { root.sendPrograms(); }
         function onGlassColorChanged() { root.sendGlass(); }
         function onGlassColorStrengthChanged() { root.sendGlass(); }
         function onDisplayChoicesChanged() { root.sendDisplay(); }
     }
 
 
-    Socket {
-        id: socket
+    // The line to the compositor. A Socket whose connection failed keeps
+    // its failed QLocalSocket, and setting `connected` again does not try
+    // again (Quickshell 0.3), so each try is a new Socket. The compositor can
+    // be reloaded, which closes its end, and its new socket may not listen
+    // yet: a lost or failed line is tried again each second.
+    Loader {
+        id: line
 
-        path: root.path
-        connected: root.path.length > 0
-        parser: SplitParser {
-            onRead: function (line) { root.answer(line); }
-        }
-        // The compositor can be reloaded, which closes its end.
-        onConnectedChanged: {
-            if (connected) {
-                root.sendAnimations();
-                root.sendGlass();
-                root.sendDisplay();
+        active: root.path.length > 0
+        sourceComponent: Socket {
+            path: root.path
+            connected: true
+            parser: SplitParser {
+                onRead: function (line) { root.answer(line); }
             }
-            else if (root.path.length > 0)
-                reconnect.restart();
         }
     }
 
+    // While the line is down, a new try each second.
     Timer {
-        id: reconnect
         interval: 1000
-        onTriggered: socket.connected = true
+        repeat: true
+        running: root.path.length > 0 && !root.available
+        onTriggered: {
+            line.active = false;
+            line.active = true;
+        }
     }
 }

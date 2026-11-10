@@ -1,0 +1,19 @@
+--- a/src/wayland/buffer/dmabuf.cpp
++++ b/src/wayland/buffer/dmabuf.cpp
+@@ -310,9 +310,15 @@
+ 	MANAGER = this;
+ 	this->initialize();
+ 
+-	if (this->isActive()) {
++	// get_default_feedback is version 4's: a compositor that offers version 3 (one with no
++	// render node) answers it with a protocol error. Without feedback, no dmabuf format is
++	// known and buffers fall back to shared memory.
++	if (this->isActive() && this->QtWayland::zwp_linux_dmabuf_v1::version() >= 4) {
+ 		qCDebug(logDmabuf) << "Requesting default dmabuf feedback...";
+ 		new LinuxDmabufFeedback(this->get_default_feedback());
++	} else if (this->isActive()) {
++		qCInfo(logDmabuf) << "linux-dmabuf version" << this->QtWayland::zwp_linux_dmabuf_v1::version()
++		                  << "has no feedback: buffers use shared memory";
+ 	}
+ }
+ 

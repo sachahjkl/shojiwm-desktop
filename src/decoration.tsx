@@ -33,13 +33,16 @@ import {
 import type { CompositionRenderable } from "shoji_wm/types";
 import { CAPTION_BUTTON, COLOR, FONT, FRAME } from "./theme";
 import { WIN_MAXIMIZED } from "./window-manager";
+import { corner, squareCorners } from "./corners";
 import { glassColour } from "./glass";
 
 /** Which picture a caption button shows. */
 type ButtonState = "" | "-hover" | "-press" | "-inactive";
 
+/** A caption button's picture; the square theme has its own set. */
 function buttonSrc(kind: string, state: ButtonState): string {
-  return `./assets/caption/${kind}${state}.svg`;
+  const folder = squareCorners() ? "caption-square" : "caption";
+  return `./assets/${folder}/${kind}${state}.svg`;
 }
 
 /** The pale label Windows shows under a caption button you rest on. */
@@ -54,7 +57,7 @@ const Tooltip = ({ text }: { text: string | ReadonlySignal<string> }) => (
     <Box
       style={{
         background: "#f7fbffee",
-        borderRadius: 3,
+        borderRadius: computed(() => corner(3)),
         paddingLeft: 7,
         paddingRight: 7,
         paddingY: 3,
@@ -277,8 +280,10 @@ export function aeroFrame(
 
   const paint = paintShader("./assets/frame.frag", {
     uniforms: {
-      radius_top: computed(() => (maximized() ? 0 : FRAME.radiusTop)),
-      radius_bottom: computed(() => (maximized() ? 0 : FRAME.radiusBottom)),
+      radius_top: computed(() => (maximized() ? 0 : corner(FRAME.radiusTop))),
+      radius_bottom: computed(() =>
+        maximized() ? 0 : corner(FRAME.radiusBottom),
+      ),
       outer_lines: computed(() => (maximized() ? 0 : 1)),
       sheen: computed(() => (focused() ? 1 : 0.55)),
       caption_h: captionHeight,
@@ -403,7 +408,9 @@ export function aeroFrame(
   return (
     <WindowBorder
       style={{
-        borderRadius: computed(() => (maximized() ? 0 : FRAME.radiusTop)),
+        borderRadius: computed(() =>
+          maximized() ? 0 : corner(FRAME.radiusTop),
+        ),
         boxShadow: shadow,
         background: "#00000000",
       }}

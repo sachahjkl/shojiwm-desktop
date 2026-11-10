@@ -12,7 +12,8 @@
 #   tools/screenshots.sh            # all of them
 #   KEEP=1 tools/screenshots.sh     # keep the session running at the end
 #
-# Override the Quickshell it uses with QUICKSHELL_FLAKE, and the compositor
+# The Quickshell is this flake's (a fix of its dmabuf code: see flake.nix);
+# override it with QUICKSHELL_FLAKE, and the compositor
 # with SHOJIWM_FLAKE (a local clone: SHOJIWM_FLAKE=path:/src/ShojiWM#default).
 # The default is the integration branch of the fork, which carries what this
 # configuration uses before upstream has it (labels' textShadow).
@@ -27,13 +28,15 @@ if [ "${1:-}" != "--inner" ]; then
     "nixpkgs#xorg-server" \
     "nixpkgs#xdotool" \
     "nixpkgs#imagemagick" \
-    "${QUICKSHELL_FLAKE:-nixpkgs#quickshell}" \
+    "${QUICKSHELL_FLAKE:-path:$repo#quickshell}" \
     "nixpkgs#foot" \
     "nixpkgs#dbus" \
     "nixpkgs#copyq" \
     "nixpkgs#dconf" \
     "nixpkgs#glib" \
-    -c bash "${BASH_SOURCE[0]}" --inner
+    -c env -u DBUS_SESSION_BUS_ADDRESS -u WAYLAND_DISPLAY -u DISPLAY \
+    -u SHOJIWM_SOCKET -u SHOJIWM_WIN7_KEYS -u SHOJIWM_WIN7_SOCKET \
+    bash "${BASH_SOURCE[0]}" --inner
 fi
 
 if [ -z "${DBUS_SESSION_BUS_ADDRESS:-}" ]; then
@@ -81,6 +84,10 @@ LOCALE_ARCHIVE="$(nix build --no-link --print-out-paths "nixpkgs#glibcLocales")/
 export LOCALE_ARCHIVE
 export LANG=en_GB.UTF-8
 export HOME="$work"
+# A made-up account, so the pictures show no one's name or picture: the
+# shell reads the account's full name (getent) and AccountsService's
+# picture by $USER, and this one has neither.
+export USER=alex LOGNAME=alex
 export XDG_CONFIG_HOME="$work/.config"
 export XDG_STATE_HOME="$work/.local/state"
 export XDG_DATA_HOME="$work/.local/share"
@@ -102,7 +109,8 @@ done
 
 data_dirs="$foot_share"
 for path in $icons; do data_dirs="$data_dirs:$path/share"; done
-export XDG_DATA_DIRS="$data_dirs:${XDG_DATA_DIRS:-/usr/share}"
+# Only these: the caller's would list the programs installed on its machine.
+export XDG_DATA_DIRS="$data_dirs"
 
 # ---------------------------------------------------------------------------
 # The configuration under test
@@ -123,7 +131,8 @@ cat >"$XDG_CONFIG_HOME/shojiwm/settings.json" <<'JSON'
 {
   "startPinned": ["foot.desktop", "footclient.desktop"],
   "taskbarPinned": ["foot.desktop", "footclient.desktop"],
-  "taskbarCompact": true
+  "taskbarCompact": true,
+  "trayHidden": ["CopyQ_copyq"]
 }
 JSON
 
@@ -384,7 +393,7 @@ sleep 2
 say "the hidden notification-area icons"
 # A new icon is hidden, as on Windows 7: the arrow left of the clock opens
 # the popover that holds it.
-xdotool mousemove --window "$window" $((WIDTH - 118)) "$bar_y"
+xdotool mousemove --window "$window" $((WIDTH - 245)) "$bar_y"
 sleep 1
 xdotool click 1
 sleep 2
@@ -394,13 +403,13 @@ alive "tray-overflow"
 say "the notification area menu"
 # A right click on the icon in the popover; the pointer then rests on the
 # menu, as a hand would.
-xdotool mousemove --window "$window" $((WIDTH - 140)) $((HEIGHT - 75))
+xdotool mousemove --window "$window" $((WIDTH - 251)) $((HEIGHT - 73))
 sleep 0.3
-xdotool mousemove --window "$window" $((WIDTH - 132)) $((HEIGHT - 83))
+xdotool mousemove --window "$window" $((WIDTH - 243)) $((HEIGHT - 81))
 sleep 0.5
 xdotool click 3
 sleep 0.5
-xdotool mousemove --window "$window" $((WIDTH - 132)) $((HEIGHT - 110))
+xdotool mousemove --window "$window" $((WIDTH - 243)) $((HEIGHT - 110))
 sleep 2
 shot "tray-menu"
 alive "tray-menu"
@@ -558,6 +567,6 @@ detail taskbar-thumbnail taskbar-right $((WIDTH - 190)) 756 190 44 5
 detail taskbar-thumbnail thumbnail-corner 2 616 40 40
 detail alt-tab alt-tab-corner 448 316 48 48
 detail jump-list jump-list-corner 40 688 60 40 7
-detail tray-menu tray-menu-corner $((WIDTH - 220)) 608 60 40 7
+detail tray-menu tray-menu-corner $((WIDTH - 335)) 640 60 40 7
 
 say "done. Pictures are in assets/site"

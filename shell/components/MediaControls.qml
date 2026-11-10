@@ -34,7 +34,7 @@ Column {
         Rectangle {
             width: 40
             height: 40
-            radius: 2
+            radius: Scheme.corner(2)
             color: Scheme.dark ? "#33ffffff" : "#1a2c4a66"
             border.width: 1
             border.color: Scheme.fieldBorder

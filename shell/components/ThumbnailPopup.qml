@@ -72,7 +72,7 @@ PopupWindow {
     Rectangle {
         anchors.fill: parent
         anchors.margins: 1
-        radius: Math.max(0, Scheme.popupRadius - 1)
+        radius: Scheme.corner(Math.max(0, Scheme.popupRadius - 1))
         color: "transparent"
         border.width: 1
         border.color: Scheme.popupInnerLine
@@ -204,7 +204,7 @@ PopupWindow {
                     anchors.topMargin: 1
                     width: 20
                     height: 17
-                    radius: 3
+                    radius: Scheme.corner(3)
                     visible: card.hovered
                     border.width: 1
                     border.color: closeArea.containsMouse ? "#7a1a12" : "transparent"
@@ -240,6 +240,7 @@ PopupWindow {
 
                     // The live picture, when the compositor can hand one over.
                     Loader {
+                        id: live
                         anchors.fill: parent
                         anchors.margins: 1
                         active: Theme.liveThumbnails
@@ -251,11 +252,13 @@ PopupWindow {
                         }
                     }
 
-                    // Otherwise the program's icon, in the middle of the card.
+                    // Otherwise, and until its first picture, the program's icon
+                    // in the middle of the card: a capture that never delivers
+                    // one (a compositor drawing in software) leaves no blank card.
                     ShellIcon {
                         anchors.centerIn: parent
                         implicitSize: 32
-                        visible: !Theme.liveThumbnails
+                        visible: !Theme.liveThumbnails || !(live.item as ScreencopyView) || !(live.item as ScreencopyView).hasContent
                         source: card.modelData
                             ? Apps.iconFor(card.modelData.appId) : ""
                     }

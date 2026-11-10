@@ -5,13 +5,15 @@ import "../theme.js" as Theme
 // The bell of the notification area: the notifications of this session. A
 // red count shows the ones not seen yet; a slashed bell shows Do not
 // disturb. A click opens the notification panel, a middle click switches
-// Do not disturb.
+// Do not disturb, a right click opens its menu (Taskbar.qml).
 Item {
     id: icon
 
     property bool active: false
     readonly property bool hovered: area.containsMouse
     signal clicked
+    /// A right click; `at` is where the icon is in its window.
+    signal menuRequested(rect at)
 
     implicitWidth: Theme.trayIconSize + 8
     implicitHeight: Theme.taskbarHeight - Theme.taskbarPadding * 2
@@ -67,10 +69,12 @@ Item {
         id: area
         anchors.fill: parent
         hoverEnabled: true
-        acceptedButtons: Qt.LeftButton | Qt.MiddleButton
+        acceptedButtons: Qt.LeftButton | Qt.MiddleButton | Qt.RightButton
         onClicked: function (event) {
             if (event.button === Qt.MiddleButton)
                 NotificationHistory.setDoNotDisturb(!NotificationHistory.doNotDisturb);
+            else if (event.button === Qt.RightButton)
+                icon.menuRequested(Qt.rect(icon.mapToItem(null, 0, 0).x, icon.mapToItem(null, 0, 0).y, icon.width, icon.height));
             else
                 icon.clicked();
         }

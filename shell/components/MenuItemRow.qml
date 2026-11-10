@@ -20,6 +20,9 @@ Item {
     /// A check box or a radio button in front of the label.
     property bool checkable: false
     property bool checked: false
+    /// Keep the column of the icon and the check mark, empty on this line,
+    /// so its label lines up with lines that have one.
+    property bool gutter: false
     readonly property bool hovered: area.containsMouse
 
     signal activated
@@ -72,7 +75,7 @@ Item {
             anchors.verticalCenter: parent.verticalCenter
             width: 16
             horizontalAlignment: Text.AlignHCenter
-            visible: row.checkable && row.icon.length === 0
+            visible: (row.checkable || row.gutter) && row.icon.length === 0
             text: row.checked ? "\u2714" : ""
             color: Scheme.text
             font.family: Theme.fontFamily
@@ -91,7 +94,7 @@ Item {
         Text {
             anchors.verticalCenter: parent.verticalCenter
             width: Math.max(0, content.width
-                - (iconImage.visible || row.checkable ? 16 + content.spacing : 0))
+                - (iconImage.visible || row.checkable || row.gutter ? 16 + content.spacing : 0))
             text: row.label
             color: row.heading ? Scheme.menuHeading : Scheme.text
             opacity: row.itemEnabled ? 1 : 0.45
@@ -135,7 +138,7 @@ Item {
 
         Rectangle {
             anchors.fill: parent
-            radius: 2
+            radius: Scheme.corner(2)
             color: pinArea.containsMouse ? Scheme.hover : "transparent"
             border.width: pinArea.containsMouse ? 1 : 0
             border.color: Scheme.selectionBorder

@@ -9,12 +9,18 @@
   pkgs,
   module,
 }: let
-  # A session that only leaves a mark.
+  # A session that only leaves a mark, and only when its arguments reach it
+  # whole, as uwsm's do: greetd joins the command's words before its shell
+  # splits them.
   session =
     (pkgs.writeTextDir "share/wayland-sessions/marker.desktop" ''
       [Desktop Entry]
       Name=Marker
-      Exec=${pkgs.writeShellScript "marker" "touch /tmp/session-started; exec sleep infinity"}
+      Exec=${pkgs.writeShellScript "marker" ''
+        [ "$*" = "start -e marker.desktop" ] || exit 1
+        touch /tmp/session-started
+        exec sleep infinity
+      ''} start -e marker.desktop
       DesktopNames=Marker
       Type=Application
     '')

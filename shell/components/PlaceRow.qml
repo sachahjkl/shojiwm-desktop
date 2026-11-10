@@ -30,7 +30,7 @@ Item {
         Rectangle {
             anchors.fill: parent
             anchors.margins: -1
-            radius: parent.radius + 1
+            radius: Scheme.corner(parent.radius + 1)
             color: "transparent"
             border.width: 1
             border.color: "#40000000"

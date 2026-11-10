@@ -26,6 +26,7 @@ import { aeroFrame } from "./decoration";
 import { createAltTab } from "./alt-tab";
 import { SHELL_SOCKET, createPeek } from "./peek";
 import { createZoom } from "./zoom";
+import { program } from "./programs";
 // The screens: SHOJIWM_WIN7_OUTPUTS and the Control Panel's choices.
 import "./display";
 import { layerGlassEffect, popupGlassEffect, windowGlassEffect } from "./glass";
@@ -42,22 +43,11 @@ import {
 // ---------------------------------------------------------------------------
 
 /**
- * The terminal, the file manager and the browser the keys start. The
- * terminal is the command in SHOJIWM_WIN7_TERMINAL, run by a shell, else
- * kitty.
+ * The browser the keys start. The terminal, the file manager, the task
+ * manager, the clipboard history and the screenshot are the Control Panel's
+ * choices (src/programs.ts).
  */
-const TERMINAL = COMPOSITOR.env.get("SHOJIWM_WIN7_TERMINAL") ?? "kitty";
-/** The task manager: SHOJIWM_WIN7_TASK_MANAGER, else Mission Center. */
-const TASK_MANAGER =
-  COMPOSITOR.env.get("SHOJIWM_WIN7_TASK_MANAGER") ?? "missioncenter";
-const FILE_MANAGER = ["thunar"];
 const BROWSER = ["chromium", "--ozone-platform-hint=auto"];
-
-/**
- * The clipboard history Super+V opens: the command in SHOJIWM_WIN7_CLIPBOARD,
- * else none.
- */
-const CLIPBOARD = COMPOSITOR.env.get("SHOJIWM_WIN7_CLIPBOARD") ?? "";
 
 /** Where the Quickshell shell lives, as a shell word. */
 const SHELL_PATH = "~/.config/shojiwm/shell";
@@ -124,7 +114,8 @@ COMPOSITOR.rendering.framePacing = "throughput";
 // ---------------------------------------------------------------------------
 
 const WINDOWS = new FloatingWindowManager();
-const ALT_TAB = createAltTab(WINDOWS);
+// (PEEK is read when the panel changes, after both are made)
+const ALT_TAB = createAltTab(WINDOWS, (titles) => PEEK.tell("alt-tab", titles));
 const PEEK = createPeek(WINDOWS);
 const ZOOM = createZoom();
 
@@ -176,49 +167,19 @@ function toggleStartMenu(): void {
   });
 }
 
-/**
- * Keys that start or close something act once per 600 ms: a keyboard that
- * sends a press again, or a key pressed twice by mistake, does it once. A
- * binding on release would miss a key let go after its modifier.
- */
-const SETTLE_MS = 600;
-function once(action: () => void): () => void {
-  let last = -Infinity;
-  return () => {
-    const now = Date.now();
-    if (now - last < SETTLE_MS) {
-      return;
-    }
-    last = now;
-    action();
-  };
-}
-
 COMPOSITOR.key.bind("start-menu", "Super", toggleStartMenu, {
   on: "release",
   within: 300,
 });
-COMPOSITOR.key.bind(
-  "terminal",
-  "Super+Return",
-  once(() => {
-    COMPOSITOR.process.spawn({ command: TERMINAL });
-  }),
-);
-COMPOSITOR.key.bind(
-  "files",
-  "Super+E",
-  once(() => {
-    COMPOSITOR.process.spawn({ command: FILE_MANAGER });
-  }),
-);
-COMPOSITOR.key.bind(
-  "browser",
-  "Super+B",
-  once(() => {
-    COMPOSITOR.process.spawn({ command: BROWSER });
-  }),
-);
+COMPOSITOR.key.bind("terminal", "Super+Return", () => {
+  COMPOSITOR.process.spawn({ command: program("terminal") });
+});
+COMPOSITOR.key.bind("files", "Super+E", () => {
+  COMPOSITOR.process.spawn({ command: program("fileManager") });
+});
+COMPOSITOR.key.bind("browser", "Super+B", () => {
+  COMPOSITOR.process.spawn({ command: BROWSER });
+});
 /** Ask the shell for "Shut Down Windows" on the current monitor. */
 function openShutdownDialog(): void {
   const monitor = WINDOWS.outputName() ?? "";
@@ -229,30 +190,22 @@ function openShutdownDialog(): void {
 
 // Alt+F4 closes the focused window; with none, as on the desktop, it asks
 // what the computer should do, as Windows 7 does.
-COMPOSITOR.key.bind(
-  "close-window",
-  "Alt+F4",
-  once(() => {
-    const window = WINDOWS.focusedWindow();
-    if (window) {
-      window.close();
-    } else {
-      openShutdownDialog();
-    }
-  }),
-);
+COMPOSITOR.key.bind("close-window", "Alt+F4", () => {
+  const window = WINDOWS.focusedWindow();
+  if (window) {
+    window.close();
+  } else {
+    openShutdownDialog();
+  }
+});
 // ShojiWM quits on Super+Shift+Q unless the configuration binds it: here it
 // closes the focused window, and the session ends from the power menu.
 COMPOSITOR.key.bind(
   "close-window-super",
   "Super+Shift+Q",
-  once(withFocused((window) => window.close())),
+  withFocused((window) => window.close()),
 );
-COMPOSITOR.key.bind(
-  "shutdown-dialog",
-  "Super+Shift+E",
-  once(openShutdownDialog),
-);
+COMPOSITOR.key.bind("shutdown-dialog", "Super+Shift+E", openShutdownDialog);
 COMPOSITOR.key.bind("switch-window", "Alt+Tab", () => ALT_TAB.open(1));
 COMPOSITOR.key.bind("switch-window-back", "Alt+Shift+Tab", () =>
   ALT_TAB.open(-1),
@@ -292,57 +245,37 @@ COMPOSITOR.key.bind(
   "Super+Right",
   withFocused((window) => WINDOWS.snapKey(window, "right")),
 );
-COMPOSITOR.key.bind(
-  "lock",
-  "Super+L",
-  once(() => {
-    COMPOSITOR.process.spawn({
-      command: `quickshell -p ${SHELL_PATH} ipc call lock lock`,
-    });
-  }),
-);
-// Print Screen and Ctrl+Print Screen: the command in SHOJIWM_WIN7_SCREENSHOT,
-// else the whole screen to the clipboard, as Windows 7 does. The variable is
-// read from the session's environment, so a new value needs a new session.
-const SCREENSHOT =
-  COMPOSITOR.env.get("SHOJIWM_WIN7_SCREENSHOT") ??
-  "grim - | wl-copy --type image/png";
+COMPOSITOR.key.bind("lock", "Super+L", () => {
+  COMPOSITOR.process.spawn({
+    command: `quickshell -p ${SHELL_PATH} ipc call lock lock`,
+  });
+});
+// Print Screen and Ctrl+Print Screen: the Control Panel's screenshot program,
+// by default the whole screen to the clipboard, as Windows 7 does.
 for (const [id, key] of [
   ["screenshot", "Print"],
   ["screenshot-ctrl", "Ctrl+Print"],
 ] as const) {
-  COMPOSITOR.key.bind(
-    id,
-    key,
-    once(() => {
-      COMPOSITOR.process.spawn({ command: SCREENSHOT });
-    }),
-  );
+  COMPOSITOR.key.bind(id, key, () => {
+    COMPOSITOR.process.spawn({ command: program("screenshot") });
+  });
 }
 // Super+X: the Start orb's right-click menu on the focused screen, the
 // power user's menu Windows opens with Win+X.
-COMPOSITOR.key.bind(
-  "admin-menu",
-  "Super+X",
-  once(() => {
-    const monitor = WINDOWS.outputName() ?? "";
-    COMPOSITOR.process.spawn({
-      command: `quickshell -p ${SHELL_PATH} ipc call adminmenu toggleOn "${monitor}"`,
-    });
-  }),
-);
+COMPOSITOR.key.bind("admin-menu", "Super+X", () => {
+  const monitor = WINDOWS.outputName() ?? "";
+  COMPOSITOR.process.spawn({
+    command: `quickshell -p ${SHELL_PATH} ipc call adminmenu toggleOn "${monitor}"`,
+  });
+});
 // Super+Shift+D: the shell's launcher, the Start menu's search in the middle
 // of the focused screen.
-COMPOSITOR.key.bind(
-  "launcher",
-  "Super+Shift+D",
-  once(() => {
-    const monitor = WINDOWS.outputName() ?? "";
-    COMPOSITOR.process.spawn({
-      command: `quickshell -p ${SHELL_PATH} ipc call launcher toggleOn "${monitor}"`,
-    });
-  }),
-);
+COMPOSITOR.key.bind("launcher", "Super+Shift+D", () => {
+  const monitor = WINDOWS.outputName() ?? "";
+  COMPOSITOR.process.spawn({
+    command: `quickshell -p ${SHELL_PATH} ipc call launcher toggleOn "${monitor}"`,
+  });
+});
 // More keys from SHOJIWM_WIN7_KEYS: a JSON object of shortcut to shell
 // command, for programs that would register a global shortcut through a
 // portal, for example {"Ctrl+Shift+ugrave": "papier toggle"}.
@@ -350,13 +283,9 @@ const EXTRA_KEYS = COMPOSITOR.env.get("SHOJIWM_WIN7_KEYS");
 if (EXTRA_KEYS) {
   const keys = JSON.parse(EXTRA_KEYS) as Record<string, string>;
   for (const [shortcut, command] of Object.entries(keys)) {
-    COMPOSITOR.key.bind(
-      `extra:${shortcut}`,
-      shortcut,
-      once(() => {
-        COMPOSITOR.process.spawn({ command });
-      }),
-    );
+    COMPOSITOR.key.bind(`extra:${shortcut}`, shortcut, () => {
+      COMPOSITOR.process.spawn({ command });
+    });
   }
 }
 
@@ -378,60 +307,41 @@ const NUMBER_ROW: readonly (readonly string[])[] = [
 NUMBER_ROW.forEach((keys, index) => {
   const number = index + 1;
   for (const key of keys) {
-    COMPOSITOR.key.bind(
-      `taskbar-${key}`,
-      `Super+${key}`,
-      once(() => {
-        COMPOSITOR.process.spawn({
-          command: `quickshell -p ${SHELL_PATH} ipc call taskbar activate ${number}`,
-        });
-      }),
-    );
-    COMPOSITOR.key.bind(
-      `taskbar-new-${key}`,
-      `Super+Shift+${key}`,
-      once(() => {
-        COMPOSITOR.process.spawn({
-          command: `quickshell -p ${SHELL_PATH} ipc call taskbar launchNew ${number}`,
-        });
-      }),
-    );
+    COMPOSITOR.key.bind(`taskbar-${key}`, `Super+${key}`, () => {
+      COMPOSITOR.process.spawn({
+        command: `quickshell -p ${SHELL_PATH} ipc call taskbar activate ${number}`,
+      });
+    });
+    COMPOSITOR.key.bind(`taskbar-new-${key}`, `Super+Shift+${key}`, () => {
+      COMPOSITOR.process.spawn({
+        command: `quickshell -p ${SHELL_PATH} ipc call taskbar launchNew ${number}`,
+      });
+    });
   }
 });
 
-// Super+V: the clipboard history, SHOJIWM_WIN7_CLIPBOARD (for example
-// "papier toggle"). Without it, the key does nothing.
-if (CLIPBOARD) {
-  COMPOSITOR.key.bind(
-    "clipboard-history",
-    "Super+V",
-    once(() => {
-      COMPOSITOR.process.spawn({ command: CLIPBOARD });
-    }),
-  );
-}
+// Super+V: the clipboard history the Control Panel chooses (for example
+// "papier toggle"). Without one, the key does nothing.
+COMPOSITOR.key.bind("clipboard-history", "Super+V", () => {
+  const command = program("clipboard");
+  if (command) {
+    COMPOSITOR.process.spawn({ command });
+  }
+});
 
 // Super+R: the Run dialog, above the focused screen's Start button, with
 // its history.
-COMPOSITOR.key.bind(
-  "run",
-  "Super+R",
-  once(() => {
-    const monitor = WINDOWS.outputName() ?? "";
-    COMPOSITOR.process.spawn({
-      command: `quickshell -p ${SHELL_PATH} ipc call run toggleOn "${monitor}"`,
-    });
-  }),
-);
+COMPOSITOR.key.bind("run", "Super+R", () => {
+  const monitor = WINDOWS.outputName() ?? "";
+  COMPOSITOR.process.spawn({
+    command: `quickshell -p ${SHELL_PATH} ipc call run toggleOn "${monitor}"`,
+  });
+});
 
 // Ctrl+Shift+Escape: the task manager, btop in the terminal.
-COMPOSITOR.key.bind(
-  "task-manager",
-  "Ctrl+Shift+Escape",
-  once(() => {
-    COMPOSITOR.process.spawn({ command: TASK_MANAGER });
-  }),
-);
+COMPOSITOR.key.bind("task-manager", "Ctrl+Shift+Escape", () => {
+  COMPOSITOR.process.spawn({ command: program("taskManager") });
+});
 
 // The media keys: the volume of the default output (the speaker in the
 // notification area follows it), the microphone, and the player through
@@ -454,7 +364,7 @@ for (const [key, command] of Object.entries(MEDIA_KEYS)) {
   COMPOSITOR.key.bind(
     `media:${key}`,
     key,
-    key.endsWith("Volume") ? action : once(action),
+    key.endsWith("Volume") ? action : action,
   );
 }
 

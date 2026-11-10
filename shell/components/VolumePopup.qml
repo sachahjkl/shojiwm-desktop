@@ -54,7 +54,7 @@ PopupWindow {
     Rectangle {
         anchors.fill: parent
         anchors.margins: 1
-        radius: Math.max(0, Scheme.popupRadius - 1)
+        radius: Scheme.corner(Math.max(0, Scheme.popupRadius - 1))
         color: "transparent"
         border.width: 1
         border.color: Scheme.popupInnerLine
@@ -177,7 +177,7 @@ PopupWindow {
                 anchors.topMargin: 5
                 anchors.bottomMargin: 5
                 width: 5
-                radius: 2
+                radius: Scheme.corner(2)
                 color: Scheme.dark ? "#1a232c" : "#e8edf2"
                 border.width: 1
                 border.color: Scheme.fieldBorder
@@ -188,7 +188,7 @@ PopupWindow {
                     anchors.bottom: parent.bottom
                     anchors.margins: 1
                     height: Math.max(0, (parent.height - 2) * slider.fraction)
-                    radius: 1
+                    radius: Scheme.corner(1)
                     color: Audio.muted ? Scheme.placeholder : "#2fb13f"
                 }
             }
@@ -199,7 +199,7 @@ PopupWindow {
                 y: track.y + (track.height - 2) * (1 - slider.fraction) + 1 - height / 2
                 width: 22
                 height: 10
-                radius: 2
+                radius: Scheme.corner(2)
                 border.width: 1
                 border.color: sliderArea.pressed || sliderArea.containsMouse
                     ? Scheme.fieldFocus : Scheme.fieldBorder
@@ -276,7 +276,7 @@ PopupWindow {
         anchors.bottom: parent.bottom
         anchors.margins: 1
         height: 28
-        radius: Math.max(0, Scheme.popupRadius - 1)
+        radius: Scheme.corner(Math.max(0, Scheme.popupRadius - 1))
         color: Scheme.dark ? "#33000000" : "#80ffffff"
 
         Rectangle {

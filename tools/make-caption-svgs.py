@@ -2,7 +2,9 @@
 """Draw the caption buttons from the measurements.
 
 Run with `python3 -I tools/make-caption-svgs.py`. It writes
-`assets/caption/*.svg`, one file per button and state. Every number here comes
+`assets/caption/*.svg`, one file per button and state, and the same with
+square corners in `assets/caption-square/` for the square variant of the
+theme. Every number here comes
 from `docs/aero-measurements.md`; change a number there and in the tables
 below, then run this again.
 
@@ -18,7 +20,9 @@ along its bottom. The close button also carries the dark line on its right.
 import os
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-OUT = os.path.join(os.path.dirname(HERE), "assets", "caption")
+ASSETS = os.path.join(os.path.dirname(HERE), "assets")
+# The folder of each variant, and whether its group has rounded corners.
+VARIANTS = (("caption", True), ("caption-square", False))
 
 H = 18  # group height, the last row being the dark border
 FILL_H = 17  # rows 0..16
@@ -320,11 +324,11 @@ GLYPHS = {
 }
 
 
-def button(name, cell_w, stops, line_colour, glyph, edge, glyph_colours):
+def button(name, cell_w, stops, line_colour, glyph, edge, glyph_colours, round_group):
     """One caption button: the dark lines, the fill, the edges, the glyph."""
     right_line = 1 if glyph == "close" else 0
-    left = glyph == "min"
-    right = glyph == "close"
+    left = round_group and glyph == "min"
+    right = round_group and glyph == "close"
     total_w = 1 + cell_w + right_line
     edge_colour, edge_alpha = edge
     glyph_line, glyph_fill = glyph_colours
@@ -368,7 +372,6 @@ def button(name, cell_w, stops, line_colour, glyph, edge, glyph_colours):
 
 
 def main():
-    os.makedirs(OUT, exist_ok=True)
     on = (GLYPH_LINE, GLYPH_FILL)
     off = (GLYPH_LINE_OFF, GLYPH_FILL_OFF)
     files = {
@@ -389,12 +392,15 @@ def main():
         "close-press": ("close", 46, RED_PRESS, RED_LINE, EDGE, on),
         "close-inactive": ("close", 46, RED_OFF, OFF_LINE, EDGE_OFF, off),
     }
-    for name, (glyph, width, stops, line, edge, colours) in files.items():
-        svg = button(name, width, stops, line, glyph, edge, colours)
-        path = os.path.join(OUT, name + ".svg")
-        with open(path, "w") as handle:
-            handle.write(svg + "\n")
-        print("wrote", os.path.relpath(path, os.path.dirname(HERE)))
+    for folder, round_group in VARIANTS:
+        out = os.path.join(ASSETS, folder)
+        os.makedirs(out, exist_ok=True)
+        for name, (glyph, width, stops, line, edge, colours) in files.items():
+            svg = button(name, width, stops, line, glyph, edge, colours, round_group)
+            path = os.path.join(out, name + ".svg")
+            with open(path, "w") as handle:
+                handle.write(svg + "\n")
+            print("wrote", os.path.relpath(path, os.path.dirname(HERE)))
 
 
 if __name__ == "__main__":

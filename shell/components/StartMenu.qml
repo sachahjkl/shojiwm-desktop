@@ -216,7 +216,7 @@ Item {
 
         Rectangle {
             anchors.fill: parent
-            radius: Scheme.menuRadius + 1
+            radius: Scheme.corner(Scheme.menuRadius + 1)
             color: Scheme.startGlassOutline
         }
 
@@ -564,13 +564,13 @@ Item {
         Rectangle {
             anchors.fill: parent
             anchors.margins: -2
-            radius: Scheme.popupRadius + 2
+            radius: Scheme.corner(Scheme.popupRadius + 2)
             color: "#99ffffff"
 
             Rectangle {
                 anchors.fill: parent
                 anchors.margins: 1
-                radius: Scheme.popupRadius + 1
+                radius: Scheme.corner(Scheme.popupRadius + 1)
                 color: "#a6000000"
             }
         }

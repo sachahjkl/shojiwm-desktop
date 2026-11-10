@@ -17,6 +17,7 @@
  */
 
 import {
+  COMPOSITOR,
   LayerPopups,
   Layers,
   Solid,
@@ -36,6 +37,8 @@ import {
   WIN_RECT,
 } from "./window-manager";
 import { setAnimationSpeed, setAnimations } from "./motion";
+import { setSquareCorners } from "./corners";
+import { setPrograms } from "./programs";
 import { setGlassColour, setGlassLevel } from "./glass";
 import { type DisplayChoice, screens, setDisplayChoices } from "./display";
 import { serveShortcuts } from "./shortcuts";
@@ -66,12 +69,18 @@ function numberOf(value: MaybeSignal<number>): number {
 export interface Peek {
   /** The output composition while peeking, or null. */
   compose(output: OutputInfo): CompositionRenderable | null;
+  /** Pushes an event to the shell (its socket's clients). */
+  tell(event: string, payload: unknown): void;
 }
 
 export function createPeek(manager: FloatingWindowManager): Peek {
   const peeking = signal(false);
 
   const server = createIpcServer(SHELL_SOCKET);
+  // On a reload, close the socket and the shell's connection: the shell
+  // then connects to the new configuration's socket and sends its settings
+  // again. Left open, the old connection was read by no one.
+  COMPOSITOR.onDisable(() => server.close());
   // The GlobalShortcuts portal service binds its keys over this socket too.
   serveShortcuts(server);
   server.handle("peek", (params) => {
@@ -104,6 +113,18 @@ export function createPeek(manager: FloatingWindowManager): Peek {
       const choice = params as { colour?: unknown; strength?: unknown };
       setGlassColour(choice.colour, choice.strength);
     }
+    return true;
+  });
+  server.handle("corners", (params) => {
+    setSquareCorners(
+      typeof params === "object" &&
+        params !== null &&
+        (params as { square?: unknown }).square === true,
+    );
+    return true;
+  });
+  server.handle("programs", (params) => {
+    setPrograms(params);
     return true;
   });
   server.handle("screens", () => screens());
@@ -212,5 +233,10 @@ export function createPeek(manager: FloatingWindowManager): Peek {
     );
   }
 
-  return { compose };
+  return {
+    compose,
+    tell(event, payload) {
+      server.broadcast(event, payload);
+    },
+  };
 }

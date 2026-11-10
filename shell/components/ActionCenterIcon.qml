@@ -4,13 +4,15 @@ import "../theme.js" as Theme
 
 // The flag of the notification area, as Windows 7's Action Center: a red
 // mark when something failed, a yellow one for a warning. A click opens its
-// panel.
+// panel, a right click its menu (Taskbar.qml).
 Item {
     id: icon
 
     property bool active: false
     readonly property bool hovered: area.containsMouse
     signal clicked
+    /// A right click; `at` is where the icon is in its window.
+    signal menuRequested(rect at)
 
     implicitWidth: Theme.trayIconSize + 8
     implicitHeight: Theme.taskbarHeight - Theme.taskbarPadding * 2
@@ -53,6 +55,12 @@ Item {
         id: area
         anchors.fill: parent
         hoverEnabled: true
-        onClicked: icon.clicked()
+        acceptedButtons: Qt.LeftButton | Qt.RightButton
+        onClicked: function (event) {
+            if (event.button === Qt.RightButton)
+                icon.menuRequested(Qt.rect(icon.mapToItem(null, 0, 0).x, icon.mapToItem(null, 0, 0).y, icon.width, icon.height));
+            else
+                icon.clicked();
+        }
     }
 }

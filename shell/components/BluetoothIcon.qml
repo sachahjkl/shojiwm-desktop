@@ -5,7 +5,7 @@ import "../theme.js" as Theme
 
 // The Bluetooth icon of the notification area: a rune on blue glass, grey
 // while Bluetooth is off. It shows only when there is an adapter. A click
-// opens the Bluetooth panel.
+// opens the Bluetooth panel, a right click its menu (Taskbar.qml).
 Item {
     id: icon
 
@@ -13,6 +13,8 @@ Item {
     property bool active: false
     readonly property bool hovered: area.containsMouse
     signal clicked
+    /// A right click; `at` is where the icon is in its window.
+    signal menuRequested(rect at)
 
     readonly property var adapter: Bluetooth.defaultAdapter
 
@@ -45,6 +47,12 @@ Item {
         id: area
         anchors.fill: parent
         hoverEnabled: true
-        onClicked: icon.clicked()
+        acceptedButtons: Qt.LeftButton | Qt.RightButton
+        onClicked: function (event) {
+            if (event.button === Qt.RightButton)
+                icon.menuRequested(Qt.rect(icon.mapToItem(null, 0, 0).x, icon.mapToItem(null, 0, 0).y, icon.width, icon.height));
+            else
+                icon.clicked();
+        }
     }
 }

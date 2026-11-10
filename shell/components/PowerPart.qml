@@ -65,7 +65,7 @@ Item {
                 visible: part.glass
                 anchors.fill: parent
                 anchors.margins: 1
-                radius: Math.max(0, Scheme.buttonRadius - 1)
+                radius: Scheme.corner(Math.max(0, Scheme.buttonRadius - 1))
                 color: "transparent"
                 border.width: 1
                 border.color: part.pressed ? "#33ffffff" : part.hot ? "#99ffffff" : "#66ffffff"

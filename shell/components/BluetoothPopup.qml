@@ -101,7 +101,7 @@ PopupWindow {
     Rectangle {
         anchors.fill: parent
         anchors.margins: 1
-        radius: Math.max(0, Scheme.popupRadius - 1)
+        radius: Scheme.corner(Math.max(0, Scheme.popupRadius - 1))
         color: "transparent"
         border.width: 1
         border.color: Scheme.popupInnerLine
@@ -352,7 +352,7 @@ PopupWindow {
         anchors.bottom: parent.bottom
         anchors.margins: 1
         height: 28
-        radius: Math.max(0, Scheme.popupRadius - 1)
+        radius: Scheme.corner(Math.max(0, Scheme.popupRadius - 1))
         color: Scheme.dark ? "#33000000" : "#80ffffff"
 
         Rectangle {

@@ -35,7 +35,7 @@ Item {
         id: field
 
         anchors.fill: parent
-        radius: 2
+        radius: Scheme.corner(2)
         color: Scheme.field
         border.width: 1
         border.color: fieldArea.containsMouse || combo.open ? Scheme.fieldFocus : Scheme.fieldBorder

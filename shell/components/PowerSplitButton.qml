@@ -1,4 +1,5 @@
 import QtQuick
+import ".."
 
 // The red power button of the Windows 7 log-on screen, and the arrow joined
 // to its right that opens the other choices. Measured at 38 + 14 x 18 px at
@@ -33,7 +34,7 @@ Item {
     Rectangle {
         id: shape
         anchors.fill: parent
-        radius: 3
+        radius: Scheme.corner(3)
         color: "#2a0303"
         clip: true
 
@@ -42,7 +43,7 @@ Item {
             y: 1
             width: split.divider - 1
             height: parent.height - 2
-            radius: 2
+            radius: Scheme.corner(2)
             hot: mainArea.containsMouse
             down: mainArea.pressed
         }
@@ -52,7 +53,7 @@ Item {
             y: 1
             width: parent.width - split.divider - 2
             height: parent.height - 2
-            radius: 2
+            radius: Scheme.corner(2)
             hot: arrowArea.containsMouse
             down: arrowArea.pressed
         }
@@ -62,7 +63,7 @@ Item {
     Rectangle {
         anchors.fill: parent
         anchors.margins: 1
-        radius: 2
+        radius: Scheme.corner(2)
         color: "transparent"
         border.width: 1
         border.color: "#4dffdada"
