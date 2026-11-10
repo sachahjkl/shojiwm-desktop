@@ -78,6 +78,15 @@
         };
       };
 
+      # Quickshell with a fix the screenshots' session needs: it asked
+      # linux-dmabuf for version 4's default feedback whatever the version the
+      # compositor offers, and ShojiWM's nested backend on software rendering
+      # offers version 3 (no render node): a protocol error that ended the
+      # shell at the first window thumbnail.
+      quickshell = pkgs.quickshell.overrideAttrs (old: {
+        patches = (old.patches or []) ++ [./nix/quickshell-dmabuf-v3.patch];
+      });
+
       install = pkgs.writeShellApplication {
         name = "shojiwm-win7-install";
         runtimeInputs = [pkgs.coreutils];
@@ -195,7 +204,7 @@
         '';
     in {
       default = config;
-      inherit config icon-theme install portal;
+      inherit config icon-theme install portal quickshell;
     });
 
     apps = forAllSystems (system: {

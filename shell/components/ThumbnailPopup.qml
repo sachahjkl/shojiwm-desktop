@@ -240,6 +240,7 @@ PopupWindow {
 
                     // The live picture, when the compositor can hand one over.
                     Loader {
+                        id: live
                         anchors.fill: parent
                         anchors.margins: 1
                         active: Theme.liveThumbnails
@@ -251,11 +252,13 @@ PopupWindow {
                         }
                     }
 
-                    // Otherwise the program's icon, in the middle of the card.
+                    // Otherwise, and until its first picture, the program's icon
+                    // in the middle of the card: a capture that never delivers
+                    // one (a compositor drawing in software) leaves no blank card.
                     ShellIcon {
                         anchors.centerIn: parent
                         implicitSize: 32
-                        visible: !Theme.liveThumbnails
+                        visible: !Theme.liveThumbnails || !(live.item as ScreencopyView) || !(live.item as ScreencopyView).hasContent
                         source: card.modelData
                             ? Apps.iconFor(card.modelData.appId) : ""
                     }
