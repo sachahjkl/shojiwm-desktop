@@ -25,7 +25,7 @@ Singleton {
     readonly property var sessionPrograms: ({
         terminal: Quickshell.env("SHOJIWM_WIN7_TERMINAL") || "kitty",
         taskManager: Quickshell.env("SHOJIWM_WIN7_TASK_MANAGER") || "inspecteur",
-        systemMonitor: Quickshell.env("SHOJIWM_WIN7_SYSTEM_MONITOR") || "kitty btop",
+        systemMonitor: Quickshell.env("SHOJIWM_WIN7_SYSTEM_MONITOR") || "inspecteur --section performance",
         clipboard: Quickshell.env("SHOJIWM_WIN7_CLIPBOARD") || "",
         screenshot: Quickshell.env("SHOJIWM_WIN7_SCREENSHOT") || "grim - | wl-copy --type image/png"
     })

@@ -479,7 +479,8 @@ running one.
   it" takes `SHOJIWM_WIN7_TERMINAL`, `SHOJIWM_WIN7_TASK_MANAGER`,
   `SHOJIWM_WIN7_SYSTEM_MONITOR`, `SHOJIWM_WIN7_CLIPBOARD` or
   `SHOJIWM_WIN7_SCREENSHOT` from the session's environment (a NixOS
-  configuration's defaults), else kitty, inspecteur, btop in kitty, none,
+  configuration's defaults), else kitty, inspecteur, inspecteur on its Performance
+  section, none,
   and the whole screen to the clipboard.
 - **More keys:** set `SHOJIWM_WIN7_KEYS` to a JSON object of shortcut to
   shell command, for example `{"Ctrl+Shift+u": "papier toggle"}`, for
