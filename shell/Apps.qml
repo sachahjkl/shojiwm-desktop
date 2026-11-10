@@ -24,6 +24,7 @@ Singleton {
     /// environment, else these defaults.
     readonly property var sessionPrograms: ({
         terminal: Quickshell.env("SHOJIWM_WIN7_TERMINAL") || "kitty",
+        fileManager: Quickshell.env("SHOJIWM_WIN7_FILE_MANAGER") || "thunar",
         taskManager: Quickshell.env("SHOJIWM_WIN7_TASK_MANAGER") || "inspecteur",
         systemMonitor: Quickshell.env("SHOJIWM_WIN7_SYSTEM_MONITOR") || "inspecteur --section performance",
         clipboard: Quickshell.env("SHOJIWM_WIN7_CLIPBOARD") || "",
@@ -42,7 +43,8 @@ Singleton {
     readonly property string taskManager: root.program("taskManager")
     /// The system monitor the CPU Meter's button opens.
     readonly property string systemMonitor: root.program("systemMonitor")
-    readonly property string fileManager: "thunar"
+    /// The file manager. Super+E opens it too.
+    readonly property string fileManager: root.program("fileManager")
     readonly property string browser: "chromium"
     /// The programs pinned to the Start menu, and the ones that keep a button
     /// on the taskbar while they are closed, left to right. Kept in
@@ -694,7 +696,8 @@ Singleton {
 
     /// Open one of the places of the Start menu in the file manager.
     function openPath(path) {
-        Quickshell.execDetached([root.fileManager, path]);
+        // (a command line: the shell gives it the folder as its last word)
+        Quickshell.execDetached(["sh", "-c", root.fileManager + ' "$1"', "sh", path]);
     }
 
     function run(command) {

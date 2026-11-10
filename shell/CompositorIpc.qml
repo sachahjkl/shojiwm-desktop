@@ -106,6 +106,7 @@ Singleton {
     function sendPrograms() {
         return send("programs", {
             terminal: Apps.program("terminal"),
+            fileManager: Apps.program("fileManager"),
             taskManager: Apps.program("taskManager"),
             clipboard: Apps.program("clipboard"),
             screenshot: Apps.program("screenshot")

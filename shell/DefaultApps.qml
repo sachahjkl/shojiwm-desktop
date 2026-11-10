@@ -31,6 +31,8 @@ Singleton {
     readonly property var programKinds: [
         { key: "terminal", label: "Terminal", categories: ["TerminalEmulator"],
           note: "Super+Enter" },
+        { key: "fileManager", label: "File manager", categories: ["FileManager"],
+          note: "Super+E, and the places" },
         { key: "taskManager", label: "Task manager", categories: ["Monitor"],
           note: "Ctrl+Shift+Escape" },
         { key: "systemMonitor", label: "System monitor", categories: ["Monitor"],

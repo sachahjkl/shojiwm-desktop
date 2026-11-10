@@ -43,11 +43,10 @@ import {
 // ---------------------------------------------------------------------------
 
 /**
- * The file manager and the browser the keys start. The terminal, the task
+ * The browser the keys start. The terminal, the file manager, the task
  * manager, the clipboard history and the screenshot are the Control Panel's
  * choices (src/programs.ts).
  */
-const FILE_MANAGER = ["thunar"];
 const BROWSER = ["chromium", "--ozone-platform-hint=auto"];
 
 /** Where the Quickshell shell lives, as a shell word. */
@@ -176,7 +175,7 @@ COMPOSITOR.key.bind("terminal", "Super+Return", () => {
   COMPOSITOR.process.spawn({ command: program("terminal") });
 });
 COMPOSITOR.key.bind("files", "Super+E", () => {
-  COMPOSITOR.process.spawn({ command: FILE_MANAGER });
+  COMPOSITOR.process.spawn({ command: program("fileManager") });
 });
 COMPOSITOR.key.bind("browser", "Super+B", () => {
   COMPOSITOR.process.spawn({ command: BROWSER });
