@@ -31,6 +31,24 @@
 
     version = "0.1.0";
 
+    # The libraries the shell on AntiWebUI links (fonts, keyboard, Wayland,
+    # PAM, and xcb for its X11 backend) and the ones it loads at run time.
+    shellLibraries = pkgs: [
+      pkgs.fontconfig
+      pkgs.freetype
+      pkgs.libxkbcommon
+      pkgs.wayland
+      pkgs.pam
+      pkgs.xorg.libxcb
+    ];
+    shellRuntime = pkgs: [
+      pkgs.vulkan-loader
+      pkgs.libGL
+      pkgs.wayland
+      pkgs.libxkbcommon
+      pkgs.pipewire
+    ];
+
     # Only the files that are installed. Keeping the Nix and git files out
     # means a change to them does not rebuild the configuration.
     configSource = nixpkgs.lib.fileset.toSource {
@@ -144,6 +162,40 @@
         };
       };
 
+      # The shell on AntiWebUI (crates/shell): taskbar, Start menu, panels,
+      # Control Panel, lock screen and log-on screen. It replaces the Quickshell
+      # shell (shell/) surface by surface. wgpu and AntiWebUI load Vulkan, EGL,
+      # Wayland and PipeWire at run time: they are on its library path.
+      shell = pkgs.rustPlatform.buildRustPackage {
+        pname = "shojiwm-shell";
+        inherit version;
+        src = nixpkgs.lib.fileset.toSource {
+          root = ./crates/shell;
+          fileset = nixpkgs.lib.fileset.unions [
+            ./crates/shell/Cargo.toml
+            ./crates/shell/Cargo.lock
+            ./crates/shell/src
+          ];
+        };
+        cargoLock = {
+          lockFile = ./crates/shell/Cargo.lock;
+          allowBuiltinFetchGit = true;
+        };
+        nativeBuildInputs = [pkgs.pkg-config pkgs.makeWrapper];
+        buildInputs = shellLibraries pkgs;
+        postFixup = ''
+          wrapProgram "$out/bin/shojiwm-shell" \
+            --prefix LD_LIBRARY_PATH : ${nixpkgs.lib.makeLibraryPath (shellRuntime pkgs)}
+        '';
+        meta = {
+          description = "The desktop shell of shojiwm-win7, on AntiWebUI";
+          homepage = "https://github.com/sachahjkl/shojiwm-win7";
+          license = nixpkgs.lib.licenses.mit;
+          platforms = nixpkgs.lib.platforms.linux;
+          mainProgram = "shojiwm-shell";
+        };
+      };
+
       # The "Aero" icon theme, for the programs of the session (Thunar): the
       # desktop's icons. It inherits Oxygen and replaces what differs: the
       # yellow folder, the libraries (the folder with an emblem, as on the
@@ -204,7 +256,7 @@
         '';
     in {
       default = config;
-      inherit config icon-theme install portal quickshell;
+      inherit config icon-theme install portal quickshell shell;
     });
 
     apps = forAllSystems (system: {
@@ -248,6 +300,9 @@
 
       # The portal builds and passes its tests.
       inherit portal;
+
+      # The shell on AntiWebUI builds.
+      inherit (self.packages.${system}) shell;
 
       # The portal's Rust: clippy without warnings, and rustfmt's layout.
       portal-lint = portal.overrideAttrs (old: {
@@ -373,8 +428,13 @@
             pkgs.rustc
             pkgs.clippy
             pkgs.rustfmt
+            pkgs.pkg-config
           ]
+          ++ shellLibraries pkgs
           ++ self.checks.${system}.pre-commit.enabledPackages;
+
+        # What the shell loads at run time (shellRuntime), for `cargo run`.
+        LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath (shellRuntime pkgs);
 
         inherit (self.checks.${system}.pre-commit) shellHook;
       };
