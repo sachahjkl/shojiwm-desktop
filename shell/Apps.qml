@@ -517,6 +517,10 @@ Singleton {
 
     /// The programs started last, last first, that are still installed.
     readonly property var recentPrograms: {
+        // Read so the list is rebuilt once the entries have been scanned: at
+        // the shell's start byId finds none yet, and the list stayed empty
+        // until the next launch.
+        void DesktopEntries.applications.values;
         var list = [];
         for (var i = 0; i < root.recentProgramIds.length; i++) {
             var entry = DesktopEntries.byId(root.recentProgramIds[i]);
@@ -529,6 +533,8 @@ Singleton {
     /// The programs started most often, most first, leaving out the pinned
     /// ones and any that are no longer installed.
     readonly property var frequent: {
+        // (rebuilt once the entries have been scanned, as recentPrograms)
+        void DesktopEntries.applications.values;
         var counts = root.launchCounts;
         var pinnedIds = pinned.map(function (entry) {
             return entry.id;
