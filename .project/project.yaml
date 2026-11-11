@@ -11,7 +11,7 @@ topics:
   - "desktop"
   - "linux"
   - "nix"
-homepage: "https://sachahjkl.github.io/shojiwm-desktop/"
+homepage: "https://desktop.froment.software"
 source:
   provider: github
   namespace: "sachahjkl"

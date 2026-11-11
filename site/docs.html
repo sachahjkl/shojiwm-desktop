@@ -1,0 +1,698 @@
+<!doctype html>
+<html lang="en" data-look="aero">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Documentation: shojiwm-desktop</title>
+<meta name="description" content="How to install, use, configure and develop shojiwm-desktop, the desktop for the ShojiWM Wayland compositor.">
+<link rel="icon" type="image/svg+xml" href="logo.svg">
+<link rel="icon" type="image/png" sizes="512x512" href="logo.png">
+<link rel="apple-touch-icon" href="logo.png">
+<link rel="stylesheet" href="style.css">
+<script>try{if(localStorage.getItem("look")==="kernel")document.documentElement.dataset.look="kernel"}catch(e){}</script>
+<script src="site.js" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="top">
+<div class="wrap">
+<a class="brand" href="./"><img src="logo.svg" alt="" width="28" height="28">shojiwm-desktop</a>
+<nav class="nav" aria-label="Site">
+<a href="./">Overview</a>
+<a href="gallery.html">Gallery</a>
+<a href="docs.html" aria-current="page">Documentation</a>
+<a href="https://github.com/sachahjkl/shojiwm-desktop">GitHub</a>
+</nav>
+</div>
+</header>
+
+<div class="wrap docs">
+
+<nav class="toc" aria-labelledby="toc-title">
+<h2 id="toc-title">On this page</h2>
+<ol>
+<li><a href="#overview">Overview</a></li>
+<li><a href="#requirements">Requirements</a></li>
+<li><a href="#install">Install</a>
+<ol>
+<li><a href="#install-nixos">NixOS</a></li>
+<li><a href="#install-nix">Nix, without NixOS</a></li>
+<li><a href="#install-manual">Without Nix</a></li>
+</ol></li>
+<li><a href="#first-run">First run</a></li>
+<li><a href="#keys">Keys</a></li>
+<li><a href="#themes">Themes</a></li>
+<li><a href="#groups">Window groups</a></li>
+<li><a href="#shell">The shell</a>
+<ol>
+<li><a href="#surfaces">Surfaces</a></li>
+<li><a href="#commands">Commands</a></li>
+</ol></li>
+<li><a href="#configuration">Configuration</a>
+<ol>
+<li><a href="#settings">settings.json</a></li>
+<li><a href="#environment">Session environment</a></li>
+<li><a href="#more">Other files</a></li>
+</ol></li>
+<li><a href="#greeter">Log-on screen</a></li>
+<li><a href="#portal">Global shortcuts</a></li>
+<li><a href="#architecture">Architecture</a></li>
+<li><a href="#development">Development</a></li>
+<li><a href="#limits">Real limits</a></li>
+</ol>
+</nav>
+
+<main id="main" class="docs-body">
+
+<section aria-labelledby="overview">
+<h1>Documentation</h1>
+<h2 id="overview">Overview</h2>
+<p>shojiwm-desktop is a complete desktop for the <a href="https://github.com/bea4dev/ShojiWM">ShojiWM</a> Wayland
+  compositor. It has three parts:</p>
+<dl class="terms">
+<dt>The compositor configuration (<code>src/</code>, TypeScript)</dt>
+<dd>ShojiWM runs it from <code>~/.config/shojiwm</code>. It draws the window frames and manages the windows: placement,
+  Aero Snap, Alt+Tab, Aero Peek, screen zoom, window groups and the keys.</dd>
+<dt>The shell <code>shojiwm-shell</code> (<code>crates/shell/</code>, Rust)</dt>
+<dd>It draws everything that is not a window frame: the taskbar, the Start menu, the launcher, the notification area,
+  the desktop, the dialogs, the Control Panel, the lock screen and the log-on screen. It is built on
+  <a href="https://github.com/bea4dev/AntiWebUI">AntiWebUI</a>, a GPU-rendered native UI toolkit by bea4dev, the author
+  of ShojiWM.</dd>
+<dt>The portal (<code>portal/</code>, Rust, optional)</dt>
+<dd>An xdg-desktop-portal GlobalShortcuts backend, so that programs can bind global keys.</dd>
+</dl>
+<p>No file from Windows is copied, embedded or required. The artwork is original, except the colour icons, which are
+  built from KDE's Oxygen icons (LGPL-3.0-or-later).</p>
+</section>
+
+<section aria-labelledby="requirements">
+<h2 id="requirements">Requirements</h2>
+<ul>
+<li><strong>ShojiWM</strong> from the <code>integration</code> branch of
+  <a href="https://github.com/sachahjkl/ShojiWM/blob/integration/FORK.md">sachahjkl/ShojiWM</a>, installed and
+  registered as a session. The branch carries what upstream does not have yet: the <code>ext-data-control-v1</code>
+  global (clipboard history) and labels' <code>textShadow</code> (the caption titles).</li>
+<li><strong>A GPU driver with Vulkan or OpenGL.</strong> AntiWebUI renders with wgpu.</li>
+<li><strong>Fonts:</strong> Inter, else Noto Sans. The Kernel theme also uses JetBrainsMono Nerd Font
+  (<code>JetBrainsMono NF</code>) for its titles and clock.</li>
+<li><strong>An icon theme</strong> with an <code>application-x-executable</code> icon, such as Adwaita or Papirus.</li>
+<li><strong>fd</strong>, for the files that the Start menu and the launcher find.</li>
+<li><strong>dconf</strong> and a settings portal that reads it (xdg-desktop-portal-gtk), for light and dark in
+  programs. On NixOS, set <code>programs.dconf.enable = true</code>.</li>
+<li><strong>PAM</strong>: the lock screen checks the password with the <code>login</code> service
+  (<code>/etc/pam.d/login</code>).</li>
+<li>The default programs: <strong>kitty</strong> (terminal), <strong>Thunar</strong> (file manager),
+  <strong>Chromium</strong> (browser) and <a href="https://inspecteur.sacha.house">inspecteur</a> (task manager).
+  Control Panel › Default Programs, or the <a href="#environment">session environment</a>, chooses others.</li>
+</ul>
+<p>Optional: NetworkManager for the network panel, BlueZ for the Bluetooth panel, PipeWire with <code>wpctl</code> for
+  the volume, <code>playerctl</code> for the media keys, <a href="https://hokum.app">Hokum</a> for notifications, systemd
+  for the power actions and the Action Center.</p>
+</section>
+
+<section aria-labelledby="install">
+<h2 id="install">Install</h2>
+<p>The flake <code>github:sachahjkl/shojiwm-desktop</code> provides:</p>
+<div class="table-box"><table>
+<thead><tr><th>Output</th><th>What it is</th></tr></thead>
+<tbody>
+<tr><td><code>packages.&lt;system&gt;.default</code>, <code>.config</code></td><td class="wrap-ok">The configuration tree: <code>src</code>, <code>assets</code>, <code>shell</code> (pictures), <code>package.json</code>, <code>tsconfig.json</code>.</td></tr>
+<tr><td><code>packages.&lt;system&gt;.shell</code></td><td class="wrap-ok">The shell, <code>bin/shojiwm-shell</code>.</td></tr>
+<tr><td><code>packages.&lt;system&gt;.portal</code></td><td class="wrap-ok">The GlobalShortcuts portal, xdg-desktop-portal-shojiwm-desktop.</td></tr>
+<tr><td><code>packages.&lt;system&gt;.icon-theme</code></td><td class="wrap-ok">The icon theme "Aero": Oxygen with the desktop's folders and Recycle Bin, for the file manager.</td></tr>
+<tr><td><code>packages.&lt;system&gt;.install</code>, <code>apps.&lt;system&gt;.install</code></td><td class="wrap-ok">A command that copies the configuration tree into <code>~/.config/shojiwm</code>.</td></tr>
+<tr><td><code>nixosModules.greeter</code></td><td class="wrap-ok">The log-on screen through greetd: <code>services.shojiwm-desktop-greeter</code>.</td></tr>
+</tbody>
+</table></div>
+<p>Systems: <code>x86_64-linux</code> and <code>aarch64-linux</code>.</p>
+
+<h3 id="install-nixos">NixOS</h3>
+<p>Add the flake as an input of your system flake:</p>
+<pre><code>{
+  inputs.shojiwm-desktop = {
+    url = "github:sachahjkl/shojiwm-desktop";
+    inputs.nixpkgs.follows = "nixpkgs";
+  };
+}</code></pre>
+<p>Then, in a NixOS module that receives <code>inputs</code>:</p>
+<pre><code>{ inputs, pkgs, ... }: let
+  desktop = inputs.shojiwm-desktop.packages.${pkgs.stdenv.hostPlatform.system};
+in {
+  imports = [ inputs.shojiwm-desktop.nixosModules.greeter ];
+
+  # The shell: the compositor configuration starts `shojiwm-shell`.
+  environment.systemPackages = [ desktop.shell desktop.icon-theme pkgs.kdePackages.oxygen-icons pkgs.fd ];
+  programs.dconf.enable = true;
+
+  # Global shortcuts for programs such as OBS or Discord.
+  xdg.portal = {
+    extraPortals = [ desktop.portal ];
+    config.shojiwm."org.freedesktop.impl.portal.GlobalShortcuts" = "shojiwm-desktop";
+  };
+
+  # The log-on screen. Turn off the display manager you had.
+  services.displayManager.ly.enable = false;
+  services.shojiwm-desktop-greeter = {
+    enable = true;
+    user = "alice";
+    defaultSession = "shojiwm-uwsm";
+    mainScreen = "HDMI-A-1";
+    monitors = [
+      { output = "HDMI-A-1"; mode = "3840x2160@60"; position = "0x0"; scale = 1.875; }
+    ];
+  };
+}</code></pre>
+<p>Link the directories of <code>desktop.default</code> into <code>~/.config/shojiwm</code> with the tool that manages
+  your home files, or run the <code>install</code> app once (next section). Do not touch
+  <code>~/.config/shojiwm/node_modules</code>: ShojiWM manages it.</p>
+<p>The <a href="#greeter">log-on screen</a> section lists every option of the module.</p>
+
+<h3 id="install-nix">Nix, without NixOS</h3>
+<ol>
+<li>Install the shell into your profile:
+<pre><code>nix profile install github:sachahjkl/shojiwm-desktop#shell</code></pre></li>
+<li>Install the configuration into <code>~/.config/shojiwm</code>:
+<pre><code>nix run github:sachahjkl/shojiwm-desktop#install</code></pre>
+<p>The command replaces <code>src</code>, <code>assets</code> and <code>shell</code>, and copies
+  <code>package.json</code> and <code>tsconfig.json</code>. It does not touch <code>node_modules</code> or
+  <code>settings.json</code>.</p></li>
+<li>Log out and start the ShojiWM session, or press <kbd>Super</kbd>+<kbd>Shift</kbd>+<kbd>R</kbd> in a running one.</li>
+</ol>
+
+<h3 id="install-manual">Without Nix</h3>
+<ol>
+<li>Build the shell. It links fontconfig, freetype, libxkbcommon, wayland, PAM and libxcb, and loads Vulkan or OpenGL,
+  Wayland and PipeWire at run time.
+<pre><code>git clone https://github.com/sachahjkl/shojiwm-desktop.git
+cd shojiwm-desktop/crates/shell
+cargo build --release
+install -Dm755 target/release/shojiwm-shell ~/.local/bin/shojiwm-shell</code></pre></li>
+<li>Copy the configuration:
+<pre><code>cd ../..
+mkdir -p ~/.config/shojiwm
+rm -rf ~/.config/shojiwm/src ~/.config/shojiwm/assets ~/.config/shojiwm/shell
+cp -R src assets shell package.json tsconfig.json ~/.config/shojiwm/</code></pre></li>
+<li>Make sure that <code>~/.local/bin</code> is in the session's <code>PATH</code>, then start the ShojiWM session.</li>
+</ol>
+</section>
+
+<section aria-labelledby="first-run">
+<h2 id="first-run">First run</h2>
+<ol>
+<li>If <code>~/.config/shojiwm/node_modules/shoji_wm</code> does not exist, run ShojiWM's <code>init-config</code>
+  first. It creates that link.</li>
+<li>Log on to the ShojiWM session. The configuration starts <code>shojiwm-shell</code> once per session.</li>
+<li>The shell writes <code>~/.config/shojiwm/settings.json</code> with the defaults if the file does not exist.</li>
+<li>Tap <kbd>Super</kbd> to open the Start menu. Open Control Panel there to choose the theme, the background and the
+  programs.</li>
+<li>If the screens are wrong, open Control Panel › Screen Resolution, or set
+  <a href="#environment"><code>SHOJIWM_DESKTOP_OUTPUTS</code></a>.</li>
+</ol>
+<p>The compositor writes its log to <code>~/.local/state/shoji_wm/logs/latest.log</code>. After a change to
+  <code>src</code>, press <kbd>Super</kbd>+<kbd>Shift</kbd>+<kbd>R</kbd> to reload the configuration.</p>
+<p>Chromium and Firefox draw their own title bar by default. To give Chromium the theme's frame, right click its tab
+  strip and turn on <strong>Use system title bar and borders</strong>. Firefox has the same setting under
+  <strong>Customise toolbar › Title bar</strong>.</p>
+</section>
+
+<section aria-labelledby="keys">
+<h2 id="keys">Keys</h2>
+<div class="table-box"><table>
+<thead><tr><th>Key</th><th>Action</th></tr></thead>
+<tbody>
+<tr><td><kbd>Super</kbd> (tap)</td><td class="wrap-ok">Show or hide the Start menu.</td></tr>
+<tr><td><kbd>Super</kbd>+<kbd>Return</kbd></td><td class="wrap-ok">Terminal.</td></tr>
+<tr><td><kbd>Super</kbd>+<kbd>E</kbd></td><td class="wrap-ok">File manager.</td></tr>
+<tr><td><kbd>Super</kbd>+<kbd>B</kbd></td><td class="wrap-ok">Browser.</td></tr>
+<tr><td><kbd>Alt</kbd>+<kbd>F4</kbd></td><td class="wrap-ok">Close the focused window. On the desktop: Shut Down Windows.</td></tr>
+<tr><td><kbd>Super</kbd>+<kbd>Shift</kbd>+<kbd>E</kbd></td><td class="wrap-ok">Shut Down Windows.</td></tr>
+<tr><td><kbd>Alt</kbd>+<kbd>Tab</kbd>, <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>Tab</kbd></td><td class="wrap-ok">Switch window.</td></tr>
+<tr><td><kbd>Super</kbd>+<kbd>Up</kbd></td><td class="wrap-ok">Maximise.</td></tr>
+<tr><td><kbd>Super</kbd>+<kbd>Down</kbd></td><td class="wrap-ok">Restore a maximised window, else minimise.</td></tr>
+<tr><td><kbd>Super</kbd>+<kbd>Left</kbd>, <kbd>Right</kbd></td><td class="wrap-ok">Snap to that side. Again: to the next screen. From the other side: restore.</td></tr>
+<tr><td><kbd>Super</kbd>+<kbd>Shift</kbd>+<kbd>Left</kbd>, <kbd>Right</kbd></td><td class="wrap-ok">Move the window to the next screen in that direction.</td></tr>
+<tr><td><kbd>Super</kbd>+<kbd>Home</kbd></td><td class="wrap-ok">Minimise the other windows, then bring them back.</td></tr>
+<tr><td><kbd>Super</kbd>+<kbd>Ctrl</kbd>+<kbd>Left</kbd>, <kbd>Right</kbd></td><td class="wrap-ok">The previous or next tab in the focused window's group.</td></tr>
+<tr><td><kbd>Super</kbd>+<kbd>Ctrl</kbd>+<kbd>Down</kbd></td><td class="wrap-ok">Take the shown tab out of its group, as a window of its own.</td></tr>
+<tr><td><kbd>Print</kbd>, <kbd>Ctrl</kbd>+<kbd>Print</kbd></td><td class="wrap-ok">Screenshot. By default, the whole screen to the clipboard.</td></tr>
+<tr><td><kbd>Super</kbd>+<kbd>D</kbd>, <kbd>Super</kbd>+<kbd>M</kbd></td><td class="wrap-ok">Show the desktop, then put the windows back.</td></tr>
+<tr><td><kbd>Super</kbd>+<kbd>Shift</kbd>+<kbd>D</kbd></td><td class="wrap-ok">The launcher, on the focused screen.</td></tr>
+<tr><td><kbd>Super</kbd>+<kbd>L</kbd></td><td class="wrap-ok">Lock.</td></tr>
+<tr><td><kbd>Super</kbd>+drag</td><td class="wrap-ok">Move a window from any point on it.</td></tr>
+<tr><td><kbd>Super</kbd>+double click</td><td class="wrap-ok">Maximise, and again to restore.</td></tr>
+<tr><td><kbd>Super</kbd>+<kbd>Shift</kbd>+<kbd>R</kbd></td><td class="wrap-ok">Reload the configuration (built into ShojiWM).</td></tr>
+<tr><td><kbd>Super</kbd>+<kbd>Shift</kbd>+<kbd>Q</kbd></td><td class="wrap-ok">Close the focused window.</td></tr>
+<tr><td><kbd>Super</kbd>+<kbd>1</kbd> … <kbd>9</kbd></td><td class="wrap-ok">The taskbar button at that place: start it, show it, put it away, or show its next window.</td></tr>
+<tr><td><kbd>Super</kbd>+<kbd>Shift</kbd>+<kbd>1</kbd> … <kbd>9</kbd></td><td class="wrap-ok">Another instance of that button's program.</td></tr>
+<tr><td><kbd>Super</kbd>+<kbd>V</kbd></td><td class="wrap-ok">Clipboard history: the command that Default Programs names. None by default.</td></tr>
+<tr><td><kbd>Super</kbd>+<kbd>R</kbd></td><td class="wrap-ok">The Run dialog, on the focused screen, with its history. <kbd>Down</kbd> or <kbd>F4</kbd> opens the list.</td></tr>
+<tr><td><kbd>Super</kbd>+<kbd>X</kbd></td><td class="wrap-ok">The orb's menu (also a right click on the orb): terminals, tools, power actions.</td></tr>
+<tr><td><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Escape</kbd></td><td class="wrap-ok">Task manager.</td></tr>
+<tr><td><kbd>Super</kbd>+<kbd>Shift</kbd>+wheel</td><td class="wrap-ok">Zoom the screen around the pointer. <kbd>Super</kbd>+<kbd>Shift</kbd>+<kbd>0</kbd> resets it.</td></tr>
+<tr><td>Volume, mute, player keys</td><td class="wrap-ok">Volume of the default output and microphone mute (<code>wpctl</code>), the player (<code>playerctl</code>).</td></tr>
+</tbody>
+</table></div>
+<p>On an AZERTY keyboard, the digit row works for <kbd>Super</kbd>+<kbd>1</kbd> … <kbd>9</kbd> too. To add keys, see
+  <a href="#environment"><code>SHOJIWM_DESKTOP_KEYS</code></a>.</p>
+</section>
+
+<section aria-labelledby="themes">
+<h2 id="themes">Themes</h2>
+<p>Choose the theme in Control Panel › Appearance and Personalization › Light, dark and glass. The shell and the window frames change at once. The choice is
+  the <code>theme</code> key of <a href="#settings">settings.json</a>: <code>"aero"</code> or <code>"kernel"</code>.</p>
+<h3>Aero</h3>
+<ul>
+<li>Windows 7's glass. The frame, the caption buttons and the title were measured pixel by pixel from Windows 7
+  screenshots; <code>docs/aero-measurements.md</code> lists every number and its source.</li>
+<li>The compositor blurs what is behind the captions, the taskbar and the menus (Light, dark and glass: Clear to Frosted,
+  <code>glassBlur</code> 0 to 4).</li>
+<li>A glass colour from a palette of fifteen, at an intensity you set (<code>glassColor</code>,
+  <code>glassColorStrength</code>).</li>
+<li>Rounded corners of 8 px, or square corners (<code>squareCorners</code>), which also squares the menus, buttons and
+  fields.</li>
+<li>The taskbar is at the bottom of the screen, with the round orb.</li>
+</ul>
+<h3>Kernel</h3>
+<ul>
+<li>A deep blue-black desk under a dotted grid.</li>
+<li>Steel-blue caption plates with a line of light and darkened edges, a dark outline, a red close button and vector
+  caption icons. Titles in JetBrains Mono.</li>
+<li>A thin bar at the top of the screen, with a launcher plate instead of the orb, flat buttons and a monospaced clock.
+  The bar's menus, the Start menu, the Run dialog, the desktop icons and the gadgets follow it to the top.</li>
+<li>Section titles in monospaced spaced capitals after an accent bar. Each Control Panel category has its own
+  colour.</li>
+</ul>
+<h3>Light and dark</h3>
+<p>Both themes have a light and a dark version. The choice is the system's preference: dconf's
+  <code>org.gnome.desktop.interface color-scheme</code>, which the settings portal passes to GTK, libadwaita, Qt, Firefox
+  and Chromium. The same page changes it, or:</p>
+<pre><code>shojiwm-shell msg appearance setDark true
+shojiwm-shell msg appearance toggle</code></pre>
+<p>With the built-in background, the desktop and the lock screen show a night version of it in dark.</p>
+</section>
+
+<section aria-labelledby="groups">
+<h2 id="groups">Window groups</h2>
+<p>A group is several windows in one frame, as tabs. The frame of the shown window draws one tab for each window of
+  the group.</p>
+<ol>
+<li>Drag a window by its caption over the caption of another window. The dragged window turns see-through, and a ghost
+  tab shows where it will go.</li>
+<li>Release the pointer. The dragged window becomes a tab of the other window's frame.</li>
+</ol>
+<ul>
+<li>Click a tab to show its window.</li>
+<li>Drag a tab along the strip to move it. Drag it out of the strip to take its window out of the group.</li>
+<li>The × of a tab closes its window.</li>
+<li><kbd>Super</kbd>+<kbd>Ctrl</kbd>+<kbd>Left</kbd> and <kbd>Right</kbd> show the previous and the next tab.
+  <kbd>Super</kbd>+<kbd>Ctrl</kbd>+<kbd>Down</kbd> takes the shown tab out of the group.</li>
+<li>The taskbar still lists every window. If you choose a hidden tab there, the group shows it.</li>
+</ul>
+<p>Ghostty asks for the theme's frame. Its new-tab key (<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>T</kbd>, set to open a new
+  window) opens a tab in the group of the window where you pressed it. <code>TABBED_PROGRAMS</code> in
+  <code>src/groups.ts</code> lists such programs.</p>
+</section>
+
+<section aria-labelledby="shell">
+<h2 id="shell">The shell</h2>
+<p><code>shojiwm-shell</code> runs once per session. The compositor configuration starts it. With the argument
+  <code>greeter</code>, it is the <a href="#greeter">log-on screen</a>. With <code>msg</code>, it sends a command to the
+  running shell.</p>
+
+<h3 id="surfaces">Surfaces</h3>
+<dl class="terms">
+<dt>Taskbar</dt>
+<dd>The orb (Aero) or the launcher plate (Kernel), the program buttons, the notification area, the clock and the
+  show-desktop strip. Every window of one program sits behind one button (<code>combineWindows</code>). Buttons show the
+  icon alone by default (<code>taskbarCompact</code>). Pinned programs keep their button while closed. A middle click,
+  <kbd>Ctrl</kbd>+click or <kbd>Shift</kbd>+click starts another instance. Progress, counts and urgency come from the
+  <code>com.canonical.Unity.LauncherEntry</code> signal. Auto-hide slides the bar away to a 2 px line.</dd>
+<dt>Thumbnails and jump lists</dt>
+<dd>Rest on a button to see its windows as cards; a click raises one, a middle click closes it. A media player's cards
+  have previous, play or pause, and next (MPRIS). A right click opens the jump list: recent files (from
+  <code>recently-used.xbel</code>), pinned files, the tasks of the program's <code>.desktop</code> file, a new instance,
+  and close.</dd>
+<dt>Start menu</dt>
+<dd>Pinned programs, the programs you start most, and All Programs in folders by category. On the right: your full name,
+  your folders, Recent Items, Control Panel, Run, and the power button with its menu. Type to search programs, Control
+  Panel tasks and files. <kbd>Return</kbd> with nothing found runs what you typed.</dd>
+<dt>Launcher</dt>
+<dd>The Start menu's search alone, on the focused screen (<kbd>Super</kbd>+<kbd>Shift</kbd>+<kbd>D</kbd>). Before you
+  type, it lists the programs you started last (<code>launcherRecentCount</code>, 25 by default). The search is fuzzy:
+  the typed letters must come in order in a name, so <em>fx</em> finds Firefox. Letters side by side, at the start of a
+  word or of the name, rank higher; the matched letters are highlighted. Drag its sides to resize it.</dd>
+<dt>Run dialog</dt>
+<dd>The Open field with the last 26 commands and completion from them. A folder, a file or an address opens with
+  <code>xdg-open</code>; anything else runs in a shell.</dd>
+<dt>Notification area</dt>
+<dd>Tray items with their menus, and hidden icons behind the arrow. The shell's own icons: volume, network, Bluetooth,
+  notifications (the bell), the Action Center (the flag) and the clock. Each opens a panel on a click and a menu on a
+  right click. The clock opens a calendar; Date and Time adds up to two more time zones.</dd>
+<dt>Desktop</dt>
+<dd>The background (picture or slide show), the desktop icons, the desktop menu, sticky notes, the CPU meter and clock
+  gadgets, and the Mystify screen saver.</dd>
+<dt>Dialogs</dt>
+<dd>Shut Down Windows, the orb's menu, and the Alt+Tab titles (the compositor draws the panel, the shell its text).</dd>
+<dt>Control Panel</dt>
+<dd>A window with its own taskbar button. Pages: Light, dark and glass (with the theme choice), Desktop Background,
+  Screen Resolution, Lock Screen, Account Picture, Taskbar and Start Menu, Notification Area Icons, Date and Time, Ease
+  of Access, Devices and Printers, Sound, Default Programs, Startup Programs, System.</dd>
+<dt>Lock screen</dt>
+<dd>The clock, your account picture, your name and the password field, on the main screen; the other screens stay
+  black. PAM checks the password. <kbd>Super</kbd>+<kbd>L</kbd>, the Start menu, <code>loginctl lock-session</code>,
+  sleep (<code>lockOnSuspend</code>) and inactivity (<code>lockAfterMinutes</code>) lock it.</dd>
+</dl>
+
+<h3 id="commands">Commands</h3>
+<p>The compositor's keys drive the shell with commands. You can send the same commands from a terminal or a script:</p>
+<pre><code>shojiwm-shell msg &lt;target&gt; &lt;function&gt; [arguments]</code></pre>
+<p>The shell listens on <code>$XDG_RUNTIME_DIR/shojiwm-shell.$WAYLAND_DISPLAY.sock</code>. It prints the answer, if
+  any. If the call fails, it prints the error and exits with status 1. A <em>screen</em> argument is a connector name
+  such as <code>DP-2</code>; an empty one means the main screen.</p>
+<div class="table-box"><table>
+<thead><tr><th>Target</th><th>Function</th><th>What it does</th></tr></thead>
+<tbody>
+<tr><td><code>taskbar</code></td><td><code>activate</code> <var>n</var></td><td class="wrap-ok">The button at place <var>n</var> (from 1): start it, show it, put it away, or show its next window.</td></tr>
+<tr><td></td><td><code>launchNew</code> <var>n</var></td><td class="wrap-ok">Another instance of the program of button <var>n</var>.</td></tr>
+<tr><td><code>startmenu</code></td><td><code>open</code>, <code>openOn</code> <var>screen</var></td><td class="wrap-ok">Open the Start menu.</td></tr>
+<tr><td></td><td><code>close</code></td><td class="wrap-ok">Close it.</td></tr>
+<tr><td></td><td><code>toggle</code>, <code>toggleOn</code> <var>screen</var></td><td class="wrap-ok">Open it, or close it if it is open.</td></tr>
+<tr><td><code>launcher</code></td><td><code>open</code>, <code>openOn</code> <var>screen</var>, <code>close</code>, <code>toggle</code>, <code>toggleOn</code> <var>screen</var></td><td class="wrap-ok">The same, for the launcher.</td></tr>
+<tr><td><code>run</code></td><td><code>open</code>, <code>openOn</code> <var>screen</var>, <code>toggleOn</code> <var>screen</var>, <code>close</code></td><td class="wrap-ok">The Run dialog.</td></tr>
+<tr><td><code>shutdown</code></td><td><code>openOn</code> <var>screen</var>, <code>close</code></td><td class="wrap-ok">Shut Down Windows.</td></tr>
+<tr><td><code>adminmenu</code></td><td><code>toggle</code>, <code>toggleOn</code> <var>screen</var>, <code>close</code></td><td class="wrap-ok">The orb's menu.</td></tr>
+<tr><td><code>lock</code></td><td><code>lock</code></td><td class="wrap-ok">Lock the session.</td></tr>
+<tr><td></td><td><code>isLocked</code></td><td class="wrap-ok">Print <code>true</code> or <code>false</code>.</td></tr>
+<tr><td><code>volume</code></td><td><code>open</code>, <code>openDevices</code>, <code>close</code></td><td class="wrap-ok">The volume panel; <code>openDevices</code> opens it with the list of outputs.</td></tr>
+<tr><td><code>bluetooth</code></td><td><code>open</code>, <code>openOn</code> <var>screen</var>, <code>close</code></td><td class="wrap-ok">The Bluetooth panel.</td></tr>
+<tr><td><code>actioncenter</code></td><td><code>open</code>, <code>close</code></td><td class="wrap-ok">The Action Center panel.</td></tr>
+<tr><td><code>controlpanel</code></td><td><code>open</code></td><td class="wrap-ok">Open the Control Panel on its home page.</td></tr>
+<tr><td></td><td><code>openPage</code> <var>page</var></td><td class="wrap-ok">Open it on a page: <code>appearance</code>, <code>background</code>, <code>display</code>, <code>lockscreen</code>, <code>account</code>, <code>taskbar</code>, <code>notifications</code>, <code>clock</code>, <code>ease</code>, <code>devices</code>, <code>sound</code>, <code>defaults</code>, <code>startup</code>, <code>about</code>.</td></tr>
+<tr><td></td><td><code>close</code></td><td class="wrap-ok">Close it.</td></tr>
+<tr><td><code>appearance</code></td><td><code>setDark</code> <code>true</code>|<code>false</code></td><td class="wrap-ok">Set the system's light or dark preference.</td></tr>
+<tr><td></td><td><code>toggle</code></td><td class="wrap-ok">Switch between light and dark.</td></tr>
+<tr><td></td><td><code>isDark</code></td><td class="wrap-ok">Print <code>true</code> or <code>false</code>.</td></tr>
+</tbody>
+</table></div>
+<p>Examples:</p>
+<pre><code>shojiwm-shell msg startmenu toggleOn DP-2
+shojiwm-shell msg controlpanel openPage display
+shojiwm-shell msg taskbar activate 3
+shojiwm-shell msg lock lock</code></pre>
+</section>
+
+<section aria-labelledby="configuration">
+<h2 id="configuration">Configuration</h2>
+<p>Most settings are in the Control Panel. For the rest, edit the files below.</p>
+
+<h3 id="settings">settings.json</h3>
+<p>The Control Panel writes <code>$XDG_CONFIG_HOME/shojiwm/settings.json</code> (by default
+  <code>~/.config/shojiwm/settings.json</code>). An update of the configuration does not touch it. The shell reads the
+  file again within a second when another program changes it, so you can edit it by hand. A missing key, or a key of
+  the wrong type, keeps its default. The shell keeps keys that it does not know.</p>
+<div class="table-box"><table>
+<thead><tr><th>Key</th><th>Default</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><code>theme</code></td><td><code>"aero"</code></td><td class="wrap-ok"><code>"aero"</code> or <code>"kernel"</code>.</td></tr>
+<tr><td><code>wallpaper</code></td><td><code>""</code></td><td class="wrap-ok">Absolute path of the desktop picture. <code>""</code>: the built-in picture.</td></tr>
+<tr><td><code>wallpaperPosition</code></td><td><code>"fill"</code></td><td class="wrap-ok"><code>fill</code>, <code>fit</code>, <code>stretch</code>, <code>tile</code> or <code>center</code>.</td></tr>
+<tr><td><code>slideshowFolder</code></td><td><code>""</code></td><td class="wrap-ok">Folder of the background slide show.</td></tr>
+<tr><td><code>slideshowMinutes</code></td><td><code>30</code></td><td class="wrap-ok">Minutes between two pictures.</td></tr>
+<tr><td><code>slideshowShuffle</code></td><td><code>false</code></td><td class="wrap-ok">Random order instead of name order.</td></tr>
+<tr><td><code>lockBackground</code></td><td><code>""</code></td><td class="wrap-ok">Lock screen picture. <code>""</code>: the desktop's; <code>"builtin"</code>: the built-in one.</td></tr>
+<tr><td><code>userPicture</code></td><td><code>""</code></td><td class="wrap-ok">Account picture. <code>""</code>: the system's, from <code>/var/lib/AccountsService/icons/$USER</code>, <code>~/.face</code> or <code>~/.face.icon</code>.</td></tr>
+<tr><td><code>glassBlur</code></td><td><code>2</code></td><td class="wrap-ok">Blur behind the glass, 0 (none) to 4.</td></tr>
+<tr><td><code>glassColor</code></td><td><code>""</code></td><td class="wrap-ok">Colour laid over the glass. <code>""</code>: plain glass.</td></tr>
+<tr><td><code>glassColorStrength</code></td><td><code>0.35</code></td><td class="wrap-ok">Intensity of that colour.</td></tr>
+<tr><td><code>squareCorners</code></td><td><code>false</code></td><td class="wrap-ok">The square variant of Aero.</td></tr>
+<tr><td><code>animationSpeed</code></td><td><code>1</code></td><td class="wrap-ok">1 is normal, 2 twice as fast. The system's <code>enable-animations</code> turns animations off.</td></tr>
+<tr><td><code>combineWindows</code></td><td><code>true</code></td><td class="wrap-ok">One taskbar button per program instead of one per window.</td></tr>
+<tr><td><code>taskbarCompact</code></td><td><code>true</code></td><td class="wrap-ok">Taskbar buttons show the icon alone.</td></tr>
+<tr><td><code>taskbarAutoHide</code></td><td><code>false</code></td><td class="wrap-ok">Hide the taskbar until the pointer reaches its edge.</td></tr>
+<tr><td><code>taskbarPinned</code></td><td><code>["thunar.desktop", "chromium.desktop", "kitty.desktop"]</code></td><td class="wrap-ok">Programs pinned to the taskbar, by <code>.desktop</code> file name, in order.</td></tr>
+<tr><td><code>startPinned</code></td><td><code>["kitty.desktop", "thunar.desktop", "chromium.desktop"]</code></td><td class="wrap-ok">Programs pinned to the Start menu.</td></tr>
+<tr><td><code>startMenuLargeIcons</code></td><td><code>false</code></td><td class="wrap-ok">Large rows in the Start menu.</td></tr>
+<tr><td><code>showFrequent</code></td><td><code>true</code></td><td class="wrap-ok">List the programs you start most in the Start menu.</td></tr>
+<tr><td><code>launcherRecentCount</code></td><td><code>25</code></td><td class="wrap-ok">Programs the launcher lists before you type.</td></tr>
+<tr><td><code>launcherWidth</code>, <code>launcherHeight</code></td><td><code>560</code>, <code>520</code></td><td class="wrap-ok">Size of the launcher, in pixels. A height of 0 leaves the field alone.</td></tr>
+<tr><td><code>jumpPins</code></td><td><code>{}</code></td><td class="wrap-ok">Files pinned to a program's jump list, by <code>.desktop</code> file name.</td></tr>
+<tr><td><code>programs</code></td><td><code>{}</code></td><td class="wrap-ok">Default Programs: command lines by key (<code>terminal</code>, <code>fileManager</code>, <code>taskManager</code>, <code>systemMonitor</code>, <code>clipboard</code>, <code>screenshot</code>). A missing or empty key: the <a href="#environment">session's</a>.</td></tr>
+<tr><td><code>trayShowAll</code></td><td><code>false</code></td><td class="wrap-ok">Show every notification icon on the bar.</td></tr>
+<tr><td><code>trayShown</code>, <code>trayHidden</code></td><td><code>[]</code></td><td class="wrap-ok">Notification icons shown on the bar, and hidden behind the arrow. New icons are hidden.</td></tr>
+<tr><td><code>clockFormat</code></td><td><code>"locale"</code></td><td class="wrap-ok"><code>locale</code>, <code>24h</code> or <code>12h</code>.</td></tr>
+<tr><td><code>showDate</code></td><td><code>true</code></td><td class="wrap-ok">The date under the clock.</td></tr>
+<tr><td><code>extraClocks</code></td><td><code>[]</code></td><td class="wrap-ok">Up to two more clocks: <code>{ "zone": "America/New_York", "label": "New York" }</code>.</td></tr>
+<tr><td><code>showCpuMeter</code>, <code>showClockGadget</code></td><td><code>true</code></td><td class="wrap-ok">Show each gadget.</td></tr>
+<tr><td><code>cpuMeterPlace</code></td><td><code>{ "right": 24, "top": 24 }</code></td><td class="wrap-ok">Place of the CPU meter, from the right and top edges of the screen less the bar.</td></tr>
+<tr><td><code>clockGadgetPlace</code></td><td><code>{ "right": 52, "top": 168 }</code></td><td class="wrap-ok">Place of the clock gadget.</td></tr>
+<tr><td><code>showDesktopIcons</code></td><td><code>true</code></td><td class="wrap-ok">Show the desktop icons.</td></tr>
+<tr><td><code>desktopIconSize</code></td><td><code>48</code></td><td class="wrap-ok">Icon size in pixels, 32 to 256.</td></tr>
+<tr><td><code>desktopSort</code></td><td><code>"name"</code></td><td class="wrap-ok"><code>name</code>, <code>size</code>, <code>type</code> or <code>date</code>.</td></tr>
+<tr><td><code>desktopAutoArrange</code></td><td><code>false</code></td><td class="wrap-ok">Fill each screen's columns in sort order.</td></tr>
+<tr><td><code>desktopAlignToGrid</code></td><td><code>true</code></td><td class="wrap-ok">Snap a moved icon to a cell.</td></tr>
+<tr><td><code>desktopPlaces</code></td><td><code>{}</code></td><td class="wrap-ok">Each icon's place: <code>{ screen, x, y }</code> by key.</td></tr>
+<tr><td><code>desktopSystemIcons</code></td><td><code>["computer"]</code></td><td class="wrap-ok">Icons beside the Recycle Bin: <code>computer</code>, <code>userfiles</code>, <code>controlpanel</code>.</td></tr>
+<tr><td><code>screensaver</code></td><td><code>"none"</code></td><td class="wrap-ok"><code>none</code> or <code>mystify</code>.</td></tr>
+<tr><td><code>screensaverMinutes</code></td><td><code>5</code></td><td class="wrap-ok">Minutes without input before the screen saver starts.</td></tr>
+<tr><td><code>lockAfterMinutes</code></td><td><code>10</code></td><td class="wrap-ok">Minutes without input before the session locks. 0: never.</td></tr>
+<tr><td><code>lockOnSuspend</code></td><td><code>true</code></td><td class="wrap-ok">Lock before the computer sleeps.</td></tr>
+<tr><td><code>powerButtonAction</code></td><td><code>"shutdown"</code></td><td class="wrap-ok">What the Start menu's power button does: <code>shutdown</code>, <code>restart</code>, <code>sleep</code>, <code>hibernate</code>, <code>lock</code> or <code>logoff</code>.</td></tr>
+<tr><td><code>shutdownDialogAction</code></td><td><code>"logoff"</code></td><td class="wrap-ok">The action that Shut Down Windows selects first.</td></tr>
+<tr><td><code>peek</code></td><td><code>true</code></td><td class="wrap-ok">Aero Peek on the show-desktop strip.</td></tr>
+<tr><td><code>primaryScreen</code></td><td><code>""</code></td><td class="wrap-ok">Connector of the main screen. <code>""</code>: <code>SHOJIWM_DESKTOP_PRIMARY_SCREEN</code>, else the first screen.</td></tr>
+<tr><td><code>displayChoices</code></td><td><code>{}</code></td><td class="wrap-ok">Screen Resolution's choices by connector: <code>{ width, height, refreshRate, scale }</code>.</td></tr>
+<tr><td><code>lastColorScheme</code></td><td><code>"default"</code></td><td class="wrap-ok">The last light or dark preference seen, so the shell starts in it. The shell writes it.</td></tr>
+</tbody>
+</table></div>
+
+<h3 id="environment">Session environment</h3>
+<p>Set these variables in the session's environment, for example in a NixOS configuration or in the script that starts
+  ShojiWM. The compositor and the shell read them when they start.</p>
+<div class="table-box"><table>
+<thead><tr><th>Variable</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><code>SHOJIWM_DESKTOP_TERMINAL</code></td><td class="wrap-ok">Terminal (<kbd>Super</kbd>+<kbd>Return</kbd>, the menus). Default: <code>kitty</code>.</td></tr>
+<tr><td><code>SHOJIWM_DESKTOP_FILE_MANAGER</code></td><td class="wrap-ok">File manager (<kbd>Super</kbd>+<kbd>E</kbd>, the folders). Default: <code>thunar</code>.</td></tr>
+<tr><td><code>SHOJIWM_DESKTOP_TASK_MANAGER</code></td><td class="wrap-ok">Task manager (<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Escape</kbd>, the bar's menu). Default: <code>inspecteur</code>.</td></tr>
+<tr><td><code>SHOJIWM_DESKTOP_SYSTEM_MONITOR</code></td><td class="wrap-ok">System monitor that the shell opens. Default: <code>inspecteur --section performance</code>.</td></tr>
+<tr><td><code>SHOJIWM_DESKTOP_CLIPBOARD</code></td><td class="wrap-ok">Clipboard history (<kbd>Super</kbd>+<kbd>V</kbd>), for example <code>papier toggle</code>. Default: none.</td></tr>
+<tr><td><code>SHOJIWM_DESKTOP_SCREENSHOT</code></td><td class="wrap-ok">Screenshot (<kbd>Print</kbd>). Default: <code>grim - | wl-copy --type image/png</code>.</td></tr>
+<tr><td><code>SHOJIWM_DESKTOP_OUTPUTS</code></td><td class="wrap-ok">Screen layout as Hyprland monitor rules <code>name,mode,position,scale</code>, separated by <code>;</code>. Example: <code>DP-2,2560x1440@180,0x0,1.25;HDMI-A-1,preferred,auto,1.875</code>. Without it, ShojiWM uses the best mode of each screen at scale 1. Screen Resolution's choices replace the mode and scale of the screens you change.</td></tr>
+<tr><td><code>SHOJIWM_DESKTOP_KEYS</code></td><td class="wrap-ok">More keys: a JSON object of shortcut to shell command, for example <code>{"Ctrl+Shift+u": "papier toggle"}</code>.</td></tr>
+<tr><td><code>SHOJIWM_DESKTOP_PRIMARY_SCREEN</code></td><td class="wrap-ok">Connector of the main screen, if <code>primaryScreen</code> is empty. The lock screen, the gadgets and the dialogs without a screen go there.</td></tr>
+</tbody>
+</table></div>
+<p>Control Panel › Default Programs overrides the first six. Its choice "As the session sets it" uses the variable.
+  The browser is <code>BROWSER</code> at the top of <code>src/index.tsx</code>.</p>
+<p>Two more variables exist:</p>
+<ul>
+<li><code>SHOJIWM_DESKTOP_SOCKET</code>: the socket of the compositor configuration (see
+  <a href="#architecture">Architecture</a>). The compositor sets it for the shell. Do not set it yourself.</li>
+<li><code>SHOJIWM_SHELL_DIR</code>: the folder of the shell's pictures. Default: <code>~/.config/shojiwm/shell</code>.
+  The log-on screen module sets it to the package.</li>
+</ul>
+
+<h3 id="more">Other files</h3>
+<ul>
+<li><strong>Notifications:</strong> <a href="https://hokum.app">Hokum</a> draws them. <code>assets/hokum/aero.kdl</code>
+  is a Windows 7 balloon theme for it. In <code>~/.config/hokum/config.kdl</code>, set
+  <code>theme "~/.config/shojiwm/assets/hokum/aero.kdl"</code> and <code>behaviour { position "bottom-right" }</code>.
+  The bell of the notification area keeps the notifications in
+  <code>~/.local/state/shojiwm-desktop/notifications.json</code>.</li>
+<li><strong>Sticky notes:</strong> <code>~/.local/state/shojiwm-desktop/notes.json</code>.</li>
+<li><strong>Frame sizes and colours:</strong> <code>src/themes/&lt;theme&gt;/metrics.ts</code>.</li>
+<li><strong>Shell sizes and colours:</strong> <code>crates/shell/src/theme_values.rs</code>.</li>
+<li><strong>Programs that open as tabs:</strong> <code>TABBED_PROGRAMS</code> in <code>src/groups.ts</code>.</li>
+</ul>
+</section>
+
+<section aria-labelledby="greeter">
+<h2 id="greeter">Log-on screen</h2>
+<p><code>shojiwm-shell greeter</code> is the lock screen as a log-on screen for
+  <a href="https://sr.ht/~kennylevinsen/greetd/">greetd</a>: the picture, the clock, the account picture and the password
+  field on the main screen, black on the others, and the session to start in the bottom-left corner. If PAM asks a
+  second question after the password, such as a one-time code, the field asks it. The log-on screen keeps the last
+  session chosen.</p>
+<h3>NixOS module</h3>
+<p><code>nixosModules.greeter</code> enables greetd, starts a Hyprland of its own with your screens, and runs the log-on
+  screen in it. When a session starts, that Hyprland exits and greetd runs the session. If the log-on screen exits
+  without starting a session (a crash, or <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>Delete</kbd>), greetd shows its text
+  log-on (agreety), which starts the default session.</p>
+<div class="table-box"><table>
+<thead><tr><th>Option of <code>services.shojiwm-desktop-greeter</code></th><th>Default</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><code>enable</code></td><td><code>false</code></td><td class="wrap-ok">Use the log-on screen through greetd.</td></tr>
+<tr><td><code>user</code></td><td>(required)</td><td class="wrap-ok">The account that the log-on screen logs on.</td></tr>
+<tr><td><code>defaultSession</code></td><td><code>services.displayManager.defaultSession</code></td><td class="wrap-ok">The session chosen the first time, and the one the text log-on starts: the <code>.desktop</code> file name without the extension, for example <code>shojiwm-uwsm</code>.</td></tr>
+<tr><td><code>mainScreen</code></td><td><code>""</code></td><td class="wrap-ok">Connector of the screen with the log-on box. Empty: the first screen.</td></tr>
+<tr><td><code>monitors</code></td><td><code>[]</code></td><td class="wrap-ok">The screens, as Hyprland monitor rules: a list of <code>{ output; mode ? "preferred"; position ? "auto"; scale ? 1; }</code>. Empty: Hyprland's defaults.</td></tr>
+<tr><td><code>keyboard.layout</code></td><td><code>services.xserver.xkb.layout</code></td><td class="wrap-ok">Keyboard layout.</td></tr>
+<tr><td><code>keyboard.variant</code></td><td><code>services.xserver.xkb.variant</code></td><td class="wrap-ok">Keyboard variant.</td></tr>
+<tr><td><code>keyboard.options</code></td><td><code>services.xserver.xkb.options</code></td><td class="wrap-ok">Keyboard options.</td></tr>
+</tbody>
+</table></div>
+<p>The module sets the greeter account's home to <code>/var/lib/greeter</code>. The last session chosen is in
+  <code>/var/lib/greeter/.local/state/shojiwm-desktop/last-session</code>. If your root is not persistent, keep
+  <code>/var/lib/greeter</code>. Hyprland's log goes to the journal: <code>journalctl -t shojiwm-desktop-greeter</code>.</p>
+<h3>Other systems</h3>
+<p>Run <code>shojiwm-shell greeter</code> as the greeter account, inside a compositor with wlr-layer-shell that greetd
+  starts. Stop the compositor when the greeter exits. The greeter reads:</p>
+<div class="table-box"><table>
+<thead><tr><th>Variable</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><code>SHOJIWM_GREETER_USER</code></td><td class="wrap-ok">The account to log on.</td></tr>
+<tr><td><code>SHOJIWM_GREETER_SESSIONS</code></td><td class="wrap-ok">The folder of the sessions' <code>.desktop</code> files (<code>share/wayland-sessions</code>).</td></tr>
+<tr><td><code>SHOJIWM_GREETER_DEFAULT_SESSION</code></td><td class="wrap-ok">The session chosen the first time: its file name without <code>.desktop</code>.</td></tr>
+<tr><td><code>SHOJIWM_DESKTOP_PRIMARY_SCREEN</code></td><td class="wrap-ok">Connector of the main screen. Without it: the first screen.</td></tr>
+<tr><td><code>SHOJIWM_SHELL_DIR</code></td><td class="wrap-ok">The folder of the pictures (the configuration's <code>shell</code>).</td></tr>
+</tbody>
+</table></div>
+<p>The account picture comes from AccountsService (<code>/var/lib/AccountsService/icons/</code>): the greeter account
+  cannot read <code>~/.face</code>. To try the log-on screen without logging out, run it under greetd's
+  <code>fakegreet</code>, which accepts the account <code>user</code>, the password <code>password</code>, then
+  <code>9</code>:</p>
+<pre><code>SHOJIWM_GREETER_USER=user \
+SHOJIWM_GREETER_SESSIONS=/run/current-system/sw/share/wayland-sessions \
+  fakegreet "shojiwm-shell greeter"</code></pre>
+</section>
+
+<section aria-labelledby="portal">
+<h2 id="portal">Global shortcuts</h2>
+<p>Programs such as OBS or Discord bind their keys through the GlobalShortcuts portal, which ShojiWM does not have.
+  <code>packages.&lt;system&gt;.portal</code> provides it. It takes each program's preferred keys and asks the
+  compositor configuration to bind them. It sends the program <code>Activated</code> when the keys go down and
+  <code>Deactivated</code> when any of them goes up, so hold-to-talk works. There is no dialog to choose other keys:
+  change them in the program.</p>
+<p>On NixOS, see the <code>xdg.portal</code> lines in the <a href="#install-nixos">install example</a>. The name in
+  <code>config.shojiwm</code> is the desktop name in lowercase: xdg-desktop-portal reads
+  <code>shojiwm-portals.conf</code>.</p>
+</section>
+
+<section aria-labelledby="architecture">
+<h2 id="architecture">Architecture</h2>
+<div class="diagram">
+<div class="box"><strong>ShojiWM + src/</strong><p>Frames, window manager, Snap, Alt+Tab panel, Peek, zoom, window groups, keys. Listens on <code>$SHOJIWM_DESKTOP_SOCKET</code>.</p></div>
+<div class="box"><strong>shojiwm-shell</strong><p>Taskbar, menus, panels, desktop, Control Panel, lock screen. Listens on <code>shojiwm-shell.$WAYLAND_DISPLAY.sock</code>.</p></div>
+<div class="box"><strong>portal</strong><p>GlobalShortcuts over D-Bus for programs; connects to <code>$SHOJIWM_DESKTOP_SOCKET</code>.</p></div>
+<div class="link">Keys → <code>shojiwm-shell msg …</code> → shell. Shell → <code>$SHOJIWM_DESKTOP_SOCKET</code> → compositor: Peek, show desktop, screens, theme, glass, corners, animations, programs. Compositor → shell: the Alt+Tab titles.</div>
+</div>
+<dl class="terms">
+<dt>The compositor configuration</dt>
+<dd>ShojiWM runs <code>src/index.tsx</code>. It starts <code>shojiwm-shell</code> once per session and gives it
+  <code>SHOJIWM_DESKTOP_SOCKET</code>: ShojiWM's own socket path with <code>-desktop.sock</code> at the end.
+  <code>src/peek.tsx</code> serves that socket with ShojiWM's protocol: one JSON object per line,
+  <code>{ "method", "params" }</code>, and <code>{ "id", "method", "params" }</code> for a request.</dd>
+<dt>From the compositor to the shell</dt>
+<dd>A key such as <kbd>Super</kbd> runs <code>shojiwm-shell msg startmenu toggleOn &lt;screen&gt;</code>. The shell's
+  socket answers each call with <code>ok</code> or <code>error</code>.</dd>
+<dt>From the shell to the compositor</dt>
+<dd>The shell sends the methods <code>peek</code>, <code>show-desktop</code>, <code>theme</code>, <code>glass</code>,
+  <code>corners</code>, <code>animations</code>, <code>programs</code>, <code>screens</code> and <code>display</code>. When
+  the line comes up, it sends the settings that the frames use again. If the compositor reloads, the shell tries again
+  each second.</dd>
+<dt>The shell</dt>
+<dd>A Rust program on AntiWebUI. Each surface is a layer-shell surface, except the Control Panel, which is a window.
+  Settings are a reactive value backed by <code>settings.json</code>.</dd>
+<dt>The portal</dt>
+<dd>A D-Bus service. It sends <code>shortcuts</code> with the triggers to bind; the compositor sends back
+  <code>shortcut</code> events with <code>pressed</code> or <code>released</code>.</dd>
+</dl>
+<h3>Files</h3>
+<div class="table-box"><table>
+<thead><tr><th>Path</th><th>What it holds</th></tr></thead>
+<tbody>
+<tr><td><code>src/index.tsx</code></td><td class="wrap-ok">The entry point: environment, keys, the shell process, the blur, the snap preview, the composition of every window.</td></tr>
+<tr><td><code>src/window-manager.ts</code></td><td class="wrap-ok">The floating window manager and Aero Snap.</td></tr>
+<tr><td><code>src/groups.ts</code>, <code>src/themes/tabs.tsx</code></td><td class="wrap-ok">Window groups and their tab strip.</td></tr>
+<tr><td><code>src/themes/aero/</code>, <code>src/themes/kernel/</code></td><td class="wrap-ok">Each theme's frame: <code>metrics.ts</code> and <code>frame.tsx</code>.</td></tr>
+<tr><td><code>src/alt-tab.tsx</code>, <code>src/peek.tsx</code>, <code>src/zoom.tsx</code></td><td class="wrap-ok">Alt+Tab, Aero Peek and the socket, screen zoom.</td></tr>
+<tr><td><code>src/display.ts</code>, <code>src/programs.ts</code>, <code>src/shortcuts.ts</code></td><td class="wrap-ok">Screens, default programs, portal shortcuts.</td></tr>
+<tr><td><code>crates/shell/</code></td><td class="wrap-ok">The shell: <code>taskbar/</code>, <code>start_menu/</code>, <code>status/</code> (notification area), <code>desktop/</code>, <code>dialogs/</code>, <code>control_panel/</code>, <code>lock/</code>, <code>greeter/</code>, <code>ui/</code>, <code>settings.rs</code>, <code>ipc.rs</code>, <code>compositor.rs</code>, <code>fuzzy.rs</code>, <code>theme_values.rs</code>.</td></tr>
+<tr><td><code>shell/</code></td><td class="wrap-ok">The shell's pictures (<code>shell/assets</code>) and <code>gtk-switch.sh</code>, which moves GTK 3 to the light or dark variant of its theme.</td></tr>
+<tr><td><code>assets/</code></td><td class="wrap-ok">Frame shaders, caption buttons, the Kernel caption icons, the logo, the Hokum theme, the screenshots (<code>assets/site/</code>).</td></tr>
+<tr><td><code>portal/</code></td><td class="wrap-ok">The GlobalShortcuts portal, with its D-Bus and systemd files.</td></tr>
+<tr><td><code>nix/greeter.nix</code>, <code>tests/greeter.nix</code></td><td class="wrap-ok">The log-on screen module and its VM test.</td></tr>
+<tr><td><code>docs/aero-measurements.md</code></td><td class="wrap-ok">Every measured number of the Aero frame and its source.</td></tr>
+<tr><td><code>site/</code></td><td class="wrap-ok">This site.</td></tr>
+</tbody>
+</table></div>
+</section>
+
+<section aria-labelledby="development">
+<h2 id="development">Development</h2>
+<h3>Checks</h3>
+<p><code>nix flake check</code> runs:</p>
+<div class="table-box"><table>
+<thead><tr><th>Check</th><th>What it does</th></tr></thead>
+<tbody>
+<tr><td><code>shell</code></td><td class="wrap-ok">Builds the shell.</td></tr>
+<tr><td><code>shell-lint</code></td><td class="wrap-ok"><code>cargo fmt --check</code> and <code>clippy</code> without warnings over <code>crates/shell</code>.</td></tr>
+<tr><td><code>portal</code></td><td class="wrap-ok">Builds the portal and runs its tests.</td></tr>
+<tr><td><code>portal-lint</code></td><td class="wrap-ok"><code>cargo fmt --check</code> and <code>clippy</code> over <code>portal</code>.</td></tr>
+<tr><td><code>typecheck</code></td><td class="wrap-ok"><code>tsc</code> over <code>src</code>, against the ShojiWM TypeScript package pinned in <code>flake.lock</code>.</td></tr>
+<tr><td><code>greeter</code></td><td class="wrap-ok">The log-on screen module in VMs: a password typed into it starts the session and the session chosen is kept; a log-on screen that dies gives way to the text log-on.</td></tr>
+<tr><td><code>pre-commit</code></td><td class="wrap-ok"><code>alejandra</code>, <code>deadnix</code>, <code>statix</code> and <code>prettier</code>.</td></tr>
+</tbody>
+</table></div>
+<p><code>nix develop</code> gives Rust, TypeScript, prettier, the libraries of the shell and the pre-commit hooks.</p>
+<h3>Run a nested session</h3>
+<pre><code>tools/dev.sh</code></pre>
+<p>The script must run in a graphical session. It links <code>src</code>, <code>assets</code> and <code>shell</code> of
+  <code>~/.config/shojiwm</code> to the checkout, then starts ShojiWM nested in a window. When the compositor stops, it
+  restores the links of your NixOS configuration with <code>systemd-tmpfiles</code>, if there are any. Run
+  <code>shoji_wm -r</code> from another terminal to reload <code>src</code>. To try a shell that you built with
+  <code>cargo build</code>, run <code>crates/shell/target/debug/shojiwm-shell</code> in the nested session.</p>
+<h3>Screenshots</h3>
+<p><code>tools/screenshots.sh</code> runs the whole desktop with no display: Xvfb holds ShojiWM's nested window, Mesa
+  renders in software, ImageMagick captures, and xdotool drives the keys and the pointer. It needs Nix only.</p>
+<div class="table-box"><table>
+<thead><tr><th>Variable</th><th>Effect</th></tr></thead>
+<tbody>
+<tr><td><code>THEME</code></td><td class="wrap-ok">The theme of the session: <code>aero</code> (default) or <code>kernel</code>.</td></tr>
+<tr><td><code>OUT</code></td><td class="wrap-ok">The folder of the pictures. Default: <code>assets/site</code>.</td></tr>
+<tr><td><code>UNTIL</code></td><td class="wrap-ok">Stop after the picture of that name, for example <code>desktop</code>.</td></tr>
+<tr><td><code>KEEP</code></td><td class="wrap-ok">If set, keep the session running at the end.</td></tr>
+<tr><td><code>SHOJIWM_FLAKE</code></td><td class="wrap-ok">Another ShojiWM flake, for example <code>path:/src/ShojiWM#default</code>.</td></tr>
+</tbody>
+</table></div>
+<pre><code>tools/screenshots.sh
+THEME=kernel OUT=assets/site/kernel tools/screenshots.sh
+THEME=kernel OUT=/tmp/k UNTIL=desktop tools/screenshots.sh</code></pre>
+<p><code>tools/details.py</code> cuts the enlarged close-ups in <code>assets/site/details/</code>.
+  <code>tools/compare.py</code> puts a reference next to a capture and prints the error per part of the frame; its output
+  stays in <code>/tmp</code>. <code>tools/make-caption-svgs.py</code> draws the caption buttons from the measurements.</p>
+</section>
+
+<section aria-labelledby="limits">
+<h2 id="limits">Real limits</h2>
+<ul>
+<li><strong>The Alt+Tab panel has square corners.</strong> The compositor draws it with <code>&lt;Solid&gt;</code>,
+  which takes a colour and a rectangle and no radius. To round it, a shader must draw the card into a texture.</li>
+<li><strong>Taskbar thumbnails in the screenshots show the program's icon.</strong> The shell asks for a live picture of
+  each window (<code>ext_image_copy_capture</code> or <code>hyprland_toplevel_export</code>). In the headless session
+  that takes the screenshots, no picture arrives, and the card keeps the icon.</li>
+<li><strong>Aero Peek on one window</strong>, from its thumbnail, is not written. The shell knows a window as a
+  foreign-toplevel handle and the compositor as a <code>WaylandWindow</code>; nothing ties the two together yet.</li>
+<li><strong>Caption buttons under the pointer and pressed</strong> are not measured: no reference screenshot shows
+  them. They are drawn from the resting gradient.</li>
+<li><strong>Not tested on a real GPU in the screenshots.</strong> Every capture is drawn by llvmpipe at 1280 × 800 and
+  scale 1, with input from xdotool.</li>
+</ul>
+</section>
+
+</main>
+</div>
+
+<footer class="foot">
+<div class="wrap">
+<span>shojiwm-desktop by <a href="https://sacha.house/">Sacha</a>. MIT licence. No file from Windows is copied, embedded or required.</span>
+<ul>
+<li><a href="https://github.com/sachahjkl/shojiwm-desktop">Source code</a></li>
+<li><a href="https://github.com/sachahjkl/shojiwm-desktop/issues">Issues</a></li>
+<li><a href="https://github.com/sachahjkl/shojiwm-desktop/commits/main">Changes</a></li>
+</ul>
+</div>
+</footer>
+</body>
+</html>

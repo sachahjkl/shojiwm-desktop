@@ -410,16 +410,16 @@ xdotool mousemove --window "$window" $((WIDTH / 2)) $((HEIGHT / 2))
 sleep 2
 
 say "the desktop's menu"
-# Pick an icon, then right click on the empty desktop and open View.
+# Pick an icon, then right click on the empty desktop, under the gadgets, and open View.
 xdotool mousemove --window "$window" 40 $((140 + bar_above))
 xdotool click 1
 sleep 1
-xdotool mousemove --window "$window" 1150 $((220 + bar_above))
+xdotool mousemove --window "$window" 1150 560
 xdotool click 3
 sleep 2
-xdotool mousemove --window "$window" 1070 $((236 + bar_above))
+xdotool mousemove --window "$window" 1180 578
 sleep 0.3
-xdotool mousemove --window "$window" 1080 $((238 + bar_above))
+xdotool mousemove --window "$window" 1190 584
 sleep 1
 xdotool click 1
 sleep 2
@@ -504,6 +504,21 @@ shot "snap"
 alive "snap"
 xdotool mouseup 1
 sleep 2
+
+say "window groups: a caption dropped on another's"
+# The snapped window's caption onto the caption of the one behind it: a ghost
+# tab while it is held there, then the two as tabs of one frame.
+xdotool mousemove --window "$window" 320 $((15 + bar_above))
+xdotool mousedown 1
+xdotool mousemove --window "$window" 500 $((40 + bar_above))
+sleep 0.5
+xdotool mousemove --window "$window" 760 $((59 + bar_above))
+sleep 2
+shot "group-ghost"
+xdotool mouseup 1
+sleep 2
+shot "group-tabs"
+alive "group"
 
 say "Alt+Tab"
 xdotool windowfocus "$window"
