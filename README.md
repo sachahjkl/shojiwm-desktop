@@ -2,7 +2,7 @@
 
 # shojiwm-desktop
 
-Site and documentation: <https://sachahjkl.github.io/shojiwm-desktop/>
+Site and documentation: <https://desktop.froment.software/>
 
 A complete desktop for [ShojiWM](https://github.com/bea4dev/ShojiWM), the
 Wayland compositor you configure in TypeScript, in two themes: **Aero**
@@ -80,7 +80,7 @@ or mocked up. `tools/screenshots.sh` makes them on a machine with no display:
 ShojiWM's nested backend inside an X server with no screen, Mesa rendering in
 software, and the keys and the pointer driven by xdotool. The Aero captures
 are in `assets/site/`, the Kernel captures under the same names in
-`assets/site/kernel/`. The [gallery](https://sachahjkl.github.io/shojiwm-desktop/gallery.html)
+`assets/site/kernel/`. The [gallery](https://desktop.froment.software/gallery.html)
 shows them all.
 
 ![The desktop](assets/site/desktop.png)
