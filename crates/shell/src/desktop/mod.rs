@@ -151,14 +151,26 @@ fn view(desk: Desk) -> Div {
 /// The layer of the desktop's menu: the menu where the pointer was pressed. A press outside of
 /// it closes it.
 fn menu_layer(desk: Desk) -> Div {
-    div().size_full().child(popup_menu(
-        move || desk.menu.with(Option::is_some),
-        move || desk.close_menu(),
-        // Inside this layer, which takes every press around the menu: no grab, which the layer
-        // could not make anyway, never having had a press of its own.
-        MenuOptions::new()
-            .at(desk.menu_rect)
-            .kind(PopupKind::Bubble),
-        move || desk.menu_lines(),
-    ))
+    // The menu has no grab (`PopupKind::Bubble`): a press anywhere else on this layer, which
+    // covers the screen, closes it. The backdrop stands beside the menu, not around it, so a
+    // press in the menu does not reach it.
+    let backdrop = div()
+        .absolute()
+        .inset(0.0)
+        .on_pointer_down(move |_| desk.close_menu())
+        .on_aux_click(move |_| desk.close_menu());
+    div()
+        .size_full()
+        .relative()
+        .child(backdrop)
+        .child(popup_menu(
+            move || desk.menu.with(Option::is_some),
+            move || desk.close_menu(),
+            // Inside this layer, which takes every press around the menu: no grab, which the layer
+            // could not make anyway, never having had a press of its own.
+            MenuOptions::new()
+                .at(desk.menu_rect)
+                .kind(PopupKind::Bubble),
+            move || desk.menu_lines(),
+        ))
 }
