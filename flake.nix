@@ -2,9 +2,6 @@
   description = "A Windows 7 Aero desktop for the ShojiWM Wayland compositor";
 
   inputs = {
-    # gui_toolkit is a submodule (ext/gui_toolkit): tools/desktoptool builds from it
-    self.submodules = true;
-
     nixpkgs.url = "https://flakehub.com/f/NixOS/nixpkgs/0.2605";
 
     git-hooks = {
@@ -20,6 +17,13 @@
       url = "github:sachahjkl/ShojiWM/integration";
       flake = false;
     };
+
+    # The toolkit whose changelog package tools/desktoptool uses (-collection:gt=<it>/src). The
+    # development shell gives its path in $GUI_TOOLKIT_SRC.
+    gui-toolkit = {
+      url = "github:sachahjkl/gui_toolkit/v0.190.1";
+      flake = false;
+    };
   };
 
   outputs = {
@@ -27,6 +31,7 @@
     nixpkgs,
     git-hooks,
     shojiwm-src,
+    gui-toolkit,
   }: let
     systems = ["x86_64-linux" "aarch64-linux"];
     forAllSystems = nixpkgs.lib.genAttrs systems;
@@ -64,7 +69,6 @@
       root = ./.;
       fileset = nixpkgs.lib.fileset.unions [
         ./tools/desktoptool
-        ./ext/gui_toolkit/src
         ./CHANGELOG.md
         ./changelog.d
         ./crates/shell/Cargo.toml
@@ -398,8 +402,8 @@
             chmod -R u+w .
             export HOME="$TMPDIR"
             mkdir -p build
-            odin test tools/desktoptool -collection:gt=ext/gui_toolkit/src -out:build/desktoptool_test
-            odin run tools/desktoptool -collection:gt=ext/gui_toolkit/src -out:build/desktoptool -- changelog check
+            odin test tools/desktoptool -collection:gt=${gui-toolkit}/src -out:build/desktoptool_test
+            odin run tools/desktoptool -collection:gt=${gui-toolkit}/src -out:build/desktoptool -- changelog check
             touch "$out"
           '';
       });
@@ -441,6 +445,7 @@
           ++ self.checks.${system}.pre-commit.enabledPackages;
 
         LD_LIBRARY_PATH = shellLibraryPath;
+        GUI_TOOLKIT_SRC = "${gui-toolkit}/src";
 
         inherit (self.checks.${system}.pre-commit) shellHook;
       };

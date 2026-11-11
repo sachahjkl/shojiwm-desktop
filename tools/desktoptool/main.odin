@@ -1,6 +1,6 @@
 // desktoptool: the project's machinery, one program, whatever the shell.
-//   odin run tools/desktoptool -collection:gt=ext/gui_toolkit/src -- <command>
-//   odin run tools/desktoptool -collection:gt=ext/gui_toolkit/src -- help
+//   odin run tools/desktoptool -collection:gt=$GUI_TOOLKIT_SRC -- <command>
+//   odin run tools/desktoptool -collection:gt=$GUI_TOOLKIT_SRC -- help
 // What it needs is on the path: git (only when it is not run from the checkout's root).
 package desktoptool
 

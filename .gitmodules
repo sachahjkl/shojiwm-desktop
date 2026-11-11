@@ -1,3 +1,0 @@
-[submodule "ext/gui_toolkit"]
-	path = ext/gui_toolkit
-	url = https://github.com/sachahjkl/gui_toolkit.git

@@ -19,17 +19,18 @@ type: Added
 - One change, one fragment. A change that a user cannot see has no fragment.
 
 The project's tool (`tools/desktoptool`) writes, checks and assembles the fragments. Run it
-from the checkout, with the gui_toolkit submodule (`git submodule update --init`):
+from the checkout, in the development shell (`nix develop`), which gives Odin and the path of
+gui_toolkit in `$GUI_TOOLKIT_SRC`:
 
 ```sh
 # a fragment, named from the text's bold summary
-odin run tools/desktoptool -collection:gt=ext/gui_toolkit/src -- changelog new Added "**The thing**: what it does"
+odin run tools/desktoptool -collection:gt=$GUI_TOOLKIT_SRC -- changelog new Added "**The thing**: what it does"
 # every fragment well formed, and the version the same in its three files
-odin run tools/desktoptool -collection:gt=ext/gui_toolkit/src -- changelog check
+odin run tools/desktoptool -collection:gt=$GUI_TOOLKIT_SRC -- changelog check
 # what the next version brings
-odin run tools/desktoptool -collection:gt=ext/gui_toolkit/src -- changelog preview
+odin run tools/desktoptool -collection:gt=$GUI_TOOLKIT_SRC -- changelog preview
 # a release: the fragments into a "## [x.y.z] - date" section, the fragments deleted
-odin run tools/desktoptool -collection:gt=ext/gui_toolkit/src -- prepare 0.2.0
+odin run tools/desktoptool -collection:gt=$GUI_TOOLKIT_SRC -- prepare 0.2.0
 ```
 
 `prepare` also writes the version in `crates/shell/Cargo.toml`, `crates/shell/Cargo.lock` and
