@@ -193,6 +193,18 @@ impl Bar {
 
 thread_local! {
     static INSTALLED: Cell<bool> = const { Cell::new(false) };
+    /// Every bar that is open, for [`close_all_popups`].
+    static BARS: std::cell::RefCell<Vec<Bar>> = const { std::cell::RefCell::new(Vec::new()) };
+}
+
+/// Closes the popups of every bar. A popup's grab closes it on a press outside the shell only:
+/// a press on another surface of the shell (the desktop) reaches that surface, which calls this.
+pub fn close_all_popups() {
+    BARS.with(|bars| {
+        for bar in bars.borrow().iter() {
+            bar.close_popups();
+        }
+    });
 }
 
 /// Starts what every bar shares: the windows and programs, the progress programs show, and the
@@ -233,6 +245,11 @@ fn bar_anchor() -> Anchor {
 pub fn open(output: Output) {
     install();
     let bar = Bar::new(output.clone());
+    BARS.with(|bars| bars.borrow_mut().push(bar.clone()));
+    {
+        let name = bar.name.clone();
+        on_cleanup(move || BARS.with(|bars| bars.borrow_mut().retain(|b| b.name != name)));
+    }
     let height = untrack(|| theme().taskbar_height as i32);
     let layer = open_layer(
         LayerOptions::new()

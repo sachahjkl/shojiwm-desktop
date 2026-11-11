@@ -406,7 +406,10 @@ xdotool click 3
 sleep 2
 shot "jump-list"
 alive "jump-list"
-xdotool mousemove --window "$window" $((WIDTH / 2)) $((HEIGHT / 2))
+# A menu: a press outside closes it (the bar takes no keys: Escape would go to
+# the window with the keyboard). On the empty desktop, under the gadgets.
+xdotool mousemove --window "$window" 1150 700
+xdotool click 1
 sleep 2
 
 say "the desktop's menu"

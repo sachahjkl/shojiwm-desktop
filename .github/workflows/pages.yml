@@ -26,7 +26,8 @@ concurrency:
 
 jobs:
   deploy:
-    runs-on: ubuntu-24.04
+    # The light runner: a container that starts at once, enough to copy files.
+    runs-on: ubuntu-slim
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}

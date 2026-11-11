@@ -102,6 +102,8 @@ fn view(desk: Desk) -> Div {
         .overflow_hidden()
         .bg(wallpaper::BACKDROP)
         .on_resized(move |w, h| desk.area.set_if_changed((w, h)))
+        // The bar's popups close on a press here: their grab only sees presses outside the shell.
+        .on_pointer_down(|_| crate::taskbar::close_all_popups())
         // A note keeps the keyboard until the pointer goes to a window or a panel: the desktop
         // is then under it no more.
         .on_hover(|inside| {
