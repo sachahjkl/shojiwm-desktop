@@ -77,9 +77,9 @@ export const WIN_PLACED = createWindowState<boolean>("placed", {
 
 const OPEN_EASING = cubicBezier(0.1, 0.9, 0.2, 1);
 const CLOSE_EASING = cubicBezier(0.4, 0, 1, 1);
-const MINIMIZE_CHANNEL = "win7.minimize";
-const OPEN_CHANNEL = "win7.open";
-const CLOSE_CHANNEL = "win7.close";
+const MINIMIZE_CHANNEL = "desktop.minimize";
+const OPEN_CHANNEL = "desktop.open";
+const CLOSE_CHANNEL = "desktop.close";
 
 /** Two presses this close together, in milliseconds, are a double click. */
 const DOUBLE_CLICK_MS = 400;

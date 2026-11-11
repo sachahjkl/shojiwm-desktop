@@ -1,4 +1,4 @@
-//! shojiwm-shell: the desktop shell of shojiwm-win7 on AntiWebUI. It replaces the Quickshell
+//! shojiwm-shell: the desktop shell of shojiwm-desktop on AntiWebUI. It replaces the Quickshell
 //! shell (`shell/`), surface by surface: the taskbar, the Start menu and the launcher, the
 //! notification area and its panels, the desktop and its gadgets, the dialogs, the Control
 //! Panel and the lock screen, in the theme chosen in the Control Panel (Aero or Kernel).

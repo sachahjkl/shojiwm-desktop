@@ -87,7 +87,7 @@ fn user() -> String {
     std::env::var("SHOJIWM_GREETER_USER").unwrap_or_default()
 }
 
-/// `$XDG_STATE_HOME/shojiwm-win7/last-session`.
+/// `$XDG_STATE_HOME/shojiwm-desktop/last-session`.
 fn last_session_file() -> PathBuf {
     state_dir().join("last-session")
 }
@@ -438,7 +438,7 @@ pub fn run() -> Result<(), String> {
     // The greeter's account has no settings of its own: the defaults, never written.
     crate::settings::never_save();
     let result = Shell::new()
-        .namespace("shojiwm-win7-greeter")
+        .namespace("shojiwm-desktop-greeter")
         .app_id("shojiwm-shell-greeter")
         .run(|| {
             let greeter = Greeter::new();
@@ -463,7 +463,7 @@ pub fn run() -> Result<(), String> {
                         .layer(Layer::Overlay)
                         .anchor(Anchor::ALL)
                         .exclusive(Exclusive::Ignore)
-                        .namespace("shojiwm-win7-greeter"),
+                        .namespace("shojiwm-desktop-greeter"),
                     move || surface(primary, greeter, account),
                 );
                 // The keyboard goes to the main screen's password field alone.

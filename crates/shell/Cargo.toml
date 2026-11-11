@@ -2,7 +2,7 @@
 name = "shojiwm-shell"
 version = "0.1.0"
 edition = "2024"
-description = "The desktop shell of shojiwm-win7 (taskbar, Start menu, panels, Control Panel, lock screen), on AntiWebUI"
+description = "The desktop shell of shojiwm-desktop (taskbar, Start menu, panels, Control Panel, lock screen), on AntiWebUI"
 license = "MIT"
 
 [[bin]]

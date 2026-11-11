@@ -35,7 +35,7 @@ const WATCH: Duration = Duration::from_secs(2);
 /// desktop): its `.desktop` file name. A drag of a program carries
 /// `DragData::new(ProgramDrag(id)).data(PROGRAM_MIME, id)`, so that another surface of the shell
 /// takes it.
-pub const PROGRAM_MIME: &str = "application/x-shojiwm-win7-program";
+pub const PROGRAM_MIME: &str = "application/x-shojiwm-desktop-program";
 
 /// A program dragged in the shell: its `.desktop` file name.
 #[derive(Clone, Debug, PartialEq, Eq)]

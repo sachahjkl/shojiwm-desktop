@@ -36,7 +36,7 @@ if [ "${1:-}" != "--inner" ]; then
     "nixpkgs#glib" \
     "path:$repo#shell" \
     -c env -u DBUS_SESSION_BUS_ADDRESS -u WAYLAND_DISPLAY -u DISPLAY \
-    -u SHOJIWM_SOCKET -u SHOJIWM_WIN7_KEYS -u SHOJIWM_WIN7_SOCKET \
+    -u SHOJIWM_SOCKET -u SHOJIWM_DESKTOP_KEYS -u SHOJIWM_DESKTOP_SOCKET \
     bash "${BASH_SOURCE[0]}" --inner
 fi
 
@@ -52,7 +52,7 @@ fi
 
 say() { printf '==> %s\n' "$*"; }
 
-work="$(mktemp -d /tmp/shojiwm-win7-shots.XXXXXX)"
+work="$(mktemp -d /tmp/shojiwm-desktop-shots.XXXXXX)"
 display=":97"
 screen="1600x1000"
 

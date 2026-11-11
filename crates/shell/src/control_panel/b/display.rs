@@ -393,7 +393,7 @@ pub fn page() -> Div {
         ))
         .child(show(move || d.confirming(), move || confirm_box(d)))
         .child(note(
-            "Your choices replace the session's layout (SHOJIWM_WIN7_OUTPUTS) for the screens \
+            "Your choices replace the session's layout (SHOJIWM_DESKTOP_OUTPUTS) for the screens \
              you change; the screens are then placed side by side, left to right.",
         ))
 }

@@ -32,7 +32,7 @@ except ImportError:  # pragma: no cover - told to the user, not handled
         "python3 -I tools/compare.py ..."
     )
 
-OUT = "/tmp/shojiwm-win7-compare"
+OUT = "/tmp/shojiwm-desktop-compare"
 
 
 def regions(w, h):

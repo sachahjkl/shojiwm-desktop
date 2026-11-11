@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
-  <!-- The shojiwm-win7 logo: a glass window whose client is a shoji screen,
+  <!-- The shojiwm-desktop logo: a glass window whose client is a shoji screen,
        paper behind a wooden lattice, on a glossy sky tile. Drawn by hand. -->
   <defs>
     <linearGradient id="tile" x1="0" y1="0" x2="0" y2="1">

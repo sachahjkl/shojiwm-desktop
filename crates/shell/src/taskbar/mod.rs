@@ -242,7 +242,7 @@ pub fn open(output: Output) {
             .exclusive(Exclusive::Fixed(height))
             .keyboard(Keyboard::None)
             .output(&output)
-            .namespace("shojiwm-win7-taskbar"),
+            .namespace("shojiwm-desktop-taskbar"),
         {
             let bar = bar.clone();
             move || view(bar)

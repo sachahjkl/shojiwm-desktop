@@ -5,6 +5,6 @@ After=graphical-session.target
 
 [Service]
 Type=dbus
-BusName=org.freedesktop.impl.portal.desktop.shojiwm-win7
-ExecStart=@out@/libexec/xdg-desktop-portal-shojiwm-win7
+BusName=org.freedesktop.impl.portal.desktop.shojiwm-desktop
+ExecStart=@out@/libexec/xdg-desktop-portal-shojiwm-desktop
 Restart=on-failure

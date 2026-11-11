@@ -5,7 +5,7 @@
 //! programs make on the session bus and prints each one as a line of JSON. Notifications that
 //! only show a level (volume, brightness: the `x-canonical-private-synchronous` or
 //! `x-dunst-stack-tag` hints) and the transient ones stay out of the list. The list is kept in
-//! `$XDG_STATE_HOME/shojiwm-win7/notifications.json`, so it outlives a restart of the shell
+//! `$XDG_STATE_HOME/shojiwm-desktop/notifications.json`, so it outlives a restart of the shell
 //! and a new session.
 
 use super::{

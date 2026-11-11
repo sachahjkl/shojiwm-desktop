@@ -163,7 +163,7 @@ pub fn install() {
         layer_while(
             &output,
             move || slot(&RUN_ON).with(|o| *o == here),
-            || dialog_layer("shojiwm-win7-run"),
+            || dialog_layer("shojiwm-desktop-run"),
             |_| run::view(),
         );
 
@@ -171,7 +171,7 @@ pub fn install() {
         layer_while(
             &output,
             move || slot(&SHUTDOWN_ON).with(|o| *o == here),
-            || dialog_layer("shojiwm-win7-shutdown"),
+            || dialog_layer("shojiwm-desktop-shutdown"),
             |_| shutdown::view(),
         );
 
@@ -179,7 +179,7 @@ pub fn install() {
         layer_while(
             &output,
             move || slot(&ADMIN_MENU_ON).with(|o| *o == here),
-            || dialog_layer("shojiwm-win7-adminmenu"),
+            || dialog_layer("shojiwm-desktop-adminmenu"),
             |output| admin_menu::view(output.name),
         );
 

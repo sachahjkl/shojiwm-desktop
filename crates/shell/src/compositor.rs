@@ -2,7 +2,7 @@
 //! show-desktop toggle that brings the windows back, the screens' modes, and the settings the
 //! window frames are drawn with (theme, corners, glass, animations, programs).
 //!
-//! `src/peek.tsx` listens and hands the path to the shell in `$SHOJIWM_WIN7_SOCKET` when it starts
+//! `src/peek.tsx` listens and hands the path to the shell in `$SHOJIWM_DESKTOP_SOCKET` when it starts
 //! it. The wire format is ShojiWM's: one JSON object per line, `{ "method", "params" }`, and
 //! `{ "id", "method", "params" }` for a request, answered by `{ "id", "result" }`.
 //!
@@ -40,7 +40,7 @@ struct Line {
 static LINE: OnceLock<Arc<Line>> = OnceLock::new();
 
 fn path() -> Option<String> {
-    std::env::var("SHOJIWM_WIN7_SOCKET")
+    std::env::var("SHOJIWM_DESKTOP_SOCKET")
         .ok()
         .filter(|p| !p.is_empty())
 }

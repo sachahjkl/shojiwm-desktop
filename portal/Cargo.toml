@@ -1,5 +1,5 @@
 [package]
-name = "xdg-desktop-portal-shojiwm-win7"
+name = "xdg-desktop-portal-shojiwm-desktop"
 version = "0.1.0"
 edition = "2024"
 description = "The GlobalShortcuts portal for the Windows 7 configuration of ShojiWM"

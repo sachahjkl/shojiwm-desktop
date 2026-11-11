@@ -68,7 +68,7 @@
       pkgs = pkgsFor system;
 
       config = pkgs.stdenvNoCC.mkDerivation {
-        pname = "shojiwm-win7";
+        pname = "shojiwm-desktop";
         inherit version;
         src = configSource;
 
@@ -84,14 +84,14 @@
 
         meta = {
           description = "A Windows 7 Aero desktop for ShojiWM";
-          homepage = "https://github.com/sachahjkl/shojiwm-win7";
+          homepage = "https://github.com/sachahjkl/shojiwm-desktop";
           license = nixpkgs.lib.licenses.mit;
           platforms = nixpkgs.lib.platforms.linux;
         };
       };
 
       install = pkgs.writeShellApplication {
-        name = "shojiwm-win7-install";
+        name = "shojiwm-desktop-install";
         runtimeInputs = [pkgs.coreutils];
         text = ''
           config_dir="''${XDG_CONFIG_HOME:-$HOME/.config}/shojiwm"
@@ -112,7 +112,7 @@
       # The GlobalShortcuts portal: programs such as Hex bind their keys
       # through it (see portal/ and src/shortcuts.ts).
       portal = pkgs.rustPlatform.buildRustPackage {
-        pname = "xdg-desktop-portal-shojiwm-win7";
+        pname = "xdg-desktop-portal-shojiwm-desktop";
         inherit version;
         src = nixpkgs.lib.fileset.toSource {
           root = ./portal;
@@ -127,21 +127,21 @@
 
         postInstall = ''
           mkdir -p "$out/libexec" "$out/share/dbus-1/services" "$out/share/systemd/user"
-          mv "$out/bin/xdg-desktop-portal-shojiwm-win7" "$out/libexec/"
+          mv "$out/bin/xdg-desktop-portal-shojiwm-desktop" "$out/libexec/"
           rmdir "$out/bin"
-          install -Dm644 data/shojiwm-win7.portal \
-            "$out/share/xdg-desktop-portal/portals/shojiwm-win7.portal"
+          install -Dm644 data/shojiwm-desktop.portal \
+            "$out/share/xdg-desktop-portal/portals/shojiwm-desktop.portal"
           substitute data/dbus.service \
-            "$out/share/dbus-1/services/org.freedesktop.impl.portal.desktop.shojiwm-win7.service" \
+            "$out/share/dbus-1/services/org.freedesktop.impl.portal.desktop.shojiwm-desktop.service" \
             --subst-var out
           substitute data/systemd.service \
-            "$out/share/systemd/user/xdg-desktop-portal-shojiwm-win7.service" \
+            "$out/share/systemd/user/xdg-desktop-portal-shojiwm-desktop.service" \
             --subst-var out
         '';
 
         meta = {
           description = "The GlobalShortcuts portal for the Windows 7 configuration of ShojiWM";
-          homepage = "https://github.com/sachahjkl/shojiwm-win7";
+          homepage = "https://github.com/sachahjkl/shojiwm-desktop";
           license = nixpkgs.lib.licenses.mit;
           platforms = nixpkgs.lib.platforms.linux;
         };
@@ -175,8 +175,8 @@
             --suffix PATH : ${nixpkgs.lib.makeBinPath [pkgs.dconf pkgs.glib pkgs.util-linux pkgs.xdg-utils]}
         '';
         meta = {
-          description = "The desktop shell of shojiwm-win7, on AntiWebUI";
-          homepage = "https://github.com/sachahjkl/shojiwm-win7";
+          description = "The desktop shell of shojiwm-desktop, on AntiWebUI";
+          homepage = "https://github.com/sachahjkl/shojiwm-desktop";
           license = nixpkgs.lib.licenses.mit;
           platforms = nixpkgs.lib.platforms.linux;
           mainProgram = "shojiwm-shell";
@@ -188,14 +188,14 @@
       # yellow folder, the libraries (the folder with an emblem, as on the
       # desktop) and the glass Recycle Bin.
       icon-theme =
-        pkgs.runCommand "shojiwm-win7-aero-icons" {
+        pkgs.runCommand "shojiwm-desktop-aero-icons" {
           src = nixpkgs.lib.fileset.toSource {
             root = ./.;
             fileset = nixpkgs.lib.fileset.unions [./assets/icons-src ./shell/assets/icons];
           };
           oxygen = "${pkgs.kdePackages.oxygen-icons}/share/icons/oxygen/base";
           meta = {
-            description = "The Aero icon theme of shojiwm-win7: Oxygen with Windows 7's folders and Recycle Bin";
+            description = "The Aero icon theme of shojiwm-desktop: Oxygen with Windows 7's folders and Recycle Bin";
             license = nixpkgs.lib.licenses.lgpl3Plus;
           };
         } ''
@@ -230,7 +230,7 @@
             {
               echo "[Icon Theme]"
               echo "Name=Aero"
-              echo "Comment=shojiwm-win7: Oxygen with Windows 7's folders and Recycle Bin"
+              echo "Comment=shojiwm-desktop: Oxygen with Windows 7's folders and Recycle Bin"
               echo "Inherits=oxygen,hicolor"
               echo "Directories=''${directories}aero/places,aero/apps,scalable/places"
               for size in $sizes; do
@@ -249,12 +249,12 @@
     apps = forAllSystems (system: {
       install = {
         type = "app";
-        program = "${self.packages.${system}.install}/bin/shojiwm-win7-install";
+        program = "${self.packages.${system}.install}/bin/shojiwm-desktop-install";
       };
     });
 
     # The Windows 7 log-on screen as the display manager (greetd): see
-    # nix/greeter.nix and services.shojiwm-win7-greeter.
+    # nix/greeter.nix and services.shojiwm-desktop-greeter.
     nixosModules.greeter = {
       config,
       lib,
@@ -310,7 +310,7 @@
 
       # The portal's Rust: clippy without warnings, and rustfmt's layout.
       portal-lint = portal.overrideAttrs (old: {
-        pname = "xdg-desktop-portal-shojiwm-win7-lint";
+        pname = "xdg-desktop-portal-shojiwm-desktop-lint";
         nativeBuildInputs = old.nativeBuildInputs ++ [pkgs.clippy pkgs.rustfmt];
         buildPhase = ''
           runHook preBuild
@@ -326,7 +326,7 @@
       # The TSX is type checked against the ShojiWM TypeScript package, the
       # way the compositor's own `npm run typecheck` does it.
       typecheck =
-        pkgs.runCommand "shojiwm-win7-typecheck" {
+        pkgs.runCommand "shojiwm-desktop-typecheck" {
           nativeBuildInputs = [pkgs.typescript];
         } ''
           cp -R ${configSource}/src ./src

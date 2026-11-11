@@ -147,7 +147,7 @@ pub fn page() -> Div {
         .child(sub_heading("Computer name"))
         .child(fact("Computer name", Facts::computer_name))
         .child(sub_heading("This desktop"))
-        .child(info_row("Desktop", || "shojiwm-win7".to_owned()))
+        .child(info_row("Desktop", || "shojiwm-desktop".to_owned()))
         .child(info_row("Compositor", || "ShojiWM".to_owned()))
         .child(info_row("Shell", || "shojiwm-shell (AntiWebUI)".to_owned()))
         .child(info_row("Launcher", || {

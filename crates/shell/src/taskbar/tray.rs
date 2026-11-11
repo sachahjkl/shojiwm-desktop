@@ -21,7 +21,7 @@ use std::path::PathBuf;
 use std::time::Duration;
 
 /// The MIME type of a notification-area icon being dragged: its item id.
-pub const TRAY_MIME: &str = "application/x-shojiwm-win7-tray-item";
+pub const TRAY_MIME: &str = "application/x-shojiwm-desktop-tray-item";
 
 /// A notification-area icon being dragged: its item id.
 #[derive(Clone, Debug, PartialEq, Eq)]

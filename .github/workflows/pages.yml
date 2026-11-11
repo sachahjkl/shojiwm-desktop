@@ -1,5 +1,5 @@
 # Publishes site/ to GitHub Pages, with the logo and the screenshots of assets/site beside it.
-# Pages use the "GitHub Actions" source (set once: gh api -X POST repos/sachahjkl/shojiwm-win7/pages -f build_type=workflow).
+# Pages use the "GitHub Actions" source (set once: gh api -X POST repos/sachahjkl/shojiwm-desktop/pages -f build_type=workflow).
 name: Pages
 
 on:

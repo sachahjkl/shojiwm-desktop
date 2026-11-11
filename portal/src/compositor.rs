@@ -25,15 +25,15 @@ pub struct Event {
     pub pressed: bool,
 }
 
-/// The socket of the configuration: `SHOJIWM_WIN7_SOCKET`, else the path
+/// The socket of the configuration: `SHOJIWM_DESKTOP_SOCKET`, else the path
 /// the configuration makes from `XDG_RUNTIME_DIR` and `WAYLAND_DISPLAY`.
 pub fn socket_path() -> PathBuf {
-    if let Some(path) = std::env::var_os("SHOJIWM_WIN7_SOCKET") {
+    if let Some(path) = std::env::var_os("SHOJIWM_DESKTOP_SOCKET") {
         return path.into();
     }
     let runtime = std::env::var_os("XDG_RUNTIME_DIR").unwrap_or_else(|| "/tmp".into());
     let display = std::env::var("WAYLAND_DISPLAY").unwrap_or_else(|_| "wayland-0".into());
-    PathBuf::from(runtime).join(format!("shojiwm-{display}-win7.sock"))
+    PathBuf::from(runtime).join(format!("shojiwm-{display}-desktop.sock"))
 }
 
 /// Keep the compositor bound to the current triggers, and pass its events

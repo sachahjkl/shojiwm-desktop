@@ -9,7 +9,7 @@
 # log-on screen never keeps you out.
 #
 # The greeter keeps the last session chosen in its state folder
-# (~greeter/.local/state/shojiwm-win7/last-session).
+# (~greeter/.local/state/shojiwm-desktop/last-session).
 {
   package,
   shell,
@@ -19,26 +19,26 @@
   pkgs,
   ...
 }: let
-  cfg = config.services.shojiwm-win7-greeter;
+  cfg = config.services.shojiwm-desktop-greeter;
   sessions = "${config.services.displayManager.sessionData.desktops}/share/wayland-sessions";
 
   # In the greeter's Hyprland: the log-on screen, then out. The mark tells
   # greetd's command below that a session was started.
-  greeterSession = pkgs.writeShellScript "shojiwm-win7-greeter" ''
+  greeterSession = pkgs.writeShellScript "shojiwm-desktop-greeter" ''
     export SHOJIWM_GREETER_USER=${lib.escapeShellArg cfg.user}
     export SHOJIWM_GREETER_SESSIONS=${sessions}
     export SHOJIWM_GREETER_DEFAULT_SESSION=${lib.escapeShellArg cfg.defaultSession}
-    export SHOJIWM_WIN7_PRIMARY_SCREEN=${lib.escapeShellArg cfg.mainScreen}
+    export SHOJIWM_DESKTOP_PRIMARY_SCREEN=${lib.escapeShellArg cfg.mainScreen}
     # The pictures of the log-on screen are the configuration's.
     export SHOJIWM_SHELL_DIR=${package}/shell
     if ${lib.getExe shell} greeter; then
-      touch "$XDG_RUNTIME_DIR/shojiwm-win7-greeter-launched"
+      touch "$XDG_RUNTIME_DIR/shojiwm-desktop-greeter-launched"
     fi
     # The configuration is Lua: dispatch takes a Lua call.
     ${pkgs.hyprland}/bin/hyprctl dispatch 'hl.dsp.exit()'
   '';
 
-  hyprlandConfig = pkgs.writeText "shojiwm-win7-greeter.lua" ''
+  hyprlandConfig = pkgs.writeText "shojiwm-desktop-greeter.lua" ''
     ${lib.concatMapStrings (monitor: ''
         hl.monitor({
             output   = ${builtins.toJSON monitor.output},
@@ -77,13 +77,13 @@
 
   # greetd's command: the log-on screen, else the text log-on into the
   # default session.
-  greeter = pkgs.writeShellScript "shojiwm-win7-greeter-or-text" ''
-    mark="$XDG_RUNTIME_DIR/shojiwm-win7-greeter-launched"
+  greeter = pkgs.writeShellScript "shojiwm-desktop-greeter-or-text" ''
+    mark="$XDG_RUNTIME_DIR/shojiwm-desktop-greeter-launched"
     rm -f "$mark"
     # Hyprland writes its banner and log to its output: to the journal
-    # (journalctl -t shojiwm-win7-greeter), not over the log-on screen's
+    # (journalctl -t shojiwm-desktop-greeter), not over the log-on screen's
     # terminal before it draws.
-    ${pkgs.systemd}/bin/systemd-cat -t shojiwm-win7-greeter -- \
+    ${pkgs.systemd}/bin/systemd-cat -t shojiwm-desktop-greeter -- \
       ${pkgs.hyprland}/bin/start-hyprland -- --config ${hyprlandConfig}
     if [ -e "$mark" ]; then
       exit 0
@@ -92,8 +92,8 @@
     exec ${pkgs.greetd}/bin/agreety --cmd "''${session:-$SHELL}"
   '';
 in {
-  options.services.shojiwm-win7-greeter = {
-    enable = lib.mkEnableOption "the Windows 7 log-on screen of shojiwm-win7, through greetd";
+  options.services.shojiwm-desktop-greeter = {
+    enable = lib.mkEnableOption "the Windows 7 log-on screen of shojiwm-desktop, through greetd";
 
     user = lib.mkOption {
       type = lib.types.str;

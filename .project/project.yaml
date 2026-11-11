@@ -1,4 +1,4 @@
-name: "shojiwm-win7"
+name: "shojiwm-desktop"
 description: "A Windows 7 Aero desktop for the ShojiWM Wayland compositor: glass window frames, a taskbar, a Start menu and a Control Panel. All artwork original."
 topics:
   - "shojiwm"
@@ -11,8 +11,8 @@ topics:
   - "desktop"
   - "linux"
   - "nix"
-homepage: "https://sachahjkl.github.io/shojiwm-win7/"
+homepage: "https://sachahjkl.github.io/shojiwm-desktop/"
 source:
   provider: github
   namespace: "sachahjkl"
-  path: "sachahjkl/shojiwm-win7"
+  path: "sachahjkl/shojiwm-desktop"

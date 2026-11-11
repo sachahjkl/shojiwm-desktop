@@ -1,8 +1,8 @@
-<p align="center"><img src="assets/logo.svg" alt="The shojiwm-win7 logo: a glass window with two shoji panels, one slid open on a mountain" width="128" height="128"></p>
+<p align="center"><img src="assets/logo.svg" alt="The shojiwm-desktop logo: a glass window with two shoji panels, one slid open on a mountain" width="128" height="128"></p>
 
-# shojiwm-win7
+# shojiwm-desktop
 
-Site: <https://sachahjkl.github.io/shojiwm-win7/>
+Site: <https://sachahjkl.github.io/shojiwm-desktop/>
 
 A Windows 7 "Aero" desktop for [ShojiWM](https://github.com/bea4dev/ShojiWM),
 the Wayland compositor you configure in TypeScript.
@@ -30,7 +30,7 @@ lists, which are built from KDE's LGPL-licensed Oxygen icons (see "Licence").
 | **Aero Snap**             | Drag a window against the top, left or right edge, or hold `Super` and press an arrow key. While you drag, a rectangle shows the place the window will take.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | **Double click**          | On the caption bar: maximise, and again to restore.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 | **Taskbar**               | Glass bar at the bottom: the orb, glass buttons that fill its height (icons alone by default, as Windows 7 does; labels in the Control Panel), the notification area, the clock over the full date, and the show-desktop button at the far right. Auto-hide (Taskbar and Start menu) slides it down to a 2 px line that brings it back, and keeps it up while one of its menus is open.                                                                                                                                                                                                                                                                                                                                                                                                        |
-| **Sticky notes**          | Desktop menu, New, Sticky Note: a yellow note on the desktop to type in, moved by its band, sized by its corner, with + for another and × to remove it. The notes are kept in `~/.local/state/shojiwm-win7/notes.json`. The desktop holds the keyboard while you type in one and gives it back when the pointer goes to a window.                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| **Sticky notes**          | Desktop menu, New, Sticky Note: a yellow note on the desktop to type in, moved by its band, sized by its corner, with + for another and × to remove it. The notes are kept in `~/.local/state/shojiwm-desktop/notes.json`. The desktop holds the keyboard while you type in one and gives it back when the pointer goes to a window.                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | **Gadgets**               | On the first screen's desktop: the CPU Meter, two dials for the processor and the memory in use read from `/proc` every 1.5 s, and the Clock, an analog face with a seconds hand and the day. Drag them anywhere; the desktop menu's Gadgets submenu shows or hides each.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | **Desktop icons**         | The Recycle Bin and everything in the desktop folder, on the top left screen to start with. Drag an icon anywhere, on any screen; View → Align icons to grid snaps it to a cell, Auto arrange icons fills each screen's columns in sort order. The icons of a screen that is not connected show on the main one and go back when it returns. Click to pick, Ctrl+click or drag a box for several, double click to open; a `.desktop` file is a shortcut with the arrow. Right click an icon to open, delete or rename it; right click the desktop for View, Sort by, Refresh, New folder or text document, a terminal there, and Personalize. Computer, your files and the Control Panel can stand beside the Recycle Bin (Taskbar and Start menu, Desktop icons); Computer does by default.   |
 | **Pinned programs**       | A pinned program keeps its icon on the taskbar while it is closed; a click starts it. Once it runs, its windows gather behind that same button. A middle click, Ctrl+click or Shift+click on any button starts another instance; clicks while a program starts do not start it again.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
@@ -43,7 +43,7 @@ lists, which are built from KDE's LGPL-licensed Oxygen icons (see "Licence").
 | **Run dialog**            | `Super`+`R`, or Run... in the Start menu: the Open field with the last 26 commands, completion from them, and the list under its arrow. A folder, a file or an address opens with `xdg-open`; anything else runs in a shell. A program that is not found stays in the field, with a message under it.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | **Start orb menu**        | A right click on the orb, or `Super`+`X`: terminals (one as root), the task manager, the Control Panel pages, the files, the network connections, the disks, the system log, the launcher, the power actions and the desktop.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | **Action Center**         | The flag of the notification area reports the problems that Windows 7's Action Center reports: system and user services that failed (systemd) and disks 90 % full, with a red or yellow mark. Its panel lists them; a failed service of yours can be cleared, a full disk opened. `quickshell ipc call actioncenter open\|close`.                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| **Notifications**         | The bell of the notification area keeps the notifications, across sessions, in `~/.local/state/shojiwm-win7/notifications.json` (Hokum draws them and keeps none): a red count for the unseen ones, a click for the list with each program's icon, title, text and time, a cross per card and Clear all. The panel's switch, or a middle click on the bell, is Hokum's Do not disturb, which slashes the bell.                                                                                                                                                                                                                                                                                                                                                                                 |
+| **Notifications**         | The bell of the notification area keeps the notifications, across sessions, in `~/.local/state/shojiwm-desktop/notifications.json` (Hokum draws them and keeps none): a red count for the unseen ones, a click for the list with each program's icon, title, text and time, a cross per card and Clear all. The panel's switch, or a middle click on the bell, is Hokum's Do not disturb, which slashes the bell.                                                                                                                                                                                                                                                                                                                                                                              |
 | **Network**               | The network icon beside the speaker shows a wired screen or wireless bars, with a yellow mark without Internet and a red one without a connection. A click opens the Windows 7 network panel: the connection in use, the wireless networks with their bars, Connect and Disconnect, the wireless switch and the connection editor. NetworkManager asks for a new network's key through its agent (nm-applet).                                                                                                                                                                                                                                                                                                                                                                                  |
 | **Bluetooth**             | With a BlueZ adapter, a Bluetooth icon shows in the notification area, grey when Bluetooth is off. A click opens its panel: the adapter and its switch, the paired devices (connected ones first, with their battery), then the devices in reach. A click on a device offers Connect or Disconnect, Pair or Remove. `quickshell ipc call bluetooth open\|close`.                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | **Volume**                | The speaker beside the clock shows the level of the default output. A click opens the volume panel: a slider, the mute button and the link to the mixer (`pwvucontrol`). The wheel steps it by 2 %, a middle click mutes, and the media keys work. With more than one output, a click on the device's name lists them to switch. `quickshell ipc call volume open\|openDevices\|close` drives the panel.                                                                                                                                                                                                                                                                                                                                                                                       |
@@ -53,7 +53,7 @@ lists, which are built from KDE's LGPL-licensed Oxygen icons (see "Licence").
 | **Screen saver**          | Mystify, drawn here: two bouncing shapes with fading trails, after 1 to 30 minutes without input (the idle protocol), until the mouse or a key; set and previewed on the Lock Screen page. Off by default, as on Windows 7.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | **Lock screen**           | The Windows 7 log-on screen: your picture behind (or the desktop's), the time, your account picture in its glass frame, your name, and the password field with the round blue arrow. `Super`+`L`, the Start menu, `loginctl lock-session`, going to sleep and a delay of inactivity lock it; PAM checks the password. It shows on the main screen only; the others stay black, and what is typed while one of them has the keyboard still goes to the password.                                                                                                                                                                                                                                                                                                                                |
 | **Control Panel**         | A window laid out as the Windows 7 one: light or dark, desktop background, lock screen picture and delay, account picture, taskbar and Start menu, clock format. Every change applies at once.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| **Screen resolution**     | The Control Panel shows the screens as they are placed and sets the resolution, refresh rate and scale of each one, live. A change goes back on its own after 15 seconds unless you keep it. The choices replace `SHOJIWM_WIN7_OUTPUTS` for the screens you change.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| **Screen resolution**     | The Control Panel shows the screens as they are placed and sets the resolution, refresh rate and scale of each one, live. A change goes back on its own after 15 seconds unless you keep it. The choices replace `SHOJIWM_DESKTOP_OUTPUTS` for the screens you change.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 | **Devices and Printers**  | The Control Panel shows the computer, its screens, the USB devices (lsusb, hubs left out) with an icon that fits each, and the printers (CUPS) with a tick on the default one.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | **Sound**                 | The Control Panel lists the playback and recording devices PipeWire knows, marks the default ones, and makes another the default; a link opens the volume mixer.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | **Default programs**      | The Control Panel sets the program that opens web links, mail, folders, text, pictures, music, videos and PDF documents, from the programs whose .desktop file says they can, through xdg-mime (~/.config/mimeapps.list).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
@@ -261,7 +261,7 @@ session (`org.gnome.desktop.interface icon-theme`).
 
 Programs such as Hex, OBS or Discord bind their keys through the
 GlobalShortcuts portal, which ShojiWM does not have. `packages.<system>.portal`
-(`portal/`, xdg-desktop-portal-shojiwm-win7) provides it. It takes each
+(`portal/`, xdg-desktop-portal-shojiwm-desktop) provides it. It takes each
 program's preferred keys, asks the configuration to bind them, and sends the
 program `Activated` when they go down and `Deactivated` when any of them goes
 up. Hold-to-talk shortcuts therefore work. There is no dialog to choose other
@@ -271,10 +271,10 @@ On NixOS:
 
 ```nix
 xdg.portal = {
-  extraPortals = [inputs.shojiwm-win7.packages.${system}.portal];
+  extraPortals = [inputs.shojiwm-desktop.packages.${system}.portal];
   # The desktop name in lowercase: xdg-desktop-portal reads
   # shojiwm-portals.conf.
-  config.shojiwm."org.freedesktop.impl.portal.GlobalShortcuts" = "shojiwm-win7";
+  config.shojiwm."org.freedesktop.impl.portal.GlobalShortcuts" = "shojiwm-desktop";
 };
 ```
 
@@ -291,9 +291,9 @@ On NixOS, `nixosModules.greeter` sets it up: greetd, a Hyprland of its own
 with your screens, and the greeter account.
 
 ```nix
-imports = [inputs.shojiwm-win7.nixosModules.greeter];
+imports = [inputs.shojiwm-desktop.nixosModules.greeter];
 services.displayManager.ly.enable = false; # or whichever display manager you had
-services.shojiwm-win7-greeter = {
+services.shojiwm-desktop-greeter = {
   enable = true;
   user = "alice";
   defaultSession = "shojiwm-uwsm";
@@ -317,7 +317,7 @@ compositor when Quickshell exits. It reads:
 | `SHOJIWM_GREETER_USER`            | The account to log on.                                                       |
 | `SHOJIWM_GREETER_SESSIONS`        | The folder of the sessions' `.desktop` files (`share/wayland-sessions`).     |
 | `SHOJIWM_GREETER_DEFAULT_SESSION` | The session chosen the first time: its file name without `.desktop`.         |
-| `SHOJIWM_WIN7_PRIMARY_SCREEN`     | The connector of the main screen (`HDMI-A-1`). Without it, the first screen. |
+| `SHOJIWM_DESKTOP_PRIMARY_SCREEN`  | The connector of the main screen (`HDMI-A-1`). Without it, the first screen. |
 
 The account picture is AccountsService's (`/var/lib/AccountsService/icons/`):
 the greeter cannot read `~/.face`. To try it without logging out, run it
@@ -341,7 +341,7 @@ to the text log-on, which starts the default session.
 Install the configuration into `~/.config/shojiwm`:
 
 ```sh
-nix run github:sachahjkl/shojiwm-win7#install
+nix run github:sachahjkl/shojiwm-desktop#install
 ```
 
 The command copies `src`, `assets`, `shell`, `package.json` and
@@ -351,8 +351,8 @@ To use the flake as an input of your own system flake:
 
 ```nix
 {
-  inputs.shojiwm-win7 = {
-    url = "github:sachahjkl/shojiwm-win7";
+  inputs.shojiwm-desktop = {
+    url = "github:sachahjkl/shojiwm-desktop";
     inputs.nixpkgs.follows = "nixpkgs";
   };
 }
@@ -365,8 +365,8 @@ into `~/.config/shojiwm` with whatever manages your home files, or run
 ### Without Nix
 
 ```sh
-git clone https://github.com/sachahjkl/shojiwm-win7.git
-cd shojiwm-win7
+git clone https://github.com/sachahjkl/shojiwm-desktop.git
+cd shojiwm-desktop
 mkdir -p ~/.config/shojiwm
 rm -rf ~/.config/shojiwm/src ~/.config/shojiwm/assets ~/.config/shojiwm/shell
 cp -R src assets shell package.json tsconfig.json ~/.config/shojiwm/
@@ -475,20 +475,20 @@ running one.
   and `systemctl` by default); the Control Panel picks which one the button
   itself runs.
 - **Main screen:** Control Panel → Screen Resolution → Make this my main display. Without a choice, the first screen Quickshell lists is the main one. The lock screen, the gadgets, and the Start menu and Shut Down dialog asked without a screen go there.
-- **Screens:** set `SHOJIWM_WIN7_OUTPUTS` in the session environment to
+- **Screens:** set `SHOJIWM_DESKTOP_OUTPUTS` in the session environment to
   Hyprland monitor rules `name,mode,position,scale` separated by `;`, for
   example `DP-2,2560x1440@180,0x0,1.25;HDMI-A-1,preferred,auto,1.875`.
   Without it, ShojiWM uses the best mode of each screen at scale 1.
 - **Programs:** the Control Panel's Default Programs chooses the terminal,
   the task manager, the system monitor, the clipboard history and the
   screenshot: an installed program or any command. "As the session sets
-  it" takes `SHOJIWM_WIN7_TERMINAL`, `SHOJIWM_WIN7_TASK_MANAGER`,
-  `SHOJIWM_WIN7_SYSTEM_MONITOR`, `SHOJIWM_WIN7_CLIPBOARD` or
-  `SHOJIWM_WIN7_SCREENSHOT` from the session's environment (a NixOS
+  it" takes `SHOJIWM_DESKTOP_TERMINAL`, `SHOJIWM_DESKTOP_TASK_MANAGER`,
+  `SHOJIWM_DESKTOP_SYSTEM_MONITOR`, `SHOJIWM_DESKTOP_CLIPBOARD` or
+  `SHOJIWM_DESKTOP_SCREENSHOT` from the session's environment (a NixOS
   configuration's defaults), else kitty, inspecteur, inspecteur on its Performance
   section, none,
   and the whole screen to the clipboard.
-- **More keys:** set `SHOJIWM_WIN7_KEYS` to a JSON object of shortcut to
+- **More keys:** set `SHOJIWM_DESKTOP_KEYS` to a JSON object of shortcut to
   shell command, for example `{"Ctrl+Shift+u": "papier toggle"}`, for
   programs that do not use the GlobalShortcuts portal.
 - **Notifications:** `assets/hokum/aero.kdl` is a Windows 7 balloon theme

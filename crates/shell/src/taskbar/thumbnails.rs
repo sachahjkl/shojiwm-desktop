@@ -104,7 +104,7 @@ pub(super) fn follow(bar: Bar) {
                     .fit_content()
                     .margin(margin(&bar, shown_windows(&bar).len()))
                     .output(&bar.output)
-                    .namespace("shojiwm-win7-thumbnails");
+                    .namespace("shojiwm-desktop-thumbnails");
                 let shown = bar.clone();
                 *handle.borrow_mut() = Some(open_layer(options, move || view(shown)));
             });

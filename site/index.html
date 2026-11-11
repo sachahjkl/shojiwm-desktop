@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light dark">
-<title>shojiwm-win7 - a Windows 7 Aero desktop for ShojiWM</title>
+<title>shojiwm-desktop - a Windows 7 Aero desktop for ShojiWM</title>
 <meta name="description" content="A Windows 7 Aero desktop for the ShojiWM Wayland compositor: glass window frames, a taskbar, a Start menu and a Control Panel. All artwork original.">
 <link rel="icon" type="image/svg+xml" href="logo.svg">
 <link rel="icon" type="image/png" sizes="512x512" href="logo.png">
@@ -16,7 +16,7 @@
 <div class="page">
 <header class="masthead">
 <img src="logo.svg" alt="" width="48" height="48">
-<a class="name" href="./">shojiwm-win7</a>
+<a class="name" href="./">shojiwm-desktop</a>
 <span class="tagline">a Windows 7 Aero desktop for the ShojiWM Wayland compositor</span>
 </header>
 <nav class="site" aria-label="Site">
@@ -26,16 +26,16 @@
 <span class="sep" aria-hidden="true">-</span>
 <a href="#install">install</a>
 <span class="sep" aria-hidden="true">-</span>
-<a href="https://github.com/sachahjkl/shojiwm-win7#readme">README</a>
+<a href="https://github.com/sachahjkl/shojiwm-desktop#readme">README</a>
 <span class="sep" aria-hidden="true">-</span>
-<a href="https://github.com/sachahjkl/shojiwm-win7">source code</a>
+<a href="https://github.com/sachahjkl/shojiwm-desktop">source code</a>
 <span class="sep" aria-hidden="true">-</span>
 <a href="https://github.com/bea4dev/ShojiWM">ShojiWM</a>
 </nav>
 <div class="columns">
 <main id="main">
-<h1>Welcome to shojiwm-win7</h1>
-<p>shojiwm-win7 is a configuration for <a href="https://github.com/bea4dev/ShojiWM">ShojiWM</a>, the Wayland
+<h1>Welcome to shojiwm-desktop</h1>
+<p>shojiwm-desktop is a configuration for <a href="https://github.com/bea4dev/ShojiWM">ShojiWM</a>, the Wayland
   compositor you configure in TypeScript. The compositor draws the window frames: a blurred glass caption bar, the
   caption buttons and a thin glossy border. A <a href="https://quickshell.org">Quickshell</a> shell draws the rest:
   the taskbar, the Start menu, the notification area, the Control Panel and the lock screen.</p>
@@ -60,12 +60,12 @@
 <h2 id="install">Install</h2>
 <p>You need ShojiWM from the <code>integration</code> branch of
   <a href="https://github.com/sachahjkl/ShojiWM/blob/integration/FORK.md">sachahjkl/ShojiWM</a>, and Quickshell 0.3.0
-  or later. The <a href="https://github.com/sachahjkl/shojiwm-win7#requirements">README</a> lists the rest.</p>
+  or later. The <a href="https://github.com/sachahjkl/shojiwm-desktop#requirements">README</a> lists the rest.</p>
 <p>With Nix, install the configuration into <code>~/.config/shojiwm</code>:</p>
-<pre><code>nix run github:sachahjkl/shojiwm-win7#install</code></pre>
+<pre><code>nix run github:sachahjkl/shojiwm-desktop#install</code></pre>
 <p>Without Nix:</p>
-<pre><code>git clone https://github.com/sachahjkl/shojiwm-win7.git
-cd shojiwm-win7
+<pre><code>git clone https://github.com/sachahjkl/shojiwm-desktop.git
+cd shojiwm-desktop
 mkdir -p ~/.config/shojiwm
 rm -rf ~/.config/shojiwm/src ~/.config/shojiwm/assets ~/.config/shojiwm/shell
 cp -R src assets shell package.json tsconfig.json ~/.config/shojiwm/</code></pre>
@@ -74,18 +74,18 @@ cp -R src assets shell package.json tsconfig.json ~/.config/shojiwm/</code></pre
 <aside aria-labelledby="news">
 <h2 id="news">News</h2>
 <div class="item">
-<time class="date" datetime="2026-11-09">2026-11-09</time>: <a href="https://github.com/sachahjkl/shojiwm-win7#the-log-on-screen">A log-on screen for greetd</a><br>
+<time class="date" datetime="2026-11-09">2026-11-09</time>: <a href="https://github.com/sachahjkl/shojiwm-desktop#the-log-on-screen">A log-on screen for greetd</a><br>
 The lock screen as a log-on screen, with <code>nixosModules.greeter</code> and a check that runs it in VMs.
 </div>
 <div class="item">
-<time class="date" datetime="2026-11-09">2026-11-09</time>: <a href="https://github.com/sachahjkl/shojiwm-win7#keys">The Run dialog and the orb menu</a><br>
+<time class="date" datetime="2026-11-09">2026-11-09</time>: <a href="https://github.com/sachahjkl/shojiwm-desktop#keys">The Run dialog and the orb menu</a><br>
 <code>Super</code>+<code>R</code> opens Run, with its history; <code>Super</code>+<code>X</code> or a right click on the orb opens the tools menu.
 </div>
 <div class="item">
-<time class="date" datetime="2026-11-09">2026-11-09</time>: <a href="https://github.com/sachahjkl/shojiwm-win7#what-you-get">A Bluetooth panel</a><br>
+<time class="date" datetime="2026-11-09">2026-11-09</time>: <a href="https://github.com/sachahjkl/shojiwm-desktop#what-you-get">A Bluetooth panel</a><br>
 The adapter, the paired devices and the devices in reach, in the notification area.
 </div>
-<p><a class="all" href="https://github.com/sachahjkl/shojiwm-win7/commits/main">- all changes -</a></p>
+<p><a class="all" href="https://github.com/sachahjkl/shojiwm-desktop/commits/main">- all changes -</a></p>
 </aside>
 </div>
 
@@ -113,9 +113,9 @@ The adapter, the paired devices and the devices in reach, in the notification ar
 </div>
 
 <footer class="foot">
-shojiwm-win7 is made by <a href="https://sacha.house/">Sacha</a>. MIT licence.
-<span class="sep" aria-hidden="true">-</span> <a href="https://github.com/sachahjkl/shojiwm-win7">source code</a>
-<span class="sep" aria-hidden="true">-</span> <a href="https://github.com/sachahjkl/shojiwm-win7/issues">issues</a>
+shojiwm-desktop is made by <a href="https://sacha.house/">Sacha</a>. MIT licence.
+<span class="sep" aria-hidden="true">-</span> <a href="https://github.com/sachahjkl/shojiwm-desktop">source code</a>
+<span class="sep" aria-hidden="true">-</span> <a href="https://github.com/sachahjkl/shojiwm-desktop/issues">issues</a>
 </footer>
 </div>
 </body>

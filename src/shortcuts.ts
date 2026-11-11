@@ -2,7 +2,7 @@
  * Global shortcuts for other programs, through the GlobalShortcuts portal.
  *
  * Programs such as Hex bind their shortcuts through the portal service
- * (`portal/`, xdg-desktop-portal-shojiwm-win7). The service sends the
+ * (`portal/`, xdg-desktop-portal-shojiwm-desktop). The service sends the
  * triggers of every bound shortcut here, over the shell socket:
  *
  *   { "method": "shortcuts", "params": { "triggers": ["Alt+space"] } }

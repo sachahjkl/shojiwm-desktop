@@ -1,6 +1,6 @@
 //! The sticky notes of the desktop (QML `StickyNotes`, `StickyNote`), as Windows 7's Sticky
 //! Notes: each has its screen, its place, its size and its text, kept in
-//! `$XDG_STATE_HOME/shojiwm-win7/notes.json`.
+//! `$XDG_STATE_HOME/shojiwm-desktop/notes.json`.
 //!
 //! A note is a pale yellow sheet with a band at the top. Drag the band to move it, its corner to
 //! size it. The band's + adds another note beside it and its × removes this one. The text is

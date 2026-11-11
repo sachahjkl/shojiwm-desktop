@@ -1,7 +1,7 @@
 /**
  * The screens: their modes and scales.
  *
- * The session sets the starting layout in SHOJIWM_WIN7_OUTPUTS, Hyprland
+ * The session sets the starting layout in SHOJIWM_DESKTOP_OUTPUTS, Hyprland
  * monitor rules `name,mode,position,scale` separated by `;`, for example
  * `DP-2,2560x1440@180,0x0,1.25;HDMI-A-1,preferred,auto,1.875`. Without it,
  * ShojiWM picks the best mode of each output at scale 1.
@@ -39,7 +39,7 @@ function parseRules(rules: string): DisplayConfigDraft {
   for (const rule of rules.split(";")) {
     const [name, mode, position, scale] = rule.split(",");
     if (!name || !mode || !position || !scale) {
-      throw new Error(`SHOJIWM_WIN7_OUTPUTS: invalid rule "${rule}"`);
+      throw new Error(`SHOJIWM_DESKTOP_OUTPUTS: invalid rule "${rule}"`);
     }
     const [size, refresh] = mode.split("@");
     const [width, height] = (size ?? "").split("x").map(Number);
@@ -60,7 +60,7 @@ function parseRules(rules: string): DisplayConfigDraft {
   return layout;
 }
 
-const RULES = COMPOSITOR.env.get("SHOJIWM_WIN7_OUTPUTS");
+const RULES = COMPOSITOR.env.get("SHOJIWM_DESKTOP_OUTPUTS");
 const base: DisplayConfigDraft = RULES ? parseRules(RULES) : {};
 let choices: Record<string, DisplayChoice> = {};
 

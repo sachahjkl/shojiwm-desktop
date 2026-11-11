@@ -1,23 +1,23 @@
 //! The programs the desktop starts, by key: the one chosen in Default Programs
-//! (`settings().programs`), else the session's (`$SHOJIWM_WIN7_*`), else a default.
+//! (`settings().programs`), else the session's (`$SHOJIWM_DESKTOP_*`), else a default.
 
 use crate::settings::settings;
 use serde_json::{Value, json};
 
 /// The keys, the variable of the session's choice, and the default.
 const SESSION: &[(&str, &str, &str)] = &[
-    ("terminal", "SHOJIWM_WIN7_TERMINAL", "kitty"),
-    ("fileManager", "SHOJIWM_WIN7_FILE_MANAGER", "thunar"),
-    ("taskManager", "SHOJIWM_WIN7_TASK_MANAGER", "inspecteur"),
+    ("terminal", "SHOJIWM_DESKTOP_TERMINAL", "kitty"),
+    ("fileManager", "SHOJIWM_DESKTOP_FILE_MANAGER", "thunar"),
+    ("taskManager", "SHOJIWM_DESKTOP_TASK_MANAGER", "inspecteur"),
     (
         "systemMonitor",
-        "SHOJIWM_WIN7_SYSTEM_MONITOR",
+        "SHOJIWM_DESKTOP_SYSTEM_MONITOR",
         "inspecteur --section performance",
     ),
-    ("clipboard", "SHOJIWM_WIN7_CLIPBOARD", ""),
+    ("clipboard", "SHOJIWM_DESKTOP_CLIPBOARD", ""),
     (
         "screenshot",
-        "SHOJIWM_WIN7_SCREENSHOT",
+        "SHOJIWM_DESKTOP_SCREENSHOT",
         "grim - | wl-copy --type image/png",
     ),
 ];

@@ -30,11 +30,11 @@ pub fn runtime_dir() -> PathBuf {
         .unwrap_or_else(std::env::temp_dir)
 }
 
-/// `$XDG_STATE_HOME/shojiwm-win7`: the notes, the notification history, the run history.
+/// `$XDG_STATE_HOME/shojiwm-desktop`: the notes, the notification history, the run history.
 pub fn state_dir() -> PathBuf {
     std::env::var_os("XDG_STATE_HOME")
         .map(PathBuf::from)
         .or_else(|| crate::settings::home().map(|h| h.join(".local/state")))
         .unwrap_or_else(std::env::temp_dir)
-        .join("shojiwm-win7")
+        .join("shojiwm-desktop")
 }

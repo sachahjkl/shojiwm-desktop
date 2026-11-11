@@ -60,8 +60,8 @@ a real GPU.
    an entry with children, beside the line, after `submenuDelay` or on a
    click. Check boxes and radio buttons show a check mark.
 5. **Aero Peek.** `src/peek.tsx` serves a socket
-   (`$XDG_RUNTIME_DIR/shojiwm-<display>-win7.sock`, handed to the shell in
-   `SHOJIWM_WIN7_SOCKET`) with ShojiWM's own IPC. `peek {on}` swaps the output
+   (`$XDG_RUNTIME_DIR/shojiwm-<display>-desktop.sock`, handed to the shell in
+   `SHOJIWM_DESKTOP_SOCKET`) with ShojiWM's own IPC. `peek {on}` swaps the output
    composition for the background layers, one glass outline per window, then
    the top layers. `show-desktop` calls the window manager's toggle, so the
    strip's second click brings the windows back, as `Super`+`D` does. The
@@ -347,7 +347,7 @@ The reference images are **not** in the repository and must not be committed.
 
 ```sh
 # once, to put the configuration in ~/.config/shojiwm
-nix run github:sachahjkl/shojiwm-win7/wip-aero-polish#install
+nix run github:sachahjkl/shojiwm-desktop/wip-aero-polish#install
 
 # the compositor itself, if it is not installed yet
 nix run github:bea4dev/ShojiWM#init-config     # links node_modules/shoji_wm

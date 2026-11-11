@@ -241,7 +241,7 @@ fn menu_layer(output: Output) {
             .keyboard(Keyboard::None)
             .input_region(InputRegion::Empty)
             .output(&output)
-            .namespace("shojiwm-win7-start"),
+            .namespace("shojiwm-desktop-start"),
         move || {
             div().size_full().child(show(
                 move || open.get(),
@@ -315,7 +315,7 @@ fn launcher_layers() {
                     .exclusive(Exclusive::Ignore)
                     .keyboard(Keyboard::Exclusive)
                     .output(&output)
-                    .namespace("shojiwm-win7-launcher"),
+                    .namespace("shojiwm-desktop-launcher"),
                 move || launcher::launcher(content_output),
             );
             effect(move || {

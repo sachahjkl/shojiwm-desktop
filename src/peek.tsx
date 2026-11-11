@@ -60,7 +60,7 @@ const PEEK = {
  */
 export const SHELL_SOCKET = defaultSocketPath().replace(
   /\.sock$/,
-  "-win7.sock",
+  "-desktop.sock",
 );
 
 function numberOf(value: MaybeSignal<number>): number {

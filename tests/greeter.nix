@@ -41,7 +41,7 @@
     };
     programs.hyprland.enable = true;
     services.displayManager.sessionPackages = [session];
-    services.shojiwm-win7-greeter = {
+    services.shojiwm-desktop-greeter = {
       enable = true;
       user = "alice";
       defaultSession = "marker";
@@ -50,7 +50,7 @@
   };
 in
   pkgs.testers.runNixOSTest {
-    name = "shojiwm-win7-greeter";
+    name = "shojiwm-desktop-greeter";
     nodes = {
       machine = node;
       fallback = node;
@@ -68,7 +68,7 @@ in
       machine.wait_for_file("/tmp/session-started", timeout=60)
       machine.wait_until_fails("pgrep -u greeter -x Hyprland", timeout=30)
       # The session chosen is kept for the next log-on.
-      machine.succeed("grep -qx marker /var/lib/greeter/.local/state/shojiwm-win7/last-session")
+      machine.succeed("grep -qx marker /var/lib/greeter/.local/state/shojiwm-desktop/last-session")
 
       # A log-on screen that dies gives way to the text log-on.
       fallback.wait_for_unit("greetd.service")

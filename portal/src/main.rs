@@ -1,4 +1,4 @@
-//! xdg-desktop-portal-shojiwm-win7: the GlobalShortcuts portal for the
+//! xdg-desktop-portal-shojiwm-desktop: the GlobalShortcuts portal for the
 //! Windows 7 configuration of ShojiWM.
 //!
 //! Programs bind shortcuts through xdg-desktop-portal, which calls this
@@ -20,7 +20,7 @@ use zbus::zvariant::ObjectPath;
 
 use shortcuts::{GlobalShortcuts, Shared};
 
-const BUS_NAME: &str = "org.freedesktop.impl.portal.desktop.shojiwm-win7";
+const BUS_NAME: &str = "org.freedesktop.impl.portal.desktop.shojiwm-desktop";
 const OBJECT_PATH: &str = "/org/freedesktop/portal/desktop";
 
 #[tokio::main(flavor = "current_thread")]

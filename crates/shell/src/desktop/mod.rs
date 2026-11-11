@@ -65,14 +65,14 @@ pub fn open(output: Output) {
     });
 }
 
-/// The main screen: the one `primary_screen` (else `SHOJIWM_WIN7_PRIMARY_SCREEN`) names, when it
+/// The main screen: the one `primary_screen` (else `SHOJIWM_DESKTOP_PRIMARY_SCREEN`) names, when it
 /// is connected, else the first output. It is not the screen with the focus: it is where the
 /// shell puts what has no screen of its own (the gadgets, the icons without a place). Reading
 /// it tracks the settings and the outputs.
 pub fn primary_output_name() -> String {
     let mut wanted = settings().with(|s| s.primary_screen.clone());
     if wanted.is_empty() {
-        wanted = std::env::var("SHOJIWM_WIN7_PRIMARY_SCREEN").unwrap_or_default();
+        wanted = std::env::var("SHOJIWM_DESKTOP_PRIMARY_SCREEN").unwrap_or_default();
     }
     let list = outputs();
     if !wanted.is_empty() && list.iter().any(|o| o.name == wanted) {

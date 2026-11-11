@@ -27,7 +27,7 @@ import { createAltTab } from "./alt-tab";
 import { SHELL_SOCKET, createPeek } from "./peek";
 import { createZoom } from "./zoom";
 import { program } from "./programs";
-// The screens: SHOJIWM_WIN7_OUTPUTS and the Control Panel's choices.
+// The screens: SHOJIWM_DESKTOP_OUTPUTS and the Control Panel's choices.
 import "./display";
 import { layerGlassEffect, popupGlassEffect, windowGlassEffect } from "./glass";
 import {
@@ -70,7 +70,7 @@ COMPOSITOR.process.once("shell", {
   runPolicy: "once-per-session",
   env: {
     // Where the shell asks for Aero Peek and the show-desktop toggle.
-    SHOJIWM_WIN7_SOCKET: SHELL_SOCKET,
+    SHOJIWM_DESKTOP_SOCKET: SHELL_SOCKET,
   },
 });
 
@@ -281,10 +281,10 @@ COMPOSITOR.key.bind("launcher", "Super+Shift+D", () => {
     command: shellCall("launcher", "toggleOn", monitor),
   });
 });
-// More keys from SHOJIWM_WIN7_KEYS: a JSON object of shortcut to shell
+// More keys from SHOJIWM_DESKTOP_KEYS: a JSON object of shortcut to shell
 // command, for programs that would register a global shortcut through a
 // portal, for example {"Ctrl+Shift+ugrave": "papier toggle"}.
-const EXTRA_KEYS = COMPOSITOR.env.get("SHOJIWM_WIN7_KEYS");
+const EXTRA_KEYS = COMPOSITOR.env.get("SHOJIWM_DESKTOP_KEYS");
 if (EXTRA_KEYS) {
   const keys = JSON.parse(EXTRA_KEYS) as Record<string, string>;
   for (const [shortcut, command] of Object.entries(keys)) {
@@ -390,7 +390,7 @@ COMPOSITOR.effect.layer = (layer) => {
   // The shell's own glass surfaces. Other programs' layers and the shell's
   // full-screen catchers named "no_blur" get none: a blur costs a capture
   // and a pass every frame they change.
-  if (namespace.startsWith("shojiwm-win7-")) {
+  if (namespace.startsWith("shojiwm-desktop-")) {
     const glass = layerGlassEffect();
     return glass ? { behind: glass } : {};
   }

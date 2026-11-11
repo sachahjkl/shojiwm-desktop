@@ -7,7 +7,7 @@
  * The Control Panel chooses them (Default Programs); the shell sends its
  * choices over its socket when it connects and when one changes. Until then,
  * and for a program left "as the session sets it", the session's environment
- * gives it (SHOJIWM_WIN7_TERMINAL, ..._FILE_MANAGER, ..._TASK_MANAGER,
+ * gives it (SHOJIWM_DESKTOP_TERMINAL, ..._FILE_MANAGER, ..._TASK_MANAGER,
  * ..._CLIPBOARD, ..._SCREENSHOT), then the defaults below.
  */
 import { COMPOSITOR } from "shoji_wm";
@@ -20,14 +20,15 @@ export type ProgramKey =
   | "screenshot";
 
 const SESSION: Record<ProgramKey, string> = {
-  terminal: COMPOSITOR.env.get("SHOJIWM_WIN7_TERMINAL") ?? "kitty",
-  fileManager: COMPOSITOR.env.get("SHOJIWM_WIN7_FILE_MANAGER") ?? "thunar",
-  taskManager: COMPOSITOR.env.get("SHOJIWM_WIN7_TASK_MANAGER") ?? "inspecteur",
+  terminal: COMPOSITOR.env.get("SHOJIWM_DESKTOP_TERMINAL") ?? "kitty",
+  fileManager: COMPOSITOR.env.get("SHOJIWM_DESKTOP_FILE_MANAGER") ?? "thunar",
+  taskManager:
+    COMPOSITOR.env.get("SHOJIWM_DESKTOP_TASK_MANAGER") ?? "inspecteur",
   // No clipboard history by default: Super+V then does nothing.
-  clipboard: COMPOSITOR.env.get("SHOJIWM_WIN7_CLIPBOARD") ?? "",
+  clipboard: COMPOSITOR.env.get("SHOJIWM_DESKTOP_CLIPBOARD") ?? "",
   // The whole screen to the clipboard, as Windows 7 does.
   screenshot:
-    COMPOSITOR.env.get("SHOJIWM_WIN7_SCREENSHOT") ??
+    COMPOSITOR.env.get("SHOJIWM_DESKTOP_SCREENSHOT") ??
     "grim - | wl-copy --type image/png",
 };
 
