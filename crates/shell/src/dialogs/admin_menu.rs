@@ -48,7 +48,9 @@ fn entries(output_name: &str) -> Vec<MenuLine> {
         MenuLine::item("Devices and Printers", || {
             crate::control_panel::open_page("devices")
         }),
-        MenuLine::item("Network Connections", || run("nm-connection-editor")),
+        MenuLine::item("Network Connections", || {
+            crate::control_panel::open_page("network")
+        }),
         MenuLine::item("Disk Management", || run("gparted")),
         MenuLine::item("System Log", || in_terminal("journalctl -b -e")),
         MenuLine::separator(),

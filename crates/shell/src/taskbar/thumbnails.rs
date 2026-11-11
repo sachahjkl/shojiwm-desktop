@@ -14,6 +14,7 @@ use crate::theme::{bar_at_top, corner, scheme, theme};
 use crate::ui::{font, popup_frame, shell_icon, vertical_gradient};
 use anti_webui::prelude::*;
 use anti_webui::shell::prelude::*;
+use serde_json::json;
 use std::cell::RefCell;
 use std::rc::Rc;
 use std::time::Duration;
@@ -30,6 +31,26 @@ const CLOSE_HEIGHT: f32 = 17.0;
 const CARD_ICON: f32 = 32.0;
 /// The room between the cards and the media buttons.
 const TOOLBAR_GAP: f32 = 8.0;
+
+thread_local! {
+    /// The `ext_foreign_toplevel_list` identifier of the window the compositor highlights.
+    static HIGHLIGHTED: RefCell<Option<String>> = const { RefCell::new(None) };
+}
+
+/// Asks the compositor to single out a window on the screen while the pointer rests on its
+/// card, or none. The compositor finds the window by its `ext_foreign_toplevel_list`
+/// identifier: the one name both sides know for the window's whole life.
+fn highlight(identifier: Option<String>) {
+    let changed = HIGHLIGHTED.with(|h| {
+        let mut h = h.borrow_mut();
+        let changed = *h != identifier;
+        *h = identifier.clone();
+        changed
+    });
+    if changed {
+        crate::compositor::send("highlight", json!({ "window": identifier }));
+    }
+}
 
 /// The windows of the group shown.
 fn shown_windows(bar: &Bar) -> Vec<Toplevel> {
@@ -89,6 +110,8 @@ pub(super) fn follow(bar: Bar) {
                     old.close();
                 }
                 if !on {
+                    // The pointer may never have left a card.
+                    highlight(None);
                     return;
                 }
                 let edge = if bar_at_top() {
@@ -326,11 +349,38 @@ fn card(bar: Bar, window: Toplevel) -> Div {
                 bar.preview.set(None);
             }
         });
+    // The window stands out on the screen while the pointer is on its card; a card that goes
+    // away (its window closed, another button's thumbnails) takes the highlight with it.
+    let first = window.identifier.clone();
+    // The identifier this card asked the compositor to highlight.
+    let asked: Rc<RefCell<Option<String>>> = Rc::default();
+    // Only its own: the next card may already have taken the highlight.
+    let release = {
+        let asked = asked.clone();
+        move || {
+            let id = asked.borrow_mut().take();
+            if id.is_some() && HIGHLIGHTED.with(|h| *h.borrow() == id) {
+                highlight(None);
+            }
+        }
+    };
+    on_cleanup(release.clone());
     div()
         .flex_none()
         .flex()
         .flex_col()
         .interaction(card_ui)
+        .on_hover(move |inside| {
+            if inside {
+                let id = untrack(|| now.get())
+                    .and_then(|w| w.identifier)
+                    .or_else(|| first.clone());
+                *asked.borrow_mut() = id.clone();
+                highlight(id);
+            } else {
+                release();
+            }
+        })
         .dyn_style(|s| s.w(theme().thumb_width))
         .child(title)
         .child(frame)

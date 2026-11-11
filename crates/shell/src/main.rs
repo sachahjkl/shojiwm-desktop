@@ -22,8 +22,10 @@ mod paths;
 mod power;
 mod programs;
 mod settings;
+mod sound;
 mod start_menu;
 mod status;
+mod sun;
 mod taskbar;
 mod theme;
 mod theme_values;
@@ -53,12 +55,14 @@ fn main() {
         .run(|| {
             ipc::serve();
             compositor::share_settings();
+            sun::install();
             apps::install();
             status::install();
             taskbar::install();
             dialogs::install();
             lock::install();
             control_panel::install();
+            sound::install();
             for_each_output(|output| {
                 desktop::open(output.clone());
                 taskbar::open(output);
@@ -67,11 +71,11 @@ fn main() {
             start_menu::install();
             ipc::handle("appearance", |function, args| match function {
                 "setDark" => {
-                    settings::set_dark(args.first().is_some_and(|a| a == "true"));
+                    settings::choose_dark(args.first().is_some_and(|a| a == "true"));
                     Ok(String::new())
                 }
                 "toggle" => {
-                    settings::set_dark(!settings::dark());
+                    settings::choose_dark(!settings::dark());
                     Ok(String::new())
                 }
                 "isDark" => Ok(settings::dark().to_string()),

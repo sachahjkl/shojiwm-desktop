@@ -10,7 +10,6 @@ use anti_webui::prelude::{Color, rgb, rgba};
 /// Every size (logical pixels), colour, face and timing (milliseconds) of a theme.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Theme {
-    pub bar_side: &'static str,
     pub taskbar_height: f32,
     pub taskbar_padding: f32,
     pub orb_size: f32,
@@ -25,7 +24,14 @@ pub struct Theme {
     pub compact_button_width: f32,
     pub tray_icon_size: f32,
     pub tray_gap: f32,
+    /// The clock's least width; a longer time or date widens it.
     pub clock_width: f32,
+    /// The room between the clock's text and the sides of its cell.
+    pub clock_padding: f32,
+    /// The time and the date side by side (`true`) or the date under the time.
+    pub clock_one_line: bool,
+    /// The room between the time and the date.
+    pub clock_gap: f32,
     pub show_desktop_width: f32,
     pub peek_delay: f32,
     pub thumb_width: f32,
@@ -87,6 +93,13 @@ pub struct Theme {
     pub button_pressed_bottom: Color,
     pub button_stack: Color,
     pub button_stack_border: Color,
+    /// Task buttons drawn flat (Kernel) instead of as glass plates: no plate at rest, the
+    /// `task_*` colours for the pointer, the active window, a press and more windows.
+    pub task_flat: bool,
+    pub task_hover: Color,
+    pub task_active: Color,
+    pub task_pressed: Color,
+    pub task_stack: Color,
     pub popup_top: Color,
     pub popup_bottom: Color,
     pub popup_border: Color,
@@ -127,7 +140,6 @@ pub struct Theme {
 }
 
 pub const AERO: Theme = Theme {
-    bar_side: "bottom",
     taskbar_height: 40.0,
     taskbar_padding: 2.0,
     orb_size: 36.0,
@@ -143,6 +155,9 @@ pub const AERO: Theme = Theme {
     tray_icon_size: 16.0,
     tray_gap: 8.0,
     clock_width: 74.0,
+    clock_padding: 4.0,
+    clock_one_line: false,
+    clock_gap: 0.0,
     show_desktop_width: 15.0,
     peek_delay: 500.0,
     thumb_width: 184.0,
@@ -204,6 +219,11 @@ pub const AERO: Theme = Theme {
     button_pressed_bottom: rgba(0xffffff1a),
     button_stack: rgba(0xffffff29),
     button_stack_border: rgba(0xffffff8c),
+    task_flat: false,
+    task_hover: rgba(0x00000000),
+    task_active: rgba(0x00000000),
+    task_pressed: rgba(0x00000000),
+    task_stack: rgba(0x00000000),
     popup_top: rgba(0xf4f9ffee),
     popup_bottom: rgba(0xdbe8f4ee),
     popup_border: rgba(0xffffffcc),
@@ -244,22 +264,24 @@ pub const AERO: Theme = Theme {
 };
 
 pub const KERNEL: Theme = Theme {
-    bar_side: "top",
     taskbar_height: 32.0,
     taskbar_padding: 2.0,
     orb_size: 40.0,
     orb_left: 0.0,
-    task_button_height: 26.0,
+    task_button_height: 32.0,
     task_button_max_width: 168.0,
     task_button_min_width: 44.0,
     task_button_gap: 2.0,
     stack_room: 4.0,
     pinned_button_width: 58.0,
-    task_icon_size: 32.0,
+    task_icon_size: 24.0,
     compact_button_width: 58.0,
     tray_icon_size: 16.0,
     tray_gap: 8.0,
     clock_width: 74.0,
+    clock_padding: 8.0,
+    clock_one_line: true,
+    clock_gap: 8.0,
     show_desktop_width: 15.0,
     peek_delay: 500.0,
     thumb_width: 184.0,
@@ -288,7 +310,7 @@ pub const KERNEL: Theme = Theme {
     menu_padding: 8.0,
     menu_search_height: 26.0,
     menu_footer_height: 42.0,
-    menu_tile_overhang: 0.0,
+    menu_tile_overhang: 30.0,
     menu_tile_size: 68.0,
     menu_glass_border: 8.0,
     bar_top: rgba(0x222d3af2),
@@ -321,6 +343,11 @@ pub const KERNEL: Theme = Theme {
     button_pressed_bottom: rgba(0x182f4aff),
     button_stack: rgba(0xffffff1a),
     button_stack_border: rgba(0xffffff40),
+    task_flat: true,
+    task_hover: rgba(0xffffff14),
+    task_active: rgba(0xffffff1f),
+    task_pressed: rgba(0x00000033),
+    task_stack: rgba(0xffffff47),
     popup_top: rgba(0x18212bfa),
     popup_bottom: rgba(0x131a22fa),
     popup_border: rgba(0xffffff14),

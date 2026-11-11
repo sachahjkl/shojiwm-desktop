@@ -7,8 +7,9 @@ use anti_webui::prelude::*;
 
 /// The colours of the shadow under [`shadow_text`]: a dark copy a pixel down, and a fainter
 /// one wider (QML `ShadowText`). Text has no blur of its own.
-const SHADOW_NEAR: Color = rgba(0x00000099);
-const SHADOW_FAR: Color = rgba(0x00000033);
+/// The log-on screen's shadow under white text, and how soft it is.
+const SHADOW: Color = rgba(0x000000b3);
+const SHADOW_BLUR: f32 = 2.0;
 
 /// Text in the theme's face and size, in the scheme's text colour.
 pub fn label_text(label: impl IntoTextSource) -> Text {
@@ -76,35 +77,48 @@ pub fn section_title_with(
 }
 
 /// White text with the soft dark shadow Windows 7 puts under the text of the log-on screen, so
-/// that it reads on any picture. In the theme's face; give it its size with `text_size`.
+/// that it reads on any picture: a blurred copy under it, a pixel lower. Set the size with
+/// `.text_size(..)`.
 pub fn shadow_text(label: impl IntoTextSource) -> Div {
+    soft_shadowed(label, Color::WHITE, SHADOW, 1.0, SHADOW_BLUR)
+        .dyn_style(|s| s.font_family(font()))
+}
+
+/// `label` in `color` over a blurred copy of itself in `shadow`, `drop` pixels lower: a shadow,
+/// not an outline. The copy is blurred by `blur` (a standard deviation, in logical pixels).
+pub fn soft_shadowed(
+    label: impl IntoTextSource,
+    color: Color,
+    shadow: Color,
+    drop: f32,
+    blur: f32,
+) -> Div {
     let label = text_fn(label);
-    let copy = |dx: f32, dy: f32, color: Color| {
-        let label = label.clone();
-        div()
-            .absolute()
-            .left(dx)
-            .top(dy)
-            .whitespace_nowrap()
-            .text_color(color)
-            .pointer_events_none()
-            .child(text(move || label()))
-    };
-    let far = copy(1.0, 2.0, SHADOW_FAR);
-    let near = copy(0.0, 1.0, SHADOW_NEAR);
-    let shown = label.clone();
+    let under = label.clone();
     div()
         .relative()
         .flex_none()
         .whitespace_nowrap()
         .select_none()
-        .dyn_style(|s| s.font_family(font()))
-        .child(far)
-        .child(near)
+        // The shadow at z 0, the text at z 1: otherwise the positioned copy is drawn over the
+        // text, and dark over white reads as grey, silvery.
+        .child(
+            div()
+                .absolute()
+                .left(0.0)
+                .top(drop)
+                .z_index(0)
+                .whitespace_nowrap()
+                .text_color(shadow)
+                .blur(blur)
+                .pointer_events_none()
+                .child(text(move || under())),
+        )
         .child(
             div()
                 .relative()
-                .text_color(Color::WHITE)
-                .child(text(move || shown())),
+                .z_index(1)
+                .text_color(color)
+                .child(text(move || label())),
         )
 }

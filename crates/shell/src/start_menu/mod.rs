@@ -23,7 +23,7 @@ mod user_tile;
 pub use user_tile::{user_picture, user_tile};
 
 use crate::settings::settings;
-use crate::theme::{bar_at_top, theme};
+use crate::theme::{bar_at_top, menu_tile_overhang, theme};
 use anti_webui::prelude::*;
 use anti_webui::shell::prelude::*;
 use std::cell::Cell;
@@ -219,7 +219,7 @@ fn menu_size() -> (i32, i32) {
     let t = theme();
     (
         t.menu_width.round() as i32,
-        (menu_height() + t.menu_tile_overhang).round() as i32,
+        (menu_height() + menu_tile_overhang()).round() as i32,
     )
 }
 

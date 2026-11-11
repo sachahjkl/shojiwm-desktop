@@ -1,8 +1,9 @@
-//! Sound: the playback and recording devices from PipeWire, the default of each marked, and a
-//! button to make another one the default.
+//! Sound: the playback and recording devices from PipeWire, the default of each marked, a
+//! button to make another one the default, and links to the pages of the Sound window.
 
 use super::common::{muted_small, page_column};
 use crate::control_panel::{heading, note, sub_heading};
+use crate::sound::Page;
 use crate::theme::{item_radius, scheme, theme};
 use crate::ui::{cp_button, cp_link, font, ink_asset};
 use anti_webui::prelude::*;
@@ -10,8 +11,6 @@ use anti_webui::shell::prelude::*;
 
 /// "Default Device" under the default one, in Windows' green.
 const DEFAULT_GREEN: Color = rgb(0x3fbf3a);
-/// The program that lists every stream, as the volume mixer of Windows (`Audio.qml`'s `mixer`).
-const MIXER: &str = "pwvucontrol";
 const ROW_HEIGHT: f32 = 46.0;
 
 pub fn page() -> Div {
@@ -34,13 +33,26 @@ pub fn page() -> Div {
             move || sound.sinks().is_empty() && sound.sources().is_empty(),
             || note("PipeWire lists no sound device."),
         ))
-        .child(
-            div()
-                .pt(6.0)
-                .child(cp_link("Open the volume mixer", false, || {
-                    crate::programs::run(MIXER)
-                })),
-        )
+        .child(sub_heading("More settings"))
+        .child(sound_link("Volume of each program", Page::Playback))
+        .child(sound_link("Programs recording sound", Page::Recording))
+        .child(sound_link(
+            "Output devices: ports, balance and volume",
+            Page::Outputs,
+        ))
+        .child(sound_link(
+            "Input devices: ports, balance and volume",
+            Page::Inputs,
+        ))
+        .child(sound_link(
+            "Sound cards: profiles (HDMI, analog, off)",
+            Page::Configuration,
+        ))
+}
+
+/// A link that opens the Sound window on `page`.
+fn sound_link(label: &'static str, page: Page) -> Div {
+    cp_link(label, false, move || crate::sound::open_page(page))
 }
 
 /// A device: its icon, its name, "Default Device" or its description, and "Set Default".

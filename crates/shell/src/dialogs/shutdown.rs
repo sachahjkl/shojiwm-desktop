@@ -278,11 +278,14 @@ fn banner() -> Div {
                         .left(0.0)
                         .top(1.0)
                         .text_color(NAME_SHADOW)
+                        .z_index(0)
+                        .blur(1.0)
                         .child(text(move || shadow_name())),
                 )
                 .child(
                     div()
                         .relative()
+                        .z_index(1)
                         .text_color(Color::WHITE)
                         .child(text(move || name())),
                 ),

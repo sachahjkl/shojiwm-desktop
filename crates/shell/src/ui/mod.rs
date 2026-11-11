@@ -12,16 +12,21 @@ mod icon;
 mod menu;
 mod scroll;
 mod text;
+mod volume;
 
 pub use controls::{
-    cp_button, cp_check, cp_combo, cp_default_button, cp_link, cp_link_tinted, cp_radio,
+    cp_button, cp_check, cp_combo, cp_default_button, cp_link, cp_link_marked, cp_link_tinted,
+    cp_radio,
 };
 pub use frame::{popup_frame, shell_tooltip};
 pub use gradient::vertical_gradient;
 pub use icon::shell_icon;
-pub use menu::{MenuLine, RowLook, bar_menu_options, menu_row, popup_menu, with_context_menu};
+pub use menu::{
+    MenuLine, RowLook, bar_menu_options, marked_text, menu_row, popup_menu, with_context_menu,
+};
 pub use scroll::aero_scroll;
-pub use text::{label_text, section_title, section_title_with, shadow_text};
+pub use text::{label_text, section_title, section_title_with, shadow_text, soft_shadowed};
+pub use volume::{VolumeControl, balance_bar, mute_button, volume_bar, volume_slider, wheel_steps};
 
 use crate::settings::dark;
 use crate::theme::{is_kernel, theme};

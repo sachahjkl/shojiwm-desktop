@@ -19,7 +19,7 @@ use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant, SystemTime};
 
 /// The icon of a program that has none.
-const FALLBACK_ICON: &str = "application-x-executable";
+pub const FALLBACK_ICON: &str = "application-x-executable";
 /// How long a click on a pinned program's button after it was started is not a new start.
 const STARTING: Duration = Duration::from_millis(3000);
 /// How many programs the Start menu lists under the pinned ones.

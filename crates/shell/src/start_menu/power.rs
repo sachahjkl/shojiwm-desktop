@@ -135,9 +135,17 @@ pub(super) fn power_button() -> Div {
                 .left(0.0)
                 .top(1.0)
                 .text_color(LABEL_SHADOW)
+                .z_index(0)
                 .child(text(label)),
         )
-        .child(div().relative().text_color(LABEL).child(text(label)));
+        // Over the dark line: a positioned copy is drawn over the text otherwise.
+        .child(
+            div()
+                .relative()
+                .z_index(1)
+                .text_color(LABEL)
+                .child(text(label)),
+        );
     let main = power_part(true, move || button.hovered(), move || button.pressed())
         .min_w(BUTTON_MIN_WIDTH)
         .px(LABEL_ROOM)

@@ -6,7 +6,7 @@
 //! own lists instead. While typing: the programs that match (AntiWebUI's ranking, best first),
 //! the Control Panel's tasks, then the files of the home folder whose names hold what is typed.
 
-use crate::control_panel::state::{TASKS, Task, find_tasks};
+use crate::control_panel::state::find_tasks;
 use crate::fuzzy;
 use crate::paths::asset;
 use crate::power::quoted;
@@ -147,21 +147,16 @@ impl Search {
                         .map(|(a, marks)| (Found::Program(a), marks))
                         .collect(),
                 );
-                let task = |t: Task| Found::Task {
-                    text: t.text.to_string(),
-                    page: t.page.to_string(),
-                };
-                let mut tasks: Vec<(Found, Vec<usize>)> =
-                    fuzzy::rank(&typed, TASKS.iter().copied(), |t| t.text.to_owned())
-                        .into_iter()
-                        .map(|m| (task(m.item), m.marks))
-                        .collect();
-                for t in find_tasks(&typed) {
-                    let found = task(t);
-                    if !tasks.iter().any(|(f, _)| *f == found) {
-                        tasks.push((found, Vec::new()));
-                    }
-                }
+                let tasks: Vec<(Found, Vec<usize>)> = find_tasks(&typed)
+                    .into_iter()
+                    .map(|f| {
+                        let found = Found::Task {
+                            text: f.task.text.to_string(),
+                            page: f.task.page.to_string(),
+                        };
+                        (found, f.marks)
+                    })
+                    .collect();
                 group(
                     "Control Panel",
                     tasks.into_iter().take(TASK_LIMIT).collect(),

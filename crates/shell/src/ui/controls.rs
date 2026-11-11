@@ -364,6 +364,31 @@ pub fn cp_link_tinted(
     tint: impl Fn() -> Color + 'static,
     on_click: impl Fn() + 'static,
 ) -> Div {
+    link_with(text(label).into_view(), large, tint, on_click)
+}
+
+/// A link of the search results: the letters a search matched (`marks`, in characters)
+/// highlighted.
+pub fn cp_link_marked(
+    label: &str,
+    marks: &[usize],
+    large: bool,
+    on_click: impl Fn() + 'static,
+) -> Div {
+    link_with(
+        super::marked_text(label, marks).into_view(),
+        large,
+        || scheme().link2,
+        on_click,
+    )
+}
+
+fn link_with(
+    label: View,
+    large: bool,
+    tint: impl Fn() -> Color + 'static,
+    on_click: impl Fn() + 'static,
+) -> Div {
     let ui = Interaction::new();
     div()
         .flex_none()
@@ -396,5 +421,5 @@ pub fn cp_link_tinted(
                 .text_color(colour);
             if ui.hovered() { s.underline() } else { s }
         })
-        .child(text(label))
+        .child(label)
 }

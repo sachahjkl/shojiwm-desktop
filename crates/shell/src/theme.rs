@@ -1,6 +1,6 @@
 //! The theme chosen in the Control Panel (`settings().theme`), read the way the surfaces need it:
 //! its sizes and colours ([`theme`]), the colour tokens for light or dark ([`scheme`]), its
-//! corners and the side of the screen its bar stands on.
+//! corners, and the side of the screen the bar stands on (a setting of its own).
 //!
 //! Every function here reads the settings, so a view that calls it in a reactive closure
 //! (`dyn_style`, `text(move || ..)`, `memo`) follows a change of theme at once.
@@ -30,12 +30,10 @@ pub fn scheme() -> Scheme {
     }
 }
 
-/// A corner's radius: `radius` in Aero, 0 in its square variant, at most 2 in Kernel. Every
+/// A corner's radius: `radius` in Aero, 0 in its square variant, 0 in Kernel (square everywhere). Every
 /// rounded corner goes through it; a circle does not.
 pub fn corner(radius: f32) -> f32 {
-    if is_kernel() {
-        radius.min(2.0)
-    } else if settings().with(|s| s.square_corners) {
+    if is_kernel() || settings().with(|s| s.square_corners) {
         0.0
     } else {
         radius
@@ -58,9 +56,9 @@ pub fn button_radius() -> f32 {
     corner(3.0)
 }
 
-/// The bar stands at the top of the screen (Kernel), not the bottom (Aero).
+/// The bar stands at the top of the screen, not the bottom (`settings().taskbar_side`).
 pub fn bar_at_top() -> bool {
-    theme().bar_side == "top"
+    settings().with(|s| s.taskbar_side == "top")
 }
 
 /// The room the bar takes at the top of the screen and at its bottom: what is placed on the
@@ -77,6 +75,16 @@ pub fn bar_below() -> f32 {
         0.0
     } else {
         theme().taskbar_height
+    }
+}
+
+/// How far the account picture stands over the Start menu's top edge. None with the bar at
+/// the top: the menu hangs from the bar there, and a picture over its edge would leave a gap.
+pub fn menu_tile_overhang() -> f32 {
+    if bar_at_top() {
+        0.0
+    } else {
+        theme().menu_tile_overhang
     }
 }
 

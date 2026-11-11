@@ -557,9 +557,12 @@ fn show_desktop(bar: Bar) -> Div {
             div()
                 .absolute()
                 .left(2.0)
-                .top(2.0)
                 .right(0.0)
-                .bottom(0.0)
+                // The 2 px left free at the desktop's side, where the bar's edge lines are.
+                .dyn_style(|s| {
+                    let (top, bottom) = if bar_at_top() { (0.0, 2.0) } else { (2.0, 0.0) };
+                    s.top(top).bottom(bottom)
+                })
                 .fill(move || {
                     let c = if ui.hovered() {
                         SHOW_DESKTOP_HOT

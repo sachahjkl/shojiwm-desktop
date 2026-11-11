@@ -216,6 +216,7 @@ fn page_view(key: &str) -> View {
         "defaults" => pages_b::default_programs_page().into_view(),
         "sound" => pages_b::sound_page().into_view(),
         "devices" => pages_b::devices_page().into_view(),
+        "network" => pages_b::network_page().into_view(),
         "display" => pages_b::display_page().into_view(),
         "about" => pages_b::about_page().into_view(),
         _ => home::home_page().into_view(),
@@ -336,7 +337,7 @@ fn path_box() -> Div {
         )
 }
 
-/// "Search Control Panel": typing replaces the page with the tasks that match every word.
+/// "Search Control Panel": typing replaces the page with the tasks it finds (`state::search`).
 /// Enter goes to the first; Escape empties it.
 fn search_box() -> Div {
     let query = state::query();
@@ -348,8 +349,8 @@ fn search_box() -> Div {
         .min_w(0.0)
         .on_focus_change(move |on| focused.set(on))
         .on_submit(|typed| {
-            if let Some(task) = state::search(typed).first() {
-                state::go(task.page);
+            if let Some(found) = state::search(typed).first() {
+                state::go(found.task.page);
             }
         })
         .on_key_down(move |e| {

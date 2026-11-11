@@ -421,6 +421,12 @@ pub struct RowLook {
 pub const MATCH: Color = rgb(0xffd54a);
 pub const MATCH_TEXT: Color = rgb(0x1f1a05);
 
+/// `label` with the letters at `marks` (indices in characters, sorted) highlighted, as the
+/// search results show what matched.
+pub fn marked_text(label: &str, marks: &[usize]) -> RichText {
+    rich_text(marked_spans(label, marks))
+}
+
 /// `label` as spans: the letters at `marks` highlighted, the rest plain.
 fn marked_spans(label: &str, marks: &[usize]) -> Vec<Span> {
     let mut spans = Vec::new();
@@ -503,7 +509,7 @@ pub fn menu_row(
         .child(dyn_view(move || {
             let now = words();
             if !marks.is_empty() {
-                return rich_text(marked_spans(&now, &marks)).into_view();
+                return marked_text(&now, &marks).into_view();
             }
             text(if heading && theme().heading_caps {
                 now.to_uppercase()

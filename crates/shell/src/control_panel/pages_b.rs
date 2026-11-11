@@ -1,5 +1,5 @@
 //! The second half of the Control Panel's pages: Screen Resolution, Devices and Printers, Sound,
-//! Default Programs, Startup Programs, Date and Time, Ease of Access and System. Each page is a
+//! Network and Sharing Center, Default Programs, Startup Programs, Date and Time, Ease of Access and System. Each page is a
 //! column the window puts in its scrolling pane; each change applies at once, as in the QML
 //! shell's `ControlPanel.qml`.
 
@@ -17,6 +17,10 @@ mod devices;
 mod display;
 #[path = "b/ease.rs"]
 mod ease;
+#[path = "b/network.rs"]
+mod network;
+#[path = "b/network_edit.rs"]
+mod network_edit;
 #[path = "b/sound.rs"]
 mod sound;
 #[path = "b/startup.rs"]
@@ -37,6 +41,11 @@ pub fn devices_page() -> Div {
 /// Sound: the playback and recording devices, and the default of each.
 pub fn sound_page() -> Div {
     sound::page()
+}
+
+/// Network and Sharing Center: the networks in use, the adapters and the saved connections.
+pub fn network_page() -> Div {
+    network::page()
 }
 
 /// Default Programs: the programs that open each kind of file, and those the desktop starts.

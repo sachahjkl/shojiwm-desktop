@@ -2,7 +2,8 @@
 //! the notification area, and the network panel it opens, as Windows 7 shows it: the connection
 //! in use and its access at the top, then the wireless networks in reach with their bars. A
 //! click on a network unfolds it with its Connect button, and a field for the key of a new
-//! secured network. The link at the bottom opens the connection editor.
+//! secured network. The link at the bottom opens the Network and Sharing Center of the Control
+//! Panel.
 
 use super::{
     ERROR_RED, Panel, badge, bar_cell, bar_picture, body_text, divider, footer, icon_width,
@@ -18,8 +19,6 @@ use anti_webui::prelude::*;
 use anti_webui::shell::prelude::*;
 use anti_webui::shell::{AccessPoint, NetError, Security};
 
-/// The program that edits the connections.
-const EDITOR: &str = "nm-connection-editor";
 /// The longest the list of networks grows before it scrolls.
 const LIST_HEIGHT: f32 = 260.0;
 
@@ -84,8 +83,9 @@ fn set_wifi(on: bool) {
     let _ = network().set_wifi_enabled(on);
 }
 
+/// The Network and Sharing Center, where the connections are edited.
 fn open_editor() {
-    crate::programs::run(EDITOR);
+    crate::control_panel::open_page("network");
 }
 
 /// The picture of the connection in use: bars for Wi-Fi, a screen for the wire.

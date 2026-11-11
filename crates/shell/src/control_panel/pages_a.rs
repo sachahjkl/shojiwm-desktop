@@ -5,14 +5,15 @@
 use super::picture_chooser::{built_in_wallpaper, picture_chooser, user_picture_source};
 use super::{heading, note, sub_heading};
 use crate::paths::asset;
-use crate::settings::{Settings, change, dark, set_dark, settings};
+use crate::settings::{Settings, change, settings};
+use crate::sun::{SunDay, choose_mode};
 use crate::theme::{corner, field_radius, is_kernel, parse_hex, scheme, theme};
 use crate::ui::{
     cp_button, cp_check, cp_combo, cp_link, cp_radio, font, label_text, shell_icon,
     vertical_gradient,
 };
 use anti_webui::prelude::*;
-use anti_webui::shell::prelude::{TrayItem, tray};
+use anti_webui::shell::prelude::{LocalTime, TrayItem, tray};
 use std::rc::Rc;
 
 // ----- helpers ---------------------------------------------------------------------------------
@@ -266,10 +267,15 @@ pub fn appearance_page() -> Div {
              taskbar and the window frames stay dark glass, as on Windows 7.",
         ))
         .child(
-            row(18.0)
-                .child(scheme_choice(false, "Light"))
-                .child(scheme_choice(true, "Dark")),
+            flow(18.0)
+                .child(scheme_choice("light", "Light"))
+                .child(scheme_choice("dark", "Dark"))
+                .child(scheme_choice("sun", "Automatic (sunrise and sunset)")),
         )
+        .child(show(
+            || settings().with(|s| s.color_scheme_mode == "sun"),
+            || wide_note(sun_note()),
+        ))
         .child(show(
             || !system_scheme_available(),
             || {
@@ -361,12 +367,32 @@ pub fn appearance_page() -> Div {
         ))
 }
 
-/// A light or dark choice: a small window in that scheme over its radio button. A click
-/// anywhere on it chooses it.
-fn scheme_choice(is_dark: bool, label: &'static str) -> Div {
+/// The note under the choices while the sun chooses: today's sunrise and sunset.
+fn sun_note() -> String {
+    let time = |unix| crate::status::short_time(&LocalTime::at(unix));
+    match crate::sun::today() {
+        None => "The place of your time zone could not be found, so the scheme stays as it \
+                 is. Set the time zone on the Date and Time page."
+            .to_owned(),
+        Some(SunDay::PolarDay) => "The sun does not set today: light all day.".to_owned(),
+        Some(SunDay::PolarNight) => "The sun does not rise today: dark all day.".to_owned(),
+        Some(SunDay::Times { rise, set }) => format!(
+            "Today the sun rises at {} and sets at {}: dark from sunset to sunrise, light \
+             in between. The place is your time zone's.",
+            time(rise),
+            time(set)
+        ),
+    }
+}
+
+/// A light, dark or automatic choice: a small window in that scheme (half and half for the
+/// sun) over its radio button. A click anywhere on it chooses it.
+fn scheme_choice(mode: &'static str, label: &'static str) -> Div {
     let ui = Interaction::new();
-    let chosen = move || dark() == is_dark;
-    let which = usize::from(is_dark);
+    let chosen = move || settings().with(|s| s.color_scheme_mode == mode);
+    let sun = mode == "sun";
+    let which = usize::from(mode != "light");
+    let width = if sun { 240.0 } else { 200.0 };
     let lines = (0..4).map(move |i| {
         div()
             .flex_none()
@@ -375,17 +401,27 @@ fn scheme_choice(is_dark: bool, label: &'static str) -> Div {
             .bg(PREVIEW_LINES[which])
             .dyn_style(|s| s.rounded(corner(3.0)))
     });
+    // The sun's choice: the right half of the page dark.
+    let night = div()
+        .absolute()
+        .top(0.0)
+        .bottom(0.0)
+        .right(0.0)
+        .w((width - 32.0) / 2.0)
+        .bg(PREVIEW_PAGE[1])
+        .dyn_style(move |s| if sun { s } else { s.hidden() });
     let window = div()
         .absolute()
         .left(16.0)
         .top(12.0)
-        .w(200.0 - 32.0)
+        .w(width - 32.0)
         .h(96.0)
         .border(1.0)
         .border_color(PREVIEW_OUTLINE)
-        .bg(PREVIEW_PAGE[which])
+        .bg(PREVIEW_PAGE[usize::from(mode == "dark")])
         .overflow_clip()
         .dyn_style(|s| s.rounded(corner(4.0)))
+        .child(night)
         .child(
             div()
                 .absolute()
@@ -414,18 +450,25 @@ fn scheme_choice(is_dark: bool, label: &'static str) -> Div {
         .flex()
         .justify_center()
         .child(
-            cp_radio(label, Binding::new(dark, set_dark), is_dark)
-                // The box below chooses it too: once is enough.
-                .on_click(|e| e.stop_propagation()),
+            cp_radio(
+                label,
+                Binding::new(
+                    || settings().with(|s| s.color_scheme_mode.clone()),
+                    |mode: String| choose_mode(&mode),
+                ),
+                mode.to_owned(),
+            )
+            // The box below chooses it too: once is enough.
+            .on_click(|e| e.stop_propagation()),
         );
     div()
         .relative()
         .flex_none()
-        .w(200.0)
+        .w(width)
         .h(150.0)
         .border(1.0)
         .interaction(ui)
-        .on_click(move |_| set_dark(is_dark))
+        .on_click(move |_| choose_mode(mode))
         .dyn_style(move |s| {
             let c = scheme();
             let s = s.rounded(corner(4.0));
@@ -871,6 +914,19 @@ pub fn taskbar_page() -> Div {
             |s| s.taskbar_auto_hide,
             |s, v| s.taskbar_auto_hide = v,
         ))
+        .child(
+            row(10.0).child(note("Taskbar location on screen:")).child(
+                cp_combo(
+                    labels(&["Bottom", "Top"]),
+                    choice(
+                        vec!["bottom".to_owned(), "top".to_owned()],
+                        |s| s.taskbar_side.clone(),
+                        |s, v| s.taskbar_side = v,
+                    ),
+                )
+                .w(100.0),
+            ),
+        )
         .child(check(
             "Use Aero Peek to preview the desktop",
             |s| s.peek,

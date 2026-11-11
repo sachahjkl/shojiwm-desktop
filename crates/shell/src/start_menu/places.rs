@@ -6,7 +6,7 @@ use super::menu::Menu;
 use super::search::open_file;
 use super::{close, power, row_height};
 use crate::settings::{home, settings};
-use crate::theme::{corner, item_radius, scheme, theme};
+use crate::theme::{corner, item_radius, menu_tile_overhang, scheme, theme};
 use crate::ui::{MenuLine, RowLook, font, menu_row, popup_menu, vertical_gradient};
 use anti_webui::prelude::*;
 use std::cell::Cell;
@@ -129,7 +129,7 @@ pub(super) fn places(menu: Menu) -> Div {
         .bottom(1.0)
         .dyn_style(|s| {
             let t = theme();
-            s.top(t.menu_tile_overhang + 1.0)
+            s.top(menu_tile_overhang() + 1.0)
                 .w(t.menu_width - t.menu_programs_width - 2.0)
         })
         .child(jump)
@@ -176,7 +176,7 @@ fn place_column(menu: Menu) -> Div {
         })
         .child(div().flex_none().dyn_style(|s| {
             let t = theme();
-            s.h(t.menu_tile_size - t.menu_tile_overhang)
+            s.h(t.menu_tile_size - menu_tile_overhang())
         }))
         .child(user)
         .children(lines)
@@ -433,7 +433,7 @@ fn jump_list(menu: Menu) -> Div {
         .dyn_style(|s| {
             let t = theme();
             s.p(t.menu_padding)
-                .pt(t.menu_padding + t.menu_tile_size - t.menu_tile_overhang)
+                .pt(t.menu_padding + t.menu_tile_size - menu_tile_overhang())
         })
         .child(list)
 }

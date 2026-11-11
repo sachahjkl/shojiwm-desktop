@@ -73,6 +73,8 @@ pub struct Settings {
     pub screensaver: String,
     pub screensaver_minutes: i64,
     pub taskbar_auto_hide: bool,
+    /// The side of the screen the bar stands on: "bottom" or "top".
+    pub taskbar_side: String,
     pub start_menu_large_icons: bool,
     pub show_frequent: bool,
     pub launcher_recent_count: i64,
@@ -86,6 +88,8 @@ pub struct Settings {
     /// By connector name; "" for the first screen.
     pub primary_screen: String,
     pub last_color_scheme: String,
+    /// "light", "dark", or "sun": dark from sunset to sunrise (`sun.rs`).
+    pub color_scheme_mode: String,
     pub desktop_auto_arrange: bool,
     pub desktop_align_to_grid: bool,
     /// Each desktop icon's place, by key: `{ screen, x, y }`.
@@ -120,7 +124,7 @@ impl Default for Settings {
             taskbar_compact: true,
             glass_blur: 2,
             square_corners: false,
-            theme: "aero".into(),
+            theme: "kernel".into(),
             programs: Map::new(),
             animation_speed: 1.0,
             display_choices: Map::new(),
@@ -146,6 +150,7 @@ impl Default for Settings {
             screensaver: "none".into(),
             screensaver_minutes: 5,
             taskbar_auto_hide: false,
+            taskbar_side: "bottom".into(),
             start_menu_large_icons: false,
             show_frequent: true,
             launcher_recent_count: 25,
@@ -156,6 +161,7 @@ impl Default for Settings {
             desktop_sort: "name".into(),
             primary_screen: String::new(),
             last_color_scheme: "default".into(),
+            color_scheme_mode: "sun".into(),
             desktop_auto_arrange: false,
             desktop_align_to_grid: true,
             desktop_places: Map::new(),
@@ -209,6 +215,7 @@ const KEYS: &[&str] = &[
     "screensaver",
     "screensaverMinutes",
     "taskbarAutoHide",
+    "taskbarSide",
     "startMenuLargeIcons",
     "showFrequent",
     "launcherRecentCount",
@@ -219,6 +226,7 @@ const KEYS: &[&str] = &[
     "desktopSort",
     "primaryScreen",
     "lastColorScheme",
+    "colorSchemeMode",
     "desktopAutoArrange",
     "desktopAlignToGrid",
     "desktopPlaces",
@@ -312,6 +320,7 @@ impl Settings {
         set!(screensaver, st("screensaver"));
         set!(screensaver_minutes, i("screensaverMinutes"));
         set!(taskbar_auto_hide, b("taskbarAutoHide"));
+        set!(taskbar_side, st("taskbarSide"));
         set!(start_menu_large_icons, b("startMenuLargeIcons"));
         set!(show_frequent, b("showFrequent"));
         set!(launcher_recent_count, i("launcherRecentCount"));
@@ -322,6 +331,7 @@ impl Settings {
         set!(desktop_sort, st("desktopSort"));
         set!(primary_screen, st("primaryScreen"));
         set!(last_color_scheme, st("lastColorScheme"));
+        set!(color_scheme_mode, st("colorSchemeMode"));
         set!(desktop_auto_arrange, b("desktopAutoArrange"));
         set!(desktop_align_to_grid, b("desktopAlignToGrid"));
         set!(desktop_places, m("desktopPlaces"));
@@ -377,6 +387,7 @@ impl Settings {
             "screensaver": self.screensaver,
             "screensaverMinutes": self.screensaver_minutes,
             "taskbarAutoHide": self.taskbar_auto_hide,
+            "taskbarSide": self.taskbar_side,
             "startMenuLargeIcons": self.start_menu_large_icons,
             "showFrequent": self.show_frequent,
             "launcherRecentCount": self.launcher_recent_count,
@@ -387,6 +398,7 @@ impl Settings {
             "desktopSort": self.desktop_sort,
             "primaryScreen": self.primary_screen,
             "lastColorScheme": self.last_color_scheme,
+            "colorSchemeMode": self.color_scheme_mode,
             "desktopAutoArrange": self.desktop_auto_arrange,
             "desktopAlignToGrid": self.desktop_align_to_grid,
             "desktopPlaces": self.desktop_places,
@@ -617,6 +629,12 @@ pub fn set_dark(on: bool) {
             .args(["dconf", GTK_THEME_KEY, if on { "dark" } else { "light" }])
             .spawn();
     }
+}
+
+/// The user's own choice of light or dark: it ends the following of the sun (`sun.rs`).
+pub fn choose_dark(on: bool) {
+    change(|s| s.color_scheme_mode = if on { "dark" } else { "light" }.into());
+    set_dark(on);
 }
 
 /// Whether the system asks for animations (`enable-animations`). Reading it tracks it.

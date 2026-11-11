@@ -9,7 +9,7 @@
 use crate::programs::{program, run};
 use crate::settings::{Place, change, motion, settings};
 use crate::theme::{bar_above, bar_below, corner};
-use crate::ui::{font, shell_icon, vertical_gradient};
+use crate::ui::{font, shell_icon, soft_shadowed, vertical_gradient};
 use anti_webui::prelude::*;
 use anti_webui::shell::prelude::*;
 use std::cell::Cell;
@@ -347,7 +347,6 @@ fn dial(
     );
     let big = size > 90.0;
     let percent = move || format!("{}%", (value() * 100.0).round() as i64);
-    let percent_shadow = percent.clone();
     div()
         .absolute()
         .left(at.0)
@@ -366,25 +365,10 @@ fn dial(
                 .items_center()
                 .justify_center()
                 .child(
-                    // Raised: a dark copy a pixel below.
-                    div()
-                        .relative()
+                    // Raised: a soft dark shadow a pixel below.
+                    soft_shadowed(percent, Color::WHITE, DIAL_VALUE_SHADOW, 1.0, 1.5)
                         .text_size(if big { 18.0 } else { 14.0 })
-                        .font_weight(FontWeight::BOLD)
-                        .child(
-                            div()
-                                .absolute()
-                                .left(0.0)
-                                .top(1.0)
-                                .text_color(DIAL_VALUE_SHADOW)
-                                .child(text(percent_shadow)),
-                        )
-                        .child(
-                            div()
-                                .relative()
-                                .text_color(Color::WHITE)
-                                .child(text(percent)),
-                        ),
+                        .font_weight(FontWeight::BOLD),
                 )
                 .child(
                     div()

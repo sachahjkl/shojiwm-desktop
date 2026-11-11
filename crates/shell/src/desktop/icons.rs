@@ -998,9 +998,17 @@ fn icon_cell(desk: Desk, item: Item) -> Div {
                         .top(1.0)
                         .right(0.0)
                         .text_color(NAME_SHADOW)
+                        .z_index(0)
+                        .blur(1.0)
                         .child(text(shadow)),
                 )
-                .child(div().relative().text_color(Color::WHITE).child(text(words)))
+                .child(
+                    div()
+                        .relative()
+                        .z_index(1)
+                        .text_color(Color::WHITE)
+                        .child(text(words)),
+                )
         }
     };
 

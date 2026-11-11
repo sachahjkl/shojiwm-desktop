@@ -1,11 +1,11 @@
 //! The home page of the Control Panel, which lists the categories and their links, and the page
 //! of search results that replaces it while something is typed in the search box.
 
-use super::state::{self, Task};
+use super::state::{self, FoundTask};
 use super::{heading, heading_text, note_text};
 use crate::paths::asset;
 use crate::theme::{scheme, theme};
-use crate::ui::{cp_link, cp_link_tinted};
+use crate::ui::{cp_link, cp_link_marked, cp_link_tinted};
 use anti_webui::prelude::*;
 
 /// The room between the two columns of categories, and between their rows.
@@ -69,6 +69,15 @@ const CATEGORIES: &[Category] = &[
             ),
             ("Choose the programs that start when you log on", "startup"),
             ("About this desktop", "about"),
+        ],
+    },
+    Category {
+        icon: "network",
+        name: "Network and Internet",
+        target: "network",
+        links: &[
+            ("View network status and tasks", "network"),
+            ("Manage saved network connections", "network"),
         ],
     },
 ];
@@ -165,7 +174,8 @@ fn category_view(category: &'static Category, order: usize, cell: Memo<f32>) -> 
         )
 }
 
-/// The tasks that match every word typed in the search box, each with the page it is on.
+/// The tasks the search box finds, best first, the matched letters highlighted, each with the
+/// page it is on.
 pub fn search_page() -> Div {
     let query = state::query();
     let found = memo(move || state::search(&query.get()));
@@ -183,15 +193,18 @@ pub fn search_page() -> Div {
         }))
         .child(for_each(
             move || found.get(),
-            |task: &Task| task.text,
-            |task: Task| {
+            |found: &FoundTask| (found.task.text, found.marks.clone()),
+            |found: FoundTask| {
+                let task = found.task;
                 let page = state::page_info(task.page);
                 div()
                     .flex()
                     .flex_col()
                     .items_start()
                     .gap(2.0)
-                    .child(cp_link(task.text, true, move || state::go(task.page)))
+                    .child(cp_link_marked(task.text, &found.marks, true, move || {
+                        state::go(task.page)
+                    }))
                     .child(note_text(format!("{}  ▸  {}", page.category, page.title)))
             },
         ))

@@ -46,6 +46,7 @@ const BADGE_HEIGHT: f32 = 14.0;
 const BADGE_TEXT: f32 = 10.0;
 /// How many edges of the other windows show behind a combined button.
 const STACK_EDGES: usize = 2;
+const STACK_LINE_INSET: f32 = 6.0;
 
 /// Where a button is in the row, as laid out before anything moves.
 #[derive(Clone, Debug, PartialEq)]
@@ -207,6 +208,23 @@ pub(super) fn buttons(bar: Bar) -> Div {
         ))
 }
 
+/// One flat layer of a Kernel button: `colour` over the whole button, shown while `shown` says
+/// so, fading in quickly and out slowly as the glass plates do.
+fn flat_layer(colour: fn() -> Color, shown: impl Fn() -> bool + 'static) -> Div {
+    div().absolute().inset(0.0).dyn_style(move |s| {
+        let t = theme();
+        let on = shown();
+        s.rounded(corner(item_radius()))
+            .bg(colour())
+            .opacity(if on { 1.0 } else { 0.0 })
+            .transition(Transition::ms(motion(if on {
+                t.hover_in
+            } else {
+                t.hover_out
+            })))
+    })
+}
+
 /// The looks of a button's plate, as Windows 7 paints them in layers: the resting glass, the
 /// active plate over it, the pointer's glow over that, and the pressed plate on top.
 #[derive(Clone, Copy)]
@@ -282,7 +300,7 @@ fn plate(kind: Plate, shown: impl Fn() -> bool + 'static) -> Div {
         .fill(move || glossy(kind.colours().0))
         .dyn_style(move |s| {
             let t = theme();
-            let on = style_shown();
+            let on = style_shown() && !t.task_flat;
             s.rounded(corner((item_radius() - 1.0).max(0.0)))
                 .border_color(kind.colours().1)
                 .opacity(if on { 1.0 } else { 0.0 })
@@ -358,8 +376,30 @@ fn task_button(bar: Bar, row: Row, key: String) -> Div {
                     .rounded(item_radius())
                     .bg(t.button_stack)
                     .border_color(t.button_stack_border);
-                if count.get() > i + 1 { s } else { s.hidden() }
+                if count.get() > i + 1 && !t.task_flat {
+                    s
+                } else {
+                    s.hidden()
+                }
             })
+    });
+    // Flat: a thin line right of the button for each other window, each shorter than the last.
+    let stack_lines = (0..STACK_EDGES).map(move |i| {
+        div().absolute().w(1.0).dyn_style(move |s| {
+            let t = theme();
+            let inset = STACK_LINE_INSET + i as f32 * 2.0;
+            let s = s
+                .left(body_w() + 1.0 + i as f32 * 2.0)
+                .bottom(inset)
+                .h((t.task_button_height - inset * 2.0).max(0.0))
+                .bg(t.task_stack)
+                .opacity(1.0 - i as f32 * 0.4);
+            if count.get() > i + 1 && t.task_flat {
+                s
+            } else {
+                s.hidden()
+            }
+        })
     });
     let body = div()
         .absolute()
@@ -372,7 +412,11 @@ fn task_button(bar: Bar, row: Row, key: String) -> Div {
             s.w(body_w())
                 .h(t.task_button_height)
                 .rounded(item_radius())
-                .border_color(t.button_outline)
+                .border_color(if t.task_flat {
+                    Color::TRANSPARENT
+                } else {
+                    t.button_outline
+                })
                 .opacity(if gone { 0.0 } else { 1.0 })
                 .transition(Transition::ms(motion(t.fade)))
         })
@@ -380,6 +424,20 @@ fn task_button(bar: Bar, row: Row, key: String) -> Div {
         .child(plate(Plate::Active, move || current.get()))
         .child(plate(Plate::Hover, hovered))
         .child(plate(Plate::Pressed, move || ui.pressed()));
+    // Kernel's flat button: nothing at rest, a lighter layer under the pointer and for the
+    // active window, a darker one while pressed. Each fills the whole height of the bar.
+    let flat = div()
+        .absolute()
+        .left(0.0)
+        .bottom(0.0)
+        .dyn_style(move |s| {
+            let t = theme();
+            let s = s.w(body_w()).h(t.task_button_height);
+            if t.task_flat { s } else { s.hidden() }
+        })
+        .child(flat_layer(|| theme().task_active, move || current.get()))
+        .child(flat_layer(|| theme().task_hover, hovered))
+        .child(flat_layer(|| theme().task_pressed, move || ui.pressed()));
     let progress = div()
         .absolute()
         .left(2.0)
@@ -607,7 +665,9 @@ fn task_button(bar: Bar, row: Row, key: String) -> Div {
             }
         })
         .children(stack)
+        .children(stack_lines)
         .child(body)
+        .child(flat)
         .child(progress)
         .child(alone)
         .child(labelled)

@@ -1,37 +1,27 @@
 //! The volume (QML `Audio`, `VolumeIcon`, `VolumePopup`): the default output of PipeWire, the
 //! speaker of the notification area and the volume panel it opens, as Windows 7 shows it: the
-//! device at the top, a vertical slider, the mute button, and the link to the mixer.
+//! device at the top, a vertical slider, the mute button, and the link to the Sound window.
 
 use super::{
     Panel, bar_cell, bar_picture, footer, icon_width, is_open, lit_row_style, one_line, panel_link,
-    panel_popup, small_text, toggle, wheel_steps,
+    panel_popup, small_text, toggle,
 };
 use crate::paths::asset;
-use crate::theme::{Align, away_from_bar, button_radius, corner, scheme, theme};
+use crate::theme::{Align, away_from_bar, scheme, theme};
 use crate::ui::{
-    MenuLine, bar_menu_options, dark_look, font, ink_asset, popup_frame, popup_menu, shell_tooltip,
-    vertical_gradient,
+    MenuLine, VolumeControl, bar_menu_options, font, ink_asset, mute_button, popup_frame,
+    popup_menu, shell_tooltip, volume_slider, wheel_steps,
 };
 use anti_webui::prelude::*;
 use anti_webui::shell::prelude::*;
 use std::cell::Cell;
 
-/// The program that lists every stream, as the volume mixer of Windows.
-const MIXER: &str = "pwvucontrol";
 /// What the speaker is called when its device has no name of its own.
 const SPEAKERS: &str = "Speakers";
 /// A notch of the wheel changes the volume by this many percent, as Windows 7 steps it.
 const NOTCH_PERCENT: f64 = 2.0;
-/// The height of the slider, and the room above and below its track.
+/// The height of the slider.
 const SLIDER_HEIGHT: f32 = 150.0;
-const TRACK_MARGIN: f32 = 5.0;
-/// The length the level runs over: the track less its margins and its border.
-const TRACK_SPAN: f32 = SLIDER_HEIGHT - TRACK_MARGIN * 2.0 - 2.0;
-/// The level's green, as Windows 7 fills its volume slider.
-const LEVEL_GREEN: Color = rgb(0x2fb13f);
-/// The sunken track of the slider, on dark and on light colours.
-const TRACK_DARK: Color = rgb(0x1a232c);
-const TRACK_LIGHT: Color = rgb(0xe8edf2);
 /// The width of the panel, alone and with a player's controls or the outputs.
 const NARROW: f32 = 104.0;
 const WIDE: f32 = 220.0;
@@ -60,22 +50,22 @@ fn sink() -> Option<AudioDevice> {
     audio().default_sink()
 }
 
-fn ready() -> bool {
-    sink().is_some()
+/// The default output's volume, as the slider and the mute button change it.
+fn control() -> VolumeControl {
+    crate::sound::default_device_control(false)
 }
 
-/// The volume, 1 for 100 %.
-fn volume() -> f64 {
-    sink().map_or(0.0, |s| s.volume)
+fn ready() -> bool {
+    control().ready()
 }
 
 fn muted() -> bool {
-    sink().is_some_and(|s| s.muted)
+    control().muted()
 }
 
 /// The volume as a whole percentage.
 fn percent() -> i64 {
-    (volume() * 100.0).round() as i64
+    control().percent()
 }
 
 fn device_name() -> String {
@@ -87,16 +77,7 @@ fn device_name() -> String {
 
 /// 1 to 3 waves for the level, or "muted".
 fn level() -> &'static str {
-    let p = percent();
-    if !ready() || muted() || p == 0 {
-        "muted"
-    } else if p < 34 {
-        "1"
-    } else if p < 67 {
-        "2"
-    } else {
-        "3"
-    }
+    control().level()
 }
 
 /// The outputs to choose from: PipeWire's sinks (a program's stream is not one).
@@ -104,29 +85,17 @@ fn outputs() -> Vec<AudioDevice> {
     audio().sinks()
 }
 
-fn set_volume(value: f64) {
-    let Some(s) = untrack(sink) else { return };
-    let value = value.clamp(0.0, 1.0);
-    let _ = s.set_volume(value);
-    if s.muted && value > 0.0 {
-        let _ = s.set_muted(false);
-    }
-}
-
 /// Changes the volume by a number of percent.
 fn step(percent_change: f64) {
-    let now = untrack(percent) as f64;
-    set_volume((now + percent_change).round() / 100.0);
+    control().step(percent_change);
 }
 
 fn toggle_mute() {
-    if let Some(s) = untrack(sink) {
-        let _ = s.set_muted(!s.muted);
-    }
+    control().toggle_mute();
 }
 
 fn open_mixer() {
-    crate::programs::run(MIXER);
+    crate::sound::open_page(crate::sound::Page::Playback);
 }
 
 /// The speaker of the notification area: its waves show the level, a red mark a muted output.
@@ -240,9 +209,9 @@ fn panel() -> Div {
                 )
                 .child(device_line())
                 .child(show(move || devices_open.get(), device_list))
-                .child(slider())
+                .child(volume_slider(control(), SLIDER_HEIGHT))
                 .child(small_text(|| percent().to_string(), || scheme().text_muted))
-                .child(mute_button()),
+                .child(mute_button(control())),
         )
         .child(footer(
             28.0,
@@ -338,121 +307,4 @@ fn device_list() -> Div {
                     )))
             },
         ))
-}
-
-/// The slider: a sunken track, the level filled in green, and a thumb. A press or a drag on it
-/// sets the volume there; the wheel steps it.
-fn slider() -> Div {
-    let ui = Interaction::new();
-    let rest = Cell::new(0.0f32);
-    let fraction = memo(|| volume().clamp(0.0, 1.0) as f32);
-    // `local` and `rect` are in the same pixels: the ratio gives the logical place.
-    let set_from = |local_y: f32, height: i32| {
-        if height <= 0 {
-            return;
-        }
-        let y = local_y * SLIDER_HEIGHT / height as f32;
-        set_volume(1.0 - ((y - TRACK_MARGIN - 1.0) / TRACK_SPAN) as f64);
-    };
-    let track = div()
-        .absolute()
-        .top(TRACK_MARGIN)
-        .bottom(TRACK_MARGIN)
-        .left(12.5)
-        .w(5.0)
-        .border(1.0)
-        .dyn_style(|s| {
-            let c = scheme();
-            s.rounded(corner(2.0))
-                .bg(if dark_look() { TRACK_DARK } else { TRACK_LIGHT })
-                .border_color(c.field_border)
-        })
-        .child(
-            div()
-                .absolute()
-                .left(0.0)
-                .right(0.0)
-                .bottom(0.0)
-                .dyn_style(move |s| {
-                    s.h((TRACK_SPAN * fraction.get()).max(0.0))
-                        .rounded(corner(1.0))
-                        .bg(if muted() {
-                            scheme().placeholder
-                        } else {
-                            LEVEL_GREEN
-                        })
-                }),
-        );
-    let thumb = div()
-        .absolute()
-        .left(4.0)
-        .w(22.0)
-        .h(10.0)
-        .border(1.0)
-        .pointer_events_none()
-        .fill(move || {
-            let c = scheme();
-            let (top, bottom) = if ui.hovered() {
-                (c.button_hot_top, c.button_hot_bottom)
-            } else {
-                (c.button_top, c.button_bottom)
-            };
-            vertical_gradient(&[(0.0, top), (1.0, bottom)])
-        })
-        .dyn_style(move |s| {
-            let c = scheme();
-            s.top(1.0 + TRACK_SPAN * (1.0 - fraction.get()))
-                .rounded(corner(2.0))
-                .border_color(if ui.hovered() || ui.pressed() {
-                    c.field_focus
-                } else {
-                    c.field_border
-                })
-        });
-    div()
-        .relative()
-        .flex_none()
-        .w(30.0)
-        .h(SLIDER_HEIGHT)
-        .interaction(ui)
-        .grab_threshold(0.0)
-        .on_grab(move |e| set_from(e.local.y, e.rect.height))
-        .on_scroll(move |e| {
-            let steps = wheel_steps(e, &rest);
-            if steps != 0 {
-                e.stop_propagation();
-                step(steps as f64 * NOTCH_PERCENT);
-            }
-        })
-        .child(track)
-        .child(thumb)
-}
-
-/// The mute button: the speaker, with the red mark when muted.
-fn mute_button() -> Div {
-    let ui = Interaction::new();
-    div()
-        .flex_none()
-        .flex()
-        .items_center()
-        .justify_center()
-        .w(30.0)
-        .h(26.0)
-        .border(1.0)
-        .interaction(ui)
-        .on_click(|_| toggle_mute())
-        .dyn_style(move |s| {
-            let c = scheme();
-            let s = s.rounded(button_radius());
-            if ui.hovered() {
-                s.bg(c.hover).border_color(c.selection_border)
-            } else {
-                s.bg(Color::TRANSPARENT).border_color(Color::TRANSPARENT)
-            }
-        })
-        .child(
-            img(|| ink_asset(&format!("speaker-{}.svg", level())))
-                .size(18.0)
-                .object_fit(ObjectFit::Contain),
-        )
 }

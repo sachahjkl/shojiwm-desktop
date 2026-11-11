@@ -154,8 +154,16 @@ pub fn clock_view(output_name: &str) -> Div {
     let column = div()
         .relative()
         .flex()
-        .flex_col()
         .items_center()
+        .dyn_style(|s| {
+            let t = theme();
+            let s = s.px(t.clock_padding).gap(t.clock_gap);
+            if t.clock_one_line {
+                s.flex_row()
+            } else {
+                s.flex_col()
+            }
+        })
         .child(line(short_time))
         .child(line(short_date).dyn_style(|s| {
             if settings().with(|s| s.show_date) {

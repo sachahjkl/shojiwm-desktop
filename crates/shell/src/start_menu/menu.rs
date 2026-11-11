@@ -19,7 +19,9 @@ use super::search::{self, Search, app_icon, program_lines};
 use super::{close, places, user_tile};
 use crate::paths::asset;
 use crate::settings::{motion, settings};
-use crate::theme::{corner, field_radius, menu_radius, parse_hex, popup_radius, scheme, theme};
+use crate::theme::{
+    corner, field_radius, menu_radius, menu_tile_overhang, parse_hex, popup_radius, scheme, theme,
+};
 use crate::ui::{RowLook, aero_scroll, font, menu_row, vertical_gradient, with_context_menu};
 use anti_webui::prelude::*;
 use anti_webui::shell::prelude::*;
@@ -139,7 +141,7 @@ fn glass() -> Div {
         .left(0.0)
         .right(0.0)
         .bottom(0.0)
-        .dyn_style(|s| s.top(theme().menu_tile_overhang))
+        .dyn_style(|s| s.top(menu_tile_overhang()))
         .child(
             div()
                 .absolute()
@@ -262,7 +264,7 @@ fn programs(menu: Menu) -> Div {
         .dyn_style(|s| {
             let t = theme();
             s.left(t.menu_glass_border)
-                .top(t.menu_tile_overhang + t.menu_glass_border)
+                .top(menu_tile_overhang() + t.menu_glass_border)
                 .bottom(t.menu_glass_border)
                 .w(t.menu_programs_width - t.menu_glass_border)
         })

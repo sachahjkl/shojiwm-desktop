@@ -81,6 +81,11 @@ pub const PAGES: &[Page] = &[
         category: "Hardware and Sound",
     },
     Page {
+        key: "network",
+        title: "Network and Sharing Center",
+        category: "Network and Internet",
+    },
+    Page {
         key: "display",
         title: "Screen Resolution",
         category: "Appearance and Personalization",
@@ -103,6 +108,7 @@ pub const SIDE_PAGES: &[&str] = &[
     "notifications",
     "clock",
     "ease",
+    "network",
     "devices",
     "sound",
     "defaults",
@@ -245,6 +251,31 @@ pub const TASKS: &[Task] = &[
         words: "display screen monitor resolution scale size dpi refresh rate hz mode text bigger",
     },
     Task {
+        text: "View network status and tasks",
+        page: "network",
+        words: "network sharing center internet connection status ip address gateway dns ethernet wired wi-fi wifi wireless adapter",
+    },
+    Task {
+        text: "Manage saved network connections",
+        page: "network",
+        words: "network connections saved profiles connect disconnect forget autoconnect vpn properties edit",
+    },
+    Task {
+        text: "Change the IP address and DNS servers",
+        page: "network",
+        words: "ip address ipv4 ipv6 dhcp static manual gateway dns server tcp/ip",
+    },
+    Task {
+        text: "Turn Wi-Fi on or off",
+        page: "network",
+        words: "wifi wi-fi wireless radio adapter enable disable airplane",
+    },
+    Task {
+        text: "Connect to a hidden network",
+        page: "network",
+        words: "hidden network ssid wifi wi-fi wireless join security key",
+    },
+    Task {
         text: "View devices and printers",
         page: "devices",
         words: "devices printers usb hardware keyboard mouse webcam printer monitor",
@@ -271,48 +302,68 @@ pub const TASKS: &[Task] = &[
     },
 ];
 
+/// A task a search found, and the letters of its text the typed text matched (`fuzzy`), to
+/// highlight.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct FoundTask {
+    pub task: Task,
+    pub marks: Vec<usize>,
+}
+
 /// The words of `query`, in lower case.
 fn words(query: &str) -> Vec<String> {
     query.split_whitespace().map(str::to_lowercase).collect()
 }
 
-/// The tasks whose text and words hold every word of `query`, for the Start menu. None for an
-/// empty query.
-pub fn find_tasks(query: &str) -> Vec<Task> {
+/// The tasks `query` finds, as the launcher finds programs: fuzzy on their text, best first;
+/// then the tasks whose text and words (with the page's title and category when `page_words`)
+/// hold every word of it. None for an empty query.
+fn matching(query: &str, page_words: bool) -> Vec<FoundTask> {
     let wanted = words(query);
     if wanted.is_empty() {
         return Vec::new();
     }
-    TASKS
-        .iter()
-        .copied()
-        .filter(|task| {
-            let haystack = format!("{} {}", task.text, task.words).to_lowercase();
-            wanted.iter().all(|w| haystack.contains(w.as_str()))
-        })
-        .collect()
+    let mut found: Vec<FoundTask> =
+        crate::fuzzy::rank(query, TASKS.iter().copied(), |t| t.text.to_owned())
+            .into_iter()
+            .map(|m| FoundTask {
+                task: m.item,
+                marks: m.marks,
+            })
+            .collect();
+    for task in TASKS {
+        if found.iter().any(|f| f.task == *task) {
+            continue;
+        }
+        let page = page_info(task.page);
+        let haystack = if page_words {
+            format!(
+                "{} {} {} {}",
+                task.text, task.words, page.title, page.category
+            )
+        } else {
+            format!("{} {}", task.text, task.words)
+        }
+        .to_lowercase();
+        if wanted.iter().all(|w| haystack.contains(w.as_str())) {
+            found.push(FoundTask {
+                task: *task,
+                marks: Vec::new(),
+            });
+        }
+    }
+    found
+}
+
+/// The tasks `query` finds, for the Start menu and the launcher.
+pub fn find_tasks(query: &str) -> Vec<FoundTask> {
+    matching(query, false)
 }
 
 /// The tasks for the Control Panel's own search box: as [`find_tasks`], and the title and the
 /// category of the task's page count too.
-pub fn search(query: &str) -> Vec<Task> {
-    let wanted = words(query);
-    if wanted.is_empty() {
-        return Vec::new();
-    }
-    TASKS
-        .iter()
-        .copied()
-        .filter(|task| {
-            let page = page_info(task.page);
-            let haystack = format!(
-                "{} {} {} {}",
-                task.text, task.words, page.title, page.category
-            )
-            .to_lowercase();
-            wanted.iter().all(|w| haystack.contains(w.as_str()))
-        })
-        .collect()
+pub fn search(query: &str) -> Vec<FoundTask> {
+    matching(query, true)
 }
 
 thread_local! {

@@ -10,6 +10,8 @@ mod audio;
 mod bluetooth;
 mod calendar;
 mod locale;
+
+pub(crate) use locale::short_time;
 mod network;
 mod notifications;
 
@@ -188,9 +190,9 @@ const FOOTER_LIGHT: Color = rgba(0xffffff80);
 /// The red of an error's text and of a notification's cross under the pointer.
 pub(crate) const ERROR_RED: Color = rgb(0xd9302a);
 
-/// The box of an icon or of the clock on the bar: `width` wide, as tall as the bar's buttons,
-/// with the white veil, `inset` from its top and bottom, that lights it under the pointer and
-/// while `active` (its panel is open). Its content is centred.
+/// The box of an icon or of the clock on the bar: `width` wide at least (wider if its content
+/// is), as tall as the bar's buttons, with the white veil, `inset` from its top and bottom, that
+/// lights it under the pointer and while `active` (its panel is open). Its content is centred.
 fn bar_cell(
     width: impl Fn() -> f32 + 'static,
     inset: f32,
@@ -220,7 +222,8 @@ fn bar_cell(
         .interaction(ui)
         .dyn_style(move |s| {
             let t = theme();
-            s.w(width()).h(t.taskbar_height - t.taskbar_padding * 2.0)
+            s.min_w(width())
+                .h(t.taskbar_height - t.taskbar_padding * 2.0)
         })
         .child(
             div()
@@ -292,18 +295,6 @@ fn panel_popup(
                 )
         },
     )
-}
-
-/// The steps of a wheel or a touchpad, up positive: one per notch, or per 40 px of a touchpad.
-fn wheel_steps(e: &ScrollEvent, rest: &Cell<f32>) -> i32 {
-    const TOUCHPAD_STEP: f32 = 40.0;
-    if e.source == ScrollSource::Wheel {
-        return -(e.delta_y.signum() as i32);
-    }
-    let total = rest.get() + e.delta_y;
-    let steps = (total / TOUCHPAD_STEP).trunc();
-    rest.set(total - steps * TOUCHPAD_STEP);
-    -(steps as i32)
 }
 
 /// Small text in the theme's face, in `color`.
