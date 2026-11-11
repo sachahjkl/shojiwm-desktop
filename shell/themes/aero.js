@@ -179,6 +179,8 @@ var fontFamily = "Inter";
 var fontFallback = "Noto Sans";
 var fontSize = 12;
 var fontSizeSmall = 11;
+// The clock's face.
+var clockFamily = fontFamily;
 
 // ---------------------------------------------------------------------------
 // Timing, in milliseconds. Short: the desktop this copies was quick.

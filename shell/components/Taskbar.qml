@@ -220,28 +220,28 @@ Item {
         opacity: Settings.glassColorStrength
     }
 
-    // The top edge of a Windows 7 taskbar is a dark hairline with a lit one
-    // under it, in that order (measured on the reference desktop: #313030
-    // then #a6a7a4).
+    // The edge of the bar towards the desktop is a dark hairline with a lit
+    // one inside it, in that order (on Windows 7's taskbar, measured on the
+    // reference desktop: #313030 then #a6a7a4). Its edge at the screen's
+    // side has a dark one. A bar at the top has them the other way up.
     Rectangle {
         anchors.left: parent.left
         anchors.right: parent.right
-        anchors.top: parent.top
+        y: Scheme.barAtTop ? parent.height - 1 : 0
         height: 1
         color: Scheme.theme.barEdge
     }
     Rectangle {
         anchors.left: parent.left
         anchors.right: parent.right
-        anchors.top: parent.top
-        anchors.topMargin: 1
+        y: Scheme.barAtTop ? parent.height - 2 : 1
         height: 1
         color: Scheme.theme.barHighlight
     }
     Rectangle {
         anchors.left: parent.left
         anchors.right: parent.right
-        anchors.bottom: parent.bottom
+        y: Scheme.barAtTop ? 0 : parent.height - 1
         height: 1
         color: Scheme.theme.barBottomEdge
     }
@@ -435,18 +435,41 @@ Item {
 
     // ----- the orb and the programs -----------------------------------------
 
-    StartOrb {
+    // The Start button: the theme's own (Aero's orb, Kernel's launcher). Both
+    // have the same interface: menuOpen, activated, menuRequested.
+    Loader {
         id: orb
 
         anchors.left: parent.left
         anchors.leftMargin: Scheme.theme.orbLeft
         anchors.verticalCenter: parent.verticalCenter
-        menuOpen: bar.menuOpen
-        onActivated: {
+        sourceComponent: Scheme.kernel ? kernelLauncher : aeroOrb
+    }
+
+    Component {
+        id: aeroOrb
+        StartOrb {}
+    }
+
+    Component {
+        id: kernelLauncher
+        KernelLauncher {}
+    }
+
+    Binding {
+        target: orb.item
+        property: "menuOpen"
+        value: bar.menuOpen
+        when: orb.item !== null
+    }
+
+    Connections {
+        target: orb.item
+        function onActivated() {
             bar.closePopups();
             bar.startRequested();
         }
-        onMenuRequested: {
+        function onMenuRequested() {
             bar.closePopups();
             bar.adminMenuRequested();
         }

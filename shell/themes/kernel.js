@@ -13,11 +13,13 @@
 // ---------------------------------------------------------------------------
 
 var barSide = "top";
-var taskbarHeight = Aero.taskbarHeight;
+// A thinner bar than Aero's, its buttons flat and nearly as tall.
+var taskbarHeight = 32;
 var taskbarPadding = Aero.taskbarPadding;
-var orbSize = Aero.orbSize;
-var orbLeft = Aero.orbLeft;
-var taskButtonHeight = Aero.taskButtonHeight;
+// The launcher at the left end: a plate as tall as the bar.
+var orbSize = 40;
+var orbLeft = 0;
+var taskButtonHeight = 26;
 var taskButtonMaxWidth = Aero.taskButtonMaxWidth;
 var taskButtonMinWidth = Aero.taskButtonMinWidth;
 var taskButtonGap = Aero.taskButtonGap;
@@ -137,6 +139,8 @@ var fontFamily = "Inter";
 var fontFallback = "Noto Sans";
 var fontSize = 12;
 var fontSizeSmall = 11;
+// The clock's face: monospaced, as the window titles.
+var clockFamily = "JetBrainsMono NF";
 
 // ---------------------------------------------------------------------------
 // Timing, in milliseconds.

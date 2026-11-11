@@ -44,7 +44,7 @@ Item {
                     ? Qt.formatTime(source.date, "h:mm AP")
                     : source.date.toLocaleTimeString(Qt.locale(), Locale.ShortFormat)
             color: Scheme.theme.textOnGlass
-            font.family: Scheme.theme.fontFamily
+            font.family: Scheme.theme.clockFamily
             font.pixelSize: Scheme.theme.fontSize
         }
 
@@ -59,7 +59,7 @@ Item {
                     .replace(/\bd\b/, "dd").replace(/\bM\b/, "MM")
                     .replace(/\byy\b/, "yyyy").replace(/ /g, "/"))
             color: Scheme.theme.textOnGlass
-            font.family: Scheme.theme.fontFamily
+            font.family: Scheme.theme.clockFamily
             font.pixelSize: Scheme.theme.fontSize
         }
     }
@@ -96,7 +96,7 @@ Item {
                         + (other.day === "Today" ? "" : " (" + other.day.toLowerCase() + ")");
                 })).join("\n")
             color: Scheme.text
-            font.family: Scheme.theme.fontFamily
+            font.family: Scheme.theme.clockFamily
             font.pixelSize: Scheme.theme.fontSizeSmall
         }
     }
