@@ -5,7 +5,6 @@ import Quickshell
 import Quickshell.Services.Mpris
 import Quickshell.Wayland
 import ".."
-import "../theme.js" as Theme
 
 // The live previews Windows 7 shows over a taskbar button.
 //
@@ -48,14 +47,14 @@ PopupWindow {
     anchor.rect: popup.anchorRect
     anchor.edges: Edges.Top
     anchor.gravity: Edges.Top
-    anchor.margins.bottom: Theme.popupGap
+    anchor.margins.bottom: Scheme.theme.popupGap
     anchor.adjustment: PopupAdjustment.SlideX | PopupAdjustment.FlipY
 
-    implicitWidth: Theme.thumbPadding * 2
-        + count * Theme.thumbWidth
-        + Math.max(0, count - 1) * Theme.thumbGap
-    implicitHeight: Theme.thumbPadding * 2
-        + Theme.thumbHeight + Theme.thumbTitleHeight + popup.toolbarHeight
+    implicitWidth: Scheme.theme.thumbPadding * 2
+        + count * Scheme.theme.thumbWidth
+        + Math.max(0, count - 1) * Scheme.theme.thumbGap
+    implicitHeight: Scheme.theme.thumbPadding * 2
+        + Scheme.theme.thumbHeight + Scheme.theme.thumbTitleHeight + popup.toolbarHeight
 
     Rectangle {
         anchors.fill: parent
@@ -92,7 +91,7 @@ PopupWindow {
     Row {
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.bottom: parent.bottom
-        anchors.bottomMargin: Theme.thumbPadding
+        anchors.bottomMargin: Scheme.theme.thumbPadding
         spacing: 6
         visible: popup.player !== null
 
@@ -162,8 +161,8 @@ PopupWindow {
     Row {
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.top: parent.top
-        anchors.topMargin: Theme.thumbPadding
-        spacing: Theme.thumbGap
+        anchors.topMargin: Scheme.theme.thumbPadding
+        spacing: Scheme.theme.thumbGap
 
         Repeater {
             model: popup.windows
@@ -173,8 +172,8 @@ PopupWindow {
 
                 required property var modelData
 
-                width: Theme.thumbWidth
-                height: Theme.thumbHeight + Theme.thumbTitleHeight
+                width: Scheme.theme.thumbWidth
+                height: Scheme.theme.thumbHeight + Scheme.theme.thumbTitleHeight
 
                 // Under the pointer, the title makes room for the close
                 // button Windows 7 puts at the card's top right.
@@ -188,11 +187,11 @@ PopupWindow {
                     id: label
 
                     width: parent.width - (card.hovered ? 22 : 0)
-                    height: Theme.thumbTitleHeight
+                    height: Scheme.theme.thumbTitleHeight
                     text: Apps.titleOf(card.modelData)
                     color: Scheme.text
-                    font.family: Theme.fontFamily
-                    font.pixelSize: Theme.fontSizeSmall
+                    font.family: Scheme.theme.fontFamily
+                    font.pixelSize: Scheme.theme.fontSizeSmall
                     elide: Text.ElideRight
                     verticalAlignment: Text.AlignVCenter
                 }
@@ -232,8 +231,8 @@ PopupWindow {
                 Rectangle {
                     anchors.top: label.bottom
                     width: parent.width
-                    height: Theme.thumbHeight
-                    color: Theme.thumbFrame
+                    height: Scheme.theme.thumbHeight
+                    color: Scheme.theme.thumbFrame
                     border.width: 1
                     border.color: cardArea.containsMouse
                         ? Scheme.selectionBorder : Scheme.popupOutline
@@ -243,7 +242,7 @@ PopupWindow {
                         id: live
                         anchors.fill: parent
                         anchors.margins: 1
-                        active: Theme.liveThumbnails
+                        active: Scheme.theme.liveThumbnails
 
                         sourceComponent: ScreencopyView {
                             captureSource: card.modelData
@@ -258,7 +257,7 @@ PopupWindow {
                     ShellIcon {
                         anchors.centerIn: parent
                         implicitSize: 32
-                        visible: !Theme.liveThumbnails || !(live.item as ScreencopyView) || !(live.item as ScreencopyView).hasContent
+                        visible: !Scheme.theme.liveThumbnails || !(live.item as ScreencopyView) || !(live.item as ScreencopyView).hasContent
                         source: card.modelData
                             ? Apps.iconFor(card.modelData.appId) : ""
                     }

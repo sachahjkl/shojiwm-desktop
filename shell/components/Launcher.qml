@@ -2,7 +2,6 @@ import QtQuick
 import QtQuick.Controls.Basic
 import Quickshell
 import ".."
-import "../theme.js" as Theme
 
 // The launcher (Super+Shift+D): the Start menu's search alone, near the top
 // of the focused screen. The same search (Search) and the same rows: type,
@@ -38,7 +37,7 @@ Item {
     /// The row Return chooses.
     property int pick: 0
 
-    readonly property int headerHeight: Theme.menuSearchHeight + 8 + Theme.menuPadding * 2
+    readonly property int headerHeight: Scheme.theme.menuSearchHeight + 8 + Scheme.theme.menuPadding * 2
 
     /// While an edge is dragged, the size it gives, -1 otherwise: the
     /// settings are written once, when it is let go.
@@ -52,7 +51,7 @@ Item {
     readonly property bool compact: launcher.listHeight === 0
     /// The panel ends above the taskbar: it never runs off the screen.
     readonly property int maxListHeight: Math.max(0, Math.round(launcher.screenHeight * 0.82)
-        - Theme.taskbarHeight - launcher.headerHeight - Theme.menuPadding - 8)
+        - Scheme.theme.taskbarHeight - launcher.headerHeight - Scheme.theme.menuPadding - 8)
     /// The most rows the compact panel grows to while typing.
     readonly property int compactRows: 14
 
@@ -64,7 +63,7 @@ Item {
     /// panel is drawn inside it, so neither a key nor a drag resizes the
     /// window; the rest of it is clear, without glass.
     readonly property int windowWidth: launcher.maxPanelWidth
-    readonly property int windowHeight: launcher.headerHeight + Theme.menuPadding
+    readonly property int windowHeight: launcher.headerHeight + Scheme.theme.menuPadding
         + Math.max(launcher.maxListHeight, launcher.compactRows * StartMenuState.rowHeight)
 
     /// Return: the row picked. Before anything is typed that is a program
@@ -112,8 +111,8 @@ Item {
         anchors.top: parent.top
         width: launcher.panelWidth
         height: launcher.headerHeight + (launcher.compact
-            ? (panel.compactRowsShown > 0 ? panel.compactRowsShown * StartMenuState.rowHeight + Theme.menuPadding : 0)
-            : launcher.listHeight + Theme.menuPadding)
+            ? (panel.compactRowsShown > 0 ? panel.compactRowsShown * StartMenuState.rowHeight + Scheme.theme.menuPadding : 0)
+            : launcher.listHeight + Scheme.theme.menuPadding)
         radius: Scheme.corner(Scheme.popupRadius + 1)
         color: Scheme.startGlassOutline
 
@@ -138,8 +137,8 @@ Item {
             anchors.left: parent.left
             anchors.right: parent.right
             anchors.top: parent.top
-            anchors.margins: Theme.menuPadding
-            height: Theme.menuSearchHeight + 8
+            anchors.margins: Scheme.theme.menuPadding
+            height: Scheme.theme.menuSearchHeight + 8
             radius: Scheme.fieldRadius
             color: Scheme.field
             border.width: 1
@@ -167,8 +166,8 @@ Item {
                 anchors.rightMargin: 8
                 anchors.verticalCenter: parent.verticalCenter
                 color: Scheme.text
-                font.family: Theme.fontFamily
-                font.pixelSize: Theme.fontSize + 2
+                font.family: Scheme.theme.fontFamily
+                font.pixelSize: Scheme.theme.fontSize + 2
                 selectByMouse: true
                 focus: true
                 clip: true
@@ -224,7 +223,7 @@ Item {
             anchors.right: parent.right
             anchors.top: searchBox.bottom
             anchors.bottom: parent.bottom
-            anchors.margins: Theme.menuPadding
+            anchors.margins: Scheme.theme.menuPadding
             visible: launcher.compact ? Search.active : true
             clip: true
             boundsBehavior: Flickable.StopAtBounds
@@ -322,7 +321,7 @@ Item {
             onPositionChanged: function (mouse) {
                 if (pressed)
                     launcher.dragListHeight = Math.max(0, Math.min(launcher.maxListHeight,
-                        Math.round(at(mouse).y - launcher.headerHeight - Theme.menuPadding)));
+                        Math.round(at(mouse).y - launcher.headerHeight - Scheme.theme.menuPadding)));
             }
         }
 
@@ -339,7 +338,7 @@ Item {
                 var point = at(mouse);
                 launcher.dragWidth = Math.round(2 * (launcher.width / 2 - point.x));
                 launcher.dragListHeight = Math.max(0, Math.min(launcher.maxListHeight,
-                    Math.round(point.y - launcher.headerHeight - Theme.menuPadding)));
+                    Math.round(point.y - launcher.headerHeight - Scheme.theme.menuPadding)));
             }
         }
 
@@ -355,7 +354,7 @@ Item {
                 var point = at(mouse);
                 launcher.dragWidth = Math.round(2 * (point.x - launcher.width / 2));
                 launcher.dragListHeight = Math.max(0, Math.min(launcher.maxListHeight,
-                    Math.round(point.y - launcher.headerHeight - Theme.menuPadding)));
+                    Math.round(point.y - launcher.headerHeight - Scheme.theme.menuPadding)));
             }
         }
     }

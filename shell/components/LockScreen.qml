@@ -3,7 +3,6 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import Quickshell
 import ".."
-import "../theme.js" as Theme
 
 // The lock screen, as the Windows 7 log-on screen is laid out: the picture
 // of your choice behind, the time over it, your account picture in its glass
@@ -167,8 +166,8 @@ Item {
                     ? TextInput.Normal : TextInput.Password
                 passwordCharacter: "\u25CF"
                 color: Settings.dark ? "#e8f1f9" : "#000000"
-                font.family: Theme.fontFamily
-                font.pixelSize: Theme.fontSize
+                font.family: Scheme.theme.fontFamily
+                font.pixelSize: Scheme.theme.fontSize
                 clip: true
                 focus: true
                 enabled: !screen.auth.busy
@@ -232,7 +231,7 @@ Item {
         anchors.topMargin: 14
         text: "Welcome"
         visible: screen.auth.busy
-        font.pixelSize: Theme.fontSize + 4
+        font.pixelSize: Scheme.theme.fontSize + 4
     }
 
     // A wrong password: the field gives way to the message and OK.
@@ -259,7 +258,7 @@ Item {
             ShadowText {
                 anchors.verticalCenter: parent.verticalCenter
                 text: screen.auth.message
-                font.pixelSize: Theme.fontSize + 4
+                font.pixelSize: Scheme.theme.fontSize + 4
             }
         }
 
@@ -329,8 +328,8 @@ Item {
                         anchors.leftMargin: 10
                         text: powerRow.modelData.label
                         color: "#10283c"
-                        font.family: Theme.fontFamily
-                        font.pixelSize: Theme.fontSize
+                        font.family: Scheme.theme.fontFamily
+                        font.pixelSize: Scheme.theme.fontSize
                     }
 
                     MouseArea {

@@ -2,7 +2,6 @@ pragma ComponentBehavior: Bound
 
 import QtQuick
 import ".."
-import "../theme.js" as Theme
 
 // The session to log on to, in the bottom-left corner of the log-on screen
 // (greeter.qml): its name and an arrow; a click opens the list of sessions
@@ -14,8 +13,8 @@ Item {
 
     FontMetrics {
         id: metrics
-        font.family: Theme.fontFamily
-        font.pixelSize: Theme.fontSize
+        font.family: Scheme.theme.fontFamily
+        font.pixelSize: Scheme.theme.fontSize
     }
 
     readonly property real longestName: {
@@ -45,7 +44,7 @@ Item {
             anchors.left: parent.left
             anchors.leftMargin: 12
             text: GreeterState.session ? GreeterState.session.name : "No session"
-            font.pixelSize: Theme.fontSize + 1
+            font.pixelSize: Scheme.theme.fontSize + 1
         }
 
         // The arrow, pointing up to the list.
@@ -55,7 +54,7 @@ Item {
             anchors.rightMargin: 10
             text: "▴"
             color: "#ffffff"
-            font.pixelSize: Theme.fontSize
+            font.pixelSize: Scheme.theme.fontSize
         }
 
         MouseArea {
@@ -110,7 +109,7 @@ Item {
                         visible: !!GreeterState.session
                             && GreeterState.session.id === row.modelData.id
                         color: "#10283c"
-                        font.pixelSize: Theme.fontSize - 3
+                        font.pixelSize: Scheme.theme.fontSize - 3
                     }
 
                     Text {
@@ -119,8 +118,8 @@ Item {
                         anchors.leftMargin: 24
                         text: row.modelData.name
                         color: "#10283c"
-                        font.family: Theme.fontFamily
-                        font.pixelSize: Theme.fontSize
+                        font.family: Scheme.theme.fontFamily
+                        font.pixelSize: Scheme.theme.fontSize
                     }
 
                     MouseArea {

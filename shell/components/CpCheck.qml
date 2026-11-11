@@ -1,6 +1,5 @@
 import QtQuick
 import ".."
-import "../theme.js" as Theme
 
 // A check box with its label, drawn as Windows 7 draws one.
 Item {
@@ -43,8 +42,8 @@ Item {
             anchors.verticalCenter: parent.verticalCenter
             text: check.label
             color: Scheme.text
-            font.family: Theme.fontFamily
-            font.pixelSize: Theme.fontSize
+            font.family: Scheme.theme.fontFamily
+            font.pixelSize: Scheme.theme.fontSize
         }
     }
 

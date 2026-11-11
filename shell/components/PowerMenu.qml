@@ -3,7 +3,6 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import Quickshell
 import ".."
-import "../theme.js" as Theme
 
 // What the arrow beside the Start menu's power button opens: log off, lock,
 // restart, sleep, hibernate. The list and the commands are in Apps.qml.
@@ -32,17 +31,17 @@ PopupWindow {
     // Windows; flipped when the screen ends.
     anchor.edges: Edges.Right | Edges.Bottom
     anchor.gravity: Edges.Right | Edges.Top
-    anchor.margins.left: Theme.popupGap
+    anchor.margins.left: Scheme.theme.popupGap
     anchor.adjustment: PopupAdjustment.FlipX | PopupAdjustment.SlideY
 
-    implicitWidth: Math.max(Theme.popupMinWidth - 30,
-                            widest + Theme.popupPadX * 2 + 30)
-    implicitHeight: column.implicitHeight + Theme.popupPadY * 2 + 2
+    implicitWidth: Math.max(Scheme.theme.popupMinWidth - 30,
+                            widest + Scheme.theme.popupPadX * 2 + 30)
+    implicitHeight: column.implicitHeight + Scheme.theme.popupPadY * 2 + 2
 
     FontMetrics {
         id: metrics
-        font.family: Theme.fontFamily
-        font.pixelSize: Theme.fontSize
+        font.family: Scheme.theme.fontFamily
+        font.pixelSize: Scheme.theme.fontSize
     }
 
     readonly property real widest: {
@@ -88,7 +87,7 @@ PopupWindow {
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.top: parent.top
-        anchors.topMargin: Theme.popupPadY
+        anchors.topMargin: Scheme.theme.popupPadY
         anchors.leftMargin: 1
         anchors.rightMargin: 1
 

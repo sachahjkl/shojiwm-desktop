@@ -5,7 +5,6 @@ import QtQuick.Controls.Basic
 import Quickshell
 import Quickshell.Io
 import ".."
-import "../theme.js" as Theme
 
 // The Start menu, laid out as Windows 7 lays it out.
 //
@@ -131,7 +130,7 @@ Item {
         anchor.adjustment: PopupAdjustment.FlipX | PopupAdjustment.SlideY
 
         implicitWidth: 280
-        implicitHeight: recentColumn.implicitHeight + Theme.popupPadY * 2 + 2
+        implicitHeight: recentColumn.implicitHeight + Scheme.theme.popupPadY * 2 + 2
 
         Rectangle {
             anchors.fill: parent
@@ -150,7 +149,7 @@ Item {
             anchors.left: parent.left
             anchors.right: parent.right
             anchors.top: parent.top
-            anchors.topMargin: Theme.popupPadY
+            anchors.topMargin: Scheme.theme.popupPadY
             anchors.leftMargin: 1
             anchors.rightMargin: 1
 
@@ -212,7 +211,7 @@ Item {
         id: glass
 
         anchors.fill: parent
-        anchors.topMargin: Theme.menuTileOverhang
+        anchors.topMargin: Scheme.theme.menuTileOverhang
 
         Rectangle {
             anchors.fill: parent
@@ -252,7 +251,7 @@ Item {
         anchors.top: glass.top
         anchors.bottom: parent.bottom
         anchors.margins: 1
-        width: menu.width - Theme.menuProgramsWidth - 2
+        width: menu.width - Scheme.theme.menuProgramsWidth - 2
         color: "transparent"
 
         // The jump list of the program under the pointer, in place of the
@@ -261,8 +260,8 @@ Item {
             anchors.left: parent.left
             anchors.right: parent.right
             anchors.top: parent.top
-            anchors.margins: Theme.menuPadding
-            anchors.topMargin: Theme.menuPadding + Theme.menuTileSize - Theme.menuTileOverhang
+            anchors.margins: Scheme.theme.menuPadding
+            anchors.topMargin: Scheme.theme.menuPadding + Scheme.theme.menuTileSize - Scheme.theme.menuTileOverhang
             spacing: 1
             visible: menu.jumpEntry !== null && !menu.searching
 
@@ -323,14 +322,14 @@ Item {
             anchors.left: parent.left
             anchors.right: parent.right
             anchors.top: parent.top
-            anchors.margins: Theme.menuPadding
+            anchors.margins: Scheme.theme.menuPadding
             spacing: 2
             visible: menu.jumpEntry === null || menu.searching
 
             // Room under the picture, which hangs over this corner.
             Item {
                 width: parent.width
-                height: Theme.menuTileSize - Theme.menuTileOverhang
+                height: Scheme.theme.menuTileSize - Scheme.theme.menuTileOverhang
             }
 
             // The account's name, the first line, as Windows 7 has it.
@@ -438,7 +437,7 @@ Item {
                         visible: place.modelData.recent === true
                         text: "▸"
                         color: Scheme.placesText
-                        font.pixelSize: Theme.fontSize
+                        font.pixelSize: Scheme.theme.fontSize
                     }
                 }
             }
@@ -453,8 +452,8 @@ Item {
 
             anchors.left: parent.left
             anchors.bottom: parent.bottom
-            anchors.leftMargin: Theme.menuPadding + 2
-            anchors.bottomMargin: Theme.menuPadding + 2
+            anchors.leftMargin: Scheme.theme.menuPadding + 2
+            anchors.bottomMargin: Scheme.theme.menuPadding + 2
             height: 25
 
             readonly property var action: Apps.powerAction(Apps.powerButtonAction)
@@ -477,8 +476,8 @@ Item {
                     color: "#ffffff"
                     style: Text.Raised
                     styleColor: "#99000000"
-                    font.family: Theme.fontFamily
-                    font.pixelSize: Theme.fontSize
+                    font.family: Scheme.theme.fontFamily
+                    font.pixelSize: Scheme.theme.fontSize
                 }
 
                 MouseArea {
@@ -557,8 +556,8 @@ Item {
         anchors.left: parent.left
         anchors.top: glass.top
         anchors.bottom: parent.bottom
-        anchors.margins: Theme.menuGlassBorder
-        width: Theme.menuProgramsWidth - Theme.menuGlassBorder
+        anchors.margins: Scheme.theme.menuGlassBorder
+        width: Scheme.theme.menuProgramsWidth - Scheme.theme.menuGlassBorder
 
         // The white pane, set into the glass with the frame's two lines.
         Rectangle {
@@ -592,7 +591,7 @@ Item {
             anchors.right: parent.right
             anchors.top: parent.top
             anchors.bottom: allPrograms.top
-            anchors.margins: Theme.menuPadding
+            anchors.margins: Scheme.theme.menuPadding
             visible: !menu.searching && menu.page === "home"
             clip: true
             contentHeight: homeColumn.implicitHeight
@@ -669,7 +668,7 @@ Item {
             anchors.right: parent.right
             anchors.top: parent.top
             anchors.bottom: allPrograms.top
-            anchors.margins: Theme.menuPadding
+            anchors.margins: Scheme.theme.menuPadding
             visible: !menu.searching && menu.page === "all"
             clip: true
             spacing: 1
@@ -722,7 +721,7 @@ Item {
             anchors.right: parent.right
             anchors.top: parent.top
             anchors.bottom: searchBox.top
-            anchors.margins: Theme.menuPadding
+            anchors.margins: Scheme.theme.menuPadding
             visible: menu.searching
             clip: true
             model: Search.rows
@@ -773,8 +772,8 @@ Item {
             anchors.left: parent.left
             anchors.right: parent.right
             anchors.bottom: searchBox.top
-            anchors.leftMargin: Theme.menuPadding
-            anchors.rightMargin: Theme.menuPadding
+            anchors.leftMargin: Scheme.theme.menuPadding
+            anchors.rightMargin: Scheme.theme.menuPadding
             anchors.bottomMargin: 4
             height: menu.searching ? 0 : StartMenuState.rowHeight + 9
             visible: !menu.searching
@@ -808,8 +807,8 @@ Item {
             anchors.left: parent.left
             anchors.right: parent.right
             anchors.bottom: parent.bottom
-            anchors.margins: Theme.menuPadding
-            height: Theme.menuSearchHeight
+            anchors.margins: Scheme.theme.menuPadding
+            height: Scheme.theme.menuSearchHeight
             radius: Scheme.fieldRadius
             color: Scheme.field
             border.width: 1
@@ -837,8 +836,8 @@ Item {
                 anchors.rightMargin: 6
                 anchors.verticalCenter: parent.verticalCenter
                 color: Scheme.text
-                font.family: Theme.fontFamily
-                font.pixelSize: Theme.fontSize
+                font.family: Scheme.theme.fontFamily
+                font.pixelSize: Scheme.theme.fontSize
                 selectByMouse: true
                 focus: true
                 clip: true
@@ -895,8 +894,8 @@ Item {
 
         x: places.x + (places.width - width) / 2
         y: 0
-        width: Theme.menuTileSize
-        height: Theme.menuTileSize
+        width: Scheme.theme.menuTileSize
+        height: Scheme.theme.menuTileSize
 
         UserTile {
             anchors.fill: parent
@@ -904,7 +903,7 @@ Item {
             dark: Settings.dark
             opacity: menu.hoveredPlace.length > 0 ? 0 : 1
             Behavior on opacity {
-                NumberAnimation { duration: Settings.motion(Theme.fade) }
+                NumberAnimation { duration: Settings.motion(Scheme.theme.fade) }
             }
         }
 
@@ -917,7 +916,7 @@ Item {
             dark: Settings.dark
             opacity: menu.hoveredPlace.length > 0 ? 1 : 0
             Behavior on opacity {
-                NumberAnimation { duration: Settings.motion(Theme.fade) }
+                NumberAnimation { duration: Settings.motion(Scheme.theme.fade) }
             }
         }
     }

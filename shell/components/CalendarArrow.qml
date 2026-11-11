@@ -1,6 +1,5 @@
 import QtQuick
 import ".."
-import "../theme.js" as Theme
 
 // A month arrow of the calendar.
 Rectangle {
@@ -20,8 +19,8 @@ Rectangle {
         anchors.centerIn: parent
         text: arrow.glyph
         color: Scheme.text
-        font.family: Theme.fontFamily
-        font.pixelSize: Theme.fontSize
+        font.family: Scheme.theme.fontFamily
+        font.pixelSize: Scheme.theme.fontSize
     }
 
     MouseArea {

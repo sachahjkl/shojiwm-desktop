@@ -4,7 +4,6 @@ import QtQuick
 import Quickshell
 import Quickshell.Services.Mpris
 import ".."
-import "../theme.js" as Theme
 
 // The player that plays now, or the first one: its cover, the title and
 // the artist, and the previous, play or pause, and next buttons. Any
@@ -70,8 +69,8 @@ Column {
                 text: controls.player
                     ? controls.player.trackTitle || controls.player.identity : ""
                 color: Scheme.text
-                font.family: Theme.fontFamily
-                font.pixelSize: Theme.fontSize
+                font.family: Scheme.theme.fontFamily
+                font.pixelSize: Scheme.theme.fontSize
                 font.bold: true
                 elide: Text.ElideRight
             }
@@ -81,8 +80,8 @@ Column {
                 text: controls.player
                     ? controls.player.trackArtist || controls.player.identity : ""
                 color: Scheme.textMuted
-                font.family: Theme.fontFamily
-                font.pixelSize: Theme.fontSizeSmall
+                font.family: Scheme.theme.fontFamily
+                font.pixelSize: Scheme.theme.fontSizeSmall
                 elide: Text.ElideRight
             }
         }

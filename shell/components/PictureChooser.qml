@@ -4,7 +4,6 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import ".."
-import "../theme.js" as Theme
 
 // A grid of pictures to pick from, as the Windows 7 background chooser shows
 // them: the pictures in your Pictures folder and in the usual backgrounds
@@ -110,8 +109,8 @@ Item {
                 ? "No picture found in your Pictures folder. Type a path below."
                 : (chooser.selected.length > 0 ? chooser.selected : chooser.builtInLabel)
             color: Scheme.textMuted
-            font.family: Theme.fontFamily
-            font.pixelSize: Theme.fontSizeSmall
+            font.family: Scheme.theme.fontFamily
+            font.pixelSize: Scheme.theme.fontSizeSmall
             elide: Text.ElideMiddle
         }
 
@@ -135,8 +134,8 @@ Item {
                     anchors.rightMargin: 6
                     verticalAlignment: TextInput.AlignVCenter
                     color: Scheme.text
-                    font.family: Theme.fontFamily
-                    font.pixelSize: Theme.fontSize
+                    font.family: Scheme.theme.fontFamily
+                    font.pixelSize: Scheme.theme.fontSize
                     clip: true
                     selectByMouse: true
                     onAccepted: chooser.usePath()

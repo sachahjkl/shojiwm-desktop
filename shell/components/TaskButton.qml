@@ -2,7 +2,6 @@ pragma ComponentBehavior: Bound
 
 import QtQuick
 import ".."
-import "../theme.js" as Theme
 
 // One program on the taskbar, with every window of it behind one button.
 //
@@ -43,7 +42,7 @@ Item {
     /// The pointer entered or left the button.
     signal hoverChanged(bool inside)
 
-    implicitHeight: Theme.taskButtonHeight
+    implicitHeight: Scheme.theme.taskButtonHeight
 
     /// Where the button is in its window, which is what a popup anchors to.
     function buttonRect() {
@@ -65,9 +64,9 @@ Item {
             width: body.width
             height: body.height
             radius: Scheme.itemRadius
-            color: Theme.buttonStack
+            color: Scheme.theme.buttonStack
             border.width: 1
-            border.color: Theme.buttonStackBorder
+            border.color: Scheme.theme.buttonStackBorder
         }
     }
 
@@ -76,18 +75,18 @@ Item {
     Rectangle {
         id: body
 
-        width: button.width - Theme.stackRoom
-        height: Theme.taskButtonHeight
+        width: button.width - Scheme.theme.stackRoom
+        height: Scheme.theme.taskButtonHeight
         anchors.bottom: parent.bottom
         radius: Scheme.itemRadius
         antialiasing: true
         color: "transparent"
         border.width: 1
-        border.color: Theme.buttonOutline
+        border.color: Scheme.theme.buttonOutline
         opacity: button.idle && !button.hovered && !area.pressed ? 0 : 1
 
         Behavior on opacity {
-            NumberAnimation { duration: Settings.motion(Theme.fade) }
+            NumberAnimation { duration: Settings.motion(Scheme.theme.fade) }
         }
 
         // The looks are layers, as Windows 7 paints them: the resting glass,
@@ -112,18 +111,18 @@ Item {
                 antialiasing: true
                 opacity: shown ? 1 : 0
                 border.width: 1
-                border.color: modelData === "Pressed" ? Theme.buttonRestBorder
-                    : Theme["button" + modelData + "Border"]
+                border.color: modelData === "Pressed" ? Scheme.theme.buttonRestBorder
+                    : Scheme.theme["button" + modelData + "Border"]
                 gradient: Gradient {
-                    GradientStop { position: 0.0; color: Theme["button" + plate.modelData + "Top"] }
-                    GradientStop { position: 0.46; color: Theme["button" + plate.modelData + "Upper"] }
-                    GradientStop { position: 0.5; color: Theme["button" + plate.modelData + "Lower"] }
-                    GradientStop { position: 1.0; color: Theme["button" + plate.modelData + "Bottom"] }
+                    GradientStop { position: 0.0; color: Scheme.theme["button" + plate.modelData + "Top"] }
+                    GradientStop { position: 0.46; color: Scheme.theme["button" + plate.modelData + "Upper"] }
+                    GradientStop { position: 0.5; color: Scheme.theme["button" + plate.modelData + "Lower"] }
+                    GradientStop { position: 1.0; color: Scheme.theme["button" + plate.modelData + "Bottom"] }
                 }
 
                 Behavior on opacity {
                     NumberAnimation {
-                        duration: Settings.motion(plate.shown ? Theme.hoverIn : Theme.hoverOut)
+                        duration: Settings.motion(plate.shown ? Scheme.theme.hoverIn : Scheme.theme.hoverOut)
                     }
                 }
             }
@@ -149,7 +148,7 @@ Item {
         }
 
         Behavior on width {
-            NumberAnimation { duration: Settings.motion(Theme.fade * 2) }
+            NumberAnimation { duration: Settings.motion(Scheme.theme.fade * 2) }
         }
     }
 
@@ -157,7 +156,7 @@ Item {
     ShellIcon {
         anchors.centerIn: body
         anchors.verticalCenterOffset: area.pressed ? 1 : 0
-        implicitSize: Theme.taskIconSize
+        implicitSize: Scheme.theme.taskIconSize
         source: button.group ? button.group.icon : ""
         visible: button.iconOnly
     }
@@ -174,7 +173,7 @@ Item {
 
             ShellIcon {
                 anchors.verticalCenter: parent.verticalCenter
-                implicitSize: Theme.taskIconSize
+                implicitSize: Scheme.theme.taskIconSize
                 source: button.group ? button.group.icon : ""
             }
 
@@ -182,7 +181,7 @@ Item {
             // glass.
             Item {
                 anchors.verticalCenter: parent.verticalCenter
-                width: Math.max(0, body.width - 12 - Theme.taskIconSize - 6)
+                width: Math.max(0, body.width - 12 - Scheme.theme.taskIconSize - 6)
                 height: label.implicitHeight
                 visible: body.width > 70
 
@@ -204,8 +203,8 @@ Item {
                         ? button.group.name
                         : Apps.titleOf(button.windows[0])
                     color: "#ffffff"
-                    font.family: Theme.fontFamily
-                    font.pixelSize: Theme.fontSize
+                    font.family: Scheme.theme.fontFamily
+                    font.pixelSize: Scheme.theme.fontSize
                     elide: Text.ElideRight
                 }
             }
@@ -214,7 +213,7 @@ Item {
 
     Timer {
         id: restTimer
-        interval: Theme.thumbDelay
+        interval: Scheme.theme.thumbDelay
         onTriggered: button.previewRequested(button.buttonRect())
     }
 
@@ -224,7 +223,7 @@ Item {
     // upper right corner.
     Rectangle {
         visible: button.count > 0
-        x: body.x + (button.iconOnly ? body.width / 2 + 2 : 6 + Theme.taskIconSize - 8)
+        x: body.x + (button.iconOnly ? body.width / 2 + 2 : 6 + Scheme.theme.taskIconSize - 8)
         y: body.y + 2
         z: 2
         height: 14
@@ -242,7 +241,7 @@ Item {
             anchors.centerIn: parent
             text: button.count > 99 ? "99+" : button.count
             color: "#ffffff"
-            font.family: Theme.fontFamily
+            font.family: Scheme.theme.fontFamily
             font.pixelSize: 10
             font.bold: true
         }
@@ -267,7 +266,7 @@ Item {
         x: button.reordering ? button.dragOffset : button.shift
         Behavior on x {
             enabled: !button.reordering
-            NumberAnimation { duration: Settings.motion(Theme.hoverIn); easing.type: Easing.OutCubic }
+            NumberAnimation { duration: Settings.motion(Scheme.theme.hoverIn); easing.type: Easing.OutCubic }
         }
     }
 

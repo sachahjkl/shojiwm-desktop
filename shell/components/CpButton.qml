@@ -1,6 +1,5 @@
 import QtQuick
 import ".."
-import "../theme.js" as Theme
 
 // A push button, as Windows 7 draws one: a pale gradient that turns blue
 // under the pointer. The dark scheme lightens it a little instead, so
@@ -43,8 +42,8 @@ Rectangle {
         anchors.centerIn: parent
         text: button.label
         color: area.containsMouse && !Scheme.dark ? "#10283c" : Scheme.text
-        font.family: Theme.fontFamily
-        font.pixelSize: Theme.fontSize
+        font.family: Scheme.theme.fontFamily
+        font.pixelSize: Scheme.theme.fontSize
     }
 
     Rectangle {

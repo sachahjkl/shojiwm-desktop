@@ -1,6 +1,5 @@
 import QtQuick
 import ".."
-import "../theme.js" as Theme
 
 // One notification-area icon: on the taskbar, or in the popover of hidden
 // icons. A left click activates the item, a right click asks for its menu.
@@ -37,12 +36,12 @@ Item {
     transform: Translate {
         x: icon.shift
         Behavior on x {
-            NumberAnimation { duration: Settings.motion(Theme.hoverIn); easing.type: Easing.OutCubic }
+            NumberAnimation { duration: Settings.motion(Scheme.theme.hoverIn); easing.type: Easing.OutCubic }
         }
     }
 
-    width: Theme.trayIconSize + 8
-    height: Theme.trayIconSize + 8
+    width: Scheme.theme.trayIconSize + 8
+    height: Scheme.theme.trayIconSize + 8
 
     function iconRect() {
         var point = icon.mapToItem(null, 0, 0);
@@ -55,13 +54,13 @@ Item {
         color: icon.hoverColor
         opacity: area.containsMouse ? 1 : 0
         Behavior on opacity {
-            NumberAnimation { duration: Settings.motion(Theme.fade) }
+            NumberAnimation { duration: Settings.motion(Scheme.theme.fade) }
         }
     }
 
     ShellIcon {
         anchors.centerIn: parent
-        implicitSize: Theme.trayIconSize
+        implicitSize: Scheme.theme.trayIconSize
         source: icon.item && icon.item.icon ? icon.item.icon : ""
     }
 

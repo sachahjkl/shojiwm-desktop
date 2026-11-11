@@ -3,7 +3,6 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import Quickshell
 import ".."
-import "../theme.js" as Theme
 
 // The popover of hidden notification-area icons, over the arrow, as Windows 7
 // shows it: the icons in a grid, and "Customize..." under them, which opens
@@ -23,7 +22,7 @@ PopupWindow {
     signal menuRequested(var item, rect at)
 
     readonly property int columns: Math.max(1, Math.min(4, items.length))
-    readonly property int cell: Theme.trayIconSize + 12
+    readonly property int cell: Scheme.theme.trayIconSize + 12
 
     color: "transparent"
     visible: popup.open && popup.items.length > 0
@@ -32,7 +31,7 @@ PopupWindow {
     anchor.rect: popup.anchorRect
     anchor.edges: Edges.Top
     anchor.gravity: Edges.Top
-    anchor.margins.bottom: Theme.popupGap + 2
+    anchor.margins.bottom: Scheme.theme.popupGap + 2
     anchor.adjustment: PopupAdjustment.SlideX | PopupAdjustment.FlipY
 
     implicitWidth: Math.max(popup.columns * popup.cell + 16, customize.implicitWidth + 24)

@@ -1,6 +1,5 @@
 import QtQuick
 import ".."
-import "../theme.js" as Theme
 
 // One line of the Start menu's places: white text on the glass, lit under
 // the pointer by a pale band of glass with a light rim, as Windows 7 draws
@@ -45,8 +44,8 @@ Item {
         anchors.verticalCenter: parent.verticalCenter
         text: row.label
         color: "#ffffff"
-        font.family: Theme.fontFamily
-        font.pixelSize: Theme.fontSize
+        font.family: Scheme.theme.fontFamily
+        font.pixelSize: Scheme.theme.fontSize
         elide: Text.ElideRight
     }
 

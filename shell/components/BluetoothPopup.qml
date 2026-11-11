@@ -4,7 +4,6 @@ import QtQuick
 import Quickshell
 import Quickshell.Bluetooth
 import ".."
-import "../theme.js" as Theme
 
 // The Bluetooth panel a click on the Bluetooth icon opens, in the style of
 // the network panel: the adapter and its switch at the top, then the paired
@@ -62,7 +61,7 @@ PopupWindow {
                          popup.anchorItem ? popup.anchorItem.height : 1)
     anchor.edges: Edges.Top
     anchor.gravity: Edges.Top
-    anchor.margins.bottom: Theme.popupGap + 2
+    anchor.margins.bottom: Scheme.theme.popupGap + 2
     anchor.adjustment: PopupAdjustment.SlideX | PopupAdjustment.FlipY
 
     implicitWidth: 290
@@ -109,8 +108,8 @@ PopupWindow {
 
     component Heading: Text {
         color: Scheme.menuHeading
-        font.family: Theme.fontFamily
-        font.pixelSize: Theme.fontSizeSmall
+        font.family: Scheme.theme.fontFamily
+        font.pixelSize: Scheme.theme.fontSizeSmall
     }
 
     Column {
@@ -145,8 +144,8 @@ PopupWindow {
                     width: 150
                     text: popup.adapter ? popup.adapter.name : "Bluetooth"
                     color: Scheme.text
-                    font.family: Theme.fontFamily
-                    font.pixelSize: Theme.fontSize
+                    font.family: Scheme.theme.fontFamily
+                    font.pixelSize: Scheme.theme.fontSize
                     font.bold: true
                     elide: Text.ElideRight
                 }
@@ -155,8 +154,8 @@ PopupWindow {
                     text: !popup.enabled ? "Bluetooth is off"
                         : popup.adapter.discovering ? "Looking for devices…" : "On"
                     color: Scheme.textMuted
-                    font.family: Theme.fontFamily
-                    font.pixelSize: Theme.fontSizeSmall
+                    font.family: Scheme.theme.fontFamily
+                    font.pixelSize: Scheme.theme.fontSizeSmall
                 }
             }
 
@@ -166,8 +165,8 @@ PopupWindow {
                 visible: !!popup.adapter
                 text: popup.enabled ? "Turn off" : "Turn on"
                 color: Scheme.link
-                font.family: Theme.fontFamily
-                font.pixelSize: Theme.fontSizeSmall
+                font.family: Scheme.theme.fontFamily
+                font.pixelSize: Scheme.theme.fontSizeSmall
                 font.underline: powerSwitch.containsMouse
 
                 MouseArea {
@@ -273,8 +272,8 @@ PopupWindow {
                             width: parent.width
                             text: row.device.name || row.device.address
                             color: Scheme.text
-                            font.family: Theme.fontFamily
-                            font.pixelSize: Theme.fontSize
+                            font.family: Scheme.theme.fontFamily
+                            font.pixelSize: Scheme.theme.fontSize
                             font.bold: row.device.connected
                             elide: Text.ElideRight
                         }
@@ -282,8 +281,8 @@ PopupWindow {
                         Text {
                             text: popup.statusOf(row.device)
                             color: Scheme.textMuted
-                            font.family: Theme.fontFamily
-                            font.pixelSize: Theme.fontSizeSmall
+                            font.family: Scheme.theme.fontFamily
+                            font.pixelSize: Scheme.theme.fontSizeSmall
                         }
                     }
 
@@ -338,8 +337,8 @@ PopupWindow {
             visible: !popup.adapter
             text: "No Bluetooth adapter."
             color: Scheme.textMuted
-            font.family: Theme.fontFamily
-            font.pixelSize: Theme.fontSizeSmall
+            font.family: Scheme.theme.fontFamily
+            font.pixelSize: Scheme.theme.fontSizeSmall
         }
     }
 
@@ -367,8 +366,8 @@ PopupWindow {
             anchors.centerIn: parent
             text: "Open Bluetooth Settings"
             color: Scheme.link
-            font.family: Theme.fontFamily
-            font.pixelSize: Theme.fontSize
+            font.family: Scheme.theme.fontFamily
+            font.pixelSize: Scheme.theme.fontSize
             font.underline: settingsArea.containsMouse
 
             MouseArea {

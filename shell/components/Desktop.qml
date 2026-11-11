@@ -5,7 +5,6 @@ import Qt.labs.folderlistmodel
 import Quickshell
 import Quickshell.Io
 import ".."
-import "../theme.js" as Theme
 import "../tools.js" as Tools
 
 // The desktop icons of one screen, over the wallpaper: the Recycle Bin, the
@@ -81,8 +80,8 @@ Item {
 
     FontMetrics {
         id: nameMetrics
-        font.family: Theme.fontFamily
-        font.pixelSize: Theme.fontSize
+        font.family: Scheme.theme.fontFamily
+        font.pixelSize: Scheme.theme.fontSize
     }
 
     /// One size up (`step` 1) or down (-1), as Ctrl+wheel and Ctrl+plus or
@@ -185,7 +184,7 @@ Item {
     })
     readonly property string firstScreen: Screens.primaryName
     /// The cells: the screen less the taskbar, filled in columns.
-    readonly property int rows: Math.max(1, Math.floor((height - Theme.taskbarHeight - 4) / size.height))
+    readonly property int rows: Math.max(1, Math.floor((height - Scheme.theme.taskbarHeight - 4) / size.height))
     readonly property int columns: Math.max(1, Math.floor((width - 4) / size.width))
 
     function screenOf(item) {
@@ -212,7 +211,7 @@ Item {
     /// A point kept on the screen, so an icon is never out of reach.
     function onScreen(x, y) {
         return Qt.point(Math.max(2, Math.min(width - 2 - size.width, x)),
-            Math.max(2, Math.min(height - Theme.taskbarHeight - 2 - size.height, y)));
+            Math.max(2, Math.min(height - Scheme.theme.taskbarHeight - 2 - size.height, y)));
     }
 
     /// The top left of each shown icon, by key.
@@ -1036,8 +1035,8 @@ Item {
                         width: parent.width
                         text: cell.label
                         color: "#ffffff"
-                        font.family: Theme.fontFamily
-                        font.pixelSize: Theme.fontSize
+                        font.family: Scheme.theme.fontFamily
+                        font.pixelSize: Scheme.theme.fontSize
                         horizontalAlignment: Text.AlignHCenter
                         wrapMode: Text.WrapAtWordBoundaryOrAnywhere
                         maximumLineCount: cell.isPicked ? 6 : 2
@@ -1066,8 +1065,8 @@ Item {
                         color: "#000000"
                         selectionColor: "#3399ff"
                         selectedTextColor: "#ffffff"
-                        font.family: Theme.fontFamily
-                        font.pixelSize: Theme.fontSize
+                        font.family: Scheme.theme.fontFamily
+                        font.pixelSize: Scheme.theme.fontSize
                         horizontalAlignment: TextInput.AlignHCenter
                         wrapMode: TextInput.WrapAnywhere
                         selectByMouse: true

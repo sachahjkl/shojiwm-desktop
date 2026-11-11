@@ -4,7 +4,6 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import Quickshell.Wayland
-import "theme.js" as Theme
 
 // What the taskbar and the Start menu know about programs and windows.
 //

@@ -3,7 +3,6 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import Quickshell
 import ".."
-import "../theme.js" as Theme
 
 // The jump list of a taskbar button, on a right click.
 //
@@ -33,18 +32,18 @@ PopupWindow {
     anchor.rect: popup.anchorRect
     anchor.edges: Edges.Top
     anchor.gravity: Edges.Top
-    anchor.margins.bottom: Theme.popupGap
+    anchor.margins.bottom: Scheme.theme.popupGap
     anchor.adjustment: PopupAdjustment.SlideX | PopupAdjustment.FlipY
 
     implicitWidth: Math.min(
-        Theme.popupMaxWidth,
-        Math.max(Theme.popupMinWidth, popup.widest + Theme.popupPadX * 2 + 24))
-    implicitHeight: column.implicitHeight + Theme.popupPadY * 2 + 2
+        Scheme.theme.popupMaxWidth,
+        Math.max(Scheme.theme.popupMinWidth, popup.widest + Scheme.theme.popupPadX * 2 + 24))
+    implicitHeight: column.implicitHeight + Scheme.theme.popupPadY * 2 + 2
 
     FontMetrics {
         id: metrics
-        font.family: Theme.fontFamily
-        font.pixelSize: Theme.fontSize
+        font.family: Scheme.theme.fontFamily
+        font.pixelSize: Scheme.theme.fontSize
     }
 
     readonly property real widest: {
@@ -96,7 +95,7 @@ PopupWindow {
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.top: parent.top
-        anchors.topMargin: Theme.popupPadY
+        anchors.topMargin: Scheme.theme.popupPadY
         anchors.leftMargin: 1
         anchors.rightMargin: 1
 

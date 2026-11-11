@@ -1,7 +1,6 @@
 import QtQuick
 import Quickshell
 import ".."
-import "../theme.js" as Theme
 
 // The Clock gadget of the desktop: a round face of pale glass in a dark
 // rim, twelve marks, the hour and minute hands and a thin red seconds hand,
@@ -164,7 +163,7 @@ Item {
         y: parent.height * 0.64
         text: Qt.formatDate(clock.date, "ddd d")
         color: "#4d6578"
-        font.family: Theme.fontFamily
+        font.family: Scheme.theme.fontFamily
         font.pixelSize: 10
     }
 }

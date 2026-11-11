@@ -2,7 +2,6 @@ pragma ComponentBehavior: Bound
 
 import QtQuick
 import ".."
-import "../theme.js" as Theme
 
 // "Shut Down Windows", as Windows 7 shows it after Alt+F4 on the desktop: the
 // screen dims, and a small window asks what the computer should do, from a
@@ -173,8 +172,8 @@ Item {
             verticalAlignment: Text.AlignVCenter
             text: "Shut Down Windows"
             color: Scheme.dark ? "#ffffff" : "#1e395b"
-            font.family: Theme.fontFamily
-            font.pixelSize: Theme.fontSize
+            font.family: Scheme.theme.fontFamily
+            font.pixelSize: Scheme.theme.fontSize
         }
 
         Rectangle {
@@ -238,7 +237,7 @@ Item {
                     color: "#ffffff"
                     style: Text.Raised
                     styleColor: "#40000000"
-                    font.family: Theme.fontFamily
+                    font.family: Scheme.theme.fontFamily
                     font.pixelSize: 22
                     font.weight: Font.Light
                 }
@@ -255,8 +254,8 @@ Item {
                 Text {
                     text: "What do you want the computer to do?"
                     color: Scheme.pageHeading
-                    font.family: Theme.fontFamily
-                    font.pixelSize: Theme.fontSize + 2
+                    font.family: Scheme.theme.fontFamily
+                    font.pixelSize: Scheme.theme.fontSize + 2
                 }
 
                 // The combo box: the choice in a field, and the drop button
@@ -290,8 +289,8 @@ Item {
                                 return action ? action.label : "";
                             }
                             color: dialog.listOpen || dialog.focusAt !== 0 ? Scheme.text : "#ffffff"
-                            font.family: Theme.fontFamily
-                            font.pixelSize: Theme.fontSize
+                            font.family: Scheme.theme.fontFamily
+                            font.pixelSize: Scheme.theme.fontSize
                         }
                     }
 
@@ -350,8 +349,8 @@ Item {
                     }
                     color: Scheme.text
                     wrapMode: Text.WordWrap
-                    font.family: Theme.fontFamily
-                    font.pixelSize: Theme.fontSize
+                    font.family: Scheme.theme.fontFamily
+                    font.pixelSize: Scheme.theme.fontSize
                 }
             }
 
@@ -434,8 +433,8 @@ Item {
                                 anchors.verticalCenter: parent.verticalCenter
                                 text: row.modelData.label
                                 color: row.lit ? "#ffffff" : Scheme.text
-                                font.family: Theme.fontFamily
-                                font.pixelSize: Theme.fontSize
+                                font.family: Scheme.theme.fontFamily
+                                font.pixelSize: Scheme.theme.fontSize
                             }
 
                             MouseArea {

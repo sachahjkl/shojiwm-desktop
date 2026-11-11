@@ -1,6 +1,5 @@
 import QtQuick
 import ".."
-import "../theme.js" as Theme
 
 // A button of the Windows 7 log-on screen (OK, Cancel): dark blue glass, a
 // light rim, a gloss over the top half, white text.
@@ -53,8 +52,8 @@ Item {
         anchors.centerIn: parent
         text: button.label
         color: "#ffffff"
-        font.family: Theme.fontFamily
-        font.pixelSize: Theme.fontSize + 1
+        font.family: Scheme.theme.fontFamily
+        font.pixelSize: Scheme.theme.fontSize + 1
     }
 
     MouseArea {

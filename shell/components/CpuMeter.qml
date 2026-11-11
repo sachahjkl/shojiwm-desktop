@@ -1,7 +1,6 @@
 import QtQuick
 import QtQuick.Shapes
 import ".."
-import "../theme.js" as Theme
 
 // The CPU Meter gadget of the desktop: two dials on a plate of dark glass,
 // the processor on the left and the memory on the right, each with its
@@ -185,7 +184,7 @@ Item {
                 color: "#ffffff"
                 style: Text.Raised
                 styleColor: "#80000000"
-                font.family: Theme.fontFamily
+                font.family: Scheme.theme.fontFamily
                 font.pixelSize: dial.width > 90 ? 18 : 14
                 font.bold: true
             }
@@ -194,7 +193,7 @@ Item {
                 anchors.horizontalCenter: parent.horizontalCenter
                 text: dial.label
                 color: "#b8cbdc"
-                font.family: Theme.fontFamily
+                font.family: Scheme.theme.fontFamily
                 font.pixelSize: 10
             }
         }
@@ -205,7 +204,7 @@ Item {
             anchors.bottomMargin: -2
             text: dial.detail
             color: "#8fa6ba"
-            font.family: Theme.fontFamily
+            font.family: Scheme.theme.fontFamily
             font.pixelSize: 9
         }
     }

@@ -1,7 +1,6 @@
 import QtQuick
 import Quickshell.Bluetooth
 import ".."
-import "../theme.js" as Theme
 
 // The Bluetooth icon of the notification area: a rune on blue glass, grey
 // while Bluetooth is off. It shows only when there is an adapter. A click
@@ -19,8 +18,8 @@ Item {
     readonly property var adapter: Bluetooth.defaultAdapter
 
     visible: icon.adapter !== null
-    implicitWidth: visible ? Theme.trayIconSize + 8 : 0
-    implicitHeight: Theme.taskbarHeight - Theme.taskbarPadding * 2
+    implicitWidth: visible ? Scheme.theme.trayIconSize + 8 : 0
+    implicitHeight: Scheme.theme.taskbarHeight - Scheme.theme.taskbarPadding * 2
 
     Rectangle {
         anchors.fill: parent
@@ -30,14 +29,14 @@ Item {
         color: "#ffffff"
         opacity: icon.active ? 0.22 : area.containsMouse ? 0.14 : 0
         Behavior on opacity {
-            NumberAnimation { duration: Settings.motion(Theme.fade) }
+            NumberAnimation { duration: Settings.motion(Scheme.theme.fade) }
         }
     }
 
     Image {
         anchors.centerIn: parent
-        width: Theme.trayIconSize
-        height: Theme.trayIconSize
+        width: Scheme.theme.trayIconSize
+        height: Scheme.theme.trayIconSize
         sourceSize: Qt.size(width * 2, height * 2)
         source: Qt.resolvedUrl("../assets/bluetooth"
             + (icon.adapter && icon.adapter.enabled ? "" : "-off") + ".svg")

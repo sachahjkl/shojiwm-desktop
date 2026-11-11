@@ -1,5 +1,5 @@
 import QtQuick
-import "../theme.js" as Theme
+import ".."
 
 // White text with the soft dark shadow Windows 7 puts under the text of the
 // log-on screen, so it reads on any picture.
@@ -32,6 +32,6 @@ Item {
     Text {
         id: label
         color: "#ffffff"
-        font.family: Theme.fontFamily
+        font.family: Scheme.theme.fontFamily
     }
 }

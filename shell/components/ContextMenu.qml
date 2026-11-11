@@ -3,7 +3,6 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import Quickshell
 import ".."
-import "../theme.js" as Theme
 
 // A right-click menu of the taskbar, above what was clicked: the bell, the
 // volume, the network, the clock, the show-desktop strip, the bar itself.
@@ -32,7 +31,7 @@ PopupWindow {
     anchor.rect: popup.anchorRect
     anchor.edges: Edges.Top
     anchor.gravity: Edges.Top
-    anchor.margins.bottom: Theme.popupGap
+    anchor.margins.bottom: Scheme.theme.popupGap
     anchor.adjustment: PopupAdjustment.SlideX | PopupAdjustment.FlipY
 
     /// A line has an icon or a check box: every line keeps that column, as
@@ -50,15 +49,15 @@ PopupWindow {
         return Math.ceil(longest);
     }
 
-    implicitWidth: Math.min(Theme.popupMaxWidth,
-        Math.max(Theme.popupMinWidth, popup.longestLabel + Theme.popupPadX * 2 + 24
+    implicitWidth: Math.min(Scheme.theme.popupMaxWidth,
+        Math.max(Scheme.theme.popupMinWidth, popup.longestLabel + Scheme.theme.popupPadX * 2 + 24
             + (popup.gutter ? 16 + 7 : 0)))
-    implicitHeight: column.implicitHeight + Theme.popupPadY * 2 + 2
+    implicitHeight: column.implicitHeight + Scheme.theme.popupPadY * 2 + 2
 
     FontMetrics {
         id: metrics
-        font.family: Theme.fontFamily
-        font.pixelSize: Theme.fontSize
+        font.family: Scheme.theme.fontFamily
+        font.pixelSize: Scheme.theme.fontSize
     }
 
     Rectangle {
@@ -88,7 +87,7 @@ PopupWindow {
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.top: parent.top
-        anchors.topMargin: Theme.popupPadY
+        anchors.topMargin: Scheme.theme.popupPadY
         anchors.leftMargin: 1
         anchors.rightMargin: 1
 

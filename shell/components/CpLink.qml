@@ -1,6 +1,5 @@
 import QtQuick
 import ".."
-import "../theme.js" as Theme
 
 // A link of the Control Panel: blue, underlined under the pointer.
 Text {
@@ -10,8 +9,8 @@ Text {
     signal clicked
 
     color: area.containsMouse ? (Scheme.dark ? "#a8d4ff" : "#3399ff") : Scheme.link2
-    font.family: Theme.fontFamily
-    font.pixelSize: large ? Theme.fontSize + 3 : Theme.fontSize
+    font.family: Scheme.theme.fontFamily
+    font.pixelSize: large ? Scheme.theme.fontSize + 3 : Scheme.theme.fontSize
     font.underline: area.containsMouse
     elide: Text.ElideRight
 

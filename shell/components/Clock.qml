@@ -1,7 +1,6 @@
 import QtQuick
 import Quickshell
 import ".."
-import "../theme.js" as Theme
 
 // The clock at the right end of the taskbar: the time over the date. A click
 // opens the calendar, a right click the clock's menu; the taskbar owns both.
@@ -15,8 +14,8 @@ Item {
     /// A right click; `at` is where the clock is in its window.
     signal menuRequested(rect at)
 
-    implicitWidth: Theme.clockWidth
-    implicitHeight: Theme.taskbarHeight - Theme.taskbarPadding * 2
+    implicitWidth: Scheme.theme.clockWidth
+    implicitHeight: Scheme.theme.taskbarHeight - Scheme.theme.taskbarPadding * 2
 
     SystemClock {
         id: source
@@ -29,7 +28,7 @@ Item {
         color: "#ffffff"
         opacity: clock.active ? 0.22 : area.containsMouse ? 0.14 : 0
         Behavior on opacity {
-            NumberAnimation { duration: Settings.motion(Theme.fade) }
+            NumberAnimation { duration: Settings.motion(Scheme.theme.fade) }
         }
     }
 
@@ -44,9 +43,9 @@ Item {
                 : Settings.clockFormat === "12h"
                     ? Qt.formatTime(source.date, "h:mm AP")
                     : source.date.toLocaleTimeString(Qt.locale(), Locale.ShortFormat)
-            color: Theme.textOnGlass
-            font.family: Theme.fontFamily
-            font.pixelSize: Theme.fontSize
+            color: Scheme.theme.textOnGlass
+            font.family: Scheme.theme.fontFamily
+            font.pixelSize: Scheme.theme.fontSize
         }
 
         Text {
@@ -59,9 +58,9 @@ Item {
                 : Qt.formatDate(source.date, Qt.locale().dateFormat(Locale.ShortFormat)
                     .replace(/\bd\b/, "dd").replace(/\bM\b/, "MM")
                     .replace(/\byy\b/, "yyyy").replace(/ /g, "/"))
-            color: Theme.textOnGlass
-            font.family: Theme.fontFamily
-            font.pixelSize: Theme.fontSize
+            color: Scheme.theme.textOnGlass
+            font.family: Scheme.theme.fontFamily
+            font.pixelSize: Scheme.theme.fontSize
         }
     }
 
@@ -71,7 +70,7 @@ Item {
         anchor.rect: Qt.rect(0, 0, clock.width, clock.height)
         anchor.edges: Edges.Top
         anchor.gravity: Edges.Top
-        anchor.margins.bottom: Theme.popupGap + 2
+        anchor.margins.bottom: Scheme.theme.popupGap + 2
         visible: tipTimer.shown && area.containsMouse && !clock.active
         color: "transparent"
         implicitWidth: tip.implicitWidth + 16
@@ -97,8 +96,8 @@ Item {
                         + (other.day === "Today" ? "" : " (" + other.day.toLowerCase() + ")");
                 })).join("\n")
             color: Scheme.text
-            font.family: Theme.fontFamily
-            font.pixelSize: Theme.fontSizeSmall
+            font.family: Scheme.theme.fontFamily
+            font.pixelSize: Scheme.theme.fontSizeSmall
         }
     }
 

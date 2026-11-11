@@ -3,7 +3,6 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import Quickshell
 import ".."
-import "../theme.js" as Theme
 
 // The notification panel a click on the bell opens: the notifications of
 // this session, newest first, each with its program's icon, its title, its
@@ -44,7 +43,7 @@ PopupWindow {
                          popup.anchorItem ? popup.anchorItem.height : 1)
     anchor.edges: Edges.Top
     anchor.gravity: Edges.Top
-    anchor.margins.bottom: Theme.popupGap + 2
+    anchor.margins.bottom: Scheme.theme.popupGap + 2
     anchor.adjustment: PopupAdjustment.SlideX | PopupAdjustment.FlipY
 
     implicitWidth: 340
@@ -92,8 +91,8 @@ PopupWindow {
             anchors.verticalCenter: parent.verticalCenter
             text: "Notifications"
             color: Scheme.menuHeading
-            font.family: Theme.fontFamily
-            font.pixelSize: Theme.fontSize
+            font.family: Scheme.theme.fontFamily
+            font.pixelSize: Scheme.theme.fontSize
         }
 
         Text {
@@ -102,8 +101,8 @@ PopupWindow {
             visible: NotificationHistory.entries.length > 0
             text: "Clear all"
             color: Scheme.link
-            font.family: Theme.fontFamily
-            font.pixelSize: Theme.fontSizeSmall
+            font.family: Scheme.theme.fontFamily
+            font.pixelSize: Scheme.theme.fontSizeSmall
             font.underline: clearArea.containsMouse
 
             MouseArea {
@@ -174,8 +173,8 @@ PopupWindow {
                         width: parent.width - age.implicitWidth - 6
                         text: card.modelData.summary.length > 0 ? card.modelData.summary : card.modelData.app
                         color: Scheme.text
-                        font.family: Theme.fontFamily
-                        font.pixelSize: Theme.fontSize
+                        font.family: Scheme.theme.fontFamily
+                        font.pixelSize: Scheme.theme.fontSize
                         font.bold: true
                         elide: Text.ElideRight
                     }
@@ -184,8 +183,8 @@ PopupWindow {
                         id: age
                         text: NotificationHistory.age(card.modelData.time, popup.now)
                         color: Scheme.textMuted
-                        font.family: Theme.fontFamily
-                        font.pixelSize: Theme.fontSizeSmall
+                        font.family: Scheme.theme.fontFamily
+                        font.pixelSize: Scheme.theme.fontSizeSmall
                     }
                 }
 
@@ -197,16 +196,16 @@ PopupWindow {
                     wrapMode: Text.Wrap
                     maximumLineCount: 3
                     elide: Text.ElideRight
-                    font.family: Theme.fontFamily
-                    font.pixelSize: Theme.fontSizeSmall
+                    font.family: Scheme.theme.fontFamily
+                    font.pixelSize: Scheme.theme.fontSizeSmall
                 }
 
                 Text {
                     text: card.modelData.app
                     visible: card.modelData.summary.length > 0 && card.modelData.app.length > 0
                     color: Scheme.textMuted
-                    font.family: Theme.fontFamily
-                    font.pixelSize: Theme.fontSizeSmall - 1
+                    font.family: Scheme.theme.fontFamily
+                    font.pixelSize: Scheme.theme.fontSizeSmall - 1
                 }
             }
 
@@ -243,8 +242,8 @@ PopupWindow {
         verticalAlignment: Text.AlignVCenter
         text: "No new notifications."
         color: Scheme.textMuted
-        font.family: Theme.fontFamily
-        font.pixelSize: Theme.fontSize
+        font.family: Scheme.theme.fontFamily
+        font.pixelSize: Scheme.theme.fontSize
     }
 
     // Do not disturb, on the band at the bottom.

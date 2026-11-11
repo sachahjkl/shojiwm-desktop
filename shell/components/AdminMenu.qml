@@ -3,7 +3,6 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import Quickshell
 import ".."
-import "../theme.js" as Theme
 
 // The menu of the Start orb, on a right click or Super+X: the tools a power
 // user wants at hand, as Windows' Win+X menu has them. A terminal, a root
@@ -112,8 +111,8 @@ Item {
 
     FontMetrics {
         id: metrics
-        font.family: Theme.fontFamily
-        font.pixelSize: Theme.fontSize
+        font.family: Scheme.theme.fontFamily
+        font.pixelSize: Scheme.theme.fontSize
     }
 
     Item {
@@ -144,11 +143,11 @@ Item {
     Rectangle {
         id: menu
 
-        x: Theme.orbLeft
-        y: parent.height - Theme.taskbarHeight - height - Theme.popupGap
-        width: Math.min(Theme.popupMaxWidth,
-            Math.max(Theme.popupMinWidth, popup.longestLabel + Theme.popupPadX * 2 + 24))
-        height: column.implicitHeight + Theme.popupPadY * 2 + 2
+        x: Scheme.theme.orbLeft
+        y: parent.height - Scheme.theme.taskbarHeight - height - Scheme.theme.popupGap
+        width: Math.min(Scheme.theme.popupMaxWidth,
+            Math.max(Scheme.theme.popupMinWidth, popup.longestLabel + Scheme.theme.popupPadX * 2 + 24))
+        height: column.implicitHeight + Scheme.theme.popupPadY * 2 + 2
         radius: Scheme.popupRadius
         border.width: 1
         border.color: Scheme.popupOutline
@@ -178,7 +177,7 @@ Item {
             anchors.left: parent.left
             anchors.right: parent.right
             anchors.top: parent.top
-            anchors.topMargin: Theme.popupPadY
+            anchors.topMargin: Scheme.theme.popupPadY
             anchors.leftMargin: 1
             anchors.rightMargin: 1
 

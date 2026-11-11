@@ -1,7 +1,6 @@
 import QtQuick
 import Quickshell
 import ".."
-import "../theme.js" as Theme
 
 // The speaker of the notification area: its waves show the level, a red
 // mark shows a muted output. A click opens the volume panel, the wheel
@@ -17,8 +16,8 @@ Item {
     /// A right click; `at` is where the icon is in its window.
     signal menuRequested(rect at)
 
-    implicitWidth: Theme.trayIconSize + 8
-    implicitHeight: Theme.taskbarHeight - Theme.taskbarPadding * 2
+    implicitWidth: Scheme.theme.trayIconSize + 8
+    implicitHeight: Scheme.theme.taskbarHeight - Scheme.theme.taskbarPadding * 2
 
     Rectangle {
         anchors.fill: parent
@@ -28,14 +27,14 @@ Item {
         color: "#ffffff"
         opacity: icon.active ? 0.22 : area.containsMouse ? 0.14 : 0
         Behavior on opacity {
-            NumberAnimation { duration: Settings.motion(Theme.fade) }
+            NumberAnimation { duration: Settings.motion(Scheme.theme.fade) }
         }
     }
 
     Image {
         anchors.centerIn: parent
-        width: Theme.trayIconSize + 2
-        height: Theme.trayIconSize + 2
+        width: Scheme.theme.trayIconSize + 2
+        height: Scheme.theme.trayIconSize + 2
         sourceSize: Qt.size(width * 2, height * 2)
         source: Qt.resolvedUrl("../assets/speaker-" + Audio.level + ".svg")
     }
@@ -67,7 +66,7 @@ Item {
         anchor.rect: Qt.rect(0, 0, icon.width, icon.height)
         anchor.edges: Edges.Top
         anchor.gravity: Edges.Top
-        anchor.margins.bottom: Theme.popupGap + 2
+        anchor.margins.bottom: Scheme.theme.popupGap + 2
         visible: tipTimer.shown && area.containsMouse && !icon.active
         color: "transparent"
         implicitWidth: tip.implicitWidth + 14
@@ -89,8 +88,8 @@ Item {
             anchors.centerIn: parent
             text: Audio.deviceName + ": " + (Audio.muted ? "Muted" : Audio.percent + "%")
             color: Scheme.text
-            font.family: Theme.fontFamily
-            font.pixelSize: Theme.fontSizeSmall
+            font.family: Scheme.theme.fontFamily
+            font.pixelSize: Scheme.theme.fontSizeSmall
         }
     }
 

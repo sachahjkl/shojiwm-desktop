@@ -1,6 +1,5 @@
 import QtQuick
 import ".."
-import "../theme.js" as Theme
 
 // One half of the Start menu's power button: the button itself, or the
 // arrow beside it. The two halves share an edge and round only their outer

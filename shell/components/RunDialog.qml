@@ -2,7 +2,6 @@ pragma ComponentBehavior: Bound
 
 import QtQuick
 import ".."
-import "../theme.js" as Theme
 
 // The Run dialog (Super+R), as Windows 7 shows it above the Start button:
 // the glass frame with its caption, the page with the run icon and the
@@ -54,7 +53,7 @@ Item {
         id: frame
 
         x: 12
-        y: parent.height - Theme.taskbarHeight - height - 12
+        y: parent.height - Scheme.theme.taskbarHeight - height - 12
         width: 420
         height: page.height + caption.height + 9
         radius: Scheme.corner(7)
@@ -89,8 +88,8 @@ Item {
             verticalAlignment: Text.AlignVCenter
             text: "Run"
             color: Scheme.dark ? "#ffffff" : "#1e395b"
-            font.family: Theme.fontFamily
-            font.pixelSize: Theme.fontSize
+            font.family: Scheme.theme.fontFamily
+            font.pixelSize: Scheme.theme.fontSize
         }
 
         Rectangle {
@@ -128,8 +127,8 @@ Item {
                         text: "Type the name of a program, folder, document, or Internet resource, and it will be opened for you."
                         wrapMode: Text.WordWrap
                         color: Scheme.text
-                        font.family: Theme.fontFamily
-                        font.pixelSize: Theme.fontSize
+                        font.family: Scheme.theme.fontFamily
+                        font.pixelSize: Scheme.theme.fontSize
                     }
                 }
 
@@ -141,8 +140,8 @@ Item {
                         verticalAlignment: Text.AlignVCenter
                         text: "Open:"
                         color: Scheme.text
-                        font.family: Theme.fontFamily
-                        font.pixelSize: Theme.fontSize
+                        font.family: Scheme.theme.fontFamily
+                        font.pixelSize: Scheme.theme.fontSize
                     }
 
                     // The field and its arrow, as a Windows combo box.
@@ -170,8 +169,8 @@ Item {
                             color: Scheme.text
                             selectionColor: "#3399ff"
                             selectedTextColor: "#ffffff"
-                            font.family: Theme.fontFamily
-                            font.pixelSize: Theme.fontSize
+                            font.family: Scheme.theme.fontFamily
+                            font.pixelSize: Scheme.theme.fontSize
                             selectByMouse: true
                             clip: true
                             focus: true
@@ -278,8 +277,8 @@ Item {
                         + "”. Check the name, then try again."
                     wrapMode: Text.WordWrap
                     color: Scheme.dark ? "#ff8a80" : "#c42b1c"
-                    font.family: Theme.fontFamily
-                    font.pixelSize: Theme.fontSize
+                    font.family: Scheme.theme.fontFamily
+                    font.pixelSize: Scheme.theme.fontSize
                 }
             }
 
@@ -352,8 +351,8 @@ Item {
                                 text: row.modelData
                                 elide: Text.ElideRight
                                 color: row.index === dialog.listPick ? "#ffffff" : Scheme.text
-                                font.family: Theme.fontFamily
-                                font.pixelSize: Theme.fontSize
+                                font.family: Scheme.theme.fontFamily
+                                font.pixelSize: Scheme.theme.fontSize
                             }
 
                             MouseArea {

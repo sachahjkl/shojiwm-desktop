@@ -1,6 +1,5 @@
 import QtQuick
 import ".."
-import "../theme.js" as Theme
 
 // The flag of the notification area, as Windows 7's Action Center: a red
 // mark when something failed, a yellow one for a warning. A click opens its
@@ -14,8 +13,8 @@ Item {
     /// A right click; `at` is where the icon is in its window.
     signal menuRequested(rect at)
 
-    implicitWidth: Theme.trayIconSize + 8
-    implicitHeight: Theme.taskbarHeight - Theme.taskbarPadding * 2
+    implicitWidth: Scheme.theme.trayIconSize + 8
+    implicitHeight: Scheme.theme.taskbarHeight - Scheme.theme.taskbarPadding * 2
 
     Rectangle {
         anchors.fill: parent
@@ -25,15 +24,15 @@ Item {
         color: "#ffffff"
         opacity: icon.active ? 0.22 : area.containsMouse ? 0.14 : 0
         Behavior on opacity {
-            NumberAnimation { duration: Settings.motion(Theme.fade) }
+            NumberAnimation { duration: Settings.motion(Scheme.theme.fade) }
         }
     }
 
     Image {
         id: picture
         anchors.centerIn: parent
-        width: Theme.trayIconSize + 2
-        height: Theme.trayIconSize + 2
+        width: Scheme.theme.trayIconSize + 2
+        height: Scheme.theme.trayIconSize + 2
         sourceSize: Qt.size(width * 2, height * 2)
         source: Qt.resolvedUrl("../assets/action-center.svg")
     }

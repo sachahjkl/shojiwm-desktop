@@ -2,7 +2,6 @@ pragma ComponentBehavior: Bound
 
 import QtQuick
 import ".."
-import "../theme.js" as Theme
 
 // A context menu of the desktop, drawn like a Windows 7 menu, from a plain
 // list of lines:
@@ -45,9 +44,9 @@ Item {
     visible: entries.length > 0
 
     width: Math.min(
-        Theme.popupMaxWidth,
-        Math.max(Theme.popupMinWidth, popup.widest + Theme.popupPadX * 2 + 16 + 7 + 24))
-    height: column.implicitHeight + Theme.popupPadY * 2 + 2
+        Scheme.theme.popupMaxWidth,
+        Math.max(Scheme.theme.popupMinWidth, popup.widest + Scheme.theme.popupPadX * 2 + 16 + 7 + 24))
+    height: column.implicitHeight + Scheme.theme.popupPadY * 2 + 2
     // To the right of where it hangs from and down, or over to the left and
     // up when the screen ends.
     x: popup.atX + width <= boundsWidth ? popup.atX : Math.max(0, popup.flipX - width)
@@ -55,8 +54,8 @@ Item {
 
     FontMetrics {
         id: metrics
-        font.family: Theme.fontFamily
-        font.pixelSize: Theme.fontSize
+        font.family: Scheme.theme.fontFamily
+        font.pixelSize: Scheme.theme.fontSize
     }
 
     readonly property real widest: {
@@ -92,7 +91,7 @@ Item {
 
     Timer {
         id: submenuTimer
-        interval: Theme.submenuDelay
+        interval: Scheme.theme.submenuDelay
         onTriggered: popup.openFrom(popup.restingEntry, popup.restingLine)
     }
 
@@ -105,7 +104,7 @@ Item {
         var at = line.mapToItem(popup, 0, 0);
         popup.openX = popup.x + popup.width - 2;
         popup.openFlipX = popup.x + 2;
-        popup.openY = popup.y + at.y - Theme.popupPadY - 1;
+        popup.openY = popup.y + at.y - Scheme.theme.popupPadY - 1;
         popup.openEntry = entry;
     }
 
@@ -144,7 +143,7 @@ Item {
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.top: parent.top
-        anchors.topMargin: Theme.popupPadY
+        anchors.topMargin: Scheme.theme.popupPadY
         anchors.leftMargin: 1
         anchors.rightMargin: 1
 

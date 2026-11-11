@@ -1,7 +1,6 @@
 import QtQuick
 import QtQuick.Effects
 import ".."
-import "../theme.js" as Theme
 
 // The orb at the left end of the taskbar, in layers as on Windows 7: the
 // orb, the snowflake's glow and shadow, the NixOS snowflake, then the glass
@@ -19,10 +18,10 @@ Item {
 
     readonly property bool hovered: area.containsMouse
     readonly property bool hot: area.containsMouse || orb.menuOpen
-    readonly property real pictureSize: Math.ceil(Theme.orbSize * Screen.devicePixelRatio)
+    readonly property real pictureSize: Math.ceil(Scheme.theme.orbSize * Screen.devicePixelRatio)
 
-    implicitWidth: Theme.orbSize
-    implicitHeight: Theme.orbSize
+    implicitWidth: Scheme.theme.orbSize
+    implicitHeight: Scheme.theme.orbSize
 
     Image {
         anchors.fill: parent
@@ -42,7 +41,7 @@ Item {
         opacity: orb.hot ? 1 : 0
 
         Behavior on opacity {
-            NumberAnimation { duration: Settings.motion(Theme.fade) * 2 }
+            NumberAnimation { duration: Settings.motion(Scheme.theme.fade) * 2 }
         }
     }
 
@@ -74,10 +73,10 @@ Item {
         opacity: orb.menuOpen ? 1 : area.containsMouse ? 0.9 : 0.35
 
         Behavior on scale {
-            NumberAnimation { duration: Settings.motion(Theme.fade) * 2 }
+            NumberAnimation { duration: Settings.motion(Scheme.theme.fade) * 2 }
         }
         Behavior on opacity {
-            NumberAnimation { duration: Settings.motion(Theme.fade) * 2 }
+            NumberAnimation { duration: Settings.motion(Scheme.theme.fade) * 2 }
         }
     }
 
@@ -110,7 +109,7 @@ Item {
         opacity: orb.hot ? 1 : 0.92
 
         Behavior on scale {
-            NumberAnimation { duration: Settings.motion(Theme.fade) }
+            NumberAnimation { duration: Settings.motion(Scheme.theme.fade) }
         }
     }
 

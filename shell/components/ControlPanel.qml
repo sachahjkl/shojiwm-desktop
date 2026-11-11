@@ -7,7 +7,6 @@ import Quickshell.Io
 import Quickshell.Services.Pipewire
 import Quickshell.Services.SystemTray
 import ".."
-import "../theme.js" as Theme
 
 // The Control Panel: a normal window, so it gets the Aero frame, laid out as
 // the Windows 7 one: an address bar with the path, a blue pane of links on
@@ -163,8 +162,8 @@ FloatingWindow {
                 anchors.rightMargin: 4
                 anchors.verticalCenter: parent.verticalCenter
                 color: Scheme.text
-                font.family: Theme.fontFamily
-                font.pixelSize: Theme.fontSize
+                font.family: Scheme.theme.fontFamily
+                font.pixelSize: Scheme.theme.fontSize
                 selectByMouse: true
                 clip: true
                 onTextChanged: {
@@ -242,8 +241,8 @@ FloatingWindow {
                     text: "▸  " + (window.pages[window.page] || {}).category
                         + "  ▸  " + (window.pages[window.page] || {}).title
                     color: Scheme.text
-                    font.family: Theme.fontFamily
-                    font.pixelSize: Theme.fontSize
+                    font.family: Scheme.theme.fontFamily
+                    font.pixelSize: Scheme.theme.fontSize
                 }
             }
         }
@@ -349,22 +348,22 @@ FloatingWindow {
 
     component Heading: Text {
         color: Scheme.pageHeading
-        font.family: Theme.fontFamily
-        font.pixelSize: Theme.fontSize + 8
+        font.family: Scheme.theme.fontFamily
+        font.pixelSize: Scheme.theme.fontSize + 8
         wrapMode: Text.WordWrap
     }
 
     component SubHeading: Text {
         color: Scheme.pageHeading
-        font.family: Theme.fontFamily
-        font.pixelSize: Theme.fontSize + 2
+        font.family: Scheme.theme.fontFamily
+        font.pixelSize: Scheme.theme.fontSize + 2
         topPadding: 10
     }
 
     component Note: Text {
         color: Scheme.textMuted
-        font.family: Theme.fontFamily
-        font.pixelSize: Theme.fontSize
+        font.family: Scheme.theme.fontFamily
+        font.pixelSize: Scheme.theme.fontSize
         wrapMode: Text.WordWrap
     }
 
@@ -489,8 +488,8 @@ FloatingWindow {
                     anchors.verticalCenter: parent.verticalCenter
                     text: "Slower"
                     color: Scheme.textMuted
-                    font.family: Theme.fontFamily
-                    font.pixelSize: Theme.fontSize
+                    font.family: Scheme.theme.fontFamily
+                    font.pixelSize: Scheme.theme.fontSize
                 }
 
                 // A track from 0.25x to 3x in steps of 0.25x.
@@ -565,16 +564,16 @@ FloatingWindow {
                     anchors.verticalCenter: parent.verticalCenter
                     text: "Faster"
                     color: Scheme.textMuted
-                    font.family: Theme.fontFamily
-                    font.pixelSize: Theme.fontSize
+                    font.family: Scheme.theme.fontFamily
+                    font.pixelSize: Scheme.theme.fontSize
                 }
 
                 Text {
                     anchors.verticalCenter: parent.verticalCenter
                     text: Settings.animationSpeed.toFixed(2) + "x"
                     color: Scheme.text
-                    font.family: Theme.fontFamily
-                    font.pixelSize: Theme.fontSize
+                    font.family: Scheme.theme.fontFamily
+                    font.pixelSize: Scheme.theme.fontSize
                     font.bold: true
                 }
 
@@ -726,7 +725,7 @@ FloatingWindow {
                                 color: "#ffffff"
                                 style: Text.Outline
                                 styleColor: "#40000000"
-                                font.family: Theme.fontFamily
+                                font.family: Scheme.theme.fontFamily
                                 font.pixelSize: Math.min(36, parent.height * 0.5)
                                 font.bold: true
                             }
@@ -856,8 +855,8 @@ FloatingWindow {
                         text: "Keep these display settings? Reverting in "
                             + DisplaySettings.secondsLeft + " s."
                         color: Scheme.text
-                        font.family: Theme.fontFamily
-                        font.pixelSize: Theme.fontSize
+                        font.family: Scheme.theme.fontFamily
+                        font.pixelSize: Scheme.theme.fontSize
                     }
 
                     CpButton {
@@ -999,8 +998,8 @@ FloatingWindow {
                     wrapMode: Text.Wrap
                     maximumLineCount: 3
                     elide: Text.ElideRight
-                    font.family: Theme.fontFamily
-                    font.pixelSize: Theme.fontSizeSmall
+                    font.family: Scheme.theme.fontFamily
+                    font.pixelSize: Scheme.theme.fontSizeSmall
                 }
 
                 Text {
@@ -1009,8 +1008,8 @@ FloatingWindow {
                     visible: tile.detail.length > 0
                     text: tile.detail
                     color: Scheme.textMuted
-                    font.family: Theme.fontFamily
-                    font.pixelSize: Theme.fontSizeSmall - 1
+                    font.family: Scheme.theme.fontFamily
+                    font.pixelSize: Scheme.theme.fontSizeSmall - 1
                 }
             }
 
@@ -1135,8 +1134,8 @@ FloatingWindow {
                         width: parent.width
                         text: device.modelData.nickname || device.modelData.description || device.modelData.name
                         color: Scheme.text
-                        font.family: Theme.fontFamily
-                        font.pixelSize: Theme.fontSize
+                        font.family: Scheme.theme.fontFamily
+                        font.pixelSize: Scheme.theme.fontSize
                         elide: Text.ElideRight
                     }
 
@@ -1144,8 +1143,8 @@ FloatingWindow {
                         width: parent.width
                         text: device.isDefault ? "Default Device" : device.modelData.description
                         color: device.isDefault ? "#3fbf3a" : Scheme.textMuted
-                        font.family: Theme.fontFamily
-                        font.pixelSize: Theme.fontSizeSmall
+                        font.family: Scheme.theme.fontFamily
+                        font.pixelSize: Scheme.theme.fontSizeSmall
                         elide: Text.ElideRight
                     }
                 }
@@ -1252,8 +1251,8 @@ FloatingWindow {
                         width: 120
                         text: kindRow.modelData.label
                         color: Scheme.text
-                        font.family: Theme.fontFamily
-                        font.pixelSize: Theme.fontSize
+                        font.family: Scheme.theme.fontFamily
+                        font.pixelSize: Scheme.theme.fontSize
                     }
 
                     ShellIcon {
@@ -1281,8 +1280,8 @@ FloatingWindow {
                         visible: kindRow.info.current.length === 0
                         text: "Not set"
                         color: Scheme.textMuted
-                        font.family: Theme.fontFamily
-                        font.pixelSize: Theme.fontSizeSmall
+                        font.family: Scheme.theme.fontFamily
+                        font.pixelSize: Scheme.theme.fontSizeSmall
                     }
                 }
             }
@@ -1335,8 +1334,8 @@ FloatingWindow {
                             width: 120
                             text: programRow.modelData.label
                             color: Scheme.text
-                            font.family: Theme.fontFamily
-                            font.pixelSize: Theme.fontSize
+                            font.family: Scheme.theme.fontFamily
+                            font.pixelSize: Scheme.theme.fontSize
                         }
 
                         CpCombo {
@@ -1361,8 +1360,8 @@ FloatingWindow {
                             anchors.verticalCenter: parent.verticalCenter
                             text: programRow.modelData.note
                             color: Scheme.textMuted
-                            font.family: Theme.fontFamily
-                            font.pixelSize: Theme.fontSizeSmall
+                            font.family: Scheme.theme.fontFamily
+                            font.pixelSize: Scheme.theme.fontSizeSmall
                         }
                     }
 
@@ -1390,8 +1389,8 @@ FloatingWindow {
                                 verticalAlignment: TextInput.AlignVCenter
                                 text: programRow.chosen
                                 color: Scheme.text
-                                font.family: Theme.fontFamily
-                                font.pixelSize: Theme.fontSize
+                                font.family: Scheme.theme.fontFamily
+                                font.pixelSize: Scheme.theme.fontSize
                                 selectByMouse: true
                                 clip: true
                                 onAccepted: {
@@ -1416,8 +1415,8 @@ FloatingWindow {
                             elide: Text.ElideMiddle
                             text: Apps.program(programRow.modelData.key) || "None"
                             color: Scheme.textMuted
-                            font.family: Theme.fontFamily
-                            font.pixelSize: Theme.fontSizeSmall
+                            font.family: Scheme.theme.fontFamily
+                            font.pixelSize: Scheme.theme.fontSizeSmall
                         }
                     }
                 }
@@ -1482,8 +1481,8 @@ FloatingWindow {
                             text: startupRow.modelData.name
                                 + (startupRow.modelData.here ? "" : " (not in this desktop)")
                             color: Scheme.text
-                            font.family: Theme.fontFamily
-                            font.pixelSize: Theme.fontSize
+                            font.family: Scheme.theme.fontFamily
+                            font.pixelSize: Scheme.theme.fontSize
                             elide: Text.ElideRight
                         }
 
@@ -1491,8 +1490,8 @@ FloatingWindow {
                             width: parent.width
                             text: startupRow.modelData.exec
                             color: Scheme.textMuted
-                            font.family: Theme.fontFamily
-                            font.pixelSize: Theme.fontSizeSmall
+                            font.family: Scheme.theme.fontFamily
+                            font.pixelSize: Scheme.theme.fontSizeSmall
                             elide: Text.ElideMiddle
                         }
                     }
@@ -1502,8 +1501,8 @@ FloatingWindow {
                         width: 70
                         text: startupRow.modelData.systemPath.length > 0 ? "System" : "Yours"
                         color: Scheme.textMuted
-                        font.family: Theme.fontFamily
-                        font.pixelSize: Theme.fontSizeSmall
+                        font.family: Scheme.theme.fontFamily
+                        font.pixelSize: Scheme.theme.fontSizeSmall
                     }
 
                     // An entry you added goes; a system entry you changed
@@ -1557,8 +1556,8 @@ FloatingWindow {
                         anchors.rightMargin: 6
                         verticalAlignment: TextInput.AlignVCenter
                         color: Scheme.text
-                        font.family: Theme.fontFamily
-                        font.pixelSize: Theme.fontSize
+                        font.family: Scheme.theme.fontFamily
+                        font.pixelSize: Scheme.theme.fontSize
                         selectByMouse: true
                         clip: true
                         onTextChanged: startup.filter = text.toLowerCase()
@@ -1610,8 +1609,8 @@ FloatingWindow {
                                 anchors.verticalCenter: parent.verticalCenter
                                 text: candidate.modelData.name
                                 color: Scheme.text
-                                font.family: Theme.fontFamily
-                                font.pixelSize: Theme.fontSize
+                                font.family: Scheme.theme.fontFamily
+                                font.pixelSize: Scheme.theme.fontSize
                             }
                         }
 
@@ -1972,8 +1971,8 @@ FloatingWindow {
                     "#b49bd9": "Lavender", "#a69b85": "Taupe", "#6b4a2f": "Chocolate",
                     "#6b7b8c": "Slate", "#e6eef2": "Frost" })[Settings.glassColor] || Settings.glassColor
                 color: Scheme.text
-                font.family: Theme.fontFamily
-                font.pixelSize: Theme.fontSize
+                font.family: Scheme.theme.fontFamily
+                font.pixelSize: Scheme.theme.fontSize
             }
 
             Row {
@@ -2113,8 +2112,8 @@ FloatingWindow {
                         verticalAlignment: TextInput.AlignVCenter
                         text: Settings.slideshowFolder
                         color: Scheme.text
-                        font.family: Theme.fontFamily
-                        font.pixelSize: Theme.fontSize
+                        font.family: Scheme.theme.fontFamily
+                        font.pixelSize: Scheme.theme.fontSize
                         selectByMouse: true
                         clip: true
                         onEditingFinished: {
@@ -2313,8 +2312,8 @@ FloatingWindow {
                     Text {
                         text: Apps.userName
                         color: Scheme.text
-                        font.family: Theme.fontFamily
-                        font.pixelSize: Theme.fontSize + 4
+                        font.family: Scheme.theme.fontFamily
+                        font.pixelSize: Scheme.theme.fontSize + 4
                     }
 
                     CpLink {
@@ -2520,8 +2519,8 @@ FloatingWindow {
                         text: trayRow.modelData.tooltipTitle
                             || trayRow.modelData.title || trayRow.modelData.id
                         color: Scheme.text
-                        font.family: Theme.fontFamily
-                        font.pixelSize: Theme.fontSize
+                        font.family: Scheme.theme.fontFamily
+                        font.pixelSize: Scheme.theme.fontSize
                         elide: Text.ElideRight
                     }
 
@@ -2659,8 +2658,8 @@ FloatingWindow {
                                 verticalAlignment: TextInput.AlignVCenter
                                 text: extra.clock ? extra.clock.label : ""
                                 color: Scheme.text
-                                font.family: Theme.fontFamily
-                                font.pixelSize: Theme.fontSize
+                                font.family: Scheme.theme.fontFamily
+                                font.pixelSize: Scheme.theme.fontSize
                                 selectByMouse: true
                                 clip: true
                                 onEditingFinished: {
@@ -2694,8 +2693,8 @@ FloatingWindow {
                                     verticalAlignment: TextInput.AlignVCenter
                                     text: extra.clock ? extra.clock.zone : ""
                                     color: Scheme.text
-                                    font.family: Theme.fontFamily
-                                    font.pixelSize: Theme.fontSize
+                                    font.family: Scheme.theme.fontFamily
+                                    font.pixelSize: Scheme.theme.fontSize
                                     selectByMouse: true
                                     clip: true
                                     // A zone the system knows is kept.
@@ -2769,8 +2768,8 @@ FloatingWindow {
                     required property var modelData
                     text: modelData.label + ":  " + modelData.value
                     color: Scheme.text
-                    font.family: Theme.fontFamily
-                    font.pixelSize: Theme.fontSize
+                    font.family: Scheme.theme.fontFamily
+                    font.pixelSize: Scheme.theme.fontSize
                 }
             }
 
@@ -2832,15 +2831,15 @@ FloatingWindow {
                     width: 190
                     text: parent.label + ":"
                     color: Scheme.textMuted
-                    font.family: Theme.fontFamily
-                    font.pixelSize: Theme.fontSize
+                    font.family: Scheme.theme.fontFamily
+                    font.pixelSize: Scheme.theme.fontSize
                 }
 
                 Text {
                     text: parent.value
                     color: Scheme.text
-                    font.family: Theme.fontFamily
-                    font.pixelSize: Theme.fontSize
+                    font.family: Scheme.theme.fontFamily
+                    font.pixelSize: Scheme.theme.fontSize
                 }
             }
 

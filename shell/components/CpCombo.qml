@@ -2,7 +2,6 @@ pragma ComponentBehavior: Bound
 
 import QtQuick
 import ".."
-import "../theme.js" as Theme
 
 // A combo box of the Control Panel, as Windows 7 draws one: the choice in a
 // field, the drop button at its right end, and below it a list with blue
@@ -48,8 +47,8 @@ Item {
             anchors.verticalCenter: parent.verticalCenter
             text: combo.model[combo.currentIndex] !== undefined ? combo.model[combo.currentIndex] : ""
             color: Scheme.text
-            font.family: Theme.fontFamily
-            font.pixelSize: Theme.fontSize
+            font.family: Scheme.theme.fontFamily
+            font.pixelSize: Scheme.theme.fontSize
             elide: Text.ElideRight
         }
 
@@ -138,8 +137,8 @@ Item {
                     anchors.verticalCenter: parent.verticalCenter
                     text: row.modelData
                     color: row.lit ? "#ffffff" : Scheme.text
-                    font.family: Theme.fontFamily
-                    font.pixelSize: Theme.fontSize
+                    font.family: Scheme.theme.fontFamily
+                    font.pixelSize: Scheme.theme.fontSize
                 }
 
                 MouseArea {

@@ -1,6 +1,5 @@
 import QtQuick
 import ".."
-import "../theme.js" as Theme
 
 // One line of a popup menu, in the manner of a Windows 7 menu: a pale blue
 // band under the pointer, a thin frame around it.
@@ -30,7 +29,7 @@ Item {
     property string pinState: ""
     signal pinClicked
 
-    implicitHeight: separator ? 7 : Theme.popupItemHeight
+    implicitHeight: separator ? 7 : Scheme.theme.popupItemHeight
 
     /// Where the line is in its window, which is what a submenu anchors to.
     function rowRect() {
@@ -42,8 +41,8 @@ Item {
         anchors.verticalCenter: parent.verticalCenter
         anchors.left: parent.left
         anchors.right: parent.right
-        anchors.leftMargin: Theme.popupPadX / 2
-        anchors.rightMargin: Theme.popupPadX / 2
+        anchors.leftMargin: Scheme.theme.popupPadX / 2
+        anchors.rightMargin: Scheme.theme.popupPadX / 2
         height: 1
         color: Scheme.menuDivider
         visible: row.separator
@@ -65,8 +64,8 @@ Item {
         id: content
 
         anchors.fill: parent
-        anchors.leftMargin: Theme.popupPadX
-        anchors.rightMargin: Theme.popupPadX + (row.hasChildren ? 12 : 0)
+        anchors.leftMargin: Scheme.theme.popupPadX
+        anchors.rightMargin: Scheme.theme.popupPadX + (row.hasChildren ? 12 : 0)
         spacing: 7
         visible: !row.separator
 
@@ -78,8 +77,8 @@ Item {
             visible: (row.checkable || row.gutter) && row.icon.length === 0
             text: row.checked ? "\u2714" : ""
             color: Scheme.text
-            font.family: Theme.fontFamily
-            font.pixelSize: Theme.fontSizeSmall
+            font.family: Scheme.theme.fontFamily
+            font.pixelSize: Scheme.theme.fontSizeSmall
         }
 
         ShellIcon {
@@ -98,8 +97,8 @@ Item {
             text: row.label
             color: row.heading ? Scheme.menuHeading : Scheme.text
             opacity: row.itemEnabled ? 1 : 0.45
-            font.family: Theme.fontFamily
-            font.pixelSize: row.heading ? Theme.fontSizeSmall : Theme.fontSize
+            font.family: Scheme.theme.fontFamily
+            font.pixelSize: row.heading ? Scheme.theme.fontSizeSmall : Scheme.theme.fontSize
             font.bold: row.heading
             elide: Text.ElideRight
         }
@@ -109,13 +108,13 @@ Item {
     Text {
         anchors.verticalCenter: parent.verticalCenter
         anchors.right: parent.right
-        anchors.rightMargin: Theme.popupPadX
+        anchors.rightMargin: Scheme.theme.popupPadX
         visible: row.hasChildren && !row.separator
         text: "\u25B8"
         color: Scheme.text
         opacity: row.itemEnabled ? 1 : 0.45
-        font.family: Theme.fontFamily
-        font.pixelSize: Theme.fontSize
+        font.family: Scheme.theme.fontFamily
+        font.pixelSize: Scheme.theme.fontSize
     }
 
     MouseArea {

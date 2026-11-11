@@ -3,7 +3,6 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import Quickshell
 import ".."
-import "../theme.js" as Theme
 
 // The taskbar: the orb, the pinned programs and one button per running
 // program, the notification area, the clock, and the show-desktop strip at
@@ -205,11 +204,11 @@ Item {
         // Light at the top, darkest a little under half way, a slight lift
         // in the lower third: the shape a Windows 7 taskbar has.
         gradient: Gradient {
-            GradientStop { position: 0.0; color: Theme.barTop }
-            GradientStop { position: 0.1; color: Theme.barUpper }
-            GradientStop { position: 0.45; color: Theme.barMiddle }
-            GradientStop { position: 0.78; color: Theme.barLower }
-            GradientStop { position: 1.0; color: Theme.barBottom }
+            GradientStop { position: 0.0; color: Scheme.theme.barTop }
+            GradientStop { position: 0.1; color: Scheme.theme.barUpper }
+            GradientStop { position: 0.45; color: Scheme.theme.barMiddle }
+            GradientStop { position: 0.78; color: Scheme.theme.barLower }
+            GradientStop { position: 1.0; color: Scheme.theme.barBottom }
         }
     }
 
@@ -229,7 +228,7 @@ Item {
         anchors.right: parent.right
         anchors.top: parent.top
         height: 1
-        color: Theme.barEdge
+        color: Scheme.theme.barEdge
     }
     Rectangle {
         anchors.left: parent.left
@@ -237,14 +236,14 @@ Item {
         anchors.top: parent.top
         anchors.topMargin: 1
         height: 1
-        color: Theme.barHighlight
+        color: Scheme.theme.barHighlight
     }
     Rectangle {
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.bottom: parent.bottom
         height: 1
-        color: Theme.barBottomEdge
+        color: Scheme.theme.barBottomEdge
     }
 
     // ----- the right hand end -----------------------------------------------
@@ -254,7 +253,7 @@ Item {
 
         anchors.right: parent.right
         anchors.verticalCenter: parent.verticalCenter
-        spacing: Theme.trayGap
+        spacing: Scheme.theme.trayGap
 
         TrayArea {
             id: trayArea
@@ -360,8 +359,8 @@ Item {
         Item {
             id: showDesktop
 
-            width: Theme.showDesktopWidth
-            height: Theme.taskbarHeight
+            width: Scheme.theme.showDesktopWidth
+            height: Scheme.theme.taskbarHeight
 
             Rectangle {
                 anchors.fill: parent
@@ -376,13 +375,13 @@ Item {
             Rectangle {
                 width: 1
                 height: parent.height
-                color: Theme.buttonOutline
+                color: Scheme.theme.buttonOutline
             }
             Rectangle {
                 x: 1
                 width: 1
                 height: parent.height
-                color: Theme.buttonRestBorder
+                color: Scheme.theme.buttonRestBorder
             }
 
             // Aero Peek: resting here turns every window to glass, through
@@ -390,7 +389,7 @@ Item {
             // them back.
             Timer {
                 id: peekTimer
-                interval: Theme.peekDelay
+                interval: Scheme.theme.peekDelay
                 onTriggered: CompositorIpc.peek(true)
             }
 
@@ -440,7 +439,7 @@ Item {
         id: orb
 
         anchors.left: parent.left
-        anchors.leftMargin: Theme.orbLeft
+        anchors.leftMargin: Scheme.theme.orbLeft
         anchors.verticalCenter: parent.verticalCenter
         menuOpen: bar.menuOpen
         onActivated: {
@@ -467,28 +466,28 @@ Item {
     readonly property int openCount: groupCount - idleCount
     readonly property real buttonsAvailable: Math.max(
         0,
-        status.x - (orb.x + orb.width) - Theme.taskButtonGap * 2)
+        status.x - (orb.x + orb.width) - Scheme.theme.taskButtonGap * 2)
     readonly property real buttonWidth: openCount === 0 ? 0 : Math.min(
-        Theme.taskButtonMaxWidth,
+        Scheme.theme.taskButtonMaxWidth,
         Math.max(
-            Theme.taskButtonMinWidth,
-            (buttonsAvailable - idleCount * Theme.pinnedButtonWidth
-                - (groupCount - 1) * Theme.taskButtonGap)
+            Scheme.theme.taskButtonMinWidth,
+            (buttonsAvailable - idleCount * Scheme.theme.pinnedButtonWidth
+                - (groupCount - 1) * Scheme.theme.taskButtonGap)
                 / openCount))
 
     Row {
         id: buttons
 
         anchors.left: orb.right
-        anchors.leftMargin: Theme.taskButtonGap * 2
+        anchors.leftMargin: Scheme.theme.taskButtonGap * 2
         anchors.bottom: parent.bottom
-        anchors.bottomMargin: (Theme.taskbarHeight - Theme.taskButtonHeight) / 2
+        anchors.bottomMargin: (Scheme.theme.taskbarHeight - Scheme.theme.taskButtonHeight) / 2
         // Sized so a very long row is cut off instead of running under the
         // clock.
         width: bar.buttonsAvailable
-        height: Theme.taskButtonHeight
+        height: Scheme.theme.taskButtonHeight
         clip: true
-        spacing: Theme.taskButtonGap
+        spacing: Scheme.theme.taskButtonGap
 
         Repeater {
             id: buttonsRepeater
@@ -520,9 +519,9 @@ Item {
                     if (before >= 0)
                         Qt.callLater(function () { Apps.moveButton(key, before); });
                 }
-                width: Settings.taskbarCompact ? Theme.compactButtonWidth
+                width: Settings.taskbarCompact ? Scheme.theme.compactButtonWidth
                     : modelData.windows.length === 0
-                        ? Theme.pinnedButtonWidth : bar.buttonWidth
+                        ? Scheme.theme.pinnedButtonWidth : bar.buttonWidth
                 height: buttons.height
 
                 onPreviewRequested: function (at) {
@@ -557,7 +556,7 @@ Item {
     property int dropBefore: -1
     /// The room a dragged button takes.
     readonly property real dragSlot: (bar.dragFrom >= 0 && buttonsRepeater.itemAt(bar.dragFrom)
-        ? buttonsRepeater.itemAt(bar.dragFrom).width : Theme.pinnedButtonWidth) + Theme.taskButtonGap
+        ? buttonsRepeater.itemAt(bar.dragFrom).width : Scheme.theme.pinnedButtonWidth) + Scheme.theme.taskButtonGap
 
     /// How far the button at `index` stands aside.
     function shiftOf(index) {

@@ -13,7 +13,6 @@ import Quickshell
 import Quickshell.Io
 import Quickshell.Wayland
 import "components"
-import "theme.js" as Theme
 
 // The desktop shell: a wallpaper with its icons, a taskbar and a Start menu, one of each per
 // screen.
@@ -317,7 +316,7 @@ ShellRoot {
             anchors.bottom: true
             anchors.left: true
             anchors.right: true
-            implicitHeight: Theme.taskbarHeight
+            implicitHeight: Scheme.theme.taskbarHeight
 
             // Auto-hide, as Windows 7's: the bar slides down to a 2 px
             // line and comes back when the pointer reaches it; windows then
@@ -327,7 +326,7 @@ ShellRoot {
                 || taskbar.busy || stayUp.running
 
             exclusionMode: ExclusionMode.Normal
-            exclusiveZone: barWindow.autoHide ? 0 : Theme.taskbarHeight
+            exclusiveZone: barWindow.autoHide ? 0 : Scheme.theme.taskbarHeight
 
             WlrLayershell.layer: WlrLayer.Top
             WlrLayershell.namespace: "shojiwm-win7-taskbar"
@@ -459,12 +458,12 @@ ShellRoot {
             color: "transparent"
             anchors.bottom: true
             anchors.left: true
-            margins.bottom: Theme.taskbarHeight + Theme.menuMargin
-            margins.left: Theme.menuMargin
-            implicitWidth: Theme.menuWidth
+            margins.bottom: Scheme.theme.taskbarHeight + Scheme.theme.menuMargin
+            margins.left: Scheme.theme.menuMargin
+            implicitWidth: Scheme.theme.menuWidth
             // Room above the glass for the account picture, which stands
             // over the menu's top edge.
-            implicitHeight: StartMenuState.menuHeight + Theme.menuTileOverhang
+            implicitHeight: StartMenuState.menuHeight + Scheme.theme.menuTileOverhang
 
             exclusionMode: ExclusionMode.Ignore
             WlrLayershell.layer: WlrLayer.Top

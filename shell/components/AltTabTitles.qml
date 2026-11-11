@@ -4,7 +4,6 @@ import QtQuick
 import Quickshell
 import Quickshell.Wayland
 import ".."
-import "../theme.js" as Theme
 
 // The titles of the Alt+Tab panel, each under its window's thumbnail. The
 // compositor draws the panel (src/alt-tab.tsx) but a composition draws no
@@ -48,8 +47,8 @@ PanelWindow {
             verticalAlignment: Text.AlignVCenter
             elide: Text.ElideRight
             color: "#ffffff"
-            font.family: Theme.fontFamily
-            font.pixelSize: Theme.fontSize
+            font.family: Scheme.theme.fontFamily
+            font.pixelSize: Scheme.theme.fontSize
             font.bold: index === titles.panel.selected
             style: Text.Outline
             styleColor: "#66000000"

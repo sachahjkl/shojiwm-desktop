@@ -3,7 +3,6 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import Quickshell
 import ".."
-import "../theme.js" as Theme
 
 // The Action Center panel: the problems the system has now, each with what
 // can be done about it, or a word that all is well.
@@ -29,7 +28,7 @@ PopupWindow {
                          popup.anchorItem ? popup.anchorItem.height : 1)
     anchor.edges: Edges.Top
     anchor.gravity: Edges.Top
-    anchor.margins.bottom: Theme.popupGap + 2
+    anchor.margins.bottom: Scheme.theme.popupGap + 2
     anchor.adjustment: PopupAdjustment.SlideX | PopupAdjustment.FlipY
 
     implicitWidth: 320
@@ -67,8 +66,8 @@ PopupWindow {
             text: Maintenance.issues.length === 0 ? "Action Center"
                 : Maintenance.issues.length + (Maintenance.issues.length === 1 ? " message" : " messages")
             color: Scheme.menuHeading
-            font.family: Theme.fontFamily
-            font.pixelSize: Theme.fontSize
+            font.family: Scheme.theme.fontFamily
+            font.pixelSize: Scheme.theme.fontSize
         }
 
         Text {
@@ -77,8 +76,8 @@ PopupWindow {
             text: "No current issues detected: every service runs, and the disks have room."
             color: Scheme.text
             wrapMode: Text.WordWrap
-            font.family: Theme.fontFamily
-            font.pixelSize: Theme.fontSizeSmall
+            font.family: Scheme.theme.fontFamily
+            font.pixelSize: Scheme.theme.fontSizeSmall
         }
 
         Repeater {
@@ -120,8 +119,8 @@ PopupWindow {
                         width: parent.width
                         text: issue.modelData.title
                         color: Scheme.text
-                        font.family: Theme.fontFamily
-                        font.pixelSize: Theme.fontSize
+                        font.family: Scheme.theme.fontFamily
+                        font.pixelSize: Scheme.theme.fontSize
                         font.bold: true
                         elide: Text.ElideRight
                     }
@@ -131,8 +130,8 @@ PopupWindow {
                         text: issue.modelData.detail
                         color: Scheme.textMuted
                         wrapMode: Text.WordWrap
-                        font.family: Theme.fontFamily
-                        font.pixelSize: Theme.fontSizeSmall
+                        font.family: Scheme.theme.fontFamily
+                        font.pixelSize: Scheme.theme.fontSizeSmall
                     }
 
                     Row {
@@ -149,7 +148,7 @@ PopupWindow {
                             text: "journalctl -u " + issue.modelData.unit
                             color: Scheme.textMuted
                             font.family: "monospace"
-                            font.pixelSize: Theme.fontSizeSmall
+                            font.pixelSize: Scheme.theme.fontSizeSmall
                         }
 
                         CpLink {

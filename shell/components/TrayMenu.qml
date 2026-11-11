@@ -3,7 +3,6 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import Quickshell
 import ".."
-import "../theme.js" as Theme
 
 // The menu of a notification-area item, drawn like a Windows 7 menu.
 //
@@ -46,16 +45,16 @@ PopupWindow {
     // of its line, and moves to the left when the screen ends.
     anchor.edges: popup.submenu ? Edges.Right | Edges.Top : Edges.Top
     anchor.gravity: popup.submenu ? Edges.Right | Edges.Bottom : Edges.Top
-    anchor.margins.bottom: popup.submenu ? 0 : Theme.popupGap
-    anchor.margins.top: popup.submenu ? -Theme.popupPadY - 1 : 0
+    anchor.margins.bottom: popup.submenu ? 0 : Scheme.theme.popupGap
+    anchor.margins.top: popup.submenu ? -Scheme.theme.popupPadY - 1 : 0
     anchor.adjustment: popup.submenu
         ? PopupAdjustment.FlipX | PopupAdjustment.SlideY
         : PopupAdjustment.SlideX | PopupAdjustment.FlipY
 
     implicitWidth: Math.min(
-        Theme.popupMaxWidth,
-        Math.max(Theme.popupMinWidth, popup.widest + Theme.popupPadX * 2 + 24))
-    implicitHeight: column.implicitHeight + Theme.popupPadY * 2 + 2
+        Scheme.theme.popupMaxWidth,
+        Math.max(Scheme.theme.popupMinWidth, popup.widest + Scheme.theme.popupPadX * 2 + 24))
+    implicitHeight: column.implicitHeight + Scheme.theme.popupPadY * 2 + 2
 
     QsMenuOpener {
         id: opener
@@ -64,8 +63,8 @@ PopupWindow {
 
     FontMetrics {
         id: metrics
-        font.family: Theme.fontFamily
-        font.pixelSize: Theme.fontSize
+        font.family: Scheme.theme.fontFamily
+        font.pixelSize: Scheme.theme.fontSize
     }
 
     // The popup is sized before it is shown, so the width comes from the
@@ -109,7 +108,7 @@ PopupWindow {
 
     Timer {
         id: submenuTimer
-        interval: Theme.submenuDelay
+        interval: Scheme.theme.submenuDelay
         onTriggered: {
             popup.openEntry = popup.restingEntry;
             popup.openRect = popup.restingRect;
@@ -161,7 +160,7 @@ PopupWindow {
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.top: parent.top
-        anchors.topMargin: Theme.popupPadY
+        anchors.topMargin: Scheme.theme.popupPadY
         anchors.leftMargin: 1
         anchors.rightMargin: 1
 

@@ -3,7 +3,6 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import Quickshell
 import ".."
-import "../theme.js" as Theme
 
 // The calendar a click on the clock opens, as Windows 7 shows it: the long
 // date at the top, then a month with today framed, and arrows for the months
@@ -81,7 +80,7 @@ PopupWindow {
                          popup.anchorItem ? popup.anchorItem.height : 1)
     anchor.edges: Edges.Top | Edges.Right
     anchor.gravity: Edges.Top | Edges.Left
-    anchor.margins.bottom: Theme.popupGap + 2
+    anchor.margins.bottom: Scheme.theme.popupGap + 2
     anchor.adjustment: PopupAdjustment.SlideX | PopupAdjustment.FlipY
 
     implicitWidth: popup.cell * 7 + 24
@@ -126,8 +125,8 @@ PopupWindow {
             horizontalAlignment: Text.AlignHCenter
             text: popup.today.toLocaleDateString(popup.locale, Locale.LongFormat)
             color: Scheme.link
-            font.family: Theme.fontFamily
-            font.pixelSize: Theme.fontSize
+            font.family: Scheme.theme.fontFamily
+            font.pixelSize: Scheme.theme.fontSize
             elide: Text.ElideRight
         }
 
@@ -153,8 +152,8 @@ PopupWindow {
                 anchors.centerIn: parent
                 text: popup.month.toLocaleDateString(popup.locale, "MMMM yyyy")
                 color: Scheme.text
-                font.family: Theme.fontFamily
-                font.pixelSize: Theme.fontSize + 1
+                font.family: Scheme.theme.fontFamily
+                font.pixelSize: Scheme.theme.fontSize + 1
                 font.bold: true
             }
 
@@ -179,8 +178,8 @@ PopupWindow {
                     horizontalAlignment: Text.AlignHCenter
                     text: modelData
                     color: Scheme.menuHeading
-                    font.family: Theme.fontFamily
-                    font.pixelSize: Theme.fontSizeSmall
+                    font.family: Scheme.theme.fontFamily
+                    font.pixelSize: Scheme.theme.fontSizeSmall
                 }
             }
 
@@ -213,8 +212,8 @@ PopupWindow {
                         anchors.centerIn: parent
                         text: day.modelData.getDate()
                         color: day.inMonth ? Scheme.text : Scheme.otherMonth
-                        font.family: Theme.fontFamily
-                        font.pixelSize: Theme.fontSize
+                        font.family: Scheme.theme.fontFamily
+                        font.pixelSize: Scheme.theme.fontSize
                         font.bold: day.isToday
                     }
 
@@ -240,8 +239,8 @@ PopupWindow {
             visible: !popup.sameDay(popup.month, popup.firstOfMonth(popup.today))
             text: "Today"
             color: Scheme.link
-            font.family: Theme.fontFamily
-            font.pixelSize: Theme.fontSize
+            font.family: Scheme.theme.fontFamily
+            font.pixelSize: Scheme.theme.fontSize
             font.underline: todayArea.containsMouse
 
             MouseArea {
@@ -279,15 +278,15 @@ PopupWindow {
                     Text {
                         text: worldClock.modelData.label
                         color: Scheme.text
-                        font.family: Theme.fontFamily
-                        font.pixelSize: Theme.fontSize
+                        font.family: Scheme.theme.fontFamily
+                        font.pixelSize: Scheme.theme.fontSize
                     }
 
                     Text {
                         text: worldClock.modelData.day
                         color: Scheme.textMuted
-                        font.family: Theme.fontFamily
-                        font.pixelSize: Theme.fontSizeSmall
+                        font.family: Scheme.theme.fontFamily
+                        font.pixelSize: Scheme.theme.fontSizeSmall
                     }
                 }
 
@@ -296,8 +295,8 @@ PopupWindow {
                     anchors.verticalCenter: parent.verticalCenter
                     text: worldClock.modelData.time
                     color: Scheme.text
-                    font.family: Theme.fontFamily
-                    font.pixelSize: Theme.fontSize + 4
+                    font.family: Scheme.theme.fontFamily
+                    font.pixelSize: Scheme.theme.fontSize + 4
                     font.weight: Font.Light
                 }
             }

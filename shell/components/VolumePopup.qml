@@ -1,7 +1,6 @@
 import QtQuick
 import Quickshell
 import ".."
-import "../theme.js" as Theme
 
 // The volume panel a click on the speaker opens, as Windows 7 shows it: the
 // device at the top, a vertical slider, the mute button under it, and the
@@ -25,7 +24,7 @@ PopupWindow {
                          popup.anchorItem ? popup.anchorItem.height : 1)
     anchor.edges: Edges.Top
     anchor.gravity: Edges.Top
-    anchor.margins.bottom: Theme.popupGap + 2
+    anchor.margins.bottom: Scheme.theme.popupGap + 2
     anchor.adjustment: PopupAdjustment.SlideX | PopupAdjustment.FlipY
 
     // Wider while a player shows its controls at the top.
@@ -92,8 +91,8 @@ PopupWindow {
             horizontalAlignment: Text.AlignHCenter
             text: Audio.deviceName + (Audio.outputs.length > 1 ? (popup.devicesOpen ? "  ▴" : "  ▾") : "")
             color: deviceArea.containsMouse ? Scheme.link : Scheme.text
-            font.family: Theme.fontFamily
-            font.pixelSize: Theme.fontSizeSmall
+            font.family: Scheme.theme.fontFamily
+            font.pixelSize: Scheme.theme.fontSizeSmall
             font.underline: deviceArea.containsMouse && Audio.outputs.length > 1
             elide: Text.ElideRight
 
@@ -138,8 +137,8 @@ PopupWindow {
                         anchors.verticalCenter: parent.verticalCenter
                         text: output.modelData.nickname || output.modelData.description
                         color: Scheme.text
-                        font.family: Theme.fontFamily
-                        font.pixelSize: Theme.fontSizeSmall
+                        font.family: Scheme.theme.fontFamily
+                        font.pixelSize: Scheme.theme.fontSizeSmall
                         font.bold: output.current
                         elide: Text.ElideRight
                     }
@@ -235,8 +234,8 @@ PopupWindow {
             anchors.horizontalCenter: parent.horizontalCenter
             text: Audio.percent
             color: Scheme.textMuted
-            font.family: Theme.fontFamily
-            font.pixelSize: Theme.fontSizeSmall
+            font.family: Scheme.theme.fontFamily
+            font.pixelSize: Scheme.theme.fontSizeSmall
         }
 
         // The mute button: the speaker, with the red mark when muted.
@@ -291,8 +290,8 @@ PopupWindow {
             anchors.centerIn: parent
             text: "Mixer"
             color: Scheme.link
-            font.family: Theme.fontFamily
-            font.pixelSize: Theme.fontSize
+            font.family: Scheme.theme.fontFamily
+            font.pixelSize: Scheme.theme.fontSize
             font.underline: mixerArea.containsMouse
 
             MouseArea {

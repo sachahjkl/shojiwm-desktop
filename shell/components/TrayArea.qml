@@ -3,7 +3,6 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import Quickshell.Services.SystemTray
 import ".."
-import "../theme.js" as Theme
 
 // The notification area, as Windows 7 has it: the icons chosen to show on
 // the taskbar, and left of them the arrow that opens the popover of the
@@ -48,7 +47,7 @@ Item {
     /// The shown icon the drop goes before, or -1 for no preview.
     property int previewBefore: -1
 
-    readonly property real slot: Theme.trayIconSize + 8 + row.spacing
+    readonly property real slot: Scheme.theme.trayIconSize + 8 + row.spacing
     /// The index of the dragged icon among the shown ones, or -1 when it
     /// comes from the popover.
     readonly property int previewFrom: {
@@ -102,12 +101,12 @@ Item {
     ShellIcon {
         visible: tray.previewItem !== null
         opacity: 0.45
-        implicitSize: Theme.trayIconSize
+        implicitSize: Scheme.theme.trayIconSize
         x: {
             var before = tray.previewBefore;
             var icon = before >= 0 && before < iconRepeater.count ? iconRepeater.itemAt(before) : null;
             var right = icon ? icon.x : row.implicitWidth + row.spacing;
-            return right - tray.slot + (Theme.trayIconSize + 8 - Theme.trayIconSize) / 2;
+            return right - tray.slot + (Scheme.theme.trayIconSize + 8 - Scheme.theme.trayIconSize) / 2;
         }
         anchors.verticalCenter: parent.verticalCenter
         source: tray.previewItem && tray.previewItem.icon ? tray.previewItem.icon : ""
@@ -159,7 +158,7 @@ Item {
             // the last shown one.
             visible: tray.hidden.length > 0 || tray.dragging || arrowDrop.containsDrag
             width: 18
-            height: Theme.trayIconSize + 8
+            height: Scheme.theme.trayIconSize + 8
             anchors.verticalCenter: parent.verticalCenter
 
             function arrowRect() {
@@ -173,14 +172,14 @@ Item {
                 color: "#2effffff"
                 opacity: arrowArea.containsMouse || tray.overflowOpen || arrowDrop.containsDrag ? 1 : 0
                 Behavior on opacity {
-                    NumberAnimation { duration: Settings.motion(Theme.fade) }
+                    NumberAnimation { duration: Settings.motion(Scheme.theme.fade) }
                 }
             }
 
             Text {
                 anchors.centerIn: parent
                 text: tray.overflowOpen ? "▼" : "▲"
-                color: Theme.textOnGlass
+                color: Scheme.theme.textOnGlass
                 font.pixelSize: 8
             }
 

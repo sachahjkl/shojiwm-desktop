@@ -1,6 +1,5 @@
 import QtQuick
 import ".."
-import "../theme.js" as Theme
 
 // One sticky note on the desktop: a pale yellow sheet with a band at the
 // top. Drag the band to move it, its corner to size it. The band's + adds
@@ -132,7 +131,7 @@ Item {
             color: "#2a2200"
             wrapMode: TextEdit.Wrap
             selectByMouse: true
-            font.family: "Segoe Print, Comic Neue, " + Theme.fontFamily
+            font.family: "Segoe Print, Comic Neue, " + Scheme.theme.fontFamily
             font.pixelSize: 14
             onTextChanged: saveLater.restart()
             onActiveFocusChanged: {

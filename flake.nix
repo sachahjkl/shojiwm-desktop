@@ -285,6 +285,20 @@
         module = self.nixosModules.greeter;
       };
 
+      # Every theme of the shell defines the same names as Aero: a name one
+      # theme lacks reads as undefined in the other, with no error.
+      theme-names = pkgs.runCommand "shojiwm-win7-theme-names" {} ''
+        names() { grep -oE '^var [A-Za-z]+' "$1" | sort; }
+        aero=${configSource}/shell/themes/aero.js
+        for theme in ${configSource}/shell/themes/*.js; do
+          if ! diff <(names "$aero") <(names "$theme"); then
+            echo "$theme: not the names of themes/aero.js (< aero, > it)"
+            exit 1
+          fi
+        done
+        touch "$out"
+      '';
+
       # The QML of the shell, checked against the Quickshell types. The
       # qmldir is written here only: Quickshell generates its own at run time.
       qmllint =

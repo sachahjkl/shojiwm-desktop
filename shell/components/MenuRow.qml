@@ -1,6 +1,5 @@
 import QtQuick
 import ".."
-import "../theme.js" as Theme
 
 // One line of the Start menu: an icon and a label, lit under the pointer.
 Rectangle {
@@ -78,8 +77,8 @@ Rectangle {
             width: parent.width - (row.icon.length > 0 ? StartMenuState.iconSize + 8 : 0) - (row.hasArrow ? 14 : 0)
             text: row.label
             color: row.heading ? Scheme.menuHeading : row.labelColor
-            font.family: Theme.fontFamily
-            font.pixelSize: row.heading ? Theme.fontSizeSmall : Theme.fontSize
+            font.family: Scheme.theme.fontFamily
+            font.pixelSize: row.heading ? Scheme.theme.fontSizeSmall : Scheme.theme.fontSize
             font.bold: row.bold || row.heading
             elide: Text.ElideRight
         }
@@ -92,7 +91,7 @@ Rectangle {
         visible: row.hasArrow
         text: "▸"
         color: Scheme.textMuted
-        font.pixelSize: Theme.fontSize
+        font.pixelSize: Scheme.theme.fontSize
     }
 
     MouseArea {
