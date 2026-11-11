@@ -333,23 +333,37 @@ li + li {
 }
 
 .foot .wrap {
-  display: flex;
-  gap: 0.5rem 1.5rem;
-  flex-wrap: wrap;
-  justify-content: space-between;
+  text-align: center;
 }
 
-.foot ul {
-  display: flex;
-  gap: 1rem;
-  flex-wrap: wrap;
-  list-style: none;
-  padding: 0;
+.foot p {
+  max-width: none;
   margin: 0;
 }
 
-.foot li + li {
-  margin-top: 0;
+/* the maker on a line of its own; under it, short pieces that wrap between them, never inside one */
+.foot .by {
+  font-size: 1rem;
+  margin-bottom: 0.4rem;
+}
+
+.foot .small span,
+.foot .small a,
+.foot .maker {
+  white-space: nowrap;
+}
+
+.foot .maker img {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  vertical-align: -3px;
+  margin: 0 0.35rem 0 0.15rem;
+}
+
+.foot .maker a {
+  color: var(--ink);
+  font-weight: 700;
 }
 
 /* ----- screenshots and figures ------------------------------------------------------------- */

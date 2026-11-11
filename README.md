@@ -21,9 +21,11 @@ It has three parts:
 - **The portal** (`portal/`, Rust): an xdg-desktop-portal GlobalShortcuts
   backend, so that programs can bind global keys.
 
-No file from Windows is copied, embedded or required. The artwork is
-original, except the colour icons of the desktop, the Start menu and the jump
-lists, which are built from KDE's LGPL-licensed Oxygen icons (see "Licence").
+It is an independent, clean-room implementation: no code, image, icon, font,
+sound or other file from Microsoft Windows is copied, embedded, decompiled or
+required. The artwork is original, except the colour icons of the desktop, the
+Start menu and the jump lists, built from KDE's LGPL-licensed Oxygen icons, and
+the NixOS snowflake (see "Licence").
 
 ## What you get
 
@@ -639,8 +641,11 @@ Not run:
 MIT. See [LICENSE](./LICENSE).
 
 The artwork in `assets/` and `shell/assets/` is original SVG, written by hand
-for this repository, except `shell/assets/icons/`. It imitates a visual
-style; it copies no file, no icon and no font from Microsoft.
+for this repository, except `shell/assets/icons/` and the NixOS snowflake. The
+Aero theme reconstructs a look from measured screenshots
+([docs/aero-measurements.md](docs/aero-measurements.md)); it copies no file,
+no icon and no font from Microsoft. No font is bundled: Inter and JetBrains
+Mono (SIL OFL) come from the system.
 
 `shell/assets/nixos-snowflake.svg` is the NixOS logo from the NixOS artwork
 (nixos-icons), CC-BY-4.0, shown on the Control Panel's System page.
@@ -651,3 +656,8 @@ on the Start orb.
 KDE's [Oxygen icons](https://invent.kde.org/frameworks/oxygen-icons),
 LGPL-3.0-or-later: glossy icons of the Windows 7 era, with Oxygen's yellow
 folder and emblems over it for the libraries. Their licence is next to them.
+
+Windows, Windows 7 and Aero are trademarks of Microsoft Corporation. This
+project is not affiliated with, endorsed or sponsored by Microsoft. The
+[legal page](https://desktop.froment.software/legal.html) gives the details:
+how it was made, the licences, trademarks and the site's privacy.

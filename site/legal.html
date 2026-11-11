@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en" data-look="kernel">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Legal: shojiwm-desktop</title>
+<meta name="description" content="How shojiwm-desktop was made, what it uses and under which licences, trademarks, and what this site does with your data.">
+<link rel="icon" type="image/svg+xml" href="logo.svg">
+<link rel="icon" type="image/png" sizes="512x512" href="logo.png">
+<link rel="apple-touch-icon" href="logo.png">
+<link rel="stylesheet" href="style.css">
+<script>try{if(localStorage.getItem("look")==="aero")document.documentElement.dataset.look="aero"}catch(e){}</script>
+<script src="site.js" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="top">
+<div class="wrap">
+<a class="brand" href="./"><img src="logo.svg" alt="" width="28" height="28">shojiwm-desktop</a>
+<nav class="nav" aria-label="Site">
+<a href="./">Overview</a>
+<a href="gallery.html">Gallery</a>
+<a href="docs.html">Documentation</a>
+<a href="https://github.com/sachahjkl/shojiwm-desktop">GitHub</a>
+</nav>
+</div>
+</header>
+
+<main id="main">
+<div class="wrap legal">
+<h1 class="page-title">Legal</h1>
+<p class="lead">How shojiwm-desktop was made, what it uses and under which licences, the trademarks it names, and what
+  this site does with your data.</p>
+
+<section aria-labelledby="made">
+<h2 id="made">An independent implementation</h2>
+<p>shojiwm-desktop is an independent, clean-room implementation. The window frames, the shell and the Control Panel
+  were written from scratch: the frames as a compositor configuration for ShojiWM, in TypeScript, and the shell and
+  the Control Panel in Rust, on AntiWebUI.</p>
+<p>No code, image, icon, font, sound or other file from Microsoft Windows is copied, embedded or decompiled. The
+  desktop does not need any file from Windows to run.</p>
+<p>The Aero theme's look was reconstructed by visual observation only. Public screenshots of Windows 7 programs,
+  from Wikimedia Commons, were measured pixel by pixel. Every size, colour and transparency is written down, with the
+  picture it came from, in
+  <a href="https://github.com/sachahjkl/shojiwm-desktop/blob/main/docs/aero-measurements.md">docs/aero-measurements.md</a>.
+  Those screenshots are not in the repository. Every element was then drawn again: the frames as shaders, the
+  buttons and symbols as SVG files.</p>
+<p>The Kernel theme is an original design.</p>
+</section>
+
+<section aria-labelledby="uses">
+<h2 id="uses">What it uses, and the licences</h2>
+<ul>
+<li><strong>shojiwm-desktop</strong> itself is under the
+  <a href="https://github.com/sachahjkl/shojiwm-desktop/blob/main/LICENSE">MIT licence</a>.</li>
+<li><strong><a href="https://github.com/bea4dev/ShojiWM">ShojiWM</a></strong>, the Wayland compositor, by bea4dev:
+  MIT licence. It is not part of this repository; you install it separately.</li>
+<li><strong><a href="https://github.com/bea4dev/AntiWebUI">AntiWebUI</a></strong>, the UI toolkit of the shell, by
+  bea4dev: MIT or Apache-2.0, at your choice.</li>
+<li><strong>The colour icons</strong> of the desktop, the Start menu and the jump lists, and the "Aero" icon theme,
+  are built from KDE's <a href="https://invent.kde.org/frameworks/oxygen-icons">Oxygen icons</a>: LGPL-3.0-or-later.
+  The licence is next to them, in <code>shell/assets/icons/</code>.</li>
+<li><strong>The NixOS snowflake</strong>, on the Start orb and on the Control Panel's System page, comes from the
+  NixOS artwork (<a href="https://github.com/NixOS/nixos-artwork">nixos-artwork</a>, packaged as nixos-icons): CC-BY-4.0. The orb's copy is
+  changed: plain white, with bolder outlines.</li>
+<li><strong>Fonts.</strong> The desktop sets its text in Inter (falling back to Noto Sans) and the Kernel theme's
+  titles in JetBrains Mono (JetBrainsMono Nerd Font). These fonts are under the SIL Open Font License. They are not
+  bundled: the desktop and this site use the fonts installed on your system.</li>
+<li><strong>All other artwork</strong> in the repository (the frames, the orb, the caption buttons, the symbols, the
+  wallpapers) is original and under the project's MIT licence.</li>
+</ul>
+</section>
+
+<section aria-labelledby="marks">
+<h2 id="marks">Trademarks</h2>
+<p>Microsoft, Windows, Windows 7 and Aero are trademarks of Microsoft Corporation. shojiwm-desktop is not affiliated
+  with, endorsed by or sponsored by Microsoft. These names are used only to describe the look that the Aero theme
+  refers to.</p>
+<p>The NixOS name and snowflake logo belong to the NixOS project. shojiwm-desktop is not affiliated with or endorsed
+  by the NixOS project.</p>
+<p>Other names on this site belong to their owners.</p>
+</section>
+
+<section aria-labelledby="privacy">
+<h2 id="privacy">Privacy</h2>
+<ul>
+<li>This site sets no cookies and has no analytics.</li>
+<li>It loads nothing from other sites: its pages, styles, script, fonts and pictures all come from this address.</li>
+<li>It keeps one value in your browser's local storage: the theme you chose for the screenshots (Kernel or Aero).
+  It never leaves your browser.</li>
+<li>GitHub Pages serves the site. GitHub can record technical data about each visit, such as your IP address. See
+  the <a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement">GitHub
+  General Privacy Statement</a>.</li>
+</ul>
+</section>
+</div>
+</main>
+
+<footer class="foot">
+<div class="wrap">
+<p class="by">By <span class="maker"><img src="froment-software-64.png" alt="" width="18" height="18"><a href="https://froment.software">Froment Software</a></span></p>
+<p class="small"><span>MIT licence</span> · <span>Not affiliated with Microsoft</span> · <span>Built on <a href="https://github.com/bea4dev/ShojiWM">ShojiWM</a> and <a href="https://github.com/bea4dev/AntiWebUI">AntiWebUI</a></span> · <a href="legal.html" aria-current="page">Legal</a> · <a href="https://github.com/sachahjkl/shojiwm-desktop">Source code</a> · <a href="https://github.com/sachahjkl/shojiwm-desktop/issues">Issues</a> · <a href="https://github.com/sachahjkl/shojiwm-desktop/commits/main">Changes</a></p>
+</div>
+</footer>
+</body>
+</html>
