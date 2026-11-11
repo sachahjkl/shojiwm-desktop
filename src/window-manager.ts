@@ -446,6 +446,10 @@ export class FloatingWindowManager {
     this.windowsById.set(window.id, window);
     this.stack.add(window);
     this.mru = [window.id, ...this.mru.filter((id) => id !== window.id)];
+    // A new window takes the keyboard, as on Windows. ShojiWM gives it only
+    // when the configuration asks for it here, while the window opens: the
+    // first paint no longer decides.
+    window.focus();
   }
 
   public onFirstCommit(window: WaylandWindow): void {
