@@ -64,9 +64,9 @@ Item {
     PopupWindow {
         anchor.item: icon
         anchor.rect: Qt.rect(0, 0, icon.width, icon.height)
-        anchor.edges: Edges.Top
-        anchor.gravity: Edges.Top
-        anchor.margins.bottom: Scheme.theme.popupGap + 2
+        anchor.edges: Scheme.awayFromBar
+        anchor.gravity: Scheme.awayFromBar
+        anchor.margins.bottom: Scheme.popupMargin(Scheme.theme.popupGap + 2)
         visible: tipTimer.shown && area.containsMouse && !icon.active
         color: "transparent"
         implicitWidth: tip.implicitWidth + 14

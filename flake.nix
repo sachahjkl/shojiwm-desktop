@@ -285,12 +285,18 @@
         module = self.nixosModules.greeter;
       };
 
-      # Every theme of the shell defines the same names as Aero: a name one
-      # theme lacks reads as undefined in the other, with no error.
+      # Every theme of the shell defines the same names as Aero, each once: a
+      # name one theme lacks reads as undefined in the other, and a name
+      # defined twice takes its last value, both with no error.
       theme-names = pkgs.runCommand "shojiwm-win7-theme-names" {} ''
         names() { grep -oE '^var [A-Za-z]+' "$1" | sort; }
         aero=${configSource}/shell/themes/aero.js
         for theme in ${configSource}/shell/themes/*.js; do
+          twice=$(names "$theme" | uniq -d)
+          if [ -n "$twice" ]; then
+            echo "$theme defines more than once: $twice"
+            exit 1
+          fi
           if ! diff <(names "$aero") <(names "$theme"); then
             echo "$theme: not the names of themes/aero.js (< aero, > it)"
             exit 1

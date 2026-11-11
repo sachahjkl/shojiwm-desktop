@@ -29,9 +29,9 @@ PopupWindow {
 
     anchor.window: popup.anchorWindow
     anchor.rect: popup.anchorRect
-    anchor.edges: Edges.Top
-    anchor.gravity: Edges.Top
-    anchor.margins.bottom: Scheme.theme.popupGap + 2
+    anchor.edges: Scheme.awayFromBar
+    anchor.gravity: Scheme.awayFromBar
+    anchor.margins.bottom: Scheme.popupMargin(Scheme.theme.popupGap + 2)
     anchor.adjustment: PopupAdjustment.SlideX | PopupAdjustment.FlipY
 
     implicitWidth: Math.max(popup.columns * popup.cell + 16, customize.implicitWidth + 24)

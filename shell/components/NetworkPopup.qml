@@ -36,9 +36,9 @@ PopupWindow {
     anchor.rect: Qt.rect(0, 0,
                          popup.anchorItem ? popup.anchorItem.width : 1,
                          popup.anchorItem ? popup.anchorItem.height : 1)
-    anchor.edges: Edges.Top
-    anchor.gravity: Edges.Top
-    anchor.margins.bottom: Scheme.theme.popupGap + 2
+    anchor.edges: Scheme.awayFromBar
+    anchor.gravity: Scheme.awayFromBar
+    anchor.margins.bottom: Scheme.popupMargin(Scheme.theme.popupGap + 2)
     anchor.adjustment: PopupAdjustment.SlideX | PopupAdjustment.FlipY
 
     implicitWidth: 290

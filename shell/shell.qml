@@ -313,7 +313,8 @@ ShellRoot {
             screen: modelData
 
             color: "transparent"
-            anchors.bottom: true
+            anchors.top: Scheme.barAtTop
+            anchors.bottom: !Scheme.barAtTop
             anchors.left: true
             anchors.right: true
             implicitHeight: Scheme.theme.taskbarHeight
@@ -385,7 +386,8 @@ ShellRoot {
                 id: taskbar
                 width: parent.width
                 height: parent.height
-                y: barWindow.raised ? 0 : parent.height - 2
+                // (hidden, it leaves 2 px at the screen's edge)
+                y: barWindow.raised ? 0 : Scheme.barAtTop ? 2 - parent.height : parent.height - 2
                 Behavior on y {
                     NumberAnimation { duration: Settings.motion(160); easing.type: Easing.OutCubic }
                 }
@@ -456,9 +458,11 @@ ShellRoot {
             readonly property bool open: StartMenuState.openOn === modelData.name
 
             color: "transparent"
-            anchors.bottom: true
+            anchors.top: Scheme.barAtTop
+            anchors.bottom: !Scheme.barAtTop
             anchors.left: true
-            margins.bottom: Scheme.theme.taskbarHeight + Scheme.theme.menuMargin
+            margins.top: Scheme.barAtTop ? Scheme.theme.taskbarHeight + Scheme.theme.menuMargin : 0
+            margins.bottom: Scheme.barAtTop ? 0 : Scheme.theme.taskbarHeight + Scheme.theme.menuMargin
             margins.left: Scheme.theme.menuMargin
             implicitWidth: Scheme.theme.menuWidth
             // Room above the glass for the account picture, which stands

@@ -12,6 +12,7 @@
 // Sizes: Aero's, until a Kernel surface needs its own.
 // ---------------------------------------------------------------------------
 
+var barSide = "top";
 var taskbarHeight = Aero.taskbarHeight;
 var taskbarPadding = Aero.taskbarPadding;
 var orbSize = Aero.orbSize;
@@ -55,7 +56,8 @@ var menuHeightSmall = Aero.menuHeightSmall;
 var menuPadding = Aero.menuPadding;
 var menuSearchHeight = Aero.menuSearchHeight;
 var menuFooterHeight = Aero.menuFooterHeight;
-var menuTileOverhang = Aero.menuTileOverhang;
+// Under a bar at the top, the account picture stays inside the menu.
+var menuTileOverhang = 0;
 var menuTileSize = Aero.menuTileSize;
 var menuGlassBorder = Aero.menuGlassBorder;
 

@@ -10,6 +10,9 @@
 // Taskbar
 // ---------------------------------------------------------------------------
 
+// The side of the screen the bar stands on: "bottom" or "top". Its popups
+// open away from it (Scheme.awayFromBar).
+var barSide = "bottom";
 var taskbarHeight = 40;
 var taskbarPadding = 2;
 var orbSize = 36;

@@ -68,9 +68,9 @@ Item {
     PopupWindow {
         anchor.item: clock
         anchor.rect: Qt.rect(0, 0, clock.width, clock.height)
-        anchor.edges: Edges.Top
-        anchor.gravity: Edges.Top
-        anchor.margins.bottom: Scheme.theme.popupGap + 2
+        anchor.edges: Scheme.awayFromBar
+        anchor.gravity: Scheme.awayFromBar
+        anchor.margins.bottom: Scheme.popupMargin(Scheme.theme.popupGap + 2)
         visible: tipTimer.shown && area.containsMouse && !clock.active
         color: "transparent"
         implicitWidth: tip.implicitWidth + 16

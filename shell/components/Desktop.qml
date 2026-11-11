@@ -198,20 +198,20 @@ Item {
     })
 
     function cellPoint(cell) {
-        return Qt.point(2 + Math.floor(cell / rows) * size.width, 2 + (cell % rows) * size.height);
+        return Qt.point(2 + Math.floor(cell / rows) * size.width, Scheme.barAbove + 2 + (cell % rows) * size.height);
     }
 
     /// The cell nearest to a point.
     function cellAt(x, y) {
         var column = Math.max(0, Math.min(columns - 1, Math.round((x - 2) / size.width)));
-        var row = Math.max(0, Math.min(rows - 1, Math.round((y - 2) / size.height)));
+        var row = Math.max(0, Math.min(rows - 1, Math.round((y - Scheme.barAbove - 2) / size.height)));
         return column * rows + row;
     }
 
     /// A point kept on the screen, so an icon is never out of reach.
     function onScreen(x, y) {
         return Qt.point(Math.max(2, Math.min(width - 2 - size.width, x)),
-            Math.max(2, Math.min(height - Scheme.theme.taskbarHeight - 2 - size.height, y)));
+            Math.max(Scheme.barAbove + 2, Math.min(height - Scheme.barBelow - 2 - size.height, y)));
     }
 
     /// The top left of each shown icon, by key.

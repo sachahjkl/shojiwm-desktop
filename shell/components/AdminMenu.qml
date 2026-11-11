@@ -144,7 +144,9 @@ Item {
         id: menu
 
         x: Scheme.theme.orbLeft
-        y: parent.height - Scheme.theme.taskbarHeight - height - Scheme.theme.popupGap
+        y: Scheme.barAtTop
+            ? Scheme.theme.taskbarHeight + Scheme.theme.popupGap
+            : parent.height - Scheme.theme.taskbarHeight - height - Scheme.theme.popupGap
         width: Math.min(Scheme.theme.popupMaxWidth,
             Math.max(Scheme.theme.popupMinWidth, popup.longestLabel + Scheme.theme.popupPadX * 2 + 24))
         height: column.implicitHeight + Scheme.theme.popupPadY * 2 + 2

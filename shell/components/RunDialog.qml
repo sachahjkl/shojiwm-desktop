@@ -53,7 +53,9 @@ Item {
         id: frame
 
         x: 12
-        y: parent.height - Scheme.theme.taskbarHeight - height - 12
+        y: Scheme.barAtTop
+            ? Scheme.theme.taskbarHeight + 12
+            : parent.height - Scheme.theme.taskbarHeight - height - 12
         width: 420
         height: page.height + caption.height + 9
         radius: Scheme.corner(7)

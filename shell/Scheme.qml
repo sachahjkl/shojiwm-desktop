@@ -23,6 +23,25 @@ Singleton {
     readonly property bool kernel: Settings.theme === "kernel"
     readonly property bool dark: Settings.dark
 
+    // ----- the bar's edge ------------------------------------------------------
+
+    /// The bar stands at the top of the screen (theme.barSide), not the bottom.
+    readonly property bool barAtTop: theme.barSide === "top"
+    /// The edge of a thing on the bar where its popups open: away from the bar.
+    readonly property int awayFromBar: barAtTop ? Edges.Bottom : Edges.Top
+    /// The room the bar takes at the top of the screen and at its bottom:
+    /// what is placed on the desktop (icons, gadgets) keeps out of it.
+    readonly property int barAbove: barAtTop ? theme.taskbarHeight : 0
+    readonly property int barBelow: barAtTop ? 0 : theme.taskbarHeight
+
+    /// The `anchor.margins.bottom` of a popup that opens away from the bar
+    /// `gap` px from its anchor. Quickshell takes the margins off the anchor
+    /// rectangle: under a bar at the top, the popup hangs from the rectangle's
+    /// bottom edge, which a negative margin moves down.
+    function popupMargin(gap) {
+        return barAtTop ? -gap : gap;
+    }
+
     // ----- shapes ---------------------------------------------------------------
 
     /// The square variant of the theme (Settings.squareCorners).

@@ -43,9 +43,9 @@ PopupWindow {
     anchor.rect: popup.anchorRect
     // The root menu stands on the tray icon; a submenu hangs from the right
     // of its line, and moves to the left when the screen ends.
-    anchor.edges: popup.submenu ? Edges.Right | Edges.Top : Edges.Top
-    anchor.gravity: popup.submenu ? Edges.Right | Edges.Bottom : Edges.Top
-    anchor.margins.bottom: popup.submenu ? 0 : Scheme.theme.popupGap
+    anchor.edges: popup.submenu ? Edges.Right | Edges.Top : Scheme.awayFromBar
+    anchor.gravity: popup.submenu ? Edges.Right | Edges.Bottom : Scheme.awayFromBar
+    anchor.margins.bottom: popup.submenu ? 0 : Scheme.popupMargin(Scheme.theme.popupGap)
     anchor.margins.top: popup.submenu ? -Scheme.theme.popupPadY - 1 : 0
     anchor.adjustment: popup.submenu
         ? PopupAdjustment.FlipX | PopupAdjustment.SlideY

@@ -292,7 +292,8 @@ fi
 
 geometry="$(xdotool getwindowgeometry --shell "$window")"
 eval "$geometry"
-bar_y=$((HEIGHT - 20))
+# The middle of the bar: at the bottom in Aero, at the top in Kernel.
+if [ "${THEME:-aero}" = kernel ]; then bar_y=20; else bar_y=$((HEIGHT - 20)); fi
 
 # Move the front window clear of the one behind it, so both frames show and
 # its bottom edge stays above the taskbar.

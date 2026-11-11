@@ -45,9 +45,9 @@ PopupWindow {
 
     anchor.window: popup.anchorWindow
     anchor.rect: popup.anchorRect
-    anchor.edges: Edges.Top
-    anchor.gravity: Edges.Top
-    anchor.margins.bottom: Scheme.theme.popupGap
+    anchor.edges: Scheme.awayFromBar
+    anchor.gravity: Scheme.awayFromBar
+    anchor.margins.bottom: Scheme.popupMargin(Scheme.theme.popupGap)
     anchor.adjustment: PopupAdjustment.SlideX | PopupAdjustment.FlipY
 
     implicitWidth: Scheme.theme.thumbPadding * 2

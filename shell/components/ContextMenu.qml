@@ -29,9 +29,9 @@ PopupWindow {
 
     anchor.window: popup.anchorWindow
     anchor.rect: popup.anchorRect
-    anchor.edges: Edges.Top
-    anchor.gravity: Edges.Top
-    anchor.margins.bottom: Scheme.theme.popupGap
+    anchor.edges: Scheme.awayFromBar
+    anchor.gravity: Scheme.awayFromBar
+    anchor.margins.bottom: Scheme.popupMargin(Scheme.theme.popupGap)
     anchor.adjustment: PopupAdjustment.SlideX | PopupAdjustment.FlipY
 
     /// A line has an icon or a check box: every line keeps that column, as

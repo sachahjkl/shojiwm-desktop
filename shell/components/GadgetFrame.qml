@@ -3,7 +3,7 @@ import Quickshell
 import ".."
 
 // A desktop gadget's place: it holds one gadget, keeps its distance from the
-// right and top edges of the desktop in a setting, and a drag anywhere on it
+// right and top edges of the desktop (the screen less the bar) in a setting, and a drag anywhere on it
 // moves it. Its buttons, if any, show on its right edge under the pointer,
 // as Windows 7's gadget toolbar does.
 Loader {
@@ -16,7 +16,7 @@ Loader {
     property var actions: []
 
     x: parent ? parent.width - width - frame.place.right : 0
-    y: frame.place.top
+    y: Scheme.barAbove + frame.place.top
 
     MouseArea {
         anchors.fill: parent
@@ -32,7 +32,8 @@ Loader {
             Settings[frame.placeSetting] = {
                 right: Math.round(Math.max(0, Math.min(area.width - frame.width,
                     area.width - (at.x - grab.x) - frame.width))),
-                top: Math.round(Math.max(0, Math.min(area.height - frame.height, at.y - grab.y)))
+                top: Math.round(Math.max(0, Math.min(area.height - Scheme.barAbove - Scheme.barBelow - frame.height,
+                    at.y - grab.y - Scheme.barAbove)))
             };
         }
     }
