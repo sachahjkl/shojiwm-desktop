@@ -63,8 +63,15 @@ pub fn compositor_programs() -> Value {
     })
 }
 
-/// Runs a command line in a shell, detached from this process.
+/// Starts a program the user works in from a command line, in a scope of its own
+/// (`crate::spawn`).
 pub fn run(command: &str) {
+    crate::spawn::start_command_line(command, None);
+}
+
+/// Runs a short helper of the shell from a command line (`systemctl`, `loginctl`, `hokum`, ...),
+/// detached from this process, in the shell's own unit.
+pub fn run_helper(command: &str) {
     if command.trim().is_empty() {
         return;
     }

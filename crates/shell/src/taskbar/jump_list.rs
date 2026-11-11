@@ -73,9 +73,10 @@ fn lines(group: &WindowGroup) -> Vec<MenuLine> {
         }
         for action in &entry.actions {
             let run = action.clone();
+            let name = entry.id.trim_end_matches(".desktop").to_owned();
             lines.push(
                 MenuLine::item(action.name.clone(), move || {
-                    let _ = run.launch();
+                    let _ = run.launch_in(crate::spawn::scope_prefix(&name));
                 })
                 .icon(action.icon.clone().unwrap_or_default()),
             );

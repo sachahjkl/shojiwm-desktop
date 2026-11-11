@@ -27,7 +27,7 @@ import { forgetHighlight, highlightZIndex } from "./highlight";
 import { createAltTab } from "./alt-tab";
 import { SHELL_SOCKET, createPeek } from "./peek";
 import { createZoom } from "./zoom";
-import { program } from "./programs";
+import { program, startProgram } from "./programs";
 // The screens: SHOJIWM_DESKTOP_OUTPUTS and the Control Panel's choices.
 import "./display";
 import { layerGlassEffect, popupGlassEffect, windowGlassEffect } from "./glass";
@@ -165,13 +165,13 @@ COMPOSITOR.key.bind("start-menu", "Super", toggleStartMenu, {
   within: 300,
 });
 COMPOSITOR.key.bind("terminal", "Super+Return", () => {
-  COMPOSITOR.process.spawn({ command: program("terminal") });
+  startProgram(program("terminal"));
 });
 COMPOSITOR.key.bind("files", "Super+E", () => {
-  COMPOSITOR.process.spawn({ command: program("fileManager") });
+  startProgram(program("fileManager"));
 });
 COMPOSITOR.key.bind("browser", "Super+B", () => {
-  COMPOSITOR.process.spawn({ command: BROWSER });
+  startProgram(BROWSER);
 });
 /** Ask the shell for "Shut Down Windows" on the current monitor. */
 function openShutdownDialog(): void {
@@ -350,7 +350,7 @@ COMPOSITOR.key.bind("run", "Super+R", () => {
 
 // Ctrl+Shift+Escape: the task manager, btop in the terminal.
 COMPOSITOR.key.bind("task-manager", "Ctrl+Shift+Escape", () => {
-  COMPOSITOR.process.spawn({ command: program("taskManager") });
+  startProgram(program("taskManager"));
 });
 
 // The media keys: the volume of the default output (the speaker in the

@@ -532,7 +532,8 @@ pub fn set_taskbar_pinned(entry: &Application, on: bool) {
 
 /// Starts a program, and counts it for the Start menu's lists.
 pub fn launch(entry: &Application) {
-    let _ = entry.launch();
+    let name = entry.id.trim_end_matches(".desktop");
+    let _ = entry.launch_in(crate::spawn::scope_prefix(name));
     count_launch(&entry.id);
 }
 
@@ -543,13 +544,7 @@ pub fn run_typed(text: &str) -> bool {
     if command.is_empty() {
         return false;
     }
-    let _ = std::process::Command::new("setsid")
-        .args(["-f", "sh", "-c", command])
-        .current_dir(home_dir())
-        .stdin(std::process::Stdio::null())
-        .stdout(std::process::Stdio::null())
-        .stderr(std::process::Stdio::null())
-        .spawn();
+    crate::spawn::start_command_line(command, Some(&home_dir()));
     true
 }
 
@@ -703,12 +698,7 @@ fn parse_user_dirs(text: String) -> HashMap<String, String> {
 /// Opens a folder in the file manager: its command line gets the folder as its last word.
 pub fn open_path(path: &str) {
     let manager = crate::programs::program("fileManager");
-    let _ = std::process::Command::new("setsid")
-        .args(["-f", "sh", "-c", &format!("{manager} \"$1\""), "sh", path])
-        .stdin(std::process::Stdio::null())
-        .stdout(std::process::Stdio::null())
-        .stderr(std::process::Stdio::null())
-        .spawn();
+    crate::spawn::start_command_line(&format!("{manager} {}", shell_quote(path)), None);
 }
 
 // ----- recent files ----------------------------------------------------------------------------
@@ -1003,13 +993,7 @@ pub fn open_with(entry: &Application, path: &str) {
         .map(PathBuf::from)
         .filter(|p| p.is_dir())
         .unwrap_or_else(home_dir);
-    let _ = std::process::Command::new("setsid")
-        .args(["-f", "sh", "-c", &words.join(" ")])
-        .current_dir(dir)
-        .stdin(std::process::Stdio::null())
-        .stdout(std::process::Stdio::null())
-        .stderr(std::process::Stdio::null())
-        .spawn();
+    crate::spawn::start_command_line(&words.join(" "), Some(&dir));
 }
 
 // ----- .desktop files --------------------------------------------------------------------------

@@ -7,7 +7,7 @@
 //! The model is one for every screen: each desktop shows the part of it that is placed on it.
 
 use crate::paths::asset;
-use crate::programs::{program, run};
+use crate::programs::{program, run, run_helper};
 use crate::settings::{change, home, settings};
 use anti_webui::prelude::*;
 use anti_webui::shell::prelude::*;
@@ -450,13 +450,19 @@ fn quote(word: &str) -> String {
     format!("'{}'", word.replace('\'', r"'\''"))
 }
 
-/// Runs `gio` with these words, apart from the shell.
-pub fn gio(args: &[&str]) {
+/// Runs `gio` with these words as a helper, apart from the shell: to trash and move files.
+fn gio(args: &[&str]) {
     let line = std::iter::once(GIO.to_owned())
         .chain(args.iter().map(|a| quote(a)))
         .collect::<Vec<_>>()
         .join(" ");
-    run(&line);
+    run_helper(&line);
+}
+
+/// Starts a program with `gio` (`launch` a shortcut, `open` a file): the program runs in a scope
+/// of its own (`crate::spawn`).
+fn gio_start(verb: &str, path: &str) {
+    crate::spawn::start_program(&[GIO.to_owned(), verb.to_owned(), path.to_owned()], None);
 }
 
 /// Opens a folder in the file manager (Apps.qml `openPath`).
@@ -470,8 +476,8 @@ pub fn open(item: &Item) {
     match item.kind {
         Kind::ControlPanel => crate::control_panel::open(),
         Kind::Trash | Kind::Folder | Kind::Computer | Kind::UserFiles => open_path(&item.path),
-        Kind::Shortcut => gio(&["launch", &item.path]),
-        Kind::File => gio(&["open", &item.path]),
+        Kind::Shortcut => gio_start("launch", &item.path),
+        Kind::File => gio_start("open", &item.path),
     }
 }
 
@@ -560,9 +566,5 @@ pub fn new_text_document() {
 
 /// The terminal, in the desktop folder.
 pub fn open_terminal() {
-    run(&format!(
-        "cd {} && {}",
-        quote(&folder_string()),
-        program("terminal")
-    ));
+    crate::spawn::start_command_line(&program("terminal"), Some(Path::new(&folder_string())));
 }

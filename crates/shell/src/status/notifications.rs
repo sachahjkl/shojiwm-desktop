@@ -228,7 +228,7 @@ fn do_not_disturb() -> bool {
 }
 
 fn set_do_not_disturb(on: bool) {
-    crate::programs::run(if on { "hokum dnd on" } else { "hokum dnd off" });
+    crate::programs::run_helper(if on { "hokum dnd on" } else { "hokum dnd off" });
 }
 
 /// Watches the session bus for notifications, and Hokum for its Do not disturb, for as long

@@ -139,7 +139,7 @@ fn refresh() {
 /// Clears a failed service of the user, so that it is not reported again.
 fn reset_unit(issue: &Issue) {
     let scope = if issue.user { "--user " } else { "" };
-    crate::programs::run(&format!(
+    crate::programs::run_helper(&format!(
         "systemctl {scope}reset-failed {}",
         shell_quote(&issue.unit)
     ));

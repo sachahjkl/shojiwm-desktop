@@ -23,6 +23,7 @@ mod power;
 mod programs;
 mod settings;
 mod sound;
+mod spawn;
 mod start_menu;
 mod status;
 mod sun;

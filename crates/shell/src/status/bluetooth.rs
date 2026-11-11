@@ -384,7 +384,7 @@ fn device_row(state: PanelState, paired_count: Memo<usize>, address: String) -> 
         };
         if untrack(|| pairing.get()) {
             // BlueZ's CancelPairing, which the service does not offer.
-            crate::programs::run(&format!(
+            crate::programs::run_helper(&format!(
                 "bluetoothctl cancel-pairing {}",
                 super::shell_quote(&d.address)
             ));

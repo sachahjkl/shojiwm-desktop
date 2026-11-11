@@ -124,17 +124,13 @@ fn expand_home(text: &str) -> String {
     }
 }
 
-/// Starts a program from the home folder, detached from the shell.
+/// Starts a program from the home folder, in a scope of its own (`crate::spawn`).
 fn spawn_detached(program: &str, args: &[&str]) {
-    let _ = std::process::Command::new("setsid")
-        .arg("-f")
-        .arg(program)
-        .args(args)
-        .current_dir(home())
-        .stdin(std::process::Stdio::null())
-        .stdout(std::process::Stdio::null())
-        .stderr(std::process::Stdio::null())
-        .spawn();
+    let argv: Vec<String> = std::iter::once(program)
+        .chain(args.iter().copied())
+        .map(str::to_owned)
+        .collect();
+    crate::spawn::start_program(&argv, Some(&home()));
 }
 
 /// What to do with the line, from its first word: "open", "run" or "missing".

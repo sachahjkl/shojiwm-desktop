@@ -94,20 +94,20 @@ pub fn run_power(id: &str) {
                 Some(id) => format!("loginctl terminate-session {}", quoted(&id)),
                 None => format!("loginctl terminate-user {}", quoted(&login_name())),
             };
-            crate::programs::run(&command);
+            crate::programs::run_helper(&command);
         }
         "restart" => {
             if by_logind(SessionAction::Reboot) {
                 let _ = logind.reboot();
             } else {
-                crate::programs::run("systemctl reboot");
+                crate::programs::run_helper("systemctl reboot");
             }
         }
         "shutdown" => {
             if by_logind(SessionAction::PowerOff) {
                 let _ = logind.power_off();
             } else {
-                crate::programs::run("systemctl poweroff");
+                crate::programs::run_helper("systemctl poweroff");
             }
         }
         "sleep" | "hibernate" => {
@@ -126,7 +126,7 @@ pub fn run_power(id: &str) {
                     logind.hibernate()
                 };
             } else {
-                crate::programs::run(command);
+                crate::programs::run_helper(command);
             }
         }
         _ => {}
