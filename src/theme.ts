@@ -10,13 +10,14 @@ export const FRAME = {
   /** Window top to client top. */
   caption: 30,
   /**
-   * The same, maximised. Windows pushes the frame off the screen then, so
-   * only the two lines around the client are left of the border.
+   * The same, maximised. Windows pushes the frame off the screen then: only
+   * the caption bar is left, and the client meets the screen's edges.
    */
   captionMaximized: 22,
   /** Left, right and bottom. */
   border: 8,
-  borderMaximized: 2,
+  /** None maximised: the client fills the width and reaches the taskbar. */
+  borderMaximized: 0,
   /** The two top corners. */
   radiusTop: 8,
   /** The two bottom corners: as round as the top ones, as on Windows 7. */
