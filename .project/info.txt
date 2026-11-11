@@ -1,0 +1,2 @@
+name=shojiwm-desktop
+description=A complete desktop for the ShojiWM Wayland compositor, in two themes (Aero and Kernel): window frames and window groups, a taskbar, a Start menu, a Control Panel, a lock screen and a log-on screen. All artwork original.
