@@ -21,7 +21,7 @@
     # The toolkit whose changelog package tools/desktoptool uses (-collection:gt=<it>/src). The
     # development shell gives its path in $GUI_TOOLKIT_SRC.
     gui-toolkit = {
-      url = "github:sachahjkl/gui_toolkit/v0.190.1";
+      url = "github:sachahjkl/gui_toolkit/v0.191.1";
       flake = false;
     };
   };
