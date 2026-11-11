@@ -49,7 +49,10 @@ export function tabLayout(
   return { left: metrics.tabsLeft, width };
 }
 
-/** The programs whose new windows open as tabs of the focused one. */
+/**
+ * The programs whose new windows open as tabs of the window used last, when
+ * it is theirs (FloatingWindowManager.openAsTab).
+ */
 export const TABBED_PROGRAMS: ReadonlySet<string> = new Set([
   "com.mitchellh.ghostty",
 ]);

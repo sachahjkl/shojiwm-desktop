@@ -1366,7 +1366,11 @@ export class FloatingWindowManager {
     shown.focus();
   }
 
-  /** A new window of a program in TABBED_PROGRAMS opens as a tab of its last window. */
+  /**
+   * A new window of a program in TABBED_PROGRAMS opens as a tab of the
+   * window used last, when that one is of the same program (its "new tab"
+   * key opened it). Started from elsewhere, it opens alone.
+   */
   private openAsTab(window: WaylandWindow): void {
     const appId = window.appId();
     if (
@@ -1377,16 +1381,15 @@ export class FloatingWindowManager {
     ) {
       return;
     }
-    const host = this.recentWindows().find(
-      (other) =>
-        other !== window &&
-        other.appId() === appId &&
-        !this.closing.has(other.id) &&
-        !other.isTransient() &&
-        !other.state[WIN_MINIMIZED]() &&
-        !usesClientDecoration(other),
-    );
-    if (!host) {
+    const host = this.recentWindows().find((other) => other !== window);
+    if (
+      !host ||
+      host.appId() !== appId ||
+      this.closing.has(host.id) ||
+      host.isTransient() ||
+      host.state[WIN_MINIMIZED]() ||
+      usesClientDecoration(host)
+    ) {
       return;
     }
     const tabs = this.groups.membersPeek(host.id).length;
