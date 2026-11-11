@@ -173,6 +173,16 @@ export XDG_DATA_HOME="$work/.local/share"
 export XDG_RUNTIME_DIR="$work/run"
 unset WAYLAND_DISPLAY
 mkdir -p "$XDG_RUNTIME_DIR" "$XDG_DATA_HOME/fonts"
+# A dconf profile of its own: only this session's database, not the system's defaults (a
+# desktop's own configuration may set a dark scheme there).
+printf 'user-db:user\n' >"$work/dconf-profile"
+export DCONF_PROFILE="$work/dconf-profile"
+# No FUSE mount of gvfs in the runtime folder: the session could not remove it at the end.
+export GVFS_DISABLE_FUSE=1
+# The bus started before these were set: the services it starts (dconf above all) must
+# write into this session's home, not into the desktop's own settings.
+dbus-update-activation-environment HOME USER LOGNAME XDG_CONFIG_HOME XDG_STATE_HOME \
+  XDG_DATA_HOME XDG_RUNTIME_DIR LANG LOCALE_ARCHIVE GVFS_DISABLE_FUSE DCONF_PROFILE
 chmod 700 "$XDG_RUNTIME_DIR"
 
 # $XDG_DATA_HOME/fonts is read both by fontconfig (Qt, for the shell) and by
@@ -207,6 +217,7 @@ cat >"$XDG_CONFIG_HOME/shojiwm/settings.json" <<JSON
 {
   "theme": "${THEME:-aero}",
   "taskbarSide": "${SIDE:-bottom}",
+  "colorSchemeMode": "light",
   "lockAfterMinutes": 0,
   "startPinned": ["foot.desktop", "footclient.desktop"],
   "taskbarPinned": ["foot.desktop", "footclient.desktop"],
