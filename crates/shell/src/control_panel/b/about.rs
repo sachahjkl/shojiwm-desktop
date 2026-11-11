@@ -27,7 +27,10 @@ struct Facts(Vec<String>);
 
 impl Facts {
     fn line(&self, i: usize) -> String {
-        self.0.get(i).map(|l| l.trim().to_owned()).unwrap_or_default()
+        self.0
+            .get(i)
+            .map(|l| l.trim().to_owned())
+            .unwrap_or_default()
     }
 
     fn os(&self) -> String {
@@ -36,7 +39,11 @@ impl Facts {
 
     fn kernel(&self) -> String {
         let release = self.line(6);
-        if release.is_empty() { release } else { format!("Linux {release}") }
+        if release.is_empty() {
+            release
+        } else {
+            format!("Linux {release}")
+        }
     }
 
     fn processor(&self) -> String {
@@ -73,7 +80,11 @@ impl Facts {
         let days = seconds / 86_400;
         let hours = seconds % 86_400 / 3_600;
         let minutes = seconds % 3_600 / 60;
-        let days = if days > 0 { format!("{days} d ") } else { String::new() };
+        let days = if days > 0 {
+            format!("{days} d ")
+        } else {
+            String::new()
+        };
         format!("{days}{hours} h {minutes} min")
     }
 
@@ -88,8 +99,15 @@ impl Facts {
 
 pub fn page() -> Div {
     let facts = signal(Facts::default());
-    task(|| Facts(output_of("sh", &["-c", FACTS_SCRIPT]).lines().map(String::from).collect()))
-        .then(move |read| facts.set(read));
+    task(|| {
+        Facts(
+            output_of("sh", &["-c", FACTS_SCRIPT])
+                .lines()
+                .map(String::from)
+                .collect(),
+        )
+    })
+    .then(move |read| facts.set(read));
     let fact = move |label: &'static str, value: fn(&Facts) -> String| {
         info_row(label, move || facts.with(value))
     };

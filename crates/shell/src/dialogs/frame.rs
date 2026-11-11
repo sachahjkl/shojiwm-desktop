@@ -54,7 +54,13 @@ pub fn dialog_frame(caption: &'static str, width: f32, page: Div) -> Div {
                 // The frame's own line takes a pixel of each.
                 .h(CAPTION_HEIGHT - 1.0)
                 .pl(9.0)
-                .dyn_style(|s| s.text_color(if dark_look() { CAPTION_DARK } else { CAPTION_LIGHT }))
+                .dyn_style(|s| {
+                    s.text_color(if dark_look() {
+                        CAPTION_DARK
+                    } else {
+                        CAPTION_LIGHT
+                    })
+                })
                 .child(caption),
         )
         .child(page.mx(7.0).mb(8.0))

@@ -54,7 +54,9 @@ fn system_dirs() -> Vec<PathBuf> {
 
 /// The `.desktop` files of a folder, by name.
 fn desktop_files(dir: &Path) -> Vec<PathBuf> {
-    let Ok(entries) = std::fs::read_dir(dir) else { return Vec::new() };
+    let Ok(entries) = std::fs::read_dir(dir) else {
+        return Vec::new();
+    };
     let mut files: Vec<PathBuf> = entries
         .flatten()
         .map(|e| e.path())
@@ -111,7 +113,11 @@ fn read_entries() -> Vec<Entry> {
     let mut found: Vec<(String, String, String, HashMap<String, String>)> = Vec::new();
     for dir in system_dirs() {
         for path in desktop_files(&dir) {
-            let id = path.file_name().unwrap_or_default().to_string_lossy().into_owned();
+            let id = path
+                .file_name()
+                .unwrap_or_default()
+                .to_string_lossy()
+                .into_owned();
             if found.iter().any(|(seen, ..)| *seen == id) {
                 continue;
             }
@@ -120,7 +126,11 @@ fn read_entries() -> Vec<Entry> {
         }
     }
     for path in desktop_files(&user_dir()) {
-        let id = path.file_name().unwrap_or_default().to_string_lossy().into_owned();
+        let id = path
+            .file_name()
+            .unwrap_or_default()
+            .to_string_lossy()
+            .into_owned();
         let keys = keys_of(&path);
         let user_path = path.display().to_string();
         match found.iter_mut().find(|(seen, ..)| *seen == id) {
@@ -150,15 +160,21 @@ fn read_entries() -> Vec<Entry> {
             }
         })
         .collect();
-    list.sort_by(|a, b| a.name.to_lowercase().cmp(&b.name.to_lowercase()));
+    list.sort_by_key(|a| a.name.to_lowercase());
     list
 }
 
 /// Turns an entry on or off: your copy of it, without the keys that turn it off, and with
 /// `Hidden=true` when it must not start.
 fn write_enabled(entry: &Entry, on: bool) {
-    let source = if entry.user_path.is_empty() { &entry.system_path } else { &entry.user_path };
-    let Ok(text) = std::fs::read_to_string(source) else { return };
+    let source = if entry.user_path.is_empty() {
+        &entry.system_path
+    } else {
+        &entry.user_path
+    };
+    let Ok(text) = std::fs::read_to_string(source) else {
+        return;
+    };
     let mut out = String::new();
     for line in text.lines() {
         if line.starts_with("Hidden=") || line.starts_with("X-GNOME-Autostart-enabled=") {
@@ -223,7 +239,9 @@ impl Startup {
 }
 
 pub fn page() -> Div {
-    let startup = Startup { entries: signal(Vec::new()) };
+    let startup = Startup {
+        entries: signal(Vec::new()),
+    };
     startup.refresh();
     let adding = signal(false);
     let user_dir = user_dir().display().to_string();
@@ -243,15 +261,17 @@ pub fn page() -> Div {
             move || startup.entries.with(Vec::is_empty),
             || note("No program starts when you log on."),
         ))
-        .child(
-            control_row(10.0).pt(8.0).child(cp_button(
-                move || {
-                    let label = if adding.get() { "Done" } else { "Add a program\u{2026}" };
-                    label.to_owned()
-                },
-                move || adding.update(|a| *a = !*a),
-            )),
-        )
+        .child(control_row(10.0).pt(8.0).child(cp_button(
+            move || {
+                let label = if adding.get() {
+                    "Done"
+                } else {
+                    "Add a program\u{2026}"
+                };
+                label.to_owned()
+            },
+            move || adding.update(|a| *a = !*a),
+        )))
         .child(show(move || adding.get(), move || add_list(startup)))
 }
 
@@ -261,10 +281,13 @@ fn entry_row(startup: Startup, entry: Entry) -> Div {
     let checked = {
         let enabled = entry.enabled;
         let entry = entry.clone();
-        Binding::new(move || enabled, move |on: bool| {
-            let entry = entry.clone();
-            startup.change(move || write_enabled(&entry, on));
-        })
+        Binding::new(
+            move || enabled,
+            move |on: bool| {
+                let entry = entry.clone();
+                startup.change(move || write_enabled(&entry, on));
+            },
+        )
     };
     let name = if entry.here {
         entry.name.clone()
@@ -277,20 +300,20 @@ fn entry_row(startup: Startup, entry: Entry) -> Div {
         .flex_none()
         .w(330.0)
         .overflow_clip()
-        .child(
-            text(name)
-                .whitespace_nowrap()
-                .dyn_style(|s| {
-                    s.font_family(font())
-                        .text_size(theme().font_size)
-                        .text_color(scheme().text)
-                }),
-        )
+        .child(text(name).whitespace_nowrap().dyn_style(|s| {
+            s.font_family(font())
+                .text_size(theme().font_size)
+                .text_color(scheme().text)
+        }))
         .child(muted_small(entry.exec.clone()).whitespace_nowrap());
     let whose = div()
         .flex_none()
         .w(70.0)
-        .child(muted_small(if entry.system_path.is_empty() { "Yours" } else { "System" }));
+        .child(muted_small(if entry.system_path.is_empty() {
+            "Yours"
+        } else {
+            "System"
+        }));
     let mut row = control_row(12.0)
         .opacity(if entry.here { 1.0 } else { 0.55 })
         .child(cp_check("", checked))
@@ -299,7 +322,11 @@ fn entry_row(startup: Startup, entry: Entry) -> Div {
         .child(whose);
     // An entry you added goes; a system entry you changed goes back to the system's.
     if !entry.user_path.is_empty() {
-        let label = if entry.system_path.is_empty() { "Remove" } else { "Restore" };
+        let label = if entry.system_path.is_empty() {
+            "Remove"
+        } else {
+            "Restore"
+        };
         let path = entry.user_path.clone();
         row = row.child(cp_link(label, false, move || {
             let path = path.clone();

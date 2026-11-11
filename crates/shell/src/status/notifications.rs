@@ -112,7 +112,12 @@ fn load() -> (Vec<Entry>, u32) {
     let entries = saved
         .get("entries")
         .and_then(Value::as_array)
-        .map(|list| list.iter().filter_map(Entry::from_json).take(KEEP).collect())
+        .map(|list| {
+            list.iter()
+                .filter_map(Entry::from_json)
+                .take(KEEP)
+                .collect()
+        })
         .unwrap_or_default();
     let unread = saved.get("unread").and_then(Value::as_u64).unwrap_or(0) as u32;
     (entries, unread)
@@ -121,7 +126,9 @@ fn load() -> (Vec<Entry>, u32) {
 /// Writes the list and the unseen count to the file.
 fn save() {
     let h = history();
-    let entries: Vec<Value> = h.entries.with_untracked(|e| e.iter().map(Entry::to_json).collect());
+    let entries: Vec<Value> = h
+        .entries
+        .with_untracked(|e| e.iter().map(Entry::to_json).collect());
     let text = json!({ "unread": h.unread.get_untracked(), "entries": entries }).to_string();
     let path = file();
     if let Some(dir) = path.parent() {
@@ -154,7 +161,9 @@ fn strip_markup(text: &str) -> String {
 /// A `Notify` call as `busctl monitor --json=short` prints it: the arguments are
 /// `app, replaces_id, icon, summary, body, actions, hints, timeout`.
 fn add(line: &str) {
-    let Ok(message) = serde_json::from_str::<Value>(line) else { return };
+    let Ok(message) = serde_json::from_str::<Value>(line) else {
+        return;
+    };
     let Some(data) = message.pointer("/payload/data").and_then(Value::as_array) else {
         return;
     };
@@ -246,7 +255,8 @@ pub fn install() {
             .spawn();
         dnd.on_line(move |line| {
             if let Ok(v) = serde_json::from_str::<Value>(line) {
-                h.do_not_disturb.set(v.get("dnd") == Some(&Value::Bool(true)));
+                h.do_not_disturb
+                    .set(v.get("dnd") == Some(&Value::Bool(true)));
             }
         });
     });
@@ -304,16 +314,30 @@ pub fn icon(output_name: &str) -> Div {
                 .text_size(COUNT_SIZE)
                 .font_weight(FontWeight::BOLD)
                 .text_color(Color::WHITE);
-            if h.unread.get() > 0 && !h.do_not_disturb.get() { s } else { s.hidden() }
+            if h.unread.get() > 0 && !h.do_not_disturb.get() {
+                s
+            } else {
+                s.hidden()
+            }
         })
         .child(text(move || {
             let n = h.unread.get();
-            if n > 9 { "9+".to_owned() } else { n.to_string() }
+            if n > 9 {
+                "9+".to_owned()
+            } else {
+                n.to_string()
+            }
         }));
     bar_cell(icon_width, 2.0, active)
         .node_ref(anchor)
         .child(bar_picture(
-            || asset(if do_not_disturb() { "bell-off.svg" } else { "bell.svg" }),
+            || {
+                asset(if do_not_disturb() {
+                    "bell-off.svg"
+                } else {
+                    "bell.svg"
+                })
+            },
             2.0,
         ))
         .child(count)
@@ -337,8 +361,7 @@ pub fn icon(output_name: &str) -> Div {
                     MenuLine::item("Clear all", clear)
                         .enabled(!history().entries.with(Vec::is_empty)),
                     MenuLine::separator(),
-                    MenuLine::item("Do not disturb", move || set_do_not_disturb(!dnd))
-                        .checked(dnd),
+                    MenuLine::item("Do not disturb", move || set_do_not_disturb(!dnd)).checked(dnd),
                     MenuLine::separator(),
                     MenuLine::item("Customize notification icons", || {
                         crate::control_panel::open_page("notifications");
@@ -346,7 +369,12 @@ pub fn icon(output_name: &str) -> Div {
                 ]
             },
         ))
-        .child(panel_popup(&name, Panel::Notifications, Align::Center, panel))
+        .child(panel_popup(
+            &name,
+            Panel::Notifications,
+            Align::Center,
+            panel,
+        ))
 }
 
 /// The notification panel: the notifications, newest first, each with its program's icon, its
@@ -367,30 +395,35 @@ fn panel() -> Div {
         .mx(10.0)
         .mt(8.0)
         .child(section_title("Notifications").dyn_style(|s| s.text_size(theme().font_size)))
-        .child(
-            panel_link("Clear all", true, clear)
-                .dyn_style(move |s| if h.entries.with(Vec::is_empty) { s.hidden() } else { s }),
-        );
+        .child(panel_link("Clear all", true, clear).dyn_style(move |s| {
+            if h.entries.with(Vec::is_empty) {
+                s.hidden()
+            } else {
+                s
+            }
+        }));
     let list = dyn_view(move || {
         let entries = h.entries.get();
-        div()
-            .flex()
-            .flex_col()
-            .gap(2.0)
-            .children(
-                entries
-                    .into_iter()
-                    .enumerate()
-                    .map(|(i, e)| card(i, e))
-                    .collect::<Vec<_>>(),
-            )
+        div().flex().flex_col().gap(2.0).children(
+            entries
+                .into_iter()
+                .enumerate()
+                .map(|(i, e)| card(i, e))
+                .collect::<Vec<_>>(),
+        )
     });
     let empty = div()
         .flex()
         .items_center()
         .h(40.0)
         .pl(16.0)
-        .dyn_style(move |s| if h.entries.with(Vec::is_empty) { s } else { s.hidden() })
+        .dyn_style(move |s| {
+            if h.entries.with(Vec::is_empty) {
+                s
+            } else {
+                s.hidden()
+            }
+        })
         .child(body_text("No new notifications.", || scheme().text_muted));
     popup_frame()
         .w(340.0)
@@ -406,7 +439,13 @@ fn panel() -> Div {
                 .mx(6.0)
                 .mt(4.0)
                 .max_h(LIST_HEIGHT)
-                .dyn_style(move |s| if h.entries.with(Vec::is_empty) { s.hidden() } else { s }),
+                .dyn_style(move |s| {
+                    if h.entries.with(Vec::is_empty) {
+                        s.hidden()
+                    } else {
+                        s
+                    }
+                }),
         )
         .child(empty)
         .child(div().flex_1().min_h(8.0))
@@ -425,9 +464,17 @@ fn panel() -> Div {
 fn card(index: usize, entry: Entry) -> Div {
     let ui = Interaction::new();
     let cross = Interaction::new();
-    let wanted = if entry.icon.is_empty() { entry.app.to_lowercase() } else { entry.icon.clone() };
+    let wanted = if entry.icon.is_empty() {
+        entry.app.to_lowercase()
+    } else {
+        entry.icon.clone()
+    };
     let icon = icon_or(&wanted, "dialog-information");
-    let title = if entry.summary.is_empty() { entry.app.clone() } else { entry.summary.clone() };
+    let title = if entry.summary.is_empty() {
+        entry.app.clone()
+    } else {
+        entry.summary.clone()
+    };
     let time = entry.time;
     let has_app_line = !entry.summary.is_empty() && !entry.app.is_empty();
     let body = entry.body.clone();
@@ -508,7 +555,11 @@ fn card(index: usize, entry: Entry) -> Div {
                     } else {
                         scheme().text_muted
                     });
-                    if ui.hovered() || cross.hovered() { s } else { s.hidden() }
+                    if ui.hovered() || cross.hovered() {
+                        s
+                    } else {
+                        s.hidden()
+                    }
                 })
                 .child("\u{00D7}"),
         )

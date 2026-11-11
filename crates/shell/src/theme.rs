@@ -10,11 +10,6 @@ use anti_webui::prelude::*;
 
 pub use crate::theme_values::{AERO, AERO_DARK, AERO_LIGHT, KERNEL, KERNEL_SCHEME, Scheme, Theme};
 
-/// The theme's name: "aero" or "kernel" (anything else reads as Aero).
-pub fn name() -> String {
-    settings().with(|s| s.theme.clone())
-}
-
 pub fn is_kernel() -> bool {
     settings().with(|s| s.theme == "kernel")
 }
@@ -71,10 +66,18 @@ pub fn bar_at_top() -> bool {
 /// The room the bar takes at the top of the screen and at its bottom: what is placed on the
 /// desktop (icons, gadgets) keeps out of it.
 pub fn bar_above() -> f32 {
-    if bar_at_top() { theme().taskbar_height } else { 0.0 }
+    if bar_at_top() {
+        theme().taskbar_height
+    } else {
+        0.0
+    }
 }
 pub fn bar_below() -> f32 {
-    if bar_at_top() { 0.0 } else { theme().taskbar_height }
+    if bar_at_top() {
+        0.0
+    } else {
+        theme().taskbar_height
+    }
 }
 
 /// Where a popup opened from something on the bar goes: away from the bar, lined up with
@@ -98,19 +101,13 @@ pub enum Align {
     Center,
 }
 
-/// The face of the text, with its fallback.
-pub fn font_families() -> [&'static str; 2] {
-    let t = theme();
-    [t.font_family, t.font_fallback]
-}
-
 /// `"#rrggbb"` or `"#aarrggbb"` (Qt's order, as the settings keep glass colours) to a colour.
 pub fn parse_hex(hex: &str) -> Option<Color> {
     let h = hex.trim().trim_start_matches('#');
     let v = u32::from_str_radix(h, 16).ok()?;
     match h.len() {
         6 => Some(rgb(v)),
-        8 => Some(rgba((v << 8) | (v >> 24))),
+        8 => Some(rgba(v.rotate_left(8))),
         _ => None,
     }
 }

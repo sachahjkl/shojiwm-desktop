@@ -66,7 +66,12 @@ fn gradient(stops: &[(f32, Color)], horizontal: bool) -> ShaderPaint {
     let stop = |i: usize| -> (f32, Color) {
         match stops.get(i).filter(|_| i < count) {
             Some(&s) => s,
-            None => (1.0, stops.get(count.wrapping_sub(1)).map_or(Color::TRANSPARENT, |s| s.1)),
+            None => (
+                1.0,
+                stops
+                    .get(count.wrapping_sub(1))
+                    .map_or(Color::TRANSPARENT, |s| s.1),
+            ),
         }
     };
     let (o0, c0) = stop(0);

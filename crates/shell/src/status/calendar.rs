@@ -7,11 +7,16 @@
 //! it. Weeks start on the locale's first day.
 
 use super::locale::{locale, long_date, month_title, short_date, short_time};
-use super::{Panel, bar_cell, body_text, collect, divider, every, is_open, panel_link, panel_popup, small_text, toggle};
+use super::{
+    Panel, bar_cell, body_text, collect, divider, every, is_open, panel_link, panel_popup,
+    small_text, toggle,
+};
 use crate::paths::asset;
 use crate::settings::settings;
 use crate::theme::{Align, away_from_bar, corner, item_radius, scheme, theme};
-use crate::ui::{MenuLine, bar_menu_options, clock_font, font, popup_frame, popup_menu, shell_tooltip};
+use crate::ui::{
+    MenuLine, bar_menu_options, clock_font, font, popup_frame, popup_menu, shell_tooltip,
+};
 use anti_webui::prelude::*;
 use anti_webui::shell::prelude::*;
 use std::cell::Cell;
@@ -58,22 +63,6 @@ fn world_clocks() -> Vec<WorldClock> {
     clocks_signal().get()
 }
 
-/// Every time zone the system knows (`timedatectl list-timezones`), for the Date and Time
-/// settings. Read the first time it is asked for. Reading it tracks it.
-pub fn zones() -> Vec<String> {
-    let s = ZONES.with(|cell| {
-        cell.get().unwrap_or_else(|| {
-            let (s, _) = create_root(|| signal(Vec::new()));
-            cell.set(Some(s));
-            collect("timedatectl", ["list-timezones"], move |lines| {
-                s.set(lines.into_iter().filter(|l| !l.is_empty()).collect());
-            });
-            s
-        })
-    });
-    s.get()
-}
-
 /// Reads the time in each zone of the settings' additional clocks. `date` reads each zone from
 /// the system's zone database.
 fn refresh_clocks() {
@@ -94,7 +83,10 @@ fn refresh_clocks() {
     ];
     args.extend(list.iter().map(|c| c.zone.clone()));
     collect("sh", args, move |lines| {
-        let here: u32 = lines.first().and_then(|l| l.trim().parse().ok()).unwrap_or(0);
+        let here: u32 = lines
+            .first()
+            .and_then(|l| l.trim().parse().ok())
+            .unwrap_or(0);
         let out = list
             .iter()
             .enumerate()
@@ -104,7 +96,11 @@ fn refresh_clocks() {
                 // Dates as yyyymmdd numbers: compare their order only.
                 let there: u32 = date.trim().parse().unwrap_or(0);
                 WorldClock {
-                    label: if clock.label.is_empty() { clock.zone.clone() } else { clock.label.clone() },
+                    label: if clock.label.is_empty() {
+                        clock.zone.clone()
+                    } else {
+                        clock.label.clone()
+                    },
                     zone: clock.zone.clone(),
                     time: time.to_owned(),
                     day: match there.cmp(&here) {
@@ -161,10 +157,13 @@ pub fn clock_view(output_name: &str) -> Div {
         .flex_col()
         .items_center()
         .child(line(short_time))
-        .child(
-            line(short_date)
-                .dyn_style(|s| if settings().with(|s| s.show_date) { s } else { s.hidden() }),
-        );
+        .child(line(short_date).dyn_style(|s| {
+            if settings().with(|s| s.show_date) {
+                s
+            } else {
+                s.hidden()
+            }
+        }));
     let cell = bar_cell(|| theme().clock_width, 0.0, active)
         .node_ref(anchor)
         .child(column)
@@ -200,7 +199,11 @@ pub fn clock_view(output_name: &str) -> Div {
     shell_tooltip(cell, untrack(|| away_from_bar(Align::Center)), || {
         let mut lines = vec![long_date(&local_time(Every::Minute))];
         lines.extend(world_clocks().into_iter().map(|c| {
-            let day = if c.day == "Today" { String::new() } else { format!(" ({})", c.day.to_lowercase()) };
+            let day = if c.day == "Today" {
+                String::new()
+            } else {
+                format!(" ({})", c.day.to_lowercase())
+            };
             format!("{}: {}{day}", c.label, c.time)
         }));
         lines.join("\n")
@@ -252,9 +255,15 @@ fn days_shown(month: i32, first_weekday: u8) -> Vec<Day> {
         .map(|n| {
             let d = n - lead + 1;
             if d < 1 {
-                Day { month: month - 1, day: before + d }
+                Day {
+                    month: month - 1,
+                    day: before + d,
+                }
             } else if d > count {
-                Day { month: month + 1, day: d - count }
+                Day {
+                    month: month + 1,
+                    day: d - count,
+                }
             } else {
                 Day { month, day: d }
             }
@@ -277,15 +286,17 @@ fn calendar() -> Div {
         .justify_between()
         .h(26.0)
         .child(arrow("\u{25C2}", move || shown.update(|m| *m -= 1)))
-        .child(body_text(
-            move || {
-                let (y, m) = from_month_index(shown.get());
-                month_title(y, m)
-            },
-            || scheme().text,
+        .child(
+            body_text(
+                move || {
+                    let (y, m) = from_month_index(shown.get());
+                    month_title(y, m)
+                },
+                || scheme().text,
+            )
+            .font_weight(FontWeight::BOLD)
+            .dyn_style(|s| s.text_size(theme().font_size + 1.0)),
         )
-        .font_weight(FontWeight::BOLD)
-        .dyn_style(|s| s.text_size(theme().font_size + 1.0)))
         .child(arrow("\u{25B8}", move || shown.update(|m| *m += 1)));
     let weekdays = dyn_view(move || {
         let l = locale();
@@ -311,23 +322,26 @@ fn calendar() -> Div {
     let grid = dyn_view(move || {
         let month = shown.get();
         let first = locale().first_weekday;
-        div()
-            .flex()
-            .flex_row()
-            .flex_wrap()
-            .w(CELL * 7.0)
-            .children(
-                days_shown(month, first)
-                    .into_iter()
-                    .map(|d| day_cell(d, month, today, shown))
-                    .collect::<Vec<_>>(),
-            )
+        div().flex().flex_row().flex_wrap().w(CELL * 7.0).children(
+            days_shown(month, first)
+                .into_iter()
+                .map(|d| day_cell(d, month, today, shown))
+                .collect::<Vec<_>>(),
+        )
     });
     let back_to_today = div()
         .flex()
         .justify_center()
-        .dyn_style(move |s| if shown.get() == today.get().0 { s.hidden() } else { s })
-        .child(panel_link("Today", false, move || shown.set(untrack(|| today.get().0))));
+        .dyn_style(move |s| {
+            if shown.get() == today.get().0 {
+                s.hidden()
+            } else {
+                s
+            }
+        })
+        .child(panel_link("Today", false, move || {
+            shown.set(untrack(|| today.get().0))
+        }));
     let others = dyn_view(move || {
         let list = world_clocks();
         div()
@@ -422,7 +436,9 @@ fn day_cell(d: Day, month: i32, today: Memo<(i32, i32)>, shown: Signal<i32>) -> 
                         .text_size(theme().font_size)
                         .text_color(if in_month { c.text } else { c.other_month });
                     if is_today.get() {
-                        s.bg(c.selection).border_color(c.today).font_weight(FontWeight::BOLD)
+                        s.bg(c.selection)
+                            .border_color(c.today)
+                            .font_weight(FontWeight::BOLD)
                     } else if ui.hovered() {
                         s.bg(c.hover).border_color(c.selection_border)
                     } else {

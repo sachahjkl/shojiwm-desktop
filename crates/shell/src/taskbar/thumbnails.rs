@@ -48,14 +48,27 @@ fn margin(bar: &Bar, count: usize) -> Margin {
     let t = theme();
     let n = count.max(1) as f32;
     let width = t.thumb_padding * 2.0 + n * t.thumb_width + (n - 1.0) * t.thumb_gap;
-    let screen = bar.output.current().map_or(bar.output.logical_size.width, |o| o.logical_size.width) as f32;
+    let screen = bar
+        .output
+        .current()
+        .map_or(bar.output.logical_size.width, |o| o.logical_size.width) as f32;
     let center = bar.preview.with(|p| p.as_ref().map_or(0.0, |p| p.center));
-    let left = (center - width / 2.0).clamp(0.0, (screen - width).max(0.0)).round() as i32;
+    let left = (center - width / 2.0)
+        .clamp(0.0, (screen - width).max(0.0))
+        .round() as i32;
     let away = (t.taskbar_height + t.popup_gap).round() as i32;
     if bar_at_top() {
-        Margin { top: away, left, ..Default::default() }
+        Margin {
+            top: away,
+            left,
+            ..Default::default()
+        }
     } else {
-        Margin { bottom: away, left, ..Default::default() }
+        Margin {
+            bottom: away,
+            left,
+            ..Default::default()
+        }
     }
 }
 
@@ -78,7 +91,11 @@ pub(super) fn follow(bar: Bar) {
                 if !on {
                     return;
                 }
-                let edge = if bar_at_top() { Anchor::TOP } else { Anchor::BOTTOM };
+                let edge = if bar_at_top() {
+                    Anchor::TOP
+                } else {
+                    Anchor::BOTTOM
+                };
                 let options = LayerOptions::new()
                     .layer(Layer::Top)
                     .anchor(edge | Anchor::LEFT)
@@ -111,8 +128,7 @@ fn player_of(windows: &[Toplevel]) -> Option<Player> {
     let short = app_id.rsplit('.').next().unwrap_or(&app_id).to_owned();
     media().players().into_iter().find(|p| {
         let name = player_program(p);
-        !name.is_empty()
-            && (app_id == name || app_id.contains(&name) || name.contains(&short))
+        !name.is_empty() && (app_id == name || app_id.contains(&name) || name.contains(&short))
     })
 }
 
@@ -171,8 +187,14 @@ fn card(bar: Bar, window: Toplevel) -> Div {
     let t = untrack(theme);
     let shot = t.live_thumbnails.then(|| {
         let scale = bar.output.scale.max(1.0);
-        let (w, h) = ((t.thumb_width * scale).ceil() as u32, (t.thumb_height * scale).ceil() as u32);
-        capture(&window, CaptureOptions::default().max_size(w, h).every(LIVE_EVERY))
+        let (w, h) = (
+            (t.thumb_width * scale).ceil() as u32,
+            (t.thumb_height * scale).ceil() as u32,
+        );
+        capture(
+            &window,
+            CaptureOptions::default().max_size(w, h).every(LIVE_EVERY),
+        )
     });
     let has_picture = {
         let shot = shot.clone();
@@ -216,8 +238,16 @@ fn card(bar: Bar, window: Toplevel) -> Div {
             let hot = close_ui.hovered();
             let s = s
                 .rounded(corner(3.0))
-                .border_color(if hot { CLOSE_BORDER } else { Color::TRANSPARENT })
-                .text_color(if hot { Color::WHITE } else { scheme().text_muted });
+                .border_color(if hot {
+                    CLOSE_BORDER
+                } else {
+                    Color::TRANSPARENT
+                })
+                .text_color(if hot {
+                    Color::WHITE
+                } else {
+                    scheme().text_muted
+                });
             if card_ui.hovered() { s } else { s.hidden() }
         })
         .on_click(move |e| {
@@ -241,12 +271,18 @@ fn card(bar: Bar, window: Toplevel) -> Div {
                 .whitespace_nowrap()
                 .dyn_style(move |s| {
                     let t = theme();
-                    s.right(if card_ui.hovered() { CLOSE_WIDTH + 2.0 } else { 0.0 })
-                        .font_family(font())
-                        .text_size(t.font_size_small)
-                        .text_color(scheme().text)
+                    s.right(if card_ui.hovered() {
+                        CLOSE_WIDTH + 2.0
+                    } else {
+                        0.0
+                    })
+                    .font_family(font())
+                    .text_size(t.font_size_small)
+                    .text_color(scheme().text)
                 })
-                .child(text(move || now.get().map(|w| title_of(&w)).unwrap_or_default())),
+                .child(text(move || {
+                    now.get().map(|w| title_of(&w)).unwrap_or_default()
+                })),
         )
         .child(close_button);
     let app_id = window.app_id.clone();
@@ -264,13 +300,18 @@ fn card(bar: Bar, window: Toplevel) -> Div {
             let c = scheme();
             s.h(t.thumb_height)
                 .bg(t.thumb_frame)
-                .border_color(if frame_ui.hovered() { c.selection_border } else { c.popup_outline })
+                .border_color(if frame_ui.hovered() {
+                    c.selection_border
+                } else {
+                    c.popup_outline
+                })
         })
         // The program's icon until the first picture, and when there is none: a capture that
         // never delivers one leaves no blank card.
-        .child(shell_icon(icon_for(&app_id), CARD_ICON).dyn_style(move |s| {
-            if has_picture.get() { s.hidden() } else { s }
-        }))
+        .child(
+            shell_icon(icon_for(&app_id), CARD_ICON)
+                .dyn_style(move |s| if has_picture.get() { s.hidden() } else { s }),
+        )
         .children(picture)
         .on_click(move |_| {
             if let Some(w) = untrack(|| now.get()) {

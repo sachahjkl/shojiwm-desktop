@@ -55,13 +55,12 @@ fn speed_row() -> Div {
         .child(speed_slider(speed).disabled(|| !animations()))
         .child(tinted_text("Faster", muted))
         .child(
-            text(|| format!("{:.2}x", settings().with(|s| s.animation_speed)))
-                .dyn_style(|s| {
-                    s.font_family(font())
-                        .text_size(theme().font_size)
-                        .text_color(scheme().text)
-                        .bold()
-                }),
+            text(|| format!("{:.2}x", settings().with(|s| s.animation_speed))).dyn_style(|s| {
+                s.font_family(font())
+                    .text_size(theme().font_size)
+                    .text_color(scheme().text)
+                    .bold()
+            }),
         )
         .child(show(
             || settings().with(|s| s.animation_speed) != 1.0,
@@ -87,7 +86,9 @@ fn speed_slider(speed: Binding<f32>) -> Div {
             .border(1.0)
             .dyn_style(|st| {
                 let c = scheme();
-                st.rounded(corner(2.0)).bg(c.field).border_color(c.field_border)
+                st.rounded(corner(2.0))
+                    .bg(c.field)
+                    .border_color(c.field_border)
             });
         let one = (1.0 - SPEED_LOW) / (SPEED_HIGH - SPEED_LOW);
         let tick = div()

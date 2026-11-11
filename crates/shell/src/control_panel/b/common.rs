@@ -85,7 +85,11 @@ pub fn cp_field(input: TextInput, width: f32, border: impl Fn(bool) -> Color + '
 /// The border of a field: the focus colour while it has the keyboard.
 pub fn field_border(focused: bool) -> Color {
     let c = scheme();
-    if focused { c.field_focus } else { c.field_border }
+    if focused {
+        c.field_focus
+    } else {
+        c.field_border
+    }
 }
 
 /// Runs `program` with `args` and gives what it printed; "" when it cannot run. It blocks:

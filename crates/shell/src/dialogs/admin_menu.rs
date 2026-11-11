@@ -28,7 +28,8 @@ fn in_terminal(command: &str) {
 fn entries(output_name: &str) -> Vec<MenuLine> {
     let launcher_on = output_name.to_owned();
     let run_on = output_name.to_owned();
-    let power = |label: &'static str, id: &'static str| MenuLine::item(label, move || run_power(id));
+    let power =
+        |label: &'static str, id: &'static str| MenuLine::item(label, move || run_power(id));
     vec![
         MenuLine::item("Terminal", || run(&program("terminal"))),
         MenuLine::item("Terminal (Administrator)", || in_terminal("sudo -i")),
@@ -44,12 +45,16 @@ fn entries(output_name: &str) -> Vec<MenuLine> {
             ));
         }),
         MenuLine::item("System", || crate::control_panel::open_page("about")),
-        MenuLine::item("Devices and Printers", || crate::control_panel::open_page("devices")),
+        MenuLine::item("Devices and Printers", || {
+            crate::control_panel::open_page("devices")
+        }),
         MenuLine::item("Network Connections", || run("nm-connection-editor")),
         MenuLine::item("Disk Management", || run("gparted")),
         MenuLine::item("System Log", || in_terminal("journalctl -b -e")),
         MenuLine::separator(),
-        MenuLine::item("Search", move || crate::start_menu::open_launcher(&launcher_on)),
+        MenuLine::item("Search", move || {
+            crate::start_menu::open_launcher(&launcher_on)
+        }),
         MenuLine::item("Run", move || run_open_on(&run_on)),
         MenuLine::separator(),
         power("Lock", "lock"),
@@ -58,7 +63,9 @@ fn entries(output_name: &str) -> Vec<MenuLine> {
         power("Restart", "restart"),
         power("Shut down", "shutdown"),
         MenuLine::separator(),
-        MenuLine::item("Desktop", || crate::compositor::send("show-desktop", json!({}))),
+        MenuLine::item("Desktop", || {
+            crate::compositor::send("show-desktop", json!({}))
+        }),
     ]
 }
 
@@ -89,7 +96,11 @@ pub fn view(output_name: String) -> Div {
                 .dyn_style(|s| {
                     let t = theme();
                     let s = s.left(t.orb_left).w(t.orb_size).h(t.taskbar_height);
-                    if bar_at_top() { s.top(0.0) } else { s.bottom(0.0) }
+                    if bar_at_top() {
+                        s.top(0.0)
+                    } else {
+                        s.bottom(0.0)
+                    }
                 })
                 .child(menu),
         )

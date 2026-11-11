@@ -13,8 +13,6 @@
 //! Each layer is one rounded box inside the last, so there is one corner, not several. On dark
 //! colours the glass is smoked.
 
-use crate::paths::asset;
-use crate::settings::{home, settings};
 use crate::theme::corner;
 use crate::ui::{dark_look, vertical_gradient};
 use anti_webui::prelude::*;
@@ -73,7 +71,11 @@ pub fn user_tile(source: impl Fn() -> PathBuf + 'static, size: f32) -> Div {
             ])
         }))
         .child(div().flex_1().fill(|| {
-            let c = if dark_look() { SMOKED_BOTTOM } else { GLASS_BOTTOM };
+            let c = if dark_look() {
+                SMOKED_BOTTOM
+            } else {
+                GLASS_BOTTOM
+            };
             vertical_gradient(&[
                 (0.0, c[0]),
                 ((0.9 - GLASS_SPLIT) / (1.0 - GLASS_SPLIT), c[1]),

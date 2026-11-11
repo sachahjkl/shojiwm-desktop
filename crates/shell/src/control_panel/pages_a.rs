@@ -19,7 +19,10 @@ use std::rc::Rc;
 
 /// A setting as a binding for a control: `get` reads it, `set` writes it.
 fn setting<T: 'static>(get: fn(&Settings) -> T, set: fn(&mut Settings, T)) -> Binding<T> {
-    Binding::new(move || settings().with(get), move |value| change(|s| set(s, value)))
+    Binding::new(
+        move || settings().with(get),
+        move |value| change(|s| set(s, value)),
+    )
 }
 
 /// A setting that takes one of `values`, as the index of a combo box. A value that is not in
@@ -95,11 +98,13 @@ fn field(value: Signal<String>, width: f32) -> (Div, TextInput) {
         .border(1.0)
         .dyn_style(move |s| {
             let c = scheme();
-            s.rounded(field_radius()).bg(c.field).border_color(if focused.get() {
-                c.field_focus
-            } else {
-                c.field_border
-            })
+            s.rounded(field_radius())
+                .bg(c.field)
+                .border_color(if focused.get() {
+                    c.field_focus
+                } else {
+                    c.field_border
+                })
         });
     (frame, input)
 }
@@ -112,11 +117,7 @@ const KNOB: (f32, f32) = (10.0, 20.0);
 
 /// A track `width` wide with a knob on it at `fraction` (0 to 1); pressing or dragging along it
 /// calls `set` with the fraction under the pointer.
-fn slider(
-    width: f32,
-    fraction: impl Fn() -> f32 + 'static,
-    set: impl Fn(f32) + 'static,
-) -> Div {
+fn slider(width: f32, fraction: impl Fn() -> f32 + 'static, set: impl Fn(f32) + 'static) -> Div {
     let ui = Interaction::new();
     let held = signal(false);
     let lit = move || ui.hovered() || held.get();
@@ -129,7 +130,9 @@ fn slider(
         .border(1.0)
         .dyn_style(|s| {
             let c = scheme();
-            s.rounded(corner(2.0)).bg(c.field).border_color(c.field_border)
+            s.rounded(corner(2.0))
+                .bg(c.field)
+                .border_color(c.field_border)
         });
     let knob = div()
         .absolute()
@@ -252,9 +255,9 @@ fn system_scheme_available() -> bool {
 /// "Choose light or dark", the theme, the corners and the glass.
 pub fn appearance_page() -> Div {
     let theme_choice = setting(|s| s.theme.clone(), |s, v| s.theme = v);
-    let kernel_theme = theme_choice.clone();
+    let kernel_theme = theme_choice;
     let corners = setting(|s| s.square_corners, |s, v| s.square_corners = v);
-    let square = corners.clone();
+    let square = corners;
     page(12.0)
         .child(heading("Choose light or dark"))
         .child(wide_note(
@@ -301,8 +304,8 @@ pub fn appearance_page() -> Div {
                     ))
                     .child(
                         flow(16.0)
-                            .child(cp_radio("Rounded", corners.clone(), false))
-                            .child(cp_radio("Square", square.clone(), true)),
+                            .child(cp_radio("Rounded", corners, false))
+                            .child(cp_radio("Square", square, true)),
                     )
             },
         ))
@@ -311,11 +314,25 @@ pub fn appearance_page() -> Div {
             "How much the caption bars, the taskbar and the menus blur what is behind them. \
              More blur costs more of the graphics card.",
         ))
-        .child(flow(16.0).children(BLUR_LEVELS.iter().map(|&(level, label)| {
-            cp_radio(label, setting(|s| s.glass_blur, |s, v| s.glass_blur = v), level)
-        })))
-        .child(wide_note("The colour of the taskbar's and the Start menu's glass:"))
-        .child(flow(8.0).children(GLASS_COLOURS.iter().map(|&(value, name)| swatch(value, name))))
+        .child(
+            flow(16.0).children(BLUR_LEVELS.iter().map(|&(level, label)| {
+                cp_radio(
+                    label,
+                    setting(|s| s.glass_blur, |s, v| s.glass_blur = v),
+                    level,
+                )
+            })),
+        )
+        .child(wide_note(
+            "The colour of the taskbar's and the Start menu's glass:",
+        ))
+        .child(
+            flow(8.0).children(
+                GLASS_COLOURS
+                    .iter()
+                    .map(|&(value, name)| swatch(value, name)),
+            ),
+        )
         .child(label_text(|| {
             let now = settings().with(|s| s.glass_color.clone());
             let name = GLASS_COLOURS
@@ -376,9 +393,7 @@ fn scheme_choice(is_dark: bool, label: &'static str) -> Div {
                 .top(0.0)
                 .right(0.0)
                 .h(18.0)
-                .fill(|| {
-                    vertical_gradient(&[(0.0, PREVIEW_CAPTION[0]), (1.0, PREVIEW_CAPTION[1])])
-                })
+                .fill(|| vertical_gradient(&[(0.0, PREVIEW_CAPTION[0]), (1.0, PREVIEW_CAPTION[1])]))
                 .dyn_style(|s| s.rounded(corner(4.0))),
         )
         .child(
@@ -465,8 +480,14 @@ fn swatch(value: &'static str, name: &'static str) -> Div {
 const POSITIONS: &[&str] = &["fill", "fit", "stretch", "tile", "center"];
 const POSITION_LABELS: &[&str] = &["Fill", "Fit", "Stretch", "Tile", "Center"];
 const SLIDESHOW_MINUTES: &[i64] = &[1, 10, 30, 60, 360, 1440];
-const SLIDESHOW_LABELS: &[&str] =
-    &["1 minute", "10 minutes", "30 minutes", "1 hour", "6 hours", "1 day"];
+const SLIDESHOW_LABELS: &[&str] = &[
+    "1 minute",
+    "10 minutes",
+    "30 minutes",
+    "1 hour",
+    "6 hours",
+    "1 day",
+];
 /// The width of the slide show's folder field.
 const FOLDER_FIELD_WIDTH: f32 = 320.0;
 /// The height of each line of the slide show's settings.
@@ -476,7 +497,9 @@ const LINE_HEIGHT: f32 = 24.0;
 pub fn background_page() -> Div {
     page(12.0)
         .child(heading("Choose your desktop background"))
-        .child(wide_note("Click a picture to make it your desktop background."))
+        .child(wide_note(
+            "Click a picture to make it your desktop background.",
+        ))
         .child(
             picture_chooser(
                 || settings().with(|s| s.wallpaper.clone()),
@@ -492,7 +515,10 @@ pub fn background_page() -> Div {
                 cp_combo(
                     labels(POSITION_LABELS),
                     choice(
-                        POSITIONS.iter().map(|p| (*p).to_owned()).collect::<Vec<String>>(),
+                        POSITIONS
+                            .iter()
+                            .map(|p| (*p).to_owned())
+                            .collect::<Vec<String>>(),
                         |s| s.wallpaper_position.clone(),
                         |s, v| s.wallpaper_position = v,
                     ),
@@ -546,7 +572,14 @@ fn slideshow_settings() -> Div {
                 commit();
             }
         });
-    let line = |content: Div| div().flex_none().h(LINE_HEIGHT).flex().items_center().child(content);
+    let line = |content: Div| {
+        div()
+            .flex_none()
+            .h(LINE_HEIGHT)
+            .flex()
+            .items_center()
+            .child(content)
+    };
     div()
         .flex()
         .flex_row()
@@ -651,8 +684,11 @@ pub fn lock_page() -> Div {
                     // "" means "the desktop's": keep a real choice instead.
                     |path| {
                         change(|s| {
-                            s.lock_background =
-                                if path.is_empty() { "builtin".to_owned() } else { path }
+                            s.lock_background = if path.is_empty() {
+                                "builtin".to_owned()
+                            } else {
+                                path
+                            }
                         })
                     },
                 )
@@ -666,7 +702,10 @@ pub fn lock_page() -> Div {
                     cp_combo(
                         labels(SAVER_LABELS),
                         choice(
-                            SAVERS.iter().map(|s| (*s).to_owned()).collect::<Vec<String>>(),
+                            SAVERS
+                                .iter()
+                                .map(|s| (*s).to_owned())
+                                .collect::<Vec<String>>(),
                             |s| s.screensaver.clone(),
                             |s, v| s.screensaver = v,
                         ),
@@ -695,14 +734,18 @@ pub fn lock_page() -> Div {
              ends it.",
         ))
         .child(sub_heading("Lock the computer"))
-        .child(note("After the mouse and the keyboard have been left alone for:"))
-        .child(flow(16.0).children(LOCK_AFTER.iter().map(|&(minutes, label)| {
-            cp_radio(
-                label,
-                setting(|s| s.lock_after_minutes, |s, v| s.lock_after_minutes = v),
-                minutes,
-            )
-        })))
+        .child(note(
+            "After the mouse and the keyboard have been left alone for:",
+        ))
+        .child(
+            flow(16.0).children(LOCK_AFTER.iter().map(|&(minutes, label)| {
+                cp_radio(
+                    label,
+                    setting(|s| s.lock_after_minutes, |s, v| s.lock_after_minutes = v),
+                    minutes,
+                )
+            })),
+        )
         .child(cp_check(
             "Lock when the computer goes to sleep",
             setting(|s| s.lock_on_suspend, |s, v| s.lock_on_suspend = v),
@@ -862,12 +905,20 @@ pub fn taskbar_page() -> Div {
         ))
         .child(
             row(10.0)
-                .child(note("Programs started last in the launcher (Windows+Shift+D):"))
+                .child(note(
+                    "Programs started last in the launcher (Windows+Shift+D):",
+                ))
                 .child(
                     cp_combo(
                         LAUNCHER_COUNTS
                             .iter()
-                            .map(|&n| if n == 0 { "None".to_owned() } else { n.to_string() })
+                            .map(|&n| {
+                                if n == 0 {
+                                    "None".to_owned()
+                                } else {
+                                    n.to_string()
+                                }
+                            })
                             .collect(),
                         choice(
                             LAUNCHER_COUNTS.to_vec(),
@@ -879,13 +930,15 @@ pub fn taskbar_page() -> Div {
                 ),
         )
         .child(note("The power button:"))
-        .child(power_choices(|| crate::power::power_button_action().to_string(), |s, v| {
-            s.power_button_action = v
-        }))
+        .child(power_choices(
+            || crate::power::power_button_action().to_string(),
+            |s, v| s.power_button_action = v,
+        ))
         .child(note("What the Shut Down dialog (Super+Shift+E) selects:"))
-        .child(power_choices(|| crate::power::shutdown_dialog_action().to_string(), |s, v| {
-            s.shutdown_dialog_action = v
-        }))
+        .child(power_choices(
+            || crate::power::shutdown_dialog_action().to_string(),
+            |s, v| s.shutdown_dialog_action = v,
+        ))
 }
 
 // ----- notification area icons -----------------------------------------------------------------
@@ -1000,6 +1053,9 @@ fn tray_line(item: TrayItem) -> Div {
         )
         .child(cp_check(
             "Show on the taskbar",
-            Binding::new(move || tray_visible(&shown), move |on| set_tray_visible(&id, on)),
+            Binding::new(
+                move || tray_visible(&shown),
+                move |on| set_tray_visible(&id, on),
+            ),
         ))
 }

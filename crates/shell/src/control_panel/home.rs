@@ -63,7 +63,10 @@ const CATEGORIES: &[Category] = &[
         name: "System",
         target: "about",
         links: &[
-            ("Choose the programs that open your files and links", "defaults"),
+            (
+                "Choose the programs that open your files and links",
+                "defaults",
+            ),
             ("Choose the programs that start when you log on", "startup"),
             ("About this desktop", "about"),
         ],
@@ -118,12 +121,13 @@ fn category_view(category: &'static Category, order: usize, cell: Memo<f32>) -> 
         let colours = theme().category_colours;
         (!colours.is_empty()).then(|| colours[order % colours.len()])
     };
-    let bar = div().flex_none().self_stretch().dyn_style(move |s| {
-        match colour() {
+    let bar = div()
+        .flex_none()
+        .self_stretch()
+        .dyn_style(move |s| match colour() {
             Some(c) => s.w(theme().heading_bar).bg(c),
             None => s.hidden(),
-        }
-    });
+        });
     let name = wrapping(cp_link_tinted(
         category.name,
         true,

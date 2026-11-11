@@ -126,9 +126,15 @@ impl Default for Settings {
             display_choices: Map::new(),
             extra_clocks: Vec::new(),
             show_cpu_meter: true,
-            cpu_meter_place: Place { right: 24.0, top: 24.0 },
+            cpu_meter_place: Place {
+                right: 24.0,
+                top: 24.0,
+            },
             show_clock_gadget: true,
-            clock_gadget_place: Place { right: 52.0, top: 168.0 },
+            clock_gadget_place: Place {
+                right: 52.0,
+                top: 168.0,
+            },
             slideshow_folder: String::new(),
             slideshow_minutes: 30,
             slideshow_shuffle: false,
@@ -231,8 +237,11 @@ const KEYS: &[&str] = &[
 ];
 
 fn strings(v: &Value) -> Option<Vec<String>> {
-    v.as_array()
-        .map(|list| list.iter().filter_map(|x| x.as_str().map(String::from)).collect())
+    v.as_array().map(|list| {
+        list.iter()
+            .filter_map(|x| x.as_str().map(String::from))
+            .collect()
+    })
 }
 
 fn place(v: &Value) -> Option<Place> {
@@ -288,7 +297,10 @@ impl Settings {
         set!(show_cpu_meter, b("showCpuMeter"));
         set!(cpu_meter_place, obj.get("cpuMeterPlace").and_then(place));
         set!(show_clock_gadget, b("showClockGadget"));
-        set!(clock_gadget_place, obj.get("clockGadgetPlace").and_then(place));
+        set!(
+            clock_gadget_place,
+            obj.get("clockGadgetPlace").and_then(place)
+        );
         set!(slideshow_folder, st("slideshowFolder"));
         set!(slideshow_minutes, i("slideshowMinutes"));
         set!(slideshow_shuffle, b("slideshowShuffle"));
@@ -507,17 +519,21 @@ pub fn settings() -> Signal<Settings> {
 }
 
 /// Reads the file again whenever its time changes and it is not this shell's own write.
-fn watch(s: Signal<Settings>, seen: std::rc::Rc<Cell<Option<SystemTime>>>, skip: std::rc::Rc<Cell<bool>>) {
+fn watch(
+    s: Signal<Settings>,
+    seen: std::rc::Rc<Cell<Option<SystemTime>>>,
+    skip: std::rc::Rc<Cell<bool>>,
+) {
     set_timeout(WATCH, move || {
         let now = modified();
         if now.is_some() && now != seen.get() {
             seen.set(now);
-            if let Some(read) = load() {
-                if read != s.get_untracked() {
-                    // Not written back: it is what the file says already.
-                    skip.set(true);
-                    s.set(read);
-                }
+            if let Some(read) = load()
+                && read != s.get_untracked()
+            {
+                // Not written back: it is what the file says already.
+                skip.set(true);
+                s.set(read);
             }
         }
         watch(s, seen, skip);
@@ -557,8 +573,7 @@ fn follow_dconf(key: &'static str, on_value: impl Fn(&str) + Clone + 'static) {
     let watch = Process::new("dconf").args(["watch", key]).spawn();
     watch.on_line(move |line| on_value(line));
     // The processes live as long as the root they were made in: the whole shell.
-    std::mem::forget(read);
-    std::mem::forget(watch);
+    let _ = (read, watch);
 }
 
 /// The system prefers dark. It starts as the last one seen, kept in the settings, so the shell
@@ -607,20 +622,21 @@ pub fn set_dark(on: bool) {
 /// Whether the system asks for animations (`enable-animations`). Reading it tracks it.
 pub fn animations() -> bool {
     ANIMATIONS.with(|cell| {
-        cell.get().unwrap_or_else(|| {
-            let (a, _) = create_root(|| {
-                let a = signal(true);
-                follow_dconf(ANIMATIONS_KEY, move |line| match line.trim() {
-                    "true" => a.set(true),
-                    "false" => a.set(false),
-                    _ => {}
+        cell.get()
+            .unwrap_or_else(|| {
+                let (a, _) = create_root(|| {
+                    let a = signal(true);
+                    follow_dconf(ANIMATIONS_KEY, move |line| match line.trim() {
+                        "true" => a.set(true),
+                        "false" => a.set(false),
+                        _ => {}
+                    });
+                    a
                 });
+                cell.set(Some(a));
                 a
-            });
-            cell.set(Some(a));
-            a
-        })
-        .get()
+            })
+            .get()
     })
 }
 

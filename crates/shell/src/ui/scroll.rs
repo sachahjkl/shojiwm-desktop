@@ -150,7 +150,12 @@ fn bar(
             .min(track);
         let range = (content_h - view_h).max(0.0);
         let room = (track - length).max(0.0);
-        let top = THICKNESS + if range > 0.0 { room * offset.get() / range } else { 0.0 };
+        let top = THICKNESS
+            + if range > 0.0 {
+                room * offset.get() / range
+            } else {
+                0.0
+            };
         Thumb {
             top,
             length,
@@ -176,7 +181,13 @@ fn bar(
         .flex()
         .flex_col()
         .gap(1.0)
-        .dyn_style(move |s| if thumb.get().length > 20.0 { s } else { s.hidden() })
+        .dyn_style(move |s| {
+            if thumb.get().length > 20.0 {
+                s
+            } else {
+                s.hidden()
+            }
+        })
         .children((0..4).map(move |_| {
             div().w(7.0).h(1.0).dyn_style(move |s| {
                 let c = colours();

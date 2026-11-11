@@ -27,7 +27,10 @@ fn player() -> Option<Player> {
 /// The name a player's program goes by on the bus (`org.mpris.MediaPlayer2.firefox.instance_1`
 /// is `firefox`), in lower case.
 pub(super) fn player_program(player: &Player) -> String {
-    let rest = player.name.strip_prefix("org.mpris.MediaPlayer2.").unwrap_or(&player.name);
+    let rest = player
+        .name
+        .strip_prefix("org.mpris.MediaPlayer2.")
+        .unwrap_or(&player.name);
     rest.split('.').next().unwrap_or(rest).to_lowercase()
 }
 
@@ -53,12 +56,19 @@ pub fn media_controls() -> Div {
             let c = scheme();
             s.rounded(corner(2.0))
                 .border_color(c.field_border)
-                .bg(if dark_look() { COVER_BACK_DARK } else { COVER_BACK_LIGHT })
+                .bg(if dark_look() {
+                    COVER_BACK_DARK
+                } else {
+                    COVER_BACK_LIGHT
+                })
         })
         .child(dyn_view(move || {
             let p = now.get()?;
             Some(match cover_file(&p) {
-                Some(file) => img(file).size(38.0).object_fit(ObjectFit::Cover).into_view(),
+                Some(file) => img(file)
+                    .size(38.0)
+                    .object_fit(ObjectFit::Cover)
+                    .into_view(),
                 None => {
                     let program = player_program(&p);
                     let icon = if anti_webui::shell::icon_path(&program, 24).is_some() {
@@ -89,7 +99,13 @@ pub fn media_controls() -> Div {
                 })
                 .child(text(move || {
                     now.get()
-                        .map(|p| if p.title.is_empty() { p.identity } else { p.title })
+                        .map(|p| {
+                            if p.title.is_empty() {
+                                p.identity
+                            } else {
+                                p.title
+                            }
+                        })
                         .unwrap_or_default()
                 })),
         )
@@ -104,7 +120,13 @@ pub fn media_controls() -> Div {
                 })
                 .child(text(move || {
                     now.get()
-                        .map(|p| if p.artists.is_empty() { p.identity } else { p.artists.join(", ") })
+                        .map(|p| {
+                            if p.artists.is_empty() {
+                                p.identity
+                            } else {
+                                p.artists.join(", ")
+                            }
+                        })
                         .unwrap_or_default()
                 })),
         );
@@ -112,7 +134,13 @@ pub fn media_controls() -> Div {
         .flex()
         .flex_col()
         .gap(6.0)
-        .dyn_style(move |s| if now.with(Option::is_none) { s.hidden() } else { s })
+        .dyn_style(move |s| {
+            if now.with(Option::is_none) {
+                s.hidden()
+            } else {
+                s
+            }
+        })
         .child(div().flex().flex_row().gap(8.0).child(cover).child(words))
         .child(transport(move || now.get()))
         .child(div().h(1.0).dyn_style(|s| s.bg(scheme().menu_divider)))
@@ -140,7 +168,11 @@ pub(super) fn transport(player: impl Fn() -> Option<Player> + Clone + 'static) -
             {
                 let c = c.clone();
                 move || {
-                    if c().is_some_and(|p| p.status == PlaybackStatus::Playing) { "pause" } else { "play" }
+                    if c().is_some_and(|p| p.status == PlaybackStatus::Playing) {
+                        "pause"
+                    } else {
+                        "play"
+                    }
                 }
             },
             move || c().is_some_and(|p| p.can_play || p.can_pause),
@@ -196,13 +228,25 @@ pub(super) fn media_button(
         .dyn_style(move |s| {
             let c = scheme();
             s.rounded(button_radius())
-                .border_color(if ui.hovered() { c.selection_border } else { c.field_border })
-                .opacity(if style_can() { 1.0 } else { UNAVAILABLE_OPACITY })
+                .border_color(if ui.hovered() {
+                    c.selection_border
+                } else {
+                    c.field_border
+                })
+                .opacity(if style_can() {
+                    1.0
+                } else {
+                    UNAVAILABLE_OPACITY
+                })
         })
         .on_click(move |_| {
             if available() {
                 run();
             }
         })
-        .child(img(move || ink_asset(&format!("media-{}.svg", glyph()))).size(14.0).object_fit(ObjectFit::Contain))
+        .child(
+            img(move || ink_asset(&format!("media-{}.svg", glyph())))
+                .size(14.0)
+                .object_fit(ObjectFit::Contain),
+        )
 }

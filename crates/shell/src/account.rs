@@ -13,9 +13,7 @@ pub fn login_name() -> String {
     std::env::var("USER")
         .ok()
         .filter(|u| !u.is_empty())
-        .or_else(|| {
-            home().and_then(|h| h.file_name().map(|n| n.to_string_lossy().into_owned()))
-        })
+        .or_else(|| home().and_then(|h| h.file_name().map(|n| n.to_string_lossy().into_owned())))
         .unwrap_or_default()
 }
 
@@ -42,15 +40,13 @@ pub fn full_name(login: &str) -> Signal<String> {
         }
     });
     // It answers once and ends; its line handler lives with the owner.
-    std::mem::forget(lookup);
+    let _ = lookup;
     name
 }
 
 /// The first readable file of a list.
 fn first_readable(paths: impl IntoIterator<Item = PathBuf>) -> Option<PathBuf> {
-    paths
-        .into_iter()
-        .find(|p| std::fs::File::open(p).is_ok())
+    paths.into_iter().find(|p| std::fs::File::open(p).is_ok())
 }
 
 /// AccountsService's picture of `login`, which a log-on screen can read (not `~/.face`, in a

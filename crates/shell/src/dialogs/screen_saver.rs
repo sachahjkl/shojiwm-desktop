@@ -157,7 +157,11 @@ fn hsla(hue: f32, saturation: f32, lightness: f32, alpha: f32) -> Color {
 /// The screen saver on `output`: black, with the shapes moving on it. Moving the mouse ends a
 /// preview.
 pub(super) fn view(output: Output) -> Div {
-    let size = untrack(|| output.current().map_or(output.logical_size, |o| o.logical_size));
+    let size = untrack(|| {
+        output
+            .current()
+            .map_or(output.logical_size, |o| o.logical_size)
+    });
     let mystify = Rc::new(RefCell::new(Mystify::new(
         size.width as f32,
         size.height as f32,

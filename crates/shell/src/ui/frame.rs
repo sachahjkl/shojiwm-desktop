@@ -77,7 +77,11 @@ pub fn tooltip_frame() -> Div {
         })
         .dyn_style(|s| {
             let c = scheme();
-            let outline = if is_kernel() { c.selection_border } else { c.popup_outline };
+            let outline = if is_kernel() {
+                c.selection_border
+            } else {
+                c.popup_outline
+            };
             s.rounded(item_radius())
                 .border_color(outline)
                 .shadow(BoxShadow {

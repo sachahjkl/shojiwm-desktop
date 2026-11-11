@@ -109,7 +109,9 @@ impl Grid {
 
     /// The cell nearest to a point.
     fn cell_at(&self, x: f32, y: f32) -> i64 {
-        let column = ((x - 2.0) / self.width).round().clamp(0.0, (self.columns - 1) as f32) as i64;
+        let column = ((x - 2.0) / self.width)
+            .round()
+            .clamp(0.0, (self.columns - 1) as f32) as i64;
         let row = ((y - self.above - 2.0) / self.height)
             .round()
             .clamp(0.0, (self.rows - 1) as f32) as i64;
@@ -121,7 +123,8 @@ impl Grid {
         let (w, h) = self.area;
         (
             x.min(w - 2.0 - self.width).max(2.0),
-            y.min(h - self.below - 2.0 - self.height).max(self.above + 2.0),
+            y.min(h - self.below - 2.0 - self.height)
+                .max(self.above + 2.0),
         )
     }
 
@@ -268,7 +271,11 @@ impl Desk {
             let grid = grid.get();
             let me = screen.get();
             let (places, auto, align) = settings().with(|s| {
-                (s.desktop_places.clone(), s.desktop_auto_arrange, s.desktop_align_to_grid)
+                (
+                    s.desktop_places.clone(),
+                    s.desktop_auto_arrange,
+                    s.desktop_align_to_grid,
+                )
             });
             let mut result = HashMap::new();
             let mut taken = HashSet::new();
@@ -324,12 +331,22 @@ impl Desk {
     }
 
     fn item(&self, key: &str) -> Option<Item> {
-        untrack(|| self.shown.with(|list| list.iter().find(|i| i.key == key).cloned()))
+        untrack(|| {
+            self.shown
+                .with(|list| list.iter().find(|i| i.key == key).cloned())
+        })
     }
 
     fn picked_items(&self) -> Vec<Item> {
         let picked = self.picked.get_untracked();
-        untrack(|| self.shown.with(|list| list.iter().filter(|i| picked.contains(&i.key)).cloned().collect()))
+        untrack(|| {
+            self.shown.with(|list| {
+                list.iter()
+                    .filter(|i| picked.contains(&i.key))
+                    .cloned()
+                    .collect()
+            })
+        })
     }
 
     fn pick(&self, key: &str, add: bool) {
@@ -399,7 +416,9 @@ impl Desk {
             icon_size: untrack(|| self.grid.get().icon),
         };
         for item in self.picked_items() {
-            let Some(&at) = positions.get(&item.key) else { continue };
+            let Some(&at) = positions.get(&item.key) else {
+                continue;
+            };
             drag.keys.push(item.key.clone());
             drag.offsets.push((at.0 - origin.0, at.1 - origin.1));
             if !item.kind.is_system() {
@@ -429,7 +448,8 @@ impl Desk {
             .collect();
         let mut changes = Changes::new();
         for (key, offset) in moving.keys.iter().zip(&moving.offsets) {
-            let mut point = grid.on_screen(x - moving.grab.0 + offset.0, y - moving.grab.1 + offset.1);
+            let mut point =
+                grid.on_screen(x - moving.grab.0 + offset.0, y - moving.grab.1 + offset.1);
             if align {
                 let mut cell = grid.cell_at(point.0, point.1);
                 while taken.contains(&cell) {
@@ -492,7 +512,11 @@ impl Desk {
     /// would land.
     pub fn drag_moved(&self, x: f32, y: f32) {
         let key = self.drop_target_at(x, y);
-        self.landing.set_if_changed(if key.is_empty() { Some(self.landing_at(x, y)) } else { None });
+        self.landing.set_if_changed(if key.is_empty() {
+            Some(self.landing_at(x, y))
+        } else {
+            None
+        });
         self.drop_key.set_if_changed(key);
     }
 
@@ -603,7 +627,10 @@ impl Desk {
         let rect = RectI::new(position.x as i32, position.y as i32, 1, 1);
         batch(|| {
             self.menu_rect.set(Some(rect));
-            self.menu.set(Some(MenuAt { point: (position.x / scale, position.y / scale), item }));
+            self.menu.set(Some(MenuAt {
+                point: (position.x / scale, position.y / scale),
+                item,
+            }));
         });
     }
 
@@ -638,7 +665,11 @@ impl Desk {
             })
             .radio(s.desktop_sort == value)
         };
-        let icon = |name: &str| crate::paths::asset(&format!("icons/{name}")).to_string_lossy().into_owned();
+        let icon = |name: &str| {
+            crate::paths::asset(&format!("icons/{name}"))
+                .to_string_lossy()
+                .into_owned()
+        };
         vec![
             MenuLine::submenu(
                 "View",
@@ -682,31 +713,33 @@ impl Desk {
                         .icon(icon("file.png")),
                     MenuLine::item("Sticky Note", move || {
                         let (w, h) = desk.area.get_untracked();
-                        notes::add(
-                            &desk.me(),
-                            point.0.min(w - 230.0),
-                            point.1.min(h - 210.0),
-                        );
+                        notes::add(&desk.me(), point.0.min(w - 230.0), point.1.min(h - 210.0));
                     }),
                 ],
             ),
             MenuLine::item("Open in Terminal", files::open_terminal).icon(icon("run.png")),
             MenuLine::separator(),
-            MenuLine::item("Screen resolution", || crate::control_panel::open_page("display"))
-                .icon(icon("computer.png")),
+            MenuLine::item("Screen resolution", || {
+                crate::control_panel::open_page("display")
+            })
+            .icon(icon("computer.png")),
             MenuLine::submenu(
                 "Gadgets",
                 vec![
-                    MenuLine::item("CPU Meter", || change(|s| s.show_cpu_meter = !s.show_cpu_meter))
-                        .checked(s.show_cpu_meter),
+                    MenuLine::item("CPU Meter", || {
+                        change(|s| s.show_cpu_meter = !s.show_cpu_meter)
+                    })
+                    .checked(s.show_cpu_meter),
                     MenuLine::item("Clock", || {
                         change(|s| s.show_clock_gadget = !s.show_clock_gadget)
                     })
                     .checked(s.show_clock_gadget),
                 ],
             ),
-            MenuLine::item("Personalize", || crate::control_panel::open_page("appearance"))
-                .icon(icon("control-panel.png")),
+            MenuLine::item("Personalize", || {
+                crate::control_panel::open_page("appearance")
+            })
+            .icon(icon("control-panel.png")),
         ]
     }
 
@@ -721,7 +754,9 @@ impl Desk {
             Kind::Computer | Kind::UserFiles | Kind::ControlPanel => vec![
                 MenuLine::item("Open", open),
                 MenuLine::separator(),
-                MenuLine::item("Remove from the desktop", move || files::remove_system_icon(kind)),
+                MenuLine::item("Remove from the desktop", move || {
+                    files::remove_system_icon(kind)
+                }),
             ],
             Kind::Trash => vec![
                 MenuLine::item("Open", open),
@@ -875,8 +910,10 @@ fn background(desk: Desk) -> Div {
                 Key::Named(NamedKey::Enter) => desk.picked_items().iter().for_each(files::open),
                 Key::Named(NamedKey::Escape) => desk.picked.set(Vec::new()),
                 key if ctrl && key.is_char('a') => {
-                    let all: Vec<String> =
-                        untrack(|| desk.shown.with(|l| l.iter().map(|i| i.key.clone()).collect()));
+                    let all: Vec<String> = untrack(|| {
+                        desk.shown
+                            .with(|l| l.iter().map(|i| i.key.clone()).collect())
+                    });
                     desk.picked.set(all);
                 }
                 key if ctrl && (key.is_char('+') || key.is_char('=')) => desk.zoom(1),
@@ -922,9 +959,8 @@ fn icon_cell(desk: Desk, item: Item) -> Div {
                 // It grows a little under a drag it would take.
                 .transition_of(
                     [Prop::Scale],
-                    Transition::ms(untrack(|| crate::settings::motion(120.0))).cubic_bezier(
-                        0.33, 1.0, 0.68, 1.0,
-                    ),
+                    Transition::ms(untrack(|| crate::settings::motion(120.0)))
+                        .cubic_bezier(0.33, 1.0, 0.68, 1.0),
                 )
                 .dyn_style(move |s| s.scale(if target.get() { DROP_GROWTH } else { 1.0 }))
                 .child(shell_icon(move || shown.icon(), size))
@@ -962,9 +998,9 @@ fn icon_cell(desk: Desk, item: Item) -> Div {
                         .top(1.0)
                         .right(0.0)
                         .text_color(NAME_SHADOW)
-                        .child(text(move || shadow())),
+                        .child(text(shadow)),
                 )
-                .child(div().relative().text_color(Color::WHITE).child(text(move || words())))
+                .child(div().relative().text_color(Color::WHITE).child(text(words)))
         }
     };
 
@@ -974,7 +1010,11 @@ fn icon_cell(desk: Desk, item: Item) -> Div {
         move || {
             // The name without its extension is picked, as Windows does.
             let name = item.name.clone();
-            let stem = if item.is_dir() { name.len() } else { name.rfind('.').filter(|&i| i > 0).unwrap_or(name.len()) };
+            let stem = if item.is_dir() {
+                name.len()
+            } else {
+                name.rfind('.').filter(|&i| i > 0).unwrap_or(name.len())
+            };
             set_timeout(Duration::ZERO, move || {
                 field_ref.focus();
                 field_ref.set_text(&name, (0, stem));
@@ -1022,7 +1062,10 @@ fn icon_cell(desk: Desk, item: Item) -> Div {
         .interaction(ui)
         .dyn_style(move |s| {
             let grid = desk.grid.get();
-            let at = desk.positions.with(|p| p.get(&*key).copied()).unwrap_or((2.0, 2.0));
+            let at = desk
+                .positions
+                .with(|p| p.get(&*key).copied())
+                .unwrap_or((2.0, 2.0));
             let (x, y, w, _) = grid.plate(at);
             let picked = picked.get();
             let lit = picked || target.get();
@@ -1035,7 +1078,8 @@ fn icon_cell(desk: Desk, item: Item) -> Div {
                 .z_index(if picked || editing.get() { 2 } else { 0 })
                 .rounded(corner(3.0));
             if lit {
-                s.bg(if hot { PLATE_PICKED_HOT } else { PLATE_PICKED }).border_color(PLATE_PICKED_BORDER)
+                s.bg(if hot { PLATE_PICKED_HOT } else { PLATE_PICKED })
+                    .border_color(PLATE_PICKED_BORDER)
             } else if ui.hovered() {
                 s.bg(PLATE_HOVER).border_color(PLATE_HOVER_BORDER)
             } else {
@@ -1083,7 +1127,11 @@ fn icon_cell(desk: Desk, item: Item) -> Div {
             DRAG.with(|d| *d.borrow_mut() = Some(drag.clone()));
             let paths = drag.paths.clone();
             let data = DragData::new(drag).data(ICONS_MIME, drag_key.as_bytes().to_vec());
-            let data = if paths.is_empty() { data } else { data.files(paths) };
+            let data = if paths.is_empty() {
+                data
+            } else {
+                data.files(paths)
+            };
             data.actions(DragActions::Both)
         })
         .drag_preview(|d: &IconDrag| shell_icon(d.icon.clone(), d.icon_size))

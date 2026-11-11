@@ -70,22 +70,36 @@ pub fn view(area: Signal<(f32, f32)>) -> impl IntoView {
         ),
         show(
             || settings().with(|s| s.show_clock_gadget),
-            move || frame(Gadget::Clock, area, (CLOCK_SIZE, CLOCK_SIZE), Vec::new(), clock()),
+            move || {
+                frame(
+                    Gadget::Clock,
+                    area,
+                    (CLOCK_SIZE, CLOCK_SIZE),
+                    Vec::new(),
+                    clock(),
+                )
+            },
         ),
     ])
 }
+
+/// A button of a gadget's toolbar: its icon's name and what it does.
+type GadgetAction = (&'static str, Rc<dyn Fn()>);
 
 /// A gadget's place: `content`, `size` big, kept where its setting says and moved by a drag.
 fn frame(
     gadget: Gadget,
     area: Signal<(f32, f32)>,
     size: (f32, f32),
-    actions: Vec<(&'static str, Rc<dyn Fn()>)>,
+    actions: Vec<GadgetAction>,
     content: Div,
 ) -> Div {
     let (w, h) = size;
     let ui = Interaction::new();
-    let from = Rc::new(Cell::new(Place { right: 0.0, top: 0.0 }));
+    let from = Rc::new(Cell::new(Place {
+        right: 0.0,
+        top: 0.0,
+    }));
     let has_tools = !actions.is_empty();
     let tools = div()
         .absolute()
@@ -94,8 +108,18 @@ fn frame(
         .flex()
         .flex_col()
         .gap(2.0)
-        .dyn_style(move |s| if has_tools && ui.hovered() { s } else { s.hidden() })
-        .children(actions.into_iter().map(|(icon, run)| tool_button(icon, run)));
+        .dyn_style(move |s| {
+            if has_tools && ui.hovered() {
+                s
+            } else {
+                s.hidden()
+            }
+        })
+        .children(
+            actions
+                .into_iter()
+                .map(|(icon, run)| tool_button(icon, run)),
+        );
     div()
         .absolute()
         .w(w)
@@ -106,7 +130,11 @@ fn frame(
             let place = gadget.place();
             let (aw, _) = area.get();
             let s = s.left(aw - w - place.right).top(bar_above() + place.top);
-            s.cursor(if ui.pressed() { CursorIcon::Grabbing } else { CursorIcon::Default })
+            s.cursor(if ui.pressed() {
+                CursorIcon::Grabbing
+            } else {
+                CursorIcon::Default
+            })
         })
         .on_grab(move |g| match g.phase {
             GrabPhase::Start => from.set(untrack(|| gadget.place())),
@@ -183,7 +211,11 @@ fn cpu_meter() -> Div {
         let stats = stats.clone();
         move || {
             let m = stats.memory();
-            if m.total > 0 { m.used as f32 / m.total as f32 } else { 0.0 }
+            if m.total > 0 {
+                m.used as f32 / m.total as f32
+            } else {
+                0.0
+            }
         }
     };
     let detail = move || {
@@ -289,28 +321,30 @@ fn dial(
         .stop(0.0, DIAL_LOW)
         .stop(0.6, DIAL_MIDDLE)
         .stop(1.0, DIAL_HIGH);
-    let gauge = svg()
-        .absolute()
-        .left(0.0)
-        .top(0.0)
-        .w(size)
-        .h(size)
-        .child(
-            svg::group()
-                .fill_none()
-                .line_cap(LineCap::Round)
-                .child(svg::path(track.clone()).stroke(DIAL_TRACK).stroke_width(6.0))
-                .child(svg::path(track).stroke(DIAL_TRACK_LIGHT).stroke_width(4.0))
-                .child(
-                    svg::path(move || {
-                        let sweep = 270.0 * shown.get() as f64;
-                        // Nothing for nothing: a round cap alone would be a dot.
-                        if sweep < 1.35 { String::new() } else { arc(cx, cy, r, 135.0, sweep) }
-                    })
-                    .stroke(band)
-                    .stroke_width(4.0),
-                ),
-        );
+    let gauge = svg().absolute().left(0.0).top(0.0).w(size).h(size).child(
+        svg::group()
+            .fill_none()
+            .line_cap(LineCap::Round)
+            .child(
+                svg::path(track.clone())
+                    .stroke(DIAL_TRACK)
+                    .stroke_width(6.0),
+            )
+            .child(svg::path(track).stroke(DIAL_TRACK_LIGHT).stroke_width(4.0))
+            .child(
+                svg::path(move || {
+                    let sweep = 270.0 * shown.get() as f64;
+                    // Nothing for nothing: a round cap alone would be a dot.
+                    if sweep < 1.35 {
+                        String::new()
+                    } else {
+                        arc(cx, cy, r, 135.0, sweep)
+                    }
+                })
+                .stroke(band)
+                .stroke_width(4.0),
+            ),
+    );
     let big = size > 90.0;
     let percent = move || format!("{}%", (value() * 100.0).round() as i64);
     let percent_shadow = percent.clone();
@@ -345,7 +379,12 @@ fn dial(
                                 .text_color(DIAL_VALUE_SHADOW)
                                 .child(text(percent_shadow)),
                         )
-                        .child(div().relative().text_color(Color::WHITE).child(text(percent))),
+                        .child(
+                            div()
+                                .relative()
+                                .text_color(Color::WHITE)
+                                .child(text(percent)),
+                        ),
                 )
                 .child(
                     div()
@@ -391,8 +430,11 @@ fn clock() -> Div {
     let c = (CLOCK_SIZE / 2.0) as f64;
     let r = (CLOCK_SIZE / 2.0 - 3.0) as f64;
     // The rim: dark, lighter at the top.
-    let rim = svg::circle(c, c, r)
-        .fill(Gradient::linear(0.0, 0.0, 0.0, 1.0).stop(0.0, RIM_TOP).stop(1.0, RIM_BOTTOM));
+    let rim = svg::circle(c, c, r).fill(
+        Gradient::linear(0.0, 0.0, 0.0, 1.0)
+            .stop(0.0, RIM_TOP)
+            .stop(1.0, RIM_BOTTOM),
+    );
     // The face: pale glass, brighter towards the top left.
     let glass = Gradient {
         shape: GradientShape::Radial {
@@ -421,22 +463,23 @@ fn clock() -> Div {
     });
     // One hand: a rounded bar from a little behind the centre to its tip, turned about the
     // centre; `turn` gives degrees clockwise from twelve.
-    let hand = move |length: f64, back: f64, width: f32, color: Color, turn: Rc<dyn Fn() -> f64>| {
-        let cap = width as f64 / 2.0;
-        svg::path(move || {
-            let (s, k) = turn().to_radians().sin_cos();
-            let (from, to) = (-(back - cap), length - cap);
-            format!(
-                "M {} {} L {} {}",
-                c + s * from,
-                c - k * from,
-                c + s * to,
-                c - k * to
-            )
-        })
-        .stroke(color)
-        .stroke_width(width)
-    };
+    let hand =
+        move |length: f64, back: f64, width: f32, color: Color, turn: Rc<dyn Fn() -> f64>| {
+            let cap = width as f64 / 2.0;
+            svg::path(move || {
+                let (s, k) = turn().to_radians().sin_cos();
+                let (from, to) = (-(back - cap), length - cap);
+                format!(
+                    "M {} {} L {} {}",
+                    c + s * from,
+                    c - k * from,
+                    c + s * to,
+                    c - k * to
+                )
+            })
+            .stroke(color)
+            .stroke_width(width)
+        };
     let now = || local_time(Every::Second);
     let seconds = move || now().second as f64;
     let minutes = move || now().minute as f64 + seconds() / 60.0;
@@ -449,22 +492,51 @@ fn clock() -> Div {
             .stop(0.0, GLOSS)
             .stop(1.0, GLOSS_END),
     );
-    let picture = svg().absolute().left(0.0).top(0.0).w(CLOCK_SIZE).h(CLOCK_SIZE).child(
-        svg::group()
-            .child(rim)
-            .child(face)
-            .child(svg::group().fill_none().line_cap(LineCap::Round).children(marks))
-            .child(
-                svg::group()
-                    .fill_none()
-                    .line_cap(LineCap::Round)
-                    .child(hand(r * 0.45, 6.0, 4.5, HANDS, Rc::new(move || hours() * 30.0)))
-                    .child(hand(r * 0.68, 8.0, 3.0, HANDS, Rc::new(move || minutes() * 6.0)))
-                    .child(hand(r * 0.74, 12.0, 1.2, SECONDS_HAND, Rc::new(move || seconds() * 6.0))),
-            )
-            .child(svg::circle(c, c, 3.0).fill(SECONDS_HAND))
-            .child(gloss),
-    );
+    let picture = svg()
+        .absolute()
+        .left(0.0)
+        .top(0.0)
+        .w(CLOCK_SIZE)
+        .h(CLOCK_SIZE)
+        .child(
+            svg::group()
+                .child(rim)
+                .child(face)
+                .child(
+                    svg::group()
+                        .fill_none()
+                        .line_cap(LineCap::Round)
+                        .children(marks),
+                )
+                .child(
+                    svg::group()
+                        .fill_none()
+                        .line_cap(LineCap::Round)
+                        .child(hand(
+                            r * 0.45,
+                            6.0,
+                            4.5,
+                            HANDS,
+                            Rc::new(move || hours() * 30.0),
+                        ))
+                        .child(hand(
+                            r * 0.68,
+                            8.0,
+                            3.0,
+                            HANDS,
+                            Rc::new(move || minutes() * 6.0),
+                        ))
+                        .child(hand(
+                            r * 0.74,
+                            12.0,
+                            1.2,
+                            SECONDS_HAND,
+                            Rc::new(move || seconds() * 6.0),
+                        )),
+                )
+                .child(svg::circle(c, c, 3.0).fill(SECONDS_HAND))
+                .child(gloss),
+        );
     div()
         .relative()
         .w(CLOCK_SIZE)

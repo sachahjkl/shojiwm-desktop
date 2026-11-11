@@ -70,7 +70,11 @@ fn tile_layer(inset: f32, radius: f32, colors: [Color; 2]) -> Div {
 /// inside the last, so there is one corner, not several. Smoked glass on dark colours.
 pub fn user_tile(picture: impl Fn() -> PathBuf + 'static) -> Div {
     let glass_part = |from: usize, to: usize, top: bool| {
-        let (start, end) = if top { (0.0, GLASS_SPLIT) } else { (GLASS_SPLIT, 1.0) };
+        let (start, end) = if top {
+            (0.0, GLASS_SPLIT)
+        } else {
+            (GLASS_SPLIT, 1.0)
+        };
         div()
             .flex_grow(end - start)
             .flex_basis(0.0)
@@ -196,8 +200,11 @@ pub fn logon_button(label: &'static str, on_click: impl Fn() + 'static) -> Div {
                 .border(1.0)
                 .pointer_events_none()
                 .dyn_style(move |s| {
-                    s.rounded(corner(2.0))
-                        .border_color(if ui.hovered() { BUTTON_RIM_HOT } else { BUTTON_RIM })
+                    s.rounded(corner(2.0)).border_color(if ui.hovered() {
+                        BUTTON_RIM_HOT
+                    } else {
+                        BUTTON_RIM
+                    })
                 }),
         )
         .child(text(label))
@@ -364,7 +371,11 @@ pub fn logon_menu_row(
             let hot = ui.hovered();
             s.rounded(item_radius())
                 .bg(if hot { ROW_HOT } else { Color::TRANSPARENT })
-                .border_color(if hot { ROW_HOT_BORDER } else { Color::TRANSPARENT })
+                .border_color(if hot {
+                    ROW_HOT_BORDER
+                } else {
+                    Color::TRANSPARENT
+                })
         })
         .child(text(label))
 }

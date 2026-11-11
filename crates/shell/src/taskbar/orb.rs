@@ -32,7 +32,13 @@ pub(super) fn start_button(bar: Bar) -> View {
         let bar = bar.clone();
         let kernel = kernel.get();
         // Built again for a change of theme only, not for every setting it reads.
-        untrack(move || if kernel { kernel_plate(bar) } else { aero_orb(bar) })
+        untrack(move || {
+            if kernel {
+                kernel_plate(bar)
+            } else {
+                aero_orb(bar)
+            }
+        })
     })
 }
 
@@ -60,7 +66,12 @@ fn with_clicks(button: Div, bar: Bar) -> Div {
 
 /// A picture of `shell/assets` over the whole of a box `size` square.
 fn layer(name: &str, size: f32) -> Img {
-    img(asset(name)).absolute().left(0.0).top(0.0).size(size).object_fit(ObjectFit::Contain)
+    img(asset(name))
+        .absolute()
+        .left(0.0)
+        .top(0.0)
+        .size(size)
+        .object_fit(ObjectFit::Contain)
 }
 
 /// Aero's orb, in layers as on Windows 7: the orb, its lit copy, the snowflake's glow, the
@@ -81,9 +92,10 @@ fn aero_orb(bar: Bar) -> Div {
         .select_none()
         .interaction(ui)
         .child(layer("start-orb.svg", size))
-        .child(layer("start-orb-hot.svg", size).dyn_style(move |s| {
-            s.opacity(if hot() { 1.0 } else { 0.0 }).transition(fade())
-        }))
+        .child(
+            layer("start-orb-hot.svg", size)
+                .dyn_style(move |s| s.opacity(if hot() { 1.0 } else { 0.0 }).transition(fade())),
+        )
         .child(
             img(asset("start-orb-logo.svg"))
                 .absolute()
@@ -154,17 +166,28 @@ fn kernel_plate(bar: Bar) -> Div {
             let (top, bottom) = if sunk() {
                 (t.button_pressed_top, t.button_pressed_bottom)
             } else if ui.hovered() {
-                (lighter(t.button_active_top, PLATE_HOT), lighter(t.button_active_bottom, PLATE_HOT))
+                (
+                    lighter(t.button_active_top, PLATE_HOT),
+                    lighter(t.button_active_bottom, PLATE_HOT),
+                )
             } else {
                 (t.button_active_top, t.button_active_bottom)
             };
             vertical_gradient(&[(0.0, top), (1.0, bottom)])
         })
         // The line of light along its top (none while sunk) and the dark seam on its right.
-        .child(div().absolute().left(0.0).right(0.0).top(0.0).h(1.0).dyn_style(move |s| {
-            let s = s.bg(theme().bar_highlight);
-            if sunk() { s.hidden() } else { s }
-        }))
+        .child(
+            div()
+                .absolute()
+                .left(0.0)
+                .right(0.0)
+                .top(0.0)
+                .h(1.0)
+                .dyn_style(move |s| {
+                    let s = s.bg(theme().bar_highlight);
+                    if sunk() { s.hidden() } else { s }
+                }),
+        )
         .child(
             div()
                 .absolute()

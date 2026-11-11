@@ -103,7 +103,13 @@ fn surface(output: Output, auth: Auth) -> Div {
     };
     div()
         .size_full()
-        .dyn_style(move |s| s.bg(if primary.get() { LOGON_BLUE } else { Color::BLACK }))
+        .dyn_style(move |s| {
+            s.bg(if primary.get() {
+                LOGON_BLUE
+            } else {
+                Color::BLACK
+            })
+        })
         .child(dyn_view(move || {
             let primary = primary.get();
             let account = account.clone();

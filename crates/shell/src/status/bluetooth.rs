@@ -50,7 +50,13 @@ pub fn icon(output_name: &str) -> Div {
         .node_ref(anchor)
         .dyn_style(move |s| if present.get() { s } else { s.hidden() })
         .child(bar_picture(
-            || asset(if powered() { "bluetooth.svg" } else { "bluetooth-off.svg" }),
+            || {
+                asset(if powered() {
+                    "bluetooth.svg"
+                } else {
+                    "bluetooth-off.svg"
+                })
+            },
             0.0,
         ))
         .on_click(move |_| toggle(&opener, Panel::Bluetooth))
@@ -131,7 +137,11 @@ fn status_of(device: &BluetoothDevice, working: Option<&'static str>) -> String 
             None => "Connected".into(),
         };
     }
-    if device.paired { "Paired".into() } else { "Not paired".into() }
+    if device.paired {
+        "Paired".into()
+    } else {
+        "Not paired".into()
+    }
 }
 
 /// The Bluetooth panel. It looks for devices from when it opens to when it closes, as
@@ -159,9 +169,15 @@ fn panel() -> Div {
         .gap(10.0)
         .h(34.0)
         .child(
-            img(move || asset(if on.get() { "bluetooth.svg" } else { "bluetooth-off.svg" }))
-                .size(28.0)
-                .object_fit(ObjectFit::Contain),
+            img(move || {
+                asset(if on.get() {
+                    "bluetooth.svg"
+                } else {
+                    "bluetooth-off.svg"
+                })
+            })
+            .size(28.0)
+            .object_fit(ObjectFit::Contain),
         )
         .child(
             div()
@@ -205,7 +221,13 @@ fn panel() -> Div {
                     });
                 },
             )
-            .dyn_style(|s| if bluetooth().adapter().is_some() { s } else { s.hidden() }),
+            .dyn_style(|s| {
+                if bluetooth().adapter().is_some() {
+                    s
+                } else {
+                    s.hidden()
+                }
+            }),
         );
     let heading = section_title(move || {
         if listed.with(Vec::is_empty) {
@@ -235,11 +257,19 @@ fn panel() -> Div {
                 .child(divider().dyn_style(move |s| if on.get() { s } else { s.hidden() }))
                 .child(heading)
                 .child(aero_scroll(list).max_h(LIST_HEIGHT).dyn_style(move |s| {
-                    if on.get() && !listed.with(Vec::is_empty) { s } else { s.hidden() }
+                    if on.get() && !listed.with(Vec::is_empty) {
+                        s
+                    } else {
+                        s.hidden()
+                    }
                 }))
                 .child(
                     small_text("No Bluetooth adapter.", || scheme().text_muted).dyn_style(|s| {
-                        if bluetooth().adapter().is_some() { s.hidden() } else { s }
+                        if bluetooth().adapter().is_some() {
+                            s.hidden()
+                        } else {
+                            s
+                        }
                     }),
                 ),
         )
@@ -259,7 +289,12 @@ fn device_row(state: PanelState, paired_count: Memo<usize>, address: String) -> 
     let ui = Interaction::new();
     let found = {
         let address = address.clone();
-        memo(move || bluetooth().devices().into_iter().find(|d| d.address == address))
+        memo(move || {
+            bluetooth()
+                .devices()
+                .into_iter()
+                .find(|d| d.address == address)
+        })
     };
     let index = {
         let address = address.clone();
@@ -306,23 +341,31 @@ fn device_row(state: PanelState, paired_count: Memo<usize>, address: String) -> 
                 .flex_col()
                 .child(one_line(
                     body_text(
-                        move || found.with(|d| d.as_ref().map_or(String::new(), |d| d.name.clone())),
+                        move || {
+                            found.with(|d| d.as_ref().map_or(String::new(), |d| d.name.clone()))
+                        },
                         || scheme().text,
                     )
                     .dyn_style(move |s| {
-                        if connected.get() { s.font_weight(FontWeight::BOLD) } else { s }
+                        if connected.get() {
+                            s.font_weight(FontWeight::BOLD)
+                        } else {
+                            s
+                        }
                     }),
                 ))
                 .child(small_text(
                     move || {
                         found.with(|d| {
-                            d.as_ref().map_or(String::new(), |d| status_of(d, working.get()))
+                            d.as_ref()
+                                .map_or(String::new(), |d| status_of(d, working.get()))
                         })
                     },
                     || scheme().text_muted,
                 )),
         );
-    let act = move |doing: &'static str, f: fn(&BluetoothDevice) -> Task<Result<(), ServiceError>>| {
+    let act = move |doing: &'static str,
+                    f: fn(&BluetoothDevice) -> Task<Result<(), ServiceError>>| {
         move || {
             if let Some(d) = untrack(|| found.get()) {
                 state.work(&d, doing, f(&d));
@@ -336,7 +379,9 @@ fn device_row(state: PanelState, paired_count: Memo<usize>, address: String) -> 
         }
     };
     let pair = move || {
-        let Some(d) = untrack(|| found.get()) else { return };
+        let Some(d) = untrack(|| found.get()) else {
+            return;
+        };
         if untrack(|| pairing.get()) {
             // BlueZ's CancelPairing, which the service does not offer.
             crate::programs::run(&format!(
@@ -371,8 +416,17 @@ fn device_row(state: PanelState, paired_count: Memo<usize>, address: String) -> 
                 .dyn_style(move |s| if paired.get() { s.hidden() } else { s }),
         )
         .child(
-            cp_button(move || if connected.get() { "Disconnect" } else { "Connect" }, connect)
-                .dyn_style(shown(paired)),
+            cp_button(
+                move || {
+                    if connected.get() {
+                        "Disconnect"
+                    } else {
+                        "Connect"
+                    }
+                },
+                connect,
+            )
+            .dyn_style(shown(paired)),
         );
     let fold = address.clone();
     let card = div()
@@ -381,7 +435,9 @@ fn device_row(state: PanelState, paired_count: Memo<usize>, address: String) -> 
         .interaction(ui)
         .on_click(move |_| {
             let open = state.unfolded.with_untracked(|u| *u == fold);
-            state.unfolded.set(if open { String::new() } else { fold.clone() });
+            state
+                .unfolded
+                .set(if open { String::new() } else { fold.clone() });
         })
         .dyn_style(move |s| lit_row_style(s, unfolded.get(), ui))
         .child(card_head)

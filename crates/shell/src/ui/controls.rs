@@ -74,7 +74,11 @@ fn push_button(label: impl IntoTextSource, default: bool, on_click: impl Fn() + 
             } else {
                 FOCUS_LINE_LIGHT
             });
-            if default || ui.focus_visible() { s } else { s.hidden() }
+            if default || ui.focus_visible() {
+                s
+            } else {
+                s.hidden()
+            }
         });
     div()
         .relative()
@@ -95,7 +99,11 @@ fn push_button(label: impl IntoTextSource, default: bool, on_click: impl Fn() + 
         .fill(move || {
             let c = scheme();
             let [top, middle, bottom] = if ui.pressed() {
-                [c.button_pressed_top, c.button_pressed_bottom, c.button_pressed_bottom]
+                [
+                    c.button_pressed_top,
+                    c.button_pressed_bottom,
+                    c.button_pressed_bottom,
+                ]
             } else if ui.hovered() && !dark_look() {
                 BUTTON_HOT
             } else if ui.hovered() {
@@ -115,7 +123,11 @@ fn push_button(label: impl IntoTextSource, default: bool, on_click: impl Fn() + 
                 (false, true) => c.field_border,
                 (false, false) => LIGHT_BUTTON_BORDER,
             };
-            let text = if ui.hovered() && !dark { LIGHT_BUTTON_HOT_TEXT } else { c.text };
+            let text = if ui.hovered() && !dark {
+                LIGHT_BUTTON_HOT_TEXT
+            } else {
+                c.text
+            };
             s.rounded(button_radius())
                 .border_color(border)
                 .text_color(text)
@@ -143,7 +155,11 @@ fn choice_box(round: bool, hovered: impl Fn() -> bool + Copy + 'static) -> Div {
             vertical_gradient(&[(0.0, top), (1.0, bottom)])
         })
         .dyn_style(move |s| {
-            let s = s.border_color(if hovered() { LIGHT_HOT_BORDER } else { BOX_BORDER });
+            let s = s.border_color(if hovered() {
+                LIGHT_HOT_BORDER
+            } else {
+                BOX_BORDER
+            });
             if round { s.rounded(BOX_SIZE / 2.0) } else { s }
         })
 }
@@ -372,7 +388,11 @@ pub fn cp_link_tinted(
             };
             let s = s
                 .font_family(font())
-                .text_size(if large { t.font_size + 3.0 } else { t.font_size })
+                .text_size(if large {
+                    t.font_size + 3.0
+                } else {
+                    t.font_size
+                })
                 .text_color(colour);
             if ui.hovered() { s.underline() } else { s }
         })

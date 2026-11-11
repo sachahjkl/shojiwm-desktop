@@ -2,13 +2,10 @@
 //! button of the log-on screen (QML `PowerSplitButton`). The actions are `crate::power`'s.
 
 use super::close;
-use crate::paths::asset;
-use crate::settings::settings;
+pub use crate::power::{POWER_ACTIONS, power_action, power_button_action, run_power};
 use crate::theme::{button_radius, corner, theme};
 use crate::ui::{MenuLine, font, popup_menu, vertical_gradient};
 use anti_webui::prelude::*;
-use anti_webui::shell::prelude::*;
-pub use crate::power::{POWER_ACTIONS, PowerAction, power_action, power_button_action, run_power, shutdown_dialog_action};
 
 // ----- the Start menu's power button ------------------------------------------------------------
 
@@ -41,7 +38,11 @@ const ARROW_WIDTH: f32 = 20.0;
 /// halves share an edge and round only their outer corners: each is a box rounded all round,
 /// wider than the half on its inner side and clipped there, so the glass, which is
 /// translucent, is painted once.
-fn power_part(left: bool, hot: impl Fn() -> bool + 'static, pressed: impl Fn() -> bool + 'static) -> Div {
+fn power_part(
+    left: bool,
+    hot: impl Fn() -> bool + 'static,
+    pressed: impl Fn() -> bool + 'static,
+) -> Div {
     let hot = std::rc::Rc::new(hot);
     let pressed = std::rc::Rc::new(pressed);
     let (hot_fill, pressed_fill) = (hot.clone(), pressed.clone());
@@ -80,7 +81,8 @@ fn power_part(left: bool, hot: impl Fn() -> bool + 'static, pressed: impl Fn() -
             } else {
                 RIM_REST
             };
-            s.rounded(corner((button_radius() - 1.0).max(0.0))).border_color(rim)
+            s.rounded(corner((button_radius() - 1.0).max(0.0)))
+                .border_color(rim)
         }));
     let part = div()
         .relative()
@@ -93,8 +95,24 @@ fn power_part(left: bool, hot: impl Fn() -> bool + 'static, pressed: impl Fn() -
     }
     // The seam between the halves, on the arrow's left edge: the outline's line, and a faint
     // light one beside it.
-    part.child(div().absolute().left(0.0).top(0.0).bottom(0.0).w(1.0).bg(GLASS_OUTLINE))
-        .child(div().absolute().left(1.0).top(1.0).bottom(1.0).w(1.0).bg(SEAM_LIGHT))
+    part.child(
+        div()
+            .absolute()
+            .left(0.0)
+            .top(0.0)
+            .bottom(0.0)
+            .w(1.0)
+            .bg(GLASS_OUTLINE),
+    )
+    .child(
+        div()
+            .absolute()
+            .left(1.0)
+            .top(1.0)
+            .bottom(1.0)
+            .w(1.0)
+            .bg(SEAM_LIGHT),
+    )
 }
 
 /// The power button at the foot of the places: glass, as on Windows 7, as wide as its label and
@@ -199,110 +217,3 @@ fn power_menu(open: Signal<bool>, anchor: NodeRef) -> Show {
 }
 
 // ----- the log-on screen's power button ---------------------------------------------------------
-
-/// The split button's size, and where its two parts meet (QML).
-const SPLIT_WIDTH: f32 = 70.0;
-const SPLIT_HEIGHT: f32 = 24.0;
-const SPLIT_DIVIDER: f32 = 50.0;
-/// The outline, and the light rim inside it (QML literals).
-const SPLIT_OUTLINE: Color = rgb(0x2a0303);
-const SPLIT_RIM: Color = rgba(0xffdada4d);
-/// A part's fill: a pale red gloss over the top half, a deep red below that brightens at the
-/// bottom; lit under the pointer, darker while pressed (QML literals). Stops at 0, 0.47, 0.5, 1.
-const SPLIT_REST: [Color; 4] = [rgb(0xd98585), rgb(0xb84a4a), rgb(0x860000), rgb(0xc00808)];
-const SPLIT_HOT: [Color; 4] = [rgb(0xeda0a0), rgb(0xcf5c5c), rgb(0xa30000), rgb(0xe01515)];
-const SPLIT_DOWN: [Color; 4] = [rgb(0xa65454), rgb(0x8c2c2c), rgb(0x5e0000), rgb(0x8a0505)];
-
-/// One part of the split button's fill.
-fn split_fill(ui: Interaction) -> ShaderPaint {
-    let f = if ui.pressed() {
-        SPLIT_DOWN
-    } else if ui.hovered() {
-        SPLIT_HOT
-    } else {
-        SPLIT_REST
-    };
-    vertical_gradient(&[(0.0, f[0]), (0.47, f[1]), (0.5, f[2]), (1.0, f[3])])
-}
-
-/// The red power button of the Windows 7 log-on screen, and the arrow joined to its right that
-/// opens the other choices: `on_power` and `on_menu` run on their clicks. One rounded piece
-/// with a dark outline and a dark line between the two parts, and a white ring for the power
-/// mark. To hang a menu from it, give what comes back a `node_ref`.
-pub fn power_split_button(on_power: impl Fn() + 'static, on_menu: impl Fn() + 'static) -> Div {
-    let main = Interaction::new();
-    let arrow = Interaction::new();
-    div()
-        .relative()
-        .flex_none()
-        .w(SPLIT_WIDTH)
-        .h(SPLIT_HEIGHT)
-        .bg(SPLIT_OUTLINE)
-        .overflow_clip()
-        .select_none()
-        .dyn_style(|s| s.rounded(corner(3.0)))
-        .child(
-            div()
-                .absolute()
-                .left(1.0)
-                .top(1.0)
-                .bottom(1.0)
-                .w(SPLIT_DIVIDER - 1.0)
-                .fill(move || split_fill(main))
-                .dyn_style(|s| s.rounded(corner(2.0))),
-        )
-        .child(
-            div()
-                .absolute()
-                .left(SPLIT_DIVIDER + 1.0)
-                .right(1.0)
-                .top(1.0)
-                .bottom(1.0)
-                .fill(move || split_fill(arrow))
-                .dyn_style(|s| s.rounded(corner(2.0))),
-        )
-        // The light rim inside the outline.
-        .child(
-            div()
-                .absolute()
-                .inset(1.0)
-                .border(1.0)
-                .border_color(SPLIT_RIM)
-                .pointer_events_none()
-                .dyn_style(|s| s.rounded(corner(2.0))),
-        )
-        .child(
-            div()
-                .absolute()
-                .left(0.0)
-                .top(0.0)
-                .bottom(0.0)
-                .w(SPLIT_DIVIDER)
-                .flex()
-                .items_center()
-                .justify_center()
-                .interaction(main)
-                .on_click(move |_| on_power())
-                .child(
-                    img(asset("power-ring.svg"))
-                        .size(16.0)
-                        .object_fit(ObjectFit::Contain),
-                ),
-        )
-        .child(
-            div()
-                .absolute()
-                .left(SPLIT_DIVIDER)
-                .right(0.0)
-                .top(0.0)
-                .bottom(0.0)
-                .flex()
-                .items_center()
-                .justify_center()
-                .text_size(7.0)
-                .text_color(Color::WHITE)
-                .interaction(arrow)
-                .on_click(move |_| on_menu())
-                .child("\u{25B2}"),
-        )
-}

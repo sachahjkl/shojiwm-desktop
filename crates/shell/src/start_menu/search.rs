@@ -6,8 +6,8 @@
 //! own lists instead. While typing: the programs that match (AntiWebUI's ranking, best first),
 //! the Control Panel's tasks, then the files of the home folder whose names hold what is typed.
 
-use crate::power::quoted;
 use crate::paths::asset;
+use crate::power::quoted;
 use crate::settings::{home, settings};
 use crate::theme::scheme;
 use crate::ui::{MenuLine, RowLook, menu_row, with_context_menu};
@@ -35,7 +35,10 @@ pub(super) enum Found {
     Heading(&'static str),
     Program(Application),
     /// A Control Panel task: what it says, and the page it opens.
-    Task { text: String, page: String },
+    Task {
+        text: String,
+        page: String,
+    },
     /// A file or a folder, by path.
     File(String),
 }
@@ -133,10 +136,7 @@ impl Search {
                         })
                         .collect(),
                 );
-                group(
-                    "Files",
-                    files.get().into_iter().map(Found::File).collect(),
-                );
+                group("Files", files.get().into_iter().map(Found::File).collect());
             }
             out
         });
@@ -155,7 +155,10 @@ impl Search {
 
     /// The row with that pick number.
     pub fn row_at(&self, pick: usize) -> Option<Row> {
-        untrack(|| self.rows.with(|r| r.iter().find(|r| r.pick == Some(pick)).cloned()))
+        untrack(|| {
+            self.rows
+                .with(|r| r.iter().find(|r| r.pick == Some(pick)).cloned())
+        })
     }
 
     /// Return in a search box: the row picked, else the text run as a command, as Run... does.
@@ -242,11 +245,19 @@ pub(super) fn program_lines(app: &Application, done: fn()) -> Vec<MenuLine> {
         }),
         MenuLine::separator(),
         MenuLine::item(
-            if on_taskbar { "Unpin from Taskbar" } else { "Pin to Taskbar" },
+            if on_taskbar {
+                "Unpin from Taskbar"
+            } else {
+                "Pin to Taskbar"
+            },
             move || crate::apps::set_taskbar_pinned(&taskbar, !on_taskbar),
         ),
         MenuLine::item(
-            if pinned { "Unpin from Start Menu" } else { "Pin to Start Menu" },
+            if pinned {
+                "Unpin from Start Menu"
+            } else {
+                "Pin to Start Menu"
+            },
             move || crate::apps::set_pinned(&start, !pinned),
         ),
     ]
@@ -255,29 +266,26 @@ pub(super) fn program_lines(app: &Application, done: fn()) -> Vec<MenuLine> {
 /// The rows of a search: a heading over each group, then its rows, the one picked lit; with
 /// nothing found while typing, "Run “…”", which Return runs. Choosing a row runs `done`.
 /// `program_menus`: a program row has its menu on a right click (the Start menu's).
-pub(super) fn results(
-    search: Search,
-    pick: Signal<usize>,
-    done: fn(),
-    program_menus: bool,
-) -> Div {
+pub(super) fn results(search: Search, pick: Signal<usize>, done: fn(), program_menus: bool) -> Div {
     let list = dyn_view(move || {
         let rows = search.rows.get();
-        div()
-            .flex()
-            .flex_col()
-            .children(
-                rows.into_iter()
-                    .map(|row| result_row(row, pick, done, program_menus))
-                    .collect::<Vec<_>>(),
-            )
+        div().flex().flex_col().children(
+            rows.into_iter()
+                .map(|row| result_row(row, pick, done, program_menus))
+                .collect::<Vec<_>>(),
+        )
     });
     let run = show(
         move || search.active() && search.pick_count.get() == 0,
         move || {
             menu_row(
                 asset("icons/run.png").to_string_lossy().into_owned(),
-                move || format!("Run \u{201C}{}\u{201D}", search.query.with(|q| q.trim().to_owned())),
+                move || {
+                    format!(
+                        "Run \u{201C}{}\u{201D}",
+                        search.query.with(|q| q.trim().to_owned())
+                    )
+                },
                 RowLook::default(),
                 || true,
             )
@@ -296,13 +304,12 @@ fn result_row(row: Row, pick: Signal<usize>, done: fn(), program_menus: bool) ->
         Found::Heading(title) => (String::new(), (*title).to_owned()),
         Found::Program(app) => (app_icon(app), app.name.clone()),
         Found::Task { text, .. } => (
-            asset("icons/control-panel.png").to_string_lossy().into_owned(),
+            asset("icons/control-panel.png")
+                .to_string_lossy()
+                .into_owned(),
             text.clone(),
         ),
-        Found::File(path) => (
-            crate::apps::file_icon(path),
-            file_name(path),
-        ),
+        Found::File(path) => (crate::apps::file_icon(path), file_name(path)),
     };
     let heading = matches!(row.found, Found::Heading(_));
     let mine = row.pick;
@@ -361,7 +368,11 @@ pub(super) fn placeholder(
                 .font_family(crate::ui::font())
                 .text_size(size())
                 .text_color(scheme().placeholder);
-            if query.with(String::is_empty) { s } else { s.hidden() }
+            if query.with(String::is_empty) {
+                s
+            } else {
+                s.hidden()
+            }
         })
         .child(words)
 }

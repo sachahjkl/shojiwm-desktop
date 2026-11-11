@@ -13,11 +13,13 @@ mod menu;
 mod scroll;
 mod text;
 
-pub use controls::{cp_button, cp_check, cp_combo, cp_default_button, cp_link, cp_link_tinted, cp_radio};
-pub use frame::{popup_frame, shell_tooltip, tooltip_frame};
-pub use gradient::{horizontal_gradient, vertical_gradient};
+pub use controls::{
+    cp_button, cp_check, cp_combo, cp_default_button, cp_link, cp_link_tinted, cp_radio,
+};
+pub use frame::{popup_frame, shell_tooltip};
+pub use gradient::vertical_gradient;
 pub use icon::shell_icon;
-pub use menu::{MenuLine, RowLook, bar_menu_options, popup_menu, with_context_menu, menu_row};
+pub use menu::{MenuLine, RowLook, bar_menu_options, menu_row, popup_menu, with_context_menu};
 pub use scroll::aero_scroll;
 pub use text::{label_text, section_title, section_title_with, shadow_text};
 
@@ -44,7 +46,13 @@ pub fn font() -> FontFamily {
 /// The face of the section titles (monospaced in Kernel), with the text's face as fallback.
 pub fn heading_font() -> FontFamily {
     let t = theme();
-    FontFamily(format!("{}, {}, {}", t.heading_family, t.font_family, t.font_fallback).into())
+    FontFamily(
+        format!(
+            "{}, {}, {}",
+            t.heading_family, t.font_family, t.font_fallback
+        )
+        .into(),
+    )
 }
 
 /// The face of the clock and its tooltip (monospaced in Kernel).

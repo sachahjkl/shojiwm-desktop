@@ -21,18 +21,41 @@ pub struct PowerAction {
 
 /// What the power button and its arrow offer, in the menu's order.
 pub const POWER_ACTIONS: &[PowerAction] = &[
-    PowerAction { id: "logoff", label: "Log off" },
-    PowerAction { id: "lock", label: "Lock" },
-    PowerAction { id: "separator", label: "" },
-    PowerAction { id: "restart", label: "Restart" },
-    PowerAction { id: "sleep", label: "Sleep" },
-    PowerAction { id: "hibernate", label: "Hibernate" },
-    PowerAction { id: "shutdown", label: "Shut down" },
+    PowerAction {
+        id: "logoff",
+        label: "Log off",
+    },
+    PowerAction {
+        id: "lock",
+        label: "Lock",
+    },
+    PowerAction {
+        id: "separator",
+        label: "",
+    },
+    PowerAction {
+        id: "restart",
+        label: "Restart",
+    },
+    PowerAction {
+        id: "sleep",
+        label: "Sleep",
+    },
+    PowerAction {
+        id: "hibernate",
+        label: "Hibernate",
+    },
+    PowerAction {
+        id: "shutdown",
+        label: "Shut down",
+    },
 ];
 
 /// The action of an id, if there is one.
 pub fn power_action(id: &str) -> Option<&'static PowerAction> {
-    POWER_ACTIONS.iter().find(|a| a.id == id && a.id != "separator")
+    POWER_ACTIONS
+        .iter()
+        .find(|a| a.id == id && a.id != "separator")
 }
 
 /// What the power button itself runs, by id: the Control Panel's choice, else "shutdown".
@@ -64,7 +87,10 @@ pub fn run_power(id: &str) {
     match id {
         "lock" => crate::lock::lock(),
         "logoff" => {
-            let command = match std::env::var("XDG_SESSION_ID").ok().filter(|s| !s.is_empty()) {
+            let command = match std::env::var("XDG_SESSION_ID")
+                .ok()
+                .filter(|s| !s.is_empty())
+            {
                 Some(id) => format!("loginctl terminate-session {}", quoted(&id)),
                 None => format!("loginctl terminate-user {}", quoted(&login_name())),
             };
@@ -94,7 +120,11 @@ pub fn run_power(id: &str) {
                 (SessionAction::Hibernate, "systemctl hibernate")
             };
             if by_logind(action) {
-                let _ = if id == "sleep" { logind.suspend() } else { logind.hibernate() };
+                let _ = if id == "sleep" {
+                    logind.suspend()
+                } else {
+                    logind.hibernate()
+                };
             } else {
                 crate::programs::run(command);
             }

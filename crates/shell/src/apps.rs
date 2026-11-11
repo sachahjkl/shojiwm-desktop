@@ -152,10 +152,12 @@ fn model() -> Model {
                     }),
                 };
                 follow_file(recent_xbel_path(), move |text| {
-                    m.recent_files.set(text.map(parse_recent).unwrap_or_default());
+                    m.recent_files
+                        .set(text.map(parse_recent).unwrap_or_default());
                 });
                 follow_file(user_dirs_path(), move |text| {
-                    m.user_dirs.set(text.map(parse_user_dirs).unwrap_or_default());
+                    m.user_dirs
+                        .set(text.map(parse_user_dirs).unwrap_or_default());
                 });
                 read_user_name(m.user_name);
                 m
@@ -172,16 +174,6 @@ fn model() -> Model {
 /// it.
 pub fn window_groups() -> Vec<WindowGroup> {
     model().groups.get()
-}
-
-/// Every open window, oldest first. Reading it tracks it.
-pub fn windows() -> Vec<Toplevel> {
-    toplevels().all()
-}
-
-/// The window that has the keyboard.
-pub fn active_window() -> Option<Toplevel> {
-    toplevels().active()
 }
 
 /// The shell's own window: the Control Panel.
@@ -201,7 +193,12 @@ fn program_key(t: &Toplevel) -> String {
     }
 }
 
-fn build_groups(open: &[Toplevel], pins: &[String], combine: bool, order: &[String]) -> Vec<WindowGroup> {
+fn build_groups(
+    open: &[Toplevel],
+    pins: &[String],
+    combine: bool,
+    order: &[String],
+) -> Vec<WindowGroup> {
     let mut list: Vec<WindowGroup> = Vec::new();
     // The group each program's next window goes into, or after, by program key.
     let mut latest: HashMap<String, String> = HashMap::new();
@@ -246,19 +243,32 @@ fn build_groups(open: &[Toplevel], pins: &[String], combine: bool, order: &[Stri
             None => {
                 let ours = is_control_panel(t);
                 let entry = if ours { None } else { entry_for(&t.app_id) };
-                let key = if combine { program.clone() } else { format!("window:{}", t.id()) };
+                let key = if combine {
+                    program.clone()
+                } else {
+                    format!("window:{}", t.id())
+                };
                 let name = match &entry {
                     _ if ours => "Control Panel".to_owned(),
                     Some(e) if !e.name.is_empty() => e.name.clone(),
                     _ => title_of(t),
                 };
                 let icon = if ours {
-                    asset("icons/control-panel.png").to_string_lossy().into_owned()
+                    asset("icons/control-panel.png")
+                        .to_string_lossy()
+                        .into_owned()
                 } else {
                     icon_for(&t.app_id)
                 };
                 latest.insert(program, key.clone());
-                list.push(WindowGroup { key, name, icon, entry, pinned: false, windows: Vec::new() });
+                list.push(WindowGroup {
+                    key,
+                    name,
+                    icon,
+                    entry,
+                    pinned: false,
+                    windows: Vec::new(),
+                });
                 list.len() - 1
             }
         };
@@ -268,7 +278,10 @@ fn build_groups(open: &[Toplevel], pins: &[String], combine: bool, order: &[Stri
         .into_iter()
         .enumerate()
         .map(|(natural, g)| {
-            let rank = order.iter().position(|k| *k == g.key).unwrap_or(order.len() + natural);
+            let rank = order
+                .iter()
+                .position(|k| *k == g.key)
+                .unwrap_or(order.len() + natural);
             (rank, g)
         })
         .collect();
@@ -355,7 +368,9 @@ pub fn activate_group(group: &WindowGroup) {
     let now = Instant::now();
     let again = STARTED.with(|s| {
         let mut s = s.borrow_mut();
-        let recent = s.get(&entry.id).is_some_and(|at| now.duration_since(*at) < STARTING);
+        let recent = s
+            .get(&entry.id)
+            .is_some_and(|at| now.duration_since(*at) < STARTING);
         if !recent {
             s.insert(entry.id.clone(), now);
         }
@@ -423,7 +438,11 @@ pub fn entry_by_id(id: &str) -> Option<Application> {
     if id.is_empty() {
         return None;
     }
-    let file = if id.ends_with(".desktop") { id.to_owned() } else { format!("{id}.desktop") };
+    let file = if id.ends_with(".desktop") {
+        id.to_owned()
+    } else {
+        format!("{id}.desktop")
+    };
     apps().get(&file)
 }
 
@@ -461,7 +480,10 @@ pub fn entry_for(app_id: &str) -> Option<Application> {
                 desktop_key(&a.id, "StartupWMClass").is_some_and(|c| c.to_lowercase() == wanted)
             })
         })
-        .or_else(|| all.iter().find(|a| stem(&a.id) == short || last_part(&a.id) == short))
+        .or_else(|| {
+            all.iter()
+                .find(|a| stem(&a.id) == short || last_part(&a.id) == short)
+        })
         .or_else(|| all.iter().find(|a| a.name.to_lowercase() == wanted))
         .cloned()
 }
@@ -490,11 +512,6 @@ pub fn entry_icon(entry: Option<&Application>) -> String {
 /// The programs the Start menu pins, in order.
 pub fn pinned() -> Vec<Application> {
     entries_of(&settings().with(|s| s.start_pinned.clone()))
-}
-
-/// The programs the taskbar pins, in order.
-pub fn taskbar_pinned() -> Vec<Application> {
-    entries_of(&settings().with(|s| s.taskbar_pinned.clone()))
 }
 
 pub fn is_pinned(entry: &Application) -> bool {
@@ -538,7 +555,8 @@ pub fn run_typed(text: &str) -> bool {
 
 fn count_launch(id: &str) {
     let m = model();
-    m.launch_counts.update(|c| *c.entry(id.to_owned()).or_insert(0) += 1);
+    m.launch_counts
+        .update(|c| *c.entry(id.to_owned()).or_insert(0) += 1);
     let counts: Map<String, Value> = m
         .launch_counts
         .get_untracked()
@@ -555,11 +573,6 @@ fn count_launch(id: &str) {
     write_json(&recent_programs_path(), &Value::from(recent));
 }
 
-/// How often each program was started from the shell, by `.desktop` file name.
-pub fn launch_counts() -> HashMap<String, i64> {
-    model().launch_counts.get()
-}
-
 /// The programs started from the shell, last first, that are still installed.
 pub fn recent_programs() -> Vec<Application> {
     entries_of(&model().recent_program_ids.get())
@@ -570,7 +583,8 @@ pub fn recent_programs() -> Vec<Application> {
 pub fn frequent() -> Vec<Application> {
     let counts = model().launch_counts.get();
     let pins = settings().with(|s| s.start_pinned.clone());
-    let mut ids: Vec<(&String, &i64)> = counts.iter().filter(|(id, _)| !pins.contains(id)).collect();
+    let mut ids: Vec<(&String, &i64)> =
+        counts.iter().filter(|(id, _)| !pins.contains(id)).collect();
     ids.sort_by(|a, b| b.1.cmp(a.1).then_with(|| a.0.cmp(b.0)));
     ids.into_iter()
         .filter_map(|(id, _)| entry_by_id(id))
@@ -601,7 +615,12 @@ pub fn folder_of(entry: &Application) -> &'static str {
     entry
         .categories
         .iter()
-        .find_map(|c| FOLDER_NAMES.iter().find(|(k, _)| *k == c.as_str()).map(|(_, n)| *n))
+        .find_map(|c| {
+            FOLDER_NAMES
+                .iter()
+                .find(|(k, _)| *k == c.as_str())
+                .map(|(_, n)| *n)
+        })
         .unwrap_or("Other")
 }
 
@@ -612,7 +631,10 @@ pub fn folders() -> Vec<Folder> {
         let name = folder_of(&entry);
         match list.iter_mut().find(|f| f.name == name) {
             Some(folder) => folder.entries.push(entry),
-            None => list.push(Folder { name: name.into(), entries: vec![entry] }),
+            None => list.push(Folder {
+                name: name.into(),
+                entries: vec![entry],
+            }),
         }
     }
     list.sort_by(|a, b| a.name.cmp(&b.name));
@@ -633,9 +655,16 @@ fn read_user_name(name: Signal<String>) {
     if login.is_empty() {
         return;
     }
-    let lookup = Process::new("getent").args(["passwd", login.as_str()]).spawn();
+    let lookup = Process::new("getent")
+        .args(["passwd", login.as_str()])
+        .spawn();
     lookup.on_line(move |line| {
-        let full = line.split(':').nth(4).and_then(|g| g.split(',').next()).unwrap_or("").trim();
+        let full = line
+            .split(':')
+            .nth(4)
+            .and_then(|g| g.split(',').next())
+            .unwrap_or("")
+            .trim();
         if !full.is_empty() {
             name.set(full.to_owned());
         }
@@ -764,7 +793,9 @@ fn parse_recent(text: String) -> Vec<RecentFile> {
     let mut rest = text.as_str();
     while let Some(start) = rest.find("<bookmark ") {
         let after = &rest[start + "<bookmark ".len()..];
-        let Some(head_end) = after.find('>') else { break };
+        let Some(head_end) = after.find('>') else {
+            break;
+        };
         let attributes = &after[..head_end];
         let tail = &after[head_end + 1..];
         let (body, next) = if attributes.ends_with('/') {
@@ -776,9 +807,13 @@ fn parse_recent(text: String) -> Vec<RecentFile> {
             }
         };
         rest = next;
-        let Some(uri) = attribute(attributes, "href") else { continue };
+        let Some(uri) = attribute(attributes, "href") else {
+            continue;
+        };
         // Only local files: the jump list hands a path to the program.
-        let Some(path) = uri.strip_prefix("file://").map(percent_decode) else { continue };
+        let Some(path) = uri.strip_prefix("file://").map(percent_decode) else {
+            continue;
+        };
         let visited = attribute(attributes, "visited")
             .or_else(|| attribute(attributes, "modified"))
             .unwrap_or_default();
@@ -797,7 +832,12 @@ fn parse_recent(text: String) -> Vec<RecentFile> {
             body_rest = &tag[end..];
         }
         let name = path.rsplit('/').next().unwrap_or(&path).to_owned();
-        found.push(RecentFile { path, name, visited, apps });
+        found.push(RecentFile {
+            path,
+            name,
+            visited,
+            apps,
+        });
     }
     found.sort_by(|a, b| b.visited.cmp(&a.visited));
     found
@@ -842,7 +882,11 @@ fn pinned_paths(entry: &Application) -> Vec<String> {
         s.jump_pins
             .get(&entry.id)
             .and_then(Value::as_array)
-            .map(|l| l.iter().filter_map(|p| p.as_str().map(String::from)).collect())
+            .map(|l| {
+                l.iter()
+                    .filter_map(|p| p.as_str().map(String::from))
+                    .collect()
+            })
             .unwrap_or_default()
     })
 }
@@ -851,7 +895,10 @@ fn pinned_paths(entry: &Application) -> Vec<String> {
 pub fn pinned_files_for(entry: &Application) -> Vec<JumpFile> {
     pinned_paths(entry)
         .into_iter()
-        .map(|path| JumpFile { name: path.rsplit('/').next().unwrap_or(&path).to_owned(), path })
+        .map(|path| JumpFile {
+            name: path.rsplit('/').next().unwrap_or(&path).to_owned(),
+            path,
+        })
         .collect()
 }
 
@@ -861,7 +908,10 @@ pub fn recent_unpinned(entry: &Application) -> Vec<JumpFile> {
     recent_for(entry)
         .into_iter()
         .filter(|f| !pinned.contains(&f.path))
-        .map(|f| JumpFile { name: f.name, path: f.path })
+        .map(|f| JumpFile {
+            name: f.name,
+            path: f.path,
+        })
         .collect()
 }
 
@@ -873,7 +923,11 @@ pub fn set_file_pinned(entry: &Application, path: &str, on: bool) {
             .jump_pins
             .get(&id)
             .and_then(Value::as_array)
-            .map(|l| l.iter().filter_map(|p| p.as_str().map(String::from)).collect())
+            .map(|l| {
+                l.iter()
+                    .filter_map(|p| p.as_str().map(String::from))
+                    .collect()
+            })
             .unwrap_or_default();
         list.retain(|other| *other != path);
         if on {
@@ -895,15 +949,25 @@ pub fn file_icon(name: &str) -> String {
         .map(|(_, e)| e.to_lowercase())
         .unwrap_or_default();
     const KINDS: &[(&str, &[&str])] = &[
-        ("file-image", &["png", "jpg", "jpeg", "gif", "webp", "svg", "bmp", "tif", "tiff", "avif", "heic"]),
-        ("file-audio", &["mp3", "flac", "ogg", "opus", "wav", "m4a", "aac"]),
+        (
+            "file-image",
+            &[
+                "png", "jpg", "jpeg", "gif", "webp", "svg", "bmp", "tif", "tiff", "avif", "heic",
+            ],
+        ),
+        (
+            "file-audio",
+            &["mp3", "flac", "ogg", "opus", "wav", "m4a", "aac"],
+        ),
         ("file-video", &["mp4", "mkv", "webm", "avi", "mov", "m4v"]),
     ];
     let kind = KINDS
         .iter()
         .find(|(_, exts)| exts.contains(&extension.as_str()))
         .map_or("file", |(k, _)| *k);
-    asset(&format!("icons/{kind}.png")).to_string_lossy().into_owned()
+    asset(&format!("icons/{kind}.png"))
+        .to_string_lossy()
+        .into_owned()
 }
 
 /// Single quotes for a shell.
@@ -953,11 +1017,18 @@ pub fn open_with(entry: &Application, path: &str) {
 /// Where `.desktop` files are, most important first.
 fn application_dirs() -> Vec<PathBuf> {
     let dirs = std::env::var("XDG_DATA_DIRS").unwrap_or_default();
-    let mut list: Vec<PathBuf> = dirs.split(':').filter(|d| d.starts_with('/')).map(PathBuf::from).collect();
+    let mut list: Vec<PathBuf> = dirs
+        .split(':')
+        .filter(|d| d.starts_with('/'))
+        .map(PathBuf::from)
+        .collect();
     if list.is_empty() {
         list = vec!["/usr/local/share".into(), "/usr/share".into()];
     }
-    std::iter::once(data_home()).chain(list).map(|d| d.join("applications")).collect()
+    std::iter::once(data_home())
+        .chain(list)
+        .map(|d| d.join("applications"))
+        .collect()
 }
 
 /// The file of a `.desktop` file name: in a folder of applications, or in a subfolder for the
@@ -988,10 +1059,9 @@ fn desktop_key(id: &str, key: &str) -> Option<String> {
                 let line = line.trim();
                 if line.starts_with('[') {
                     in_entry = line == "[Desktop Entry]";
-                } else if in_entry
-                    && let Some((k, v)) = line.split_once('=')
-                {
-                    keys.entry(k.trim().to_owned()).or_insert_with(|| v.trim().to_owned());
+                } else if in_entry && let Some((k, v)) = line.split_once('=') {
+                    keys.entry(k.trim().to_owned())
+                        .or_insert_with(|| v.trim().to_owned());
                 }
             }
             keys
@@ -1028,7 +1098,12 @@ fn modified(path: &Path) -> Option<SystemTime> {
 /// Calls `read` with the file's text now (`None` when it cannot be read), and again each time
 /// its time changes.
 fn follow_file(path: PathBuf, read: impl Fn(Option<String>) + 'static) {
-    fn look(path: PathBuf, seen: Option<SystemTime>, first: bool, read: std::rc::Rc<dyn Fn(Option<String>)>) {
+    fn look(
+        path: PathBuf,
+        seen: Option<SystemTime>,
+        first: bool,
+        read: std::rc::Rc<dyn Fn(Option<String>)>,
+    ) {
         let now = modified(&path);
         if first || now != seen {
             read(std::fs::read_to_string(&path).ok());

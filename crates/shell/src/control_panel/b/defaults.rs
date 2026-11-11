@@ -7,8 +7,8 @@
 //!   an installed program of the right category, or a command typed here.
 
 use super::common::{
-    FIELD_HEIGHT, control_row, cp_field, data_dirs, desktop_entry_keys, desktop_file,
-    field_border, muted_small, output_of, page_column, tinted_text,
+    FIELD_HEIGHT, control_row, cp_field, data_dirs, desktop_entry_keys, desktop_file, field_border,
+    muted_small, output_of, page_column, tinted_text,
 };
 use crate::control_panel::{heading, note};
 use crate::programs::{program, session_program};
@@ -34,18 +34,40 @@ struct Kind {
 const KINDS: &[Kind] = &[
     Kind {
         label: "Web browser",
-        types: &["x-scheme-handler/https", "x-scheme-handler/http", "text/html"],
+        types: &[
+            "x-scheme-handler/https",
+            "x-scheme-handler/http",
+            "text/html",
+        ],
     },
-    Kind { label: "E-mail", types: &["x-scheme-handler/mailto"] },
-    Kind { label: "Folders", types: &["inode/directory"] },
-    Kind { label: "Text files", types: &["text/plain"] },
+    Kind {
+        label: "E-mail",
+        types: &["x-scheme-handler/mailto"],
+    },
+    Kind {
+        label: "Folders",
+        types: &["inode/directory"],
+    },
+    Kind {
+        label: "Text files",
+        types: &["text/plain"],
+    },
     Kind {
         label: "Pictures",
         types: &["image/png", "image/jpeg", "image/webp", "image/gif"],
     },
-    Kind { label: "Music", types: &["audio/mpeg", "audio/flac", "audio/ogg"] },
-    Kind { label: "Videos", types: &["video/mp4", "video/x-matroska", "video/webm"] },
-    Kind { label: "PDF documents", types: &["application/pdf"] },
+    Kind {
+        label: "Music",
+        types: &["audio/mpeg", "audio/flac", "audio/ogg"],
+    },
+    Kind {
+        label: "Videos",
+        types: &["video/mp4", "video/x-matroska", "video/webm"],
+    },
+    Kind {
+        label: "PDF documents",
+        types: &["application/pdf"],
+    },
 ];
 
 /// A program the desktop starts: its key in `settings().programs`, and the categories of the
@@ -120,16 +142,26 @@ impl Handlers {
 fn read_handlers() -> HashMap<String, Handlers> {
     let mut files: Vec<(String, String)> = Vec::new();
     for dir in data_dirs() {
-        let Ok(entries) = std::fs::read_dir(dir.join("applications")) else { continue };
+        let Ok(entries) = std::fs::read_dir(dir.join("applications")) else {
+            continue;
+        };
         let mut paths: Vec<_> = entries.flatten().map(|e| e.path()).collect();
         paths.sort();
         for path in paths {
             if path.extension().is_none_or(|e| e != "desktop") {
                 continue;
             }
-            let Ok(text) = std::fs::read_to_string(&path) else { continue };
-            let Some(line) = text.lines().find(|l| l.starts_with("MimeType=")) else { continue };
-            let id = path.file_name().unwrap_or_default().to_string_lossy().into_owned();
+            let Ok(text) = std::fs::read_to_string(&path) else {
+                continue;
+            };
+            let Some(line) = text.lines().find(|l| l.starts_with("MimeType=")) else {
+                continue;
+            };
+            let id = path
+                .file_name()
+                .unwrap_or_default()
+                .to_string_lossy()
+                .into_owned();
             files.push((id, line["MimeType=".len()..].to_owned()));
         }
     }
@@ -137,14 +169,22 @@ fn read_handlers() -> HashMap<String, Handlers> {
         .iter()
         .map(|kind| {
             let ty = kind.types[0];
-            let current = output_of("xdg-mime", &["query", "default", ty]).trim().to_owned();
+            let current = output_of("xdg-mime", &["query", "default", ty])
+                .trim()
+                .to_owned();
             let mut candidates: Vec<String> = Vec::new();
             for (id, types) in &files {
                 if types.split(';').any(|t| t == ty) && !candidates.contains(id) {
                     candidates.push(id.clone());
                 }
             }
-            (ty.to_owned(), Handlers { current, candidates })
+            (
+                ty.to_owned(),
+                Handlers {
+                    current,
+                    candidates,
+                },
+            )
         })
         .collect()
 }
@@ -273,7 +313,11 @@ fn program_choices(kind: &ProgramKind) -> Vec<Choice> {
     let mut out: Vec<Choice> = apps()
         .all()
         .into_iter()
-        .filter(|a| a.categories.iter().any(|c| kind.categories.contains(&c.as_str())))
+        .filter(|a| {
+            a.categories
+                .iter()
+                .any(|c| kind.categories.contains(&c.as_str()))
+        })
         .filter_map(|a| {
             Some(Choice {
                 command: command_of(&a)?,
@@ -281,7 +325,7 @@ fn program_choices(kind: &ProgramKind) -> Vec<Choice> {
             })
         })
         .collect();
-    out.sort_by(|a, b| a.name.to_lowercase().cmp(&b.name.to_lowercase()));
+    out.sort_by_key(|a| a.name.to_lowercase());
     out
 }
 
@@ -291,7 +335,8 @@ fn set_program(key: &str, command: &str) {
         if command.is_empty() {
             s.programs.remove(key);
         } else {
-            s.programs.insert(key.to_owned(), Value::String(command.to_owned()));
+            s.programs
+                .insert(key.to_owned(), Value::String(command.to_owned()));
         }
     });
 }
@@ -300,12 +345,19 @@ pub fn page() -> Div {
     let handlers = signal(HashMap::<String, Handlers>::new());
     task(read_handlers).then(move |read| handlers.set(read));
     page_column(12.0)
-        .child(heading("Choose the programs that open your files and links"))
+        .child(heading(
+            "Choose the programs that open your files and links",
+        ))
         .child(note(
             "The choice applies to every program that opens files through the desktop's \
              standard (xdg-open), and is kept in ~/.config/mimeapps.list.",
         ))
-        .children(KINDS.iter().map(|kind| kind_row(handlers, kind)).collect::<Vec<_>>())
+        .children(
+            KINDS
+                .iter()
+                .map(|kind| kind_row(handlers, kind))
+                .collect::<Vec<_>>(),
+        )
         .child(heading("Choose the programs the desktop starts"))
         .child(note(
             "The terminal, the task manager and the others the keys and the taskbar start. \
@@ -421,17 +473,17 @@ fn program_row(kind: &'static ProgramKind) -> Div {
     let command_line = show(
         move || !custom(),
         move || {
-            div()
-                .flex_none()
-                .w(COMMAND_WIDTH)
-                .overflow_clip()
-                .child(
-                    muted_small(move || {
-                        let command = program(kind.key);
-                        if command.is_empty() { "None".to_owned() } else { command }
-                    })
-                    .whitespace_nowrap(),
-                )
+            div().flex_none().w(COMMAND_WIDTH).overflow_clip().child(
+                muted_small(move || {
+                    let command = program(kind.key);
+                    if command.is_empty() {
+                        "None".to_owned()
+                    } else {
+                        command
+                    }
+                })
+                .whitespace_nowrap(),
+            )
         },
     );
     let command_field = show(custom, move || {

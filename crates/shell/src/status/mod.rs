@@ -13,11 +13,9 @@ mod locale;
 mod network;
 mod notifications;
 
-pub use calendar::zones;
-
+use crate::settings::motion;
 use crate::theme::{Align, away_from_bar, corner, item_radius, popup_radius, scheme, theme};
 use crate::ui::{dark_look, font};
-use crate::settings::motion;
 use anti_webui::prelude::*;
 use anti_webui::shell::prelude::*;
 use std::cell::{Cell, RefCell};
@@ -34,8 +32,11 @@ pub enum Panel {
     Calendar,
 }
 
+/// The panel that is open, and the screen it is on.
+type Open = Option<(String, Panel)>;
+
 thread_local! {
-    static OPEN: Cell<Option<Signal<Option<(String, Panel)>>>> = const { Cell::new(None) };
+    static OPEN: Cell<Option<Signal<Open>>> = const { Cell::new(None) };
 }
 
 /// The panel open now, and the output it is open on.
@@ -51,7 +52,10 @@ fn open_state() -> Signal<Option<(String, Panel)>> {
 
 /// `panel` is open on the output `output_name`. Reading it tracks it.
 pub fn is_open(output_name: &str, panel: Panel) -> bool {
-    open_state().with(|s| s.as_ref().is_some_and(|(o, p)| o == output_name && *p == panel))
+    open_state().with(|s| {
+        s.as_ref()
+            .is_some_and(|(o, p)| o == output_name && *p == panel)
+    })
 }
 
 /// Opens `panel` on `output_name`, and closes any other.
@@ -142,7 +146,11 @@ pub fn install() {
         }
         "openOn" => {
             let screen = args.first().cloned().unwrap_or_default();
-            let screen = if screen.is_empty() { crate::desktop::primary_output_name() } else { screen };
+            let screen = if screen.is_empty() {
+                crate::desktop::primary_output_name()
+            } else {
+                screen
+            };
             open(&screen, Panel::Bluetooth);
             Ok(String::new())
         }
@@ -244,7 +252,10 @@ fn bar_picture(path: impl Fn() -> std::path::PathBuf + 'static, grow: f32) -> Di
 }
 
 /// The badge at the bottom right of an icon (a red or yellow mark), shown while `shown`.
-fn badge(path: impl Fn() -> std::path::PathBuf + 'static, shown: impl Fn() -> bool + 'static) -> Div {
+fn badge(
+    path: impl Fn() -> std::path::PathBuf + 'static,
+    shown: impl Fn() -> bool + 'static,
+) -> Div {
     div()
         .absolute()
         .right(-2.0)
@@ -339,7 +350,11 @@ fn panel_link(label: impl IntoTextSource, small: bool, on_click: impl Fn() + 'st
             let t = theme();
             let s = s
                 .font_family(font())
-                .text_size(if small { t.font_size_small } else { t.font_size })
+                .text_size(if small {
+                    t.font_size_small
+                } else {
+                    t.font_size
+                })
                 .text_color(scheme().link);
             if ui.hovered() { s.underline() } else { s }
         })
@@ -368,8 +383,16 @@ fn footer(height: f32, centred: bool, content: impl IntoView) -> Div {
         .dyn_style(move |s| {
             let s = s
                 .rounded_b(corner((popup_radius() - 1.0).max(0.0)))
-                .bg(if dark_look() { FOOTER_DARK } else { FOOTER_LIGHT });
-            if centred { s.justify_center() } else { s.justify_start().pl(10.0) }
+                .bg(if dark_look() {
+                    FOOTER_DARK
+                } else {
+                    FOOTER_LIGHT
+                });
+            if centred {
+                s.justify_center()
+            } else {
+                s.justify_start().pl(10.0)
+            }
         })
         .child(
             div()

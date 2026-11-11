@@ -7,9 +7,9 @@
 //! It shows on the main screen only. The lock (`lock`) checks the password with PAM; the
 //! log-on screen (`greeter`) with greetd. Each gives an [`Auth`].
 
-use crate::power::{power_button_action, run_power};
 use super::parts::{logon_button, logon_menu, logon_menu_row, power_split_button, user_tile};
 use crate::paths::asset;
+use crate::power::{power_button_action, run_power};
 use crate::settings::{dark, settings};
 use crate::theme::{is_kernel, theme};
 use crate::ui::{dark_look, font, shadow_text, vertical_gradient};
@@ -24,8 +24,18 @@ pub const LOGON_BLUE: Color = rgb(0x0e3a63);
 /// The shade from the top and the bottom, so that white text reads on any picture: on light
 /// colours, then on dark ones, at 0, 0.35, 0.7 and 1 of the height.
 const SHADE: [[Color; 4]; 2] = [
-    [rgba(0x00000059), rgba(0x00000014), rgba(0x00000014), rgba(0x00000073)],
-    [rgba(0x00000080), rgba(0x00000033), rgba(0x00000033), rgba(0x00000099)],
+    [
+        rgba(0x00000059),
+        rgba(0x00000014),
+        rgba(0x00000014),
+        rgba(0x00000073),
+    ],
+    [
+        rgba(0x00000080),
+        rgba(0x00000033),
+        rgba(0x00000033),
+        rgba(0x00000099),
+    ],
 ];
 
 /// The password field: its fill, its border at rest and with the keyboard, the inner shade a
@@ -195,10 +205,10 @@ pub fn logon_screen(auth: Auth, account: Account) -> Div {
         .items_center()
         .gap(2.0)
         .dyn_style(move |s| s.mb((height.get() * 0.06).round()))
-        .child(shadow_text(time_text).dyn_style(|s| s.text_size(76.0).font_weight(FontWeight::LIGHT)))
         .child(
-            shadow_text(|| local_time(Every::Minute).format("%A, %B %-d, %Y")).text_size(20.0),
-        );
+            shadow_text(time_text).dyn_style(|s| s.text_size(76.0).font_weight(FontWeight::LIGHT)),
+        )
+        .child(shadow_text(|| local_time(Every::Minute).format("%A, %B %-d, %Y")).text_size(20.0));
 
     // ----- the password field and its round arrow ----------------------------------------------
     let entry = div()
@@ -266,11 +276,7 @@ pub fn logon_screen(auth: Auth, account: Account) -> Div {
                 .flex()
                 .flex_col()
                 .items_center()
-                .child(
-                    shadow_text(move || name())
-                        .mt(14.0)
-                        .text_size(22.0),
-                )
+                .child(shadow_text(move || name()).mt(14.0).text_size(22.0))
                 .child(entry)
                 .child(welcome)
                 .child(error),
@@ -353,7 +359,11 @@ fn password_field(auth: Auth, field: NodeRef) -> Div {
         .border(1.0)
         .dyn_style(move |s| {
             let d = shade();
-            let border = if ui.focused() { FIELD_BORDER_FOCUS[d] } else { FIELD_BORDER[d] };
+            let border = if ui.focused() {
+                FIELD_BORDER_FOCUS[d]
+            } else {
+                FIELD_BORDER[d]
+            };
             s.bg(FIELD[d]).border_color(border)
         })
         .child(
@@ -390,11 +400,19 @@ fn password_field(auth: Auth, field: NodeRef) -> Div {
                         .font_family(font())
                         .text_size(theme().font_size)
                         .text_color(FIELD_HINT[shade()]);
-                    if auth.typed.with(String::is_empty) { s } else { s.hidden() }
+                    if auth.typed.with(String::is_empty) {
+                        s
+                    } else {
+                        s.hidden()
+                    }
                 })
                 .child(text(move || {
                     let prompt = auth.prompt.get();
-                    if prompt.is_empty() { "Password".to_owned() } else { prompt }
+                    if prompt.is_empty() {
+                        "Password".to_owned()
+                    } else {
+                        prompt
+                    }
                 })),
         )
         .child(
@@ -417,7 +435,11 @@ fn password_field(auth: Auth, field: NodeRef) -> Div {
 fn password_input(auth: Auth, field: NodeRef, ui: Interaction, echo: bool) -> TextInput {
     request_frame(move |_| field.focus());
     text_input()
-        .purpose(if echo { ImePurpose::Normal } else { ImePurpose::Password })
+        .purpose(if echo {
+            ImePurpose::Normal
+        } else {
+            ImePurpose::Password
+        })
         .value(auth.typed)
         .node_ref(field)
         .interaction(ui)
@@ -454,7 +476,11 @@ fn go_button(auth: Auth) -> Div {
         .child(
             img(move || {
                 let dark = if dark_look() { "-dark" } else { "" };
-                let hot = if ui.hovered() && !ui.pressed() { "-hot" } else { "" };
+                let hot = if ui.hovered() && !ui.pressed() {
+                    "-hot"
+                } else {
+                    ""
+                };
                 asset(&format!("arrow-bead{dark}{hot}.svg"))
             })
             .size(32.0)

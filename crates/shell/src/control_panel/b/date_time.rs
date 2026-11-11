@@ -33,11 +33,7 @@ fn locale_name() -> String {
         .filter_map(|k| std::env::var(k).ok())
         .find(|v| !v.is_empty())
         .unwrap_or_else(|| "C".into());
-    value
-        .split(['.', '@'])
-        .next()
-        .unwrap_or("C")
-        .to_owned()
+    value.split(['.', '@']).next().unwrap_or("C").to_owned()
 }
 
 pub fn page() -> Div {
@@ -79,7 +75,11 @@ pub fn page() -> Div {
             "Show the time in other time zones under the calendar and when you rest the \
              pointer on the clock.",
         ))
-        .children((0..EXTRA_CLOCKS).map(|i| extra_clock(i, zones)).collect::<Vec<_>>())
+        .children(
+            (0..EXTRA_CLOCKS)
+                .map(|i| extra_clock(i, zones))
+                .collect::<Vec<_>>(),
+        )
         .child(sub_heading("Time zone and synchronization"))
         .child(time_facts())
         .child(note(
@@ -134,7 +134,9 @@ fn extra_clock(index: usize, zones: Signal<Vec<String>>) -> Div {
 fn clock_fields(index: usize, clock: Memo<Option<ExtraClock>>, zones: Signal<Vec<String>>) -> Div {
     // The name: kept when Enter is pressed or the field is left.
     let label = signal(String::new());
-    effect(move || label.set(clock.with(|c| c.as_ref().map(|c| c.label.clone()).unwrap_or_default())));
+    effect(move || {
+        label.set(clock.with(|c| c.as_ref().map(|c| c.label.clone()).unwrap_or_default()))
+    });
     let finish_label = move || {
         let typed = label.get_untracked();
         if let Some(c) = untrack(|| clock.get())
@@ -158,7 +160,9 @@ fn clock_fields(index: usize, clock: Memo<Option<ExtraClock>>, zones: Signal<Vec
 
     // The zone: only a zone the system knows is kept.
     let zone = signal(String::new());
-    effect(move || zone.set(clock.with(|c| c.as_ref().map(|c| c.zone.clone()).unwrap_or_default())));
+    effect(move || {
+        zone.set(clock.with(|c| c.as_ref().map(|c| c.zone.clone()).unwrap_or_default()))
+    });
     let typing = signal(false);
     // The pointer is on the zones offered: a click there must not lose them first.
     let pointing = signal(false);
@@ -243,7 +247,14 @@ fn clock_fields(index: usize, clock: Memo<Option<ExtraClock>>, zones: Signal<Vec
                 .items_start()
                 .gap(12.0)
                 .child(form_label("Time zone:", LABEL_WIDTH))
-                .child(div().flex().flex_col().gap(2.0).child(zone_field).child(offered)),
+                .child(
+                    div()
+                        .flex()
+                        .flex_col()
+                        .gap(2.0)
+                        .child(zone_field)
+                        .child(offered),
+                ),
         )
 }
 
@@ -270,7 +281,12 @@ fn time_facts() -> Div {
         .flex_col()
         .gap(10.0)
         .child(tinted_text(
-            move || format!("Time zone:  {}", value("Timezone").unwrap_or_else(|| "unknown".into())),
+            move || {
+                format!(
+                    "Time zone:  {}",
+                    value("Timezone").unwrap_or_else(|| "unknown".into())
+                )
+            },
             ink,
         ))
         .child(tinted_text(

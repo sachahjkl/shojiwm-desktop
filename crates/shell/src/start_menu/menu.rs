@@ -132,9 +132,8 @@ pub(super) fn start_menu(output_name: String) -> Div {
 /// The pane of glass under the whole menu: the outline, the glass with its light rim, and the
 /// colour of the glass chosen in the Control Panel over it.
 fn glass() -> Div {
-    let tint = memo(|| {
-        settings().with(|s| (parse_hex(&s.glass_color), s.glass_color_strength as f32))
-    });
+    let tint =
+        memo(|| settings().with(|s| (parse_hex(&s.glass_color), s.glass_color_strength as f32)));
     div()
         .absolute()
         .left(0.0)
@@ -160,7 +159,10 @@ fn glass() -> Div {
                         (1.0, c.start_glass_bottom),
                     ])
                 })
-                .dyn_style(|s| s.rounded(menu_radius()).border_color(scheme().start_glass_highlight)),
+                .dyn_style(|s| {
+                    s.rounded(menu_radius())
+                        .border_color(scheme().start_glass_highlight)
+                }),
         )
         .child(div().absolute().inset(1.0).dyn_style(move |s| {
             let s = s.rounded(menu_radius());
@@ -216,7 +218,10 @@ fn programs(menu: Menu) -> Div {
                 .flex_col()
                 .justify_between()
                 .mb(4.0)
-                .dyn_style(|s| s.mx(theme().menu_padding).h(super::row_height() + DIVIDER_ROOM))
+                .dyn_style(|s| {
+                    s.mx(theme().menu_padding)
+                        .h(super::row_height() + DIVIDER_ROOM)
+                })
                 .child(
                     div()
                         .mt(4.0)
@@ -241,7 +246,11 @@ fn programs(menu: Menu) -> Div {
                     )
                     .on_click(move |_| {
                         page.update(|p| {
-                            *p = if *p == Page::All { Page::Home } else { Page::All }
+                            *p = if *p == Page::All {
+                                Page::Home
+                            } else {
+                                Page::All
+                            }
                         });
                         open_folder.set(String::new());
                     }),
@@ -335,7 +344,12 @@ fn home_list(menu: Menu) -> View {
                 .h(DIVIDER_ROOM)
                 .flex()
                 .items_center()
-                .child(div().flex_1().h(1.0).dyn_style(|s| s.bg(scheme().menu_divider)))
+                .child(
+                    div()
+                        .flex_1()
+                        .h(1.0)
+                        .dyn_style(|s| s.bg(scheme().menu_divider)),
+                )
         });
         let pinned_rows: Vec<Div> = pinned
             .into_iter()
@@ -387,7 +401,11 @@ fn folder_list(open_folder: Signal<String>) -> View {
                         let name = name.clone();
                         move |_| {
                             open_folder.update(|o| {
-                                *o = if *o == name { String::new() } else { name.clone() }
+                                *o = if *o == name {
+                                    String::new()
+                                } else {
+                                    name.clone()
+                                }
                             })
                         }
                     });
@@ -490,7 +508,11 @@ fn search_box(menu: Menu) -> Div {
                 .h(t.menu_search_height)
                 .rounded(field_radius())
                 .bg(c.field)
-                .border_color(if focused.get() { c.field_focus } else { c.field_border })
+                .border_color(if focused.get() {
+                    c.field_focus
+                } else {
+                    c.field_border
+                })
         })
         .child(
             img(asset("search.svg"))
@@ -531,7 +553,13 @@ fn avatar(menu: Menu) -> Div {
     });
     let fade = untrack(|| motion(theme().fade));
     let place_shown = follow(
-        move || if hovered.with(|h| !h.is_empty()) { 1.0f32 } else { 0.0 },
+        move || {
+            if hovered.with(|h| !h.is_empty()) {
+                1.0f32
+            } else {
+                0.0
+            }
+        },
         Transition::ms(fade).ease_out(),
     );
     let tile_size = untrack(|| theme().menu_tile_size);
@@ -560,7 +588,11 @@ fn avatar(menu: Menu) -> Div {
             .inset(0.0)
             .dyn_style(move |s| {
                 let shown = place_shown.get().clamp(0.0, 1.0);
-                if last.with(|l| l.is_empty()) { s.hidden() } else { s.opacity(shown) }
+                if last.with(|l| l.is_empty()) {
+                    s.hidden()
+                } else {
+                    s.opacity(shown)
+                }
             }),
         )
 }

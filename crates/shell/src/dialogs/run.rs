@@ -279,7 +279,11 @@ pub fn view() -> Div {
         .left(MARGIN)
         .dyn_style(|s| {
             let away = theme().taskbar_height + MARGIN;
-            if bar_at_top() { s.top(away) } else { s.bottom(away) }
+            if bar_at_top() {
+                s.top(away)
+            } else {
+                s.bottom(away)
+            }
         })
         // A press in the window keeps it, and closes the list.
         .on_pointer_down(move |e| {
@@ -357,7 +361,9 @@ fn open_row(state: State, last_length: Rc<Cell<usize>>, accept: Rc<dyn Fn()>) ->
                 }
                 Key::Named(NamedKey::ArrowDown) => {
                     if open {
-                        state.pick.update(|p| *p = (*p + 1).min(count.saturating_sub(1)));
+                        state
+                            .pick
+                            .update(|p| *p = (*p + 1).min(count.saturating_sub(1)));
                     } else {
                         state.pick.set(0);
                         state.list_open.set(count > 0);
@@ -386,7 +392,11 @@ fn open_row(state: State, last_length: Rc<Cell<usize>>, accept: Rc<dyn Fn()>) ->
         })
         .dyn_style(move |s| {
             if arrow_ui.hovered() || state.list_open.get() {
-                s.bg(if dark_look() { ARROW_HOT_DARK } else { ARROW_HOT_LIGHT })
+                s.bg(if dark_look() {
+                    ARROW_HOT_DARK
+                } else {
+                    ARROW_HOT_LIGHT
+                })
             } else {
                 s.bg(Color::TRANSPARENT)
             }
@@ -511,7 +521,11 @@ fn not_found_line(state: State) -> Div {
             let shown = state.not_found.with(|missing| {
                 !missing.is_empty() && state.typed.with(|typed| typed.trim() == missing.as_str())
             });
-            let s = s.text_color(if dark_look() { NOT_FOUND_DARK } else { NOT_FOUND_LIGHT });
+            let s = s.text_color(if dark_look() {
+                NOT_FOUND_DARK
+            } else {
+                NOT_FOUND_LIGHT
+            });
             if shown { s } else { s.hidden() }
         })
         .child(text(move || {

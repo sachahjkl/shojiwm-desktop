@@ -178,7 +178,9 @@ pub fn authenticate(user: &str, password: String) -> Result<(), Refused> {
                 Err(Refused::Other(if text.is_null() {
                     format!("PAM error {other}")
                 } else {
-                    unsafe { CStr::from_ptr(text) }.to_string_lossy().into_owned()
+                    unsafe { CStr::from_ptr(text) }
+                        .to_string_lossy()
+                        .into_owned()
                 }))
             }
         };

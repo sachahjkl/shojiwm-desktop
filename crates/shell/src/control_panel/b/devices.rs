@@ -109,7 +109,9 @@ pub fn page() -> Div {
             sub_heading(format!("Devices ({count})"))
         }))
         .child(dyn_view(move || {
-            let computer = crate::paths::asset("icons/computer.png").display().to_string();
+            let computer = crate::paths::asset("icons/computer.png")
+                .display()
+                .to_string();
             let mut tiles = vec![tile("Computer".into(), String::new(), computer, false)];
             for output in outputs() {
                 // Some screens do not say their model.
@@ -122,7 +124,12 @@ pub fn page() -> Div {
                     "{} · {} × {}",
                     output.name, output.logical_size.width, output.logical_size.height
                 );
-                tiles.push(tile(label, detail, icon_or("video-display", "computer"), false));
+                tiles.push(tile(
+                    label,
+                    detail,
+                    icon_or("video-display", "computer"),
+                    false,
+                ));
             }
             for name in devices.with(|d| d.usb.clone()) {
                 let icon = icon_for(&name);

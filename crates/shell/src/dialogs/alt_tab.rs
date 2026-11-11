@@ -53,7 +53,11 @@ fn parse(payload: &Value) -> Option<Panel> {
             x: number(c, "x"),
             y: number(c, "y"),
             width: number(c, "width"),
-            title: c.get("title").and_then(Value::as_str).unwrap_or("").to_owned(),
+            title: c
+                .get("title")
+                .and_then(Value::as_str)
+                .unwrap_or("")
+                .to_owned(),
         })
         .collect();
     Some(Panel {
@@ -77,18 +81,22 @@ pub(super) fn shown_on(output_name: &str) -> bool {
 
 /// The titles of the panel on the output named `output_name`.
 pub(super) fn view(output_name: String) -> Div {
-    div().size_full().relative().select_none().child(dyn_view(move || {
-        let Some(now) = panel().get().filter(|p| p.output == output_name) else {
-            return div();
-        };
-        let titles: Vec<Div> = now
-            .cells
-            .into_iter()
-            .enumerate()
-            .map(|(i, cell)| title(cell, now.title_height, i == now.selected))
-            .collect();
-        div().absolute().inset(0.0).children(titles)
-    }))
+    div()
+        .size_full()
+        .relative()
+        .select_none()
+        .child(dyn_view(move || {
+            let Some(now) = panel().get().filter(|p| p.output == output_name) else {
+                return div();
+            };
+            let titles: Vec<Div> = now
+                .cells
+                .into_iter()
+                .enumerate()
+                .map(|(i, cell)| title(cell, now.title_height, i == now.selected))
+                .collect();
+            div().absolute().inset(0.0).children(titles)
+        }))
 }
 
 /// A title in its cell: centred, in white with a dark line round its letters, bold for the
@@ -118,7 +126,11 @@ fn title(cell: Cell, height: f32, selected: bool) -> Div {
         .h(height)
         .dyn_style(move |s| {
             let s = s.font_family(font()).text_size(theme().font_size);
-            if selected { s.font_weight(FontWeight::BOLD) } else { s }
+            if selected {
+                s.font_weight(FontWeight::BOLD)
+            } else {
+                s
+            }
         })
         .child(layer(-1.0, 0.0, TITLE_OUTLINE))
         .child(layer(1.0, 0.0, TITLE_OUTLINE))

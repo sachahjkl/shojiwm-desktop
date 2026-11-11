@@ -75,7 +75,9 @@ fn answer(call: Call) {
     let (target, function, rest) = match call.args.as_slice() {
         [target, function, rest @ ..] => (target.clone(), function.clone(), rest.to_vec()),
         _ => {
-            let _ = call.reply.send("error usage: msg <target> <function> [args]".into());
+            let _ = call
+                .reply
+                .send("error usage: msg <target> <function> [args]".into());
             return;
         }
     };
@@ -96,14 +98,20 @@ pub fn serve() {
     // Someone else listening means another shell is running; a file with no one behind it is
     // left over from one that died.
     if UnixStream::connect(&path).is_ok() {
-        eprintln!("shojiwm-shell: another one is running at {}", path.display());
+        eprintln!(
+            "shojiwm-shell: another one is running at {}",
+            path.display()
+        );
         return;
     }
     let _ = std::fs::remove_file(&path);
     let listener = match UnixListener::bind(&path) {
         Ok(l) => l,
         Err(e) => {
-            eprintln!("shojiwm-shell: no command socket at {}: {e}", path.display());
+            eprintln!(
+                "shojiwm-shell: no command socket at {}: {e}",
+                path.display()
+            );
             return;
         }
     };

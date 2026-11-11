@@ -37,9 +37,14 @@ enum Primary {
 fn primary() -> Option<Primary> {
     let net = network();
     if let Some(w) = net.wired().filter(|w| w.connected) {
-        return Some(Primary::Wired { interface: w.interface });
+        return Some(Primary::Wired {
+            interface: w.interface,
+        });
     }
-    net.wifi().map(|ap| Primary::Wifi { ssid: ap.ssid, strength: ap.strength })
+    net.wifi().map(|ap| Primary::Wifi {
+        ssid: ap.ssid,
+        strength: ap.strength,
+    })
 }
 
 fn primary_name(p: &Primary) -> String {
@@ -53,7 +58,10 @@ fn primary_name(p: &Primary) -> String {
 /// a `wireless` directory in sysfs. NetworkManager's service does not tell it.
 fn has_wifi() -> bool {
     std::fs::read_dir("/sys/class/net")
-        .map(|dir| dir.flatten().any(|entry| entry.path().join("wireless").exists()))
+        .map(|dir| {
+            dir.flatten()
+                .any(|entry| entry.path().join("wireless").exists())
+        })
         .unwrap_or(false)
 }
 
@@ -115,12 +123,11 @@ pub fn icon(output_name: &str) -> Div {
     };
     let opener = name.clone();
     let lines_name = name.clone();
-    let picture = bar_picture(move || asset(&format!("{}.svg", glyph(wifi_device))), 2.0).child(
-        badge(
+    let picture =
+        bar_picture(move || asset(&format!("{}.svg", glyph(wifi_device))), 2.0).child(badge(
             || asset(&format!("network-badge-{}.svg", badge_name())),
             || !badge_name().is_empty(),
-        ),
-    );
+        ));
     let cell = bar_cell(icon_width, 2.0, active)
         .node_ref(anchor)
         .child(picture)
@@ -150,17 +157,21 @@ pub fn icon(output_name: &str) -> Div {
             },
         ))
         .child(panel_popup(&name, Panel::Network, Align::Center, panel));
-    shell_tooltip(cell, untrack(|| away_from_bar(Align::Center)), || match primary() {
-        Some(p) => {
-            let access = if network().connectivity() == Connectivity::Full {
-                "Internet access"
-            } else {
-                "No Internet access"
-            };
-            format!("{}\n{access}", primary_name(&p))
-        }
-        None => "Not connected".into(),
-    })
+    shell_tooltip(
+        cell,
+        untrack(|| away_from_bar(Align::Center)),
+        || match primary() {
+            Some(p) => {
+                let access = if network().connectivity() == Connectivity::Full {
+                    "Internet access"
+                } else {
+                    "No Internet access"
+                };
+                format!("{}\n{access}", primary_name(&p))
+            }
+            None => "Not connected".into(),
+        },
+    )
 }
 
 /// What the panel keeps while it is open: the unfolded network, the key typed for it, the
@@ -278,15 +289,11 @@ fn panel() -> Div {
             true,
             move || set_wifi(!untrack(|| wifi_on.get())),
         ));
-    let list = div()
-        .flex()
-        .flex_col()
-        .gap(1.0)
-        .child(for_each(
-            || network().access_points(),
-            |ap: &AccessPoint| ap.ssid.clone(),
-            move |ap: AccessPoint| network_row(state, ap.ssid),
-        ));
+    let list = div().flex().flex_col().gap(1.0).child(for_each(
+        || network().access_points(),
+        |ap: &AccessPoint| ap.ssid.clone(),
+        move |ap: AccessPoint| network_row(state, ap.ssid),
+    ));
     let wireless = div()
         .flex()
         .flex_col()
@@ -331,14 +338,22 @@ fn network_row(state: PanelState, ssid: String) -> Div {
     let ui = Interaction::new();
     let found = {
         let ssid = ssid.clone();
-        memo(move || network().access_points().into_iter().find(|ap| ap.ssid == ssid))
+        memo(move || {
+            network()
+                .access_points()
+                .into_iter()
+                .find(|ap| ap.ssid == ssid)
+        })
     };
     let unfolded = {
         let ssid = ssid.clone();
         memo(move || state.unfolded.with(|u| *u == ssid))
     };
     let asks_key = memo(move || {
-        found.with(|ap| ap.as_ref().is_some_and(|ap| secure(ap) && !ap.known && !ap.active))
+        found.with(|ap| {
+            ap.as_ref()
+                .is_some_and(|ap| secure(ap) && !ap.known && !ap.active)
+        })
     });
     let active = memo(move || found.with(|ap| ap.as_ref().is_some_and(|ap| ap.active)));
     let fold = ssid.clone();
@@ -350,19 +365,25 @@ fn network_row(state: PanelState, ssid: String) -> Div {
         .h(30.0)
         .px(8.0)
         .child(
-            one_line(body_text(ssid.clone(), || scheme().text).dyn_style(move |s| {
-                if active.get() { s.font_weight(FontWeight::BOLD) } else { s }
-            }))
+            one_line(
+                body_text(ssid.clone(), || scheme().text).dyn_style(move |s| {
+                    if active.get() {
+                        s.font_weight(FontWeight::BOLD)
+                    } else {
+                        s
+                    }
+                }),
+            )
             .flex_1(),
         )
-        .child(
-            text("\u{1F512}")
-                .text_size(10.0)
-                .dyn_style(move |s| {
-                    let s = s.text_color(scheme().text_muted);
-                    if found.with(|ap| ap.as_ref().is_some_and(secure)) { s } else { s.hidden() }
-                }),
-        )
+        .child(text("\u{1F512}").text_size(10.0).dyn_style(move |s| {
+            let s = s.text_color(scheme().text_muted);
+            if found.with(|ap| ap.as_ref().is_some_and(secure)) {
+                s
+            } else {
+                s.hidden()
+            }
+        }))
         .child(
             img(move || {
                 let strength = found.with(|ap| ap.as_ref().map_or(0, |ap| ap.strength));
@@ -413,8 +434,13 @@ fn network_row(state: PanelState, ssid: String) -> Div {
                 })
                 .flex_1(),
         );
-    let error = small_text(move || state.error.get(), || ERROR_RED)
-        .dyn_style(move |s| if state.error.with(String::is_empty) { s.hidden() } else { s });
+    let error = small_text(move || state.error.get(), || ERROR_RED).dyn_style(move |s| {
+        if state.error.with(String::is_empty) {
+            s.hidden()
+        } else {
+            s
+        }
+    });
     let button = div()
         .flex()
         .flex_row()
@@ -457,7 +483,9 @@ fn network_row(state: PanelState, ssid: String) -> Div {
             let open = state.unfolded.with_untracked(|u| *u == fold);
             state.error.set(String::new());
             state.key.set(String::new());
-            state.unfolded.set(if open { String::new() } else { fold.clone() });
+            state
+                .unfolded
+                .set(if open { String::new() } else { fold.clone() });
         })
         .dyn_style(move |s| lit_row_style(s, unfolded.get(), ui))
         .child(head)

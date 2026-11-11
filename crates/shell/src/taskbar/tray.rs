@@ -51,7 +51,11 @@ const OVERFLOW_GAP: f32 = 6.0;
 /// The programs' items, but blueman's: the shell draws its own Bluetooth icon and panel when
 /// there is an adapter, and its applet keeps running only for its pairing agent.
 fn items() -> Vec<TrayItem> {
-    tray().items().into_iter().filter(|i| i.id != "blueman").collect()
+    tray()
+        .items()
+        .into_iter()
+        .filter(|i| i.id != "blueman")
+        .collect()
 }
 
 /// Whether an item shows on the taskbar, or only in the popover of hidden icons: the choice made
@@ -106,14 +110,25 @@ fn shown_items() -> Vec<TrayItem> {
         .into_iter()
         .filter(|i| tray_visible(&i.id))
         .enumerate()
-        .map(|(natural, i)| (order.iter().position(|o| *o == i.id).unwrap_or(order.len() + natural), i))
+        .map(|(natural, i)| {
+            (
+                order
+                    .iter()
+                    .position(|o| *o == i.id)
+                    .unwrap_or(order.len() + natural),
+                i,
+            )
+        })
         .collect();
     ranked.sort_by_key(|(rank, _)| *rank);
     ranked.into_iter().map(|(_, i)| i).collect()
 }
 
 fn hidden_items() -> Vec<TrayItem> {
-    items().into_iter().filter(|i| !tray_visible(&i.id)).collect()
+    items()
+        .into_iter()
+        .filter(|i| !tray_visible(&i.id))
+        .collect()
 }
 
 /// The room an icon takes in the row.
@@ -130,7 +145,9 @@ fn index_at(bar: &Bar, e: &DropEvent, count: usize) -> usize {
     let local = (x - row.x).clamp(0.0, row.width.max(0.0));
     let slot = untrack(slot);
     let half = (slot - ROW_GAP) / 2.0;
-    (0..count).find(|i| local < *i as f32 * slot + half).unwrap_or(count)
+    (0..count)
+        .find(|i| local < *i as f32 * slot + half)
+        .unwrap_or(count)
 }
 
 /// The bar takes a notification-area icon dropped anywhere on it: on the icons, at that place
@@ -141,7 +158,8 @@ pub(super) fn take_drops(target: Div, bar: Bar) -> Div {
     target
         .on_drag_over::<TrayDrag>(move |drag, e| {
             let count = untrack(shown_items).len();
-            over.tray_drop.set(Some((drag.0.clone(), index_at(&over, e, count))));
+            over.tray_drop
+                .set(Some((drag.0.clone(), index_at(&over, e, count))));
         })
         .on_drag_hover(move |inside| {
             if !inside {
@@ -202,7 +220,10 @@ pub(super) fn area(bar: Bar) -> Div {
         if preview_from.get().is_some() {
             return None;
         }
-        items().into_iter().find(|i| i.id == id).map(|i| (i.key(), before))
+        items()
+            .into_iter()
+            .find(|i| i.id == id)
+            .map(|i| (i.key(), before))
     });
     let ghost = div()
         .absolute()
@@ -223,7 +244,10 @@ pub(super) fn area(bar: Bar) -> Div {
         })
         .child(dyn_view(move || {
             let (key, _) = incoming.get()?;
-            Some(picture(move || items().into_iter().find(|i| i.key() == key), untrack(|| theme().tray_icon_size)))
+            Some(picture(
+                move || items().into_iter().find(|i| i.key() == key),
+                untrack(|| theme().tray_icon_size),
+            ))
         }));
     let icons = div()
         .relative()
@@ -233,24 +257,20 @@ pub(super) fn area(bar: Bar) -> Div {
         .gap(ROW_GAP)
         .node_ref(bar.tray_row)
         .child(ghost)
-        .child(for_each(
-            move || shown.get(),
-            |item| item.key(),
-            {
-                let bar = bar.clone();
-                move |item: TrayItem| {
-                    let key = item.key();
-                    let index = memo(move || shown.with(|s| s.iter().position(|i| i.key() == key)));
-                    let ghosted = move || index.get().is_some_and(|i| preview_from.get() == Some(i));
-                    tray_icon(bar.clone(), item, true).dyn_style(move |s| {
-                        let shift = index.get().map_or(0.0, shift_of);
-                        s.translate_x(shift)
-                            .opacity(if ghosted() { GHOST_OPACITY } else { 1.0 })
-                            .transition(Transition::ms(motion(theme().hover_in)).ease_out())
-                    })
-                }
-            },
-        ));
+        .child(for_each(move || shown.get(), |item| item.key(), {
+            let bar = bar.clone();
+            move |item: TrayItem| {
+                let key = item.key();
+                let index = memo(move || shown.with(|s| s.iter().position(|i| i.key() == key)));
+                let ghosted = move || index.get().is_some_and(|i| preview_from.get() == Some(i));
+                tray_icon(bar.clone(), item, true).dyn_style(move |s| {
+                    let shift = index.get().map_or(0.0, shift_of);
+                    s.translate_x(shift)
+                        .opacity(if ghosted() { GHOST_OPACITY } else { 1.0 })
+                        .transition(Transition::ms(motion(theme().hover_in)).ease_out())
+                })
+            }
+        }));
     div()
         .flex()
         .flex_row()
@@ -278,22 +298,35 @@ fn arrow(bar: Bar, hidden: Memo<Vec<TrayItem>>) -> Div {
         .dyn_style(move |s| {
             let s = s.h(theme().tray_icon_size + ICON_ROOM);
             // Kept while an icon is dragged, so that there is somewhere to drop the last one.
-            if hidden.with(Vec::is_empty) && !dragging.get() && !over.get() { s.hidden() } else { s }
+            if hidden.with(Vec::is_empty) && !dragging.get() && !over.get() {
+                s.hidden()
+            } else {
+                s
+            }
         })
-        .child(div().absolute().left(0.0).top(0.0).right(0.0).bottom(0.0).bg(HOVER_ON_GLASS).dyn_style(
-            move |s| {
-                let lit = ui.hovered() || open.get() || over.get();
-                s.rounded(item_radius())
-                    .opacity(if lit { 1.0 } else { 0.0 })
-                    .transition(Transition::ms(motion(theme().fade)))
-            },
-        ))
+        .child(
+            div()
+                .absolute()
+                .left(0.0)
+                .top(0.0)
+                .right(0.0)
+                .bottom(0.0)
+                .bg(HOVER_ON_GLASS)
+                .dyn_style(move |s| {
+                    let lit = ui.hovered() || open.get() || over.get();
+                    s.rounded(item_radius())
+                        .opacity(if lit { 1.0 } else { 0.0 })
+                        .transition(Transition::ms(motion(theme().fade)))
+                }),
+        )
         .child(
             div()
                 .relative()
                 .text_size(ARROW_GLYPH_SIZE)
                 .dyn_style(|s| s.text_color(theme().text_on_glass))
-                .child(text(move || if open.get() { "\u{25BC}" } else { "\u{25B2}" })),
+                .child(text(
+                    move || if open.get() { "\u{25BC}" } else { "\u{25B2}" },
+                )),
         )
         .on_click(move |_| {
             let now = !click.overflow_open.get_untracked();
@@ -316,7 +349,8 @@ fn overflow(bar: Bar, hidden: Memo<Vec<TrayItem>>) -> Show {
             let bar = bar.clone();
             let customize = bar.clone();
             let dismiss = bar.clone();
-            let (placement, gap) = untrack(|| (away_from_bar(Align::Center), theme().popup_gap as i32 + 2));
+            let (placement, gap) =
+                untrack(|| (away_from_bar(Align::Center), theme().popup_gap as i32 + 2));
             popup()
                 .placement(placement)
                 .gap(gap)
@@ -346,12 +380,19 @@ fn overflow(bar: Bar, hidden: Memo<Vec<TrayItem>>) -> Show {
                                             .flex()
                                             .items_center()
                                             .justify_center()
-                                            .dyn_style(|s| s.size(theme().tray_icon_size + CELL_ROOM))
+                                            .dyn_style(|s| {
+                                                s.size(theme().tray_icon_size + CELL_ROOM)
+                                            })
                                             .child(tray_icon(bar.clone(), item, false))
                                     },
                                 )),
                         )
-                        .child(div().self_stretch().h(1.0).dyn_style(|s| s.bg(scheme().menu_divider)))
+                        .child(
+                            div()
+                                .self_stretch()
+                                .h(1.0)
+                                .dyn_style(|s| s.bg(scheme().menu_divider)),
+                        )
                         .child(cp_link("Customize...", false, move || {
                             customize.overflow_open.set(false);
                             crate::control_panel::open_page("notifications");
@@ -390,7 +431,10 @@ fn picture(item: impl Fn() -> Option<TrayItem> + 'static, size: f32) -> Div {
             .filter(|n| !n.is_empty())
             .and_then(|n| named_icon(n, icon.theme_path.as_deref(), pixels));
         Some(match (named, icon.best(pixels)) {
-            (Some(file), _) => img(file).size(size).object_fit(ObjectFit::Contain).into_view(),
+            (Some(file), _) => img(file)
+                .size(size)
+                .object_fit(ObjectFit::Contain)
+                .into_view(),
             (None, Some(bitmap)) => bitmap_view(move || Some(bitmap.clone()))
                 .size(size)
                 .object_fit(ObjectFit::Contain)
@@ -422,7 +466,8 @@ fn tray_lines(item: &TrayItem, entries: &[TrayMenuItem]) -> Vec<MenuLine> {
             } else {
                 MenuLine::submenu(m.label.clone(), tray_lines(item, &m.children))
             };
-            line.icon(m.icon_name.clone().unwrap_or_default()).enabled(m.enabled)
+            line.icon(m.icon_name.clone().unwrap_or_default())
+                .enabled(m.enabled)
         })
         .collect()
 }
@@ -462,7 +507,8 @@ fn tray_icon(bar: Bar, item: TrayItem, in_taskbar: bool) -> Div {
             let again = bar.tray_menu.get_untracked().as_deref() == Some(key.as_str());
             bar.preview.set(None);
             bar.jump_list.set(None);
-            bar.tray_menu.set(if again { None } else { Some(key.clone()) });
+            bar.tray_menu
+                .set(if again { None } else { Some(key.clone()) });
         }
     };
     // The item was used: a popover holding it closes.
@@ -488,17 +534,31 @@ fn tray_icon(bar: Bar, item: TrayItem, in_taskbar: bool) -> Div {
         .node_ref(anchor)
         .interaction(ui)
         .dyn_style(|s| s.size(theme().tray_icon_size + ICON_ROOM))
-        .child(div().absolute().left(0.0).top(0.0).right(0.0).bottom(0.0).dyn_style(move |s| {
-            let band = if in_taskbar { HOVER_ON_GLASS } else { scheme().selection };
-            s.rounded(item_radius())
-                .bg(band)
-                .opacity(if ui.hovered() { 1.0 } else { 0.0 })
-                .transition(Transition::ms(motion(theme().fade)))
-        }))
+        .child(
+            div()
+                .absolute()
+                .left(0.0)
+                .top(0.0)
+                .right(0.0)
+                .bottom(0.0)
+                .dyn_style(move |s| {
+                    let band = if in_taskbar {
+                        HOVER_ON_GLASS
+                    } else {
+                        scheme().selection
+                    };
+                    s.rounded(item_radius())
+                        .bg(band)
+                        .opacity(if ui.hovered() { 1.0 } else { 0.0 })
+                        .transition(Transition::ms(motion(theme().fade)))
+                }),
+        )
         .child(picture(move || now.get(), size).relative())
         // A platform drag, so that it can leave the taskbar: dropped where nothing takes it, an
         // icon of the taskbar goes to the popover.
-        .draggable(move || DragData::new(TrayDrag(drag_id.clone())).data(TRAY_MIME, drag_id.as_bytes().to_vec()))
+        .draggable(move || {
+            DragData::new(TrayDrag(drag_id.clone())).data(TRAY_MIME, drag_id.as_bytes().to_vec())
+        })
         .on_drag_end(move |result| {
             if in_taskbar && result == DragResult::Cancelled {
                 let id = id.clone();

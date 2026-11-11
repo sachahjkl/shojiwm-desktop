@@ -18,11 +18,16 @@ use std::sync::mpsc::{Sender, channel};
 
 /// What the greeter asks greetd.
 pub enum Request {
-    CreateSession { username: String },
+    CreateSession {
+        username: String,
+    },
     /// The answer to an `auth_message`: what was typed for a question, nothing for
     /// information.
     Respond(Option<String>),
-    StartSession { cmd: Vec<String>, env: Vec<String> },
+    StartSession {
+        cmd: Vec<String>,
+        env: Vec<String>,
+    },
     CancelSession,
 }
 
@@ -40,9 +45,15 @@ pub enum AuthKind {
 /// What greetd answers.
 pub enum Response {
     Success,
-    AuthMessage { kind: AuthKind, text: String },
+    AuthMessage {
+        kind: AuthKind,
+        text: String,
+    },
     /// `auth`: the password or the answer was wrong; otherwise something else went wrong.
-    Error { auth: bool, description: String },
+    Error {
+        auth: bool,
+        description: String,
+    },
 }
 
 impl Request {
@@ -126,12 +137,11 @@ impl Greetd {
             .name("shojiwm-shell greetd".into())
             .spawn(move || {
                 for request in received {
-                    let response = exchange(&mut stream, &request).unwrap_or_else(|e| {
-                        Response::Error {
+                    let response =
+                        exchange(&mut stream, &request).unwrap_or_else(|e| Response::Error {
                             auth: false,
                             description: e,
-                        }
-                    });
+                        });
                     to_ui.send(response);
                 }
             })

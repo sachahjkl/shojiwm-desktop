@@ -13,7 +13,7 @@ use std::cell::Cell;
 use std::collections::HashMap;
 
 /// What a program shows on its button.
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, Default)]
 pub struct LauncherEntry {
     /// From 0 to 1, or `None` for no progress.
     pub progress: Option<f64>,
@@ -21,12 +21,6 @@ pub struct LauncherEntry {
     pub count: Option<i64>,
     /// The program asks to be looked at.
     pub urgent: bool,
-}
-
-impl Default for LauncherEntry {
-    fn default() -> Self {
-        Self { progress: None, count: None, urgent: false }
-    }
 }
 
 thread_local! {
@@ -82,7 +76,9 @@ fn update(entries: Signal<HashMap<String, LauncherEntry>>, line: &str) {
     };
     let id = app.trim_start_matches("application://").to_owned();
     let value = |key: &str| props.get(key).and_then(|p| p.get("data"));
-    let old = entries.with_untracked(|e| e.get(&id).copied()).unwrap_or_default();
+    let old = entries
+        .with_untracked(|e| e.get(&id).copied())
+        .unwrap_or_default();
     let mut next = old;
     let progress_visible = value("progress-visible").and_then(Value::as_bool);
     let progress = value("progress").and_then(Value::as_f64);

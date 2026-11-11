@@ -39,7 +39,11 @@ pub fn open(output: Output) {
     // The keyboard stays with the desktop while an icon is renamed or a note is typed in.
     let holds = memo(move || desk.rename_key.with(|k| !k.is_empty()) || notes::editing());
     effect(move || {
-        layer.set_keyboard(if holds.get() { Keyboard::Exclusive } else { Keyboard::OnDemand });
+        layer.set_keyboard(if holds.get() {
+            Keyboard::Exclusive
+        } else {
+            Keyboard::OnDemand
+        });
     });
 
     let menu_open = memo(move || desk.menu.with(Option::is_some));
@@ -119,8 +123,10 @@ fn view(desk: Desk) -> Div {
         })
         .on_drop_files(move |paths, e| {
             let (x, y) = logical(e.position);
-            let paths: Vec<String> =
-                paths.iter().map(|p| p.to_string_lossy().into_owned()).collect();
+            let paths: Vec<String> = paths
+                .iter()
+                .map(|p| p.to_string_lossy().into_owned())
+                .collect();
             desk.drop_files(&paths, x, y, e.action == DragAction::Copy);
         })
         .on_drag_over(move |_: &IconDrag, e: &DropEvent| {
@@ -150,7 +156,9 @@ fn menu_layer(desk: Desk) -> Div {
         move || desk.close_menu(),
         // Inside this layer, which takes every press around the menu: no grab, which the layer
         // could not make anyway, never having had a press of its own.
-        MenuOptions::new().at(desk.menu_rect).kind(PopupKind::Bubble),
+        MenuOptions::new()
+            .at(desk.menu_rect)
+            .kind(PopupKind::Bubble),
         move || desk.menu_lines(),
     ))
 }

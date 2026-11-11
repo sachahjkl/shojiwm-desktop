@@ -28,11 +28,29 @@ pub struct Locale {
     pub first_weekday: u8,
 }
 
-const DAYS: [&str; 7] = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+const DAYS: [&str; 7] = [
+    "Sunday",
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+];
 const SHORT_DAYS: [&str; 7] = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MONTHS: [&str; 12] = [
-    "January", "February", "March", "April", "May", "June", "July", "August", "September",
-    "October", "November", "December",
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
 ];
 
 /// Whether the environment chose no language (`LC_ALL`, `LC_TIME`, then `LANG`).
@@ -88,7 +106,9 @@ pub fn install() {
         let mut l = Locale::default();
         let list = |v: &str| -> Vec<String> { v.split(';').map(String::from).collect() };
         for line in &lines {
-            let Some((key, value)) = line.split_once('=') else { continue };
+            let Some((key, value)) = line.split_once('=') else {
+                continue;
+            };
             let value = value.trim().trim_matches('"');
             match key.trim() {
                 "day" if list(value).len() == 7 => l.day_names = list(value),
@@ -150,7 +170,11 @@ pub fn plain_date(t: &LocalTime) -> String {
 /// locale's short date (month first, or day first).
 pub fn long_date(t: &LocalTime) -> String {
     let l = locale();
-    let day = l.day_names.get(t.weekday as usize).cloned().unwrap_or_default();
+    let day = l
+        .day_names
+        .get(t.weekday as usize)
+        .cloned()
+        .unwrap_or_default();
     let month = l
         .month_names
         .get(t.month.saturating_sub(1) as usize)

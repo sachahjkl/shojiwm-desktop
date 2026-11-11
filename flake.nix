@@ -276,6 +276,7 @@
     }:
       import ./nix/greeter.nix {
         package = self.packages.${pkgs.stdenv.hostPlatform.system}.default;
+        inherit (self.packages.${pkgs.stdenv.hostPlatform.system}) shell;
       } {inherit config lib pkgs;};
 
     checks = forAllSystems (system: let
@@ -303,6 +304,22 @@
 
       # The shell on AntiWebUI builds.
       inherit (self.packages.${system}) shell;
+
+      # The shell's Rust: clippy without warnings, and rustfmt's layout.
+      shell-lint = self.packages.${system}.shell.overrideAttrs (old: {
+        pname = "shojiwm-shell-lint";
+        nativeBuildInputs = old.nativeBuildInputs ++ [pkgs.clippy pkgs.rustfmt];
+        buildPhase = ''
+          runHook preBuild
+          cargo fmt --check
+          cargo clippy --all-targets --offline -- -D warnings
+          runHook postBuild
+        '';
+        doCheck = false;
+        installPhase = "touch $out";
+        postInstall = "";
+        postFixup = "";
+      });
 
       # The portal's Rust: clippy without warnings, and rustfmt's layout.
       portal-lint = portal.overrideAttrs (old: {

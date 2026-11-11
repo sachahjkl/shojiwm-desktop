@@ -3,8 +3,8 @@
 //! device at the top, a vertical slider, the mute button, and the link to the mixer.
 
 use super::{
-    Panel, bar_cell, bar_picture, footer, icon_width, is_open, lit_row_style, one_line,
-    panel_link, panel_popup, small_text, toggle, wheel_steps,
+    Panel, bar_cell, bar_picture, footer, icon_width, is_open, lit_row_style, one_line, panel_link,
+    panel_popup, small_text, toggle, wheel_steps,
 };
 use crate::paths::asset;
 use crate::theme::{Align, away_from_bar, button_radius, corner, scheme, theme};
@@ -146,7 +146,10 @@ pub fn icon(output_name: &str) -> Div {
     let wheel_name = name.clone();
     let cell = bar_cell(icon_width, 2.0, active)
         .node_ref(anchor)
-        .child(bar_picture(|| asset(&format!("speaker-{}.svg", level())), 2.0))
+        .child(bar_picture(
+            || asset(&format!("speaker-{}.svg", level())),
+            2.0,
+        ))
         .on_click(move |_| {
             set_devices_open(false);
             toggle(&opener, Panel::Volume);
@@ -180,7 +183,9 @@ pub fn icon(output_name: &str) -> Div {
                         super::open(&name, Panel::Volume);
                         set_devices_open(true);
                     }),
-                    MenuLine::item("Mute", toggle_mute).checked(muted()).enabled(ready()),
+                    MenuLine::item("Mute", toggle_mute)
+                        .checked(muted())
+                        .enabled(ready()),
                     MenuLine::separator(),
                     MenuLine::item("Sound settings", || {
                         crate::control_panel::open_page("sound");
@@ -190,7 +195,11 @@ pub fn icon(output_name: &str) -> Div {
         ))
         .child(panel_popup(&name, Panel::Volume, Align::Center, panel));
     shell_tooltip(cell, untrack(|| away_from_bar(Align::Center)), || {
-        let state = if muted() { "Muted".to_owned() } else { format!("{}%", percent()) };
+        let state = if muted() {
+            "Muted".to_owned()
+        } else {
+            format!("{}%", percent())
+        };
         format!("{}: {state}", device_name())
     })
 }
@@ -202,7 +211,13 @@ fn panel() -> Div {
     let has_player = memo(|| media().current().is_some());
     let devices_open = devices_open_signal();
     popup_frame()
-        .dyn_style(move |s| s.w(if has_player.get() || devices_open.get() { WIDE } else { NARROW }))
+        .dyn_style(move |s| {
+            s.w(if has_player.get() || devices_open.get() {
+                WIDE
+            } else {
+                NARROW
+            })
+        })
         .child(
             div()
                 .flex()
@@ -218,7 +233,11 @@ fn panel() -> Div {
                         .dyn_style(move |s| if has_player.get() { s } else { s.hidden() })
                         .child(crate::taskbar::media_controls()),
                 )
-                .child(img(|| ink_asset("speaker-3.svg")).size(32.0).object_fit(ObjectFit::Contain))
+                .child(
+                    img(|| ink_asset("speaker-3.svg"))
+                        .size(32.0)
+                        .object_fit(ObjectFit::Contain),
+                )
                 .child(device_line())
                 .child(show(move || devices_open.get(), device_list))
                 .child(slider())
@@ -258,8 +277,16 @@ fn device_line() -> Div {
             let s = s
                 .font_family(font())
                 .text_size(theme().font_size_small)
-                .text_color(if ui.hovered() { scheme().link } else { scheme().text });
-            let s = if several.get() { s.cursor(CursorIcon::Pointer) } else { s };
+                .text_color(if ui.hovered() {
+                    scheme().link
+                } else {
+                    scheme().text
+                });
+            let s = if several.get() {
+                s.cursor(CursorIcon::Pointer)
+            } else {
+                s
+            };
             if lit { s.underline() } else { s }
         })
         .child(text(move || {
@@ -300,9 +327,15 @@ fn device_list() -> Div {
                         set_devices_open(false);
                     })
                     .dyn_style(move |s| lit_row_style(s, current.get(), ui))
-                    .child(one_line(small_text(label, || scheme().text).dyn_style(move |s| {
-                        if current.get() { s.font_weight(FontWeight::BOLD) } else { s }
-                    })))
+                    .child(one_line(small_text(label, || scheme().text).dyn_style(
+                        move |s| {
+                            if current.get() {
+                                s.font_weight(FontWeight::BOLD)
+                            } else {
+                                s
+                            }
+                        },
+                    )))
             },
         ))
 }
@@ -334,11 +367,22 @@ fn slider() -> Div {
                 .bg(if dark_look() { TRACK_DARK } else { TRACK_LIGHT })
                 .border_color(c.field_border)
         })
-        .child(div().absolute().left(0.0).right(0.0).bottom(0.0).dyn_style(move |s| {
-            s.h((TRACK_SPAN * fraction.get()).max(0.0))
-                .rounded(corner(1.0))
-                .bg(if muted() { scheme().placeholder } else { LEVEL_GREEN })
-        }));
+        .child(
+            div()
+                .absolute()
+                .left(0.0)
+                .right(0.0)
+                .bottom(0.0)
+                .dyn_style(move |s| {
+                    s.h((TRACK_SPAN * fraction.get()).max(0.0))
+                        .rounded(corner(1.0))
+                        .bg(if muted() {
+                            scheme().placeholder
+                        } else {
+                            LEVEL_GREEN
+                        })
+                }),
+        );
     let thumb = div()
         .absolute()
         .left(4.0)
@@ -359,7 +403,11 @@ fn slider() -> Div {
             let c = scheme();
             s.top(1.0 + TRACK_SPAN * (1.0 - fraction.get()))
                 .rounded(corner(2.0))
-                .border_color(if ui.hovered() || ui.pressed() { c.field_focus } else { c.field_border })
+                .border_color(if ui.hovered() || ui.pressed() {
+                    c.field_focus
+                } else {
+                    c.field_border
+                })
         });
     div()
         .relative()

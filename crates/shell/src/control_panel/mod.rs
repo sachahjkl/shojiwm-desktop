@@ -16,7 +16,9 @@ pub mod state;
 
 use crate::paths::asset;
 use crate::theme::{field_radius, scheme, theme};
-use crate::ui::{aero_scroll, cp_link, cp_link_tinted, font, section_title_with, vertical_gradient};
+use crate::ui::{
+    aero_scroll, cp_link, cp_link_tinted, font, section_title_with, vertical_gradient,
+};
 use anti_webui::prelude::*;
 
 /// The window's title. The taskbar knows the Control Panel's window by it.
@@ -114,9 +116,13 @@ pub fn heading_text(label: impl IntoTextSource) -> Div {
 /// The title of a part of a page: the theme's section title in the page heading colour, 2 px
 /// over the text, with room above it.
 pub fn sub_heading(label: impl Into<String>) -> Div {
-    section_title_with(label.into(), || scheme().page_heading, || theme().calendar_today)
-        .pt(10.0)
-        .dyn_style(|s| s.text_size(theme().font_size + 2.0))
+    section_title_with(
+        label.into(),
+        || scheme().page_heading,
+        || theme().calendar_today,
+    )
+    .pt(10.0)
+    .dyn_style(|s| s.text_size(theme().font_size + 2.0))
 }
 
 /// A line of explanation, in the muted text colour. It wraps.
@@ -266,7 +272,11 @@ fn back_button() -> Div {
             }
         })
         .fill(move || {
-            let top = if ui.hovered() && !on_home() { BACK_TOP_HOT } else { BACK_TOP };
+            let top = if ui.hovered() && !on_home() {
+                BACK_TOP_HOT
+            } else {
+                BACK_TOP
+            };
             vertical_gradient(&[(0.0, top), (1.0, BACK_BOTTOM)])
         })
         .dyn_style(|s| s.opacity(if on_home() { BACK_IDLE_OPACITY } else { 1.0 }))
@@ -299,7 +309,9 @@ fn path_box() -> Div {
         .whitespace_nowrap()
         .dyn_style(|s| {
             let c = scheme();
-            s.rounded(field_radius()).bg(c.field).border_color(c.field_border)
+            s.rounded(field_radius())
+                .bg(c.field)
+                .border_color(c.field_border)
         })
         .child(
             img(asset("icons/control-panel.png"))
@@ -307,7 +319,12 @@ fn path_box() -> Div {
                 .size(16.0)
                 .object_fit(ObjectFit::Contain),
         )
-        .child(cp_link_tinted(TITLE, false, || scheme().text, || state::go("home")))
+        .child(cp_link_tinted(
+            TITLE,
+            false,
+            || scheme().text,
+            || state::go("home"),
+        ))
         .child(
             div()
                 .flex_none()
@@ -355,11 +372,13 @@ fn search_box() -> Div {
         .pr(6.0)
         .dyn_style(move |s| {
             let c = scheme();
-            s.rounded(field_radius()).bg(c.field).border_color(if focused.get() {
-                c.field_focus
-            } else {
-                c.field_border
-            })
+            s.rounded(field_radius())
+                .bg(c.field)
+                .border_color(if focused.get() {
+                    c.field_focus
+                } else {
+                    c.field_border
+                })
         })
         .child(input)
         .child(

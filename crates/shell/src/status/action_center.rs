@@ -90,7 +90,11 @@ fn parse(lines: &[String]) -> Vec<Issue> {
         match section {
             "system" | "user" => {
                 let user = section == "user";
-                let whose = if user { "A service of yours" } else { "A system service" };
+                let whose = if user {
+                    "A service of yours"
+                } else {
+                    "A system service"
+                };
                 list.push(Issue {
                     error: true,
                     title: format!("{} failed", line.trim_end_matches(".service")),
@@ -101,8 +105,12 @@ fn parse(lines: &[String]) -> Vec<Issue> {
                 });
             }
             "disks" => {
-                let Some((used, mount)) = line.split_once(' ') else { continue };
-                let Ok(used) = used.parse::<u32>() else { continue };
+                let Some((used, mount)) = line.split_once(' ') else {
+                    continue;
+                };
+                let Ok(used) = used.parse::<u32>() else {
+                    continue;
+                };
                 if used >= FULL_PERCENT {
                     list.push(Issue {
                         error: used >= ERROR_PERCENT,
@@ -131,7 +139,10 @@ fn refresh() {
 /// Clears a failed service of the user, so that it is not reported again.
 fn reset_unit(issue: &Issue) {
     let scope = if issue.user { "--user " } else { "" };
-    crate::programs::run(&format!("systemctl {scope}reset-failed {}", shell_quote(&issue.unit)));
+    crate::programs::run(&format!(
+        "systemctl {scope}reset-failed {}",
+        shell_quote(&issue.unit)
+    ));
     set_timeout(AFTER_RESET, refresh);
 }
 
@@ -161,7 +172,13 @@ pub fn icon(output_name: &str) -> Div {
     let opener = name.clone();
     let lines_name = name.clone();
     let picture = bar_picture(|| asset("action-center.svg"), 2.0).child(badge(
-        || asset(if has_errors() { "network-badge-error.svg" } else { "network-badge-warning.svg" }),
+        || {
+            asset(if has_errors() {
+                "network-badge-error.svg"
+            } else {
+                "network-badge-warning.svg"
+            })
+        },
         move || issues.with(|l| !l.is_empty()),
     ));
     bar_cell(icon_width, 2.0, active)
@@ -191,7 +208,12 @@ pub fn icon(output_name: &str) -> Div {
                 ]
             },
         ))
-        .child(panel_popup(&name, Panel::ActionCenter, Align::Center, panel))
+        .child(panel_popup(
+            &name,
+            Panel::ActionCenter,
+            Align::Center,
+            panel,
+        ))
 }
 
 /// The Action Center panel: the problems the system has now, each with what can be done about
@@ -212,7 +234,13 @@ fn panel() -> Div {
         "No current issues detected: every service runs, and the disks have room.",
         || scheme().text,
     )
-    .dyn_style(move |s| if issues.with(Vec::is_empty) { s } else { s.hidden() });
+    .dyn_style(move |s| {
+        if issues.with(Vec::is_empty) {
+            s
+        } else {
+            s.hidden()
+        }
+    });
     let list = dyn_view(move || {
         div()
             .flex()
@@ -235,11 +263,17 @@ fn panel() -> Div {
 /// A problem: its mark, its title, what happened, and what can be done.
 fn issue_card(issue: Issue) -> Div {
     let error = issue.error;
-    let mark = if error { "network-badge-error.svg" } else { "network-badge-warning.svg" };
+    let mark = if error {
+        "network-badge-error.svg"
+    } else {
+        "network-badge-warning.svg"
+    };
     let mut actions = div().flex().flex_row().items_center().gap(12.0);
     if !issue.unit.is_empty() && issue.user {
         let cleared = issue.clone();
-        actions = actions.child(cp_link("Clear this message", false, move || reset_unit(&cleared)));
+        actions = actions.child(cp_link("Clear this message", false, move || {
+            reset_unit(&cleared)
+        }));
     }
     if !issue.unit.is_empty() && !issue.user {
         actions = actions.child(
@@ -272,9 +306,11 @@ fn issue_card(issue: Issue) -> Div {
                 (false, true) => WARNING_TINT_DARK,
                 (false, false) => WARNING_TINT_LIGHT,
             };
-            s.rounded(item_radius())
-                .bg(tint)
-                .border_color(if error { ERROR_OUTLINE } else { WARNING_OUTLINE })
+            s.rounded(item_radius()).bg(tint).border_color(if error {
+                ERROR_OUTLINE
+            } else {
+                WARNING_OUTLINE
+            })
         })
         .child(
             img(asset(mark))

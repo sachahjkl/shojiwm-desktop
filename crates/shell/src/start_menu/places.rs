@@ -118,7 +118,10 @@ pub(super) fn places(menu: Menu) -> Div {
     };
     let column = {
         let menu = menu.clone();
-        show(move || !showing_jump.get(), move || place_column(menu.clone()))
+        show(
+            move || !showing_jump.get(),
+            move || place_column(menu.clone()),
+        )
     };
     div()
         .absolute()
@@ -150,7 +153,13 @@ fn place_column(menu: Menu) -> Div {
         .into_iter()
         .map(|place| match place {
             None => separator(),
-            Some(place) => place_line(&menu, place, recent_open, recent_wait.clone(), recent_anchor),
+            Some(place) => place_line(
+                &menu,
+                place,
+                recent_open,
+                recent_wait.clone(),
+                recent_anchor,
+            ),
         })
         .collect();
     div()
@@ -263,7 +272,10 @@ fn place_line(
             .flex()
             .items_center()
             .pointer_events_none()
-            .dyn_style(|s| s.text_size(theme().font_size).text_color(scheme().places_text))
+            .dyn_style(|s| {
+                s.text_size(theme().font_size)
+                    .text_color(scheme().places_text)
+            })
             .child("\u{25B8}"),
     )
 }
@@ -279,7 +291,11 @@ fn place_row(label: impl IntoTextSource, on_hover: impl Fn(bool) + 'static) -> D
         .border(1.0)
         .border_color(BAND_RIM)
         .fill(move || {
-            let f = if ui.pressed() { BAND_FILL_PRESSED } else { BAND_FILL };
+            let f = if ui.pressed() {
+                BAND_FILL_PRESSED
+            } else {
+                BAND_FILL
+            };
             vertical_gradient(&[(0.0, f[0]), (0.5, f[1]), (1.0, f[2])])
         })
         .dyn_style(move |s| {
@@ -366,7 +382,7 @@ fn jump_list(menu: Menu) -> Div {
         settings().with(|s| s.jump_pins.len());
         let pinned = crate::apps::pinned_files_for(&app);
         let recent = crate::apps::recent_unpinned(&app);
-        let heading = |label: &'static str| {
+        let _heading = |label: &'static str| {
             menu_row(
                 "",
                 label,

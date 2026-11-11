@@ -8,15 +8,13 @@
 //! list, then the dialog.
 
 use super::frame::{button_band, dialog_frame, dialog_page};
-use crate::power::{POWER_ACTIONS, PowerAction, login_name, run_power};
 use super::shutdown_close;
-use crate::paths::asset;
-use crate::settings::{home, settings};
+use crate::power::{POWER_ACTIONS, PowerAction, run_power};
+use crate::settings::settings;
 use crate::theme::{corner, scheme, theme};
 use crate::ui::{cp_button, cp_default_button, font, ink_asset, vertical_gradient};
 use anti_webui::prelude::*;
 use std::cell::Cell;
-use std::path::PathBuf;
 use std::rc::Rc;
 
 /// The dimmed screen round the dialog.
@@ -51,7 +49,9 @@ const WHEEL_STEP: f32 = 40.0;
 fn description(id: &str) -> &'static str {
     match id {
         "shutdown" => "Closes all open programs and turns off the computer.",
-        "restart" => "Closes all open programs, turns off the computer, and then turns it on again.",
+        "restart" => {
+            "Closes all open programs, turns off the computer, and then turns it on again."
+        }
         "sleep" => "Keeps your session in memory and puts the computer in a low-power state.",
         "hibernate" => "Saves your session to the disk and turns off the computer.",
         "logoff" => "Closes all open programs and logs you off.",
@@ -63,8 +63,16 @@ fn description(id: &str) -> &'static str {
 /// The power actions, the one chosen in the Control Panel first (else Log off).
 fn actions() -> Vec<PowerAction> {
     let wanted = untrack(|| settings().with(|s| s.shutdown_dialog_action.clone()));
-    let first = if POWER_ACTIONS.iter().any(|a| a.id == wanted) { wanted } else { "logoff".into() };
-    let mut list: Vec<PowerAction> = POWER_ACTIONS.iter().copied().filter(|a| a.id != "separator").collect();
+    let first = if POWER_ACTIONS.iter().any(|a| a.id == wanted) {
+        wanted
+    } else {
+        "logoff".into()
+    };
+    let mut list: Vec<PowerAction> = POWER_ACTIONS
+        .iter()
+        .copied()
+        .filter(|a| a.id != "separator")
+        .collect();
     list.sort_by_key(|a| a.id != first);
     list
 }
@@ -164,7 +172,9 @@ pub fn view() -> Div {
             match e.key {
                 Key::Named(NamedKey::Tab) => {
                     state.list_open.set(false);
-                    state.focus.update(|f| *f = f.step(if e.modifiers.shift { -1 } else { 1 }));
+                    state
+                        .focus
+                        .update(|f| *f = f.step(if e.modifiers.shift { -1 } else { 1 }));
                 }
                 Key::Named(NamedKey::ArrowUp) if on_list => state.step(-1),
                 Key::Named(NamedKey::ArrowDown) if on_list => {
@@ -235,7 +245,11 @@ fn banner() -> Div {
         .fill(|| vertical_gradient(&[(0.0, SWEEP[0]), (0.12, SWEEP[1]), (0.55, SWEEP[2])]));
     let name = move || {
         let full = crate::account::user_name();
-        if full.is_empty() { "Shut Down".to_owned() } else { full }
+        if full.is_empty() {
+            "Shut Down".to_owned()
+        } else {
+            full
+        }
     };
     let name = Rc::new(name);
     let shadow_name = name.clone();
@@ -247,9 +261,7 @@ fn banner() -> Div {
         .flex_none()
         .h(BANNER_HEIGHT)
         .overflow_clip()
-        .fill(|| {
-            vertical_gradient(&[(0.0, BANNER[0]), (0.55, BANNER[1]), (1.0, BANNER[2])])
-        })
+        .fill(|| vertical_gradient(&[(0.0, BANNER[0]), (0.55, BANNER[1]), (1.0, BANNER[2])]))
         .child(sweep)
         .child(user_tile(48.0).ml(16.0))
         .child(
@@ -386,7 +398,11 @@ fn field(state: State, actions: Rc<Vec<PowerAction>>, keys: NodeRef) -> Div {
         .dyn_style(move |s| {
             let c = scheme();
             s.rounded(corner(2.0)).bg(c.field).border_color(
-                if ui.hovered() || state.list_open.get() { c.field_focus } else { c.field_border },
+                if ui.hovered() || state.list_open.get() {
+                    c.field_focus
+                } else {
+                    c.field_border
+                },
             )
         })
         // On the press: the frame closes the list on it.
@@ -536,9 +552,10 @@ fn user_tile(size: f32) -> Div {
         )
         .child(layer(band - 1.0).bg(TILE_DARK_LINE))
         .child(
-            layer(band)
-                .overflow_clip()
-                .child(img(move || picture.get()).size_full().object_fit(ObjectFit::Cover)),
+            layer(band).overflow_clip().child(
+                img(move || picture.get())
+                    .size_full()
+                    .object_fit(ObjectFit::Cover),
+            ),
         )
 }
-

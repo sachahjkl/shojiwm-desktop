@@ -67,7 +67,8 @@ struct Screen {
 
 impl Screen {
     fn from_json(v: &Value) -> Option<Self> {
-        let int = |v: &Value, k: &str| v.get(k).and_then(Value::as_f64).unwrap_or(0.0).round() as i64;
+        let int =
+            |v: &Value, k: &str| v.get(k).and_then(Value::as_f64).unwrap_or(0.0).round() as i64;
         let num = |k: &str| v.get(k).and_then(Value::as_f64).unwrap_or(0.0);
         let modes = v
             .get("modes")
@@ -85,7 +86,11 @@ impl Screen {
         let scale = num("scale");
         Some(Self {
             name: v.get("name")?.as_str()?.to_owned(),
-            description: v.get("description").and_then(Value::as_str).unwrap_or("").to_owned(),
+            description: v
+                .get("description")
+                .and_then(Value::as_str)
+                .unwrap_or("")
+                .to_owned(),
             width: int(v, "width"),
             height: int(v, "height"),
             refresh_rate: int(v, "refreshRate"),
@@ -227,11 +232,15 @@ impl Display {
     /// Shows the selected screen's current mode and scale.
     fn load(self) {
         untrack(|| {
-            let Some(screen) = self.screen.get() else { return };
+            let Some(screen) = self.screen.get() else {
+                return;
+            };
             let size = (screen.width, screen.height);
             let size_at = self.sizes.with(|l| l.iter().position(|s| *s == size));
             self.size_index.set(size_at.unwrap_or(0));
-            let rate_at = self.rates.with(|l| l.iter().position(|r| *r == screen.refresh_rate));
+            let rate_at = self
+                .rates
+                .with(|l| l.iter().position(|r| *r == screen.refresh_rate));
             self.rate_index.set(rate_at.unwrap_or(0));
             let scale_at = SCALES.iter().position(|s| (s - screen.scale).abs() < 1e-6);
             self.scale_index.set(scale_at.unwrap_or(0));
@@ -241,7 +250,9 @@ impl Display {
     /// The choices with the selected screen's new mode and scale, applied.
     fn apply(self) {
         untrack(|| {
-            let Some(screen) = self.screen.get() else { return };
+            let Some(screen) = self.screen.get() else {
+                return;
+            };
             let Some((width, height)) = self.sizes.with(|l| l.get(self.size_index.get()).copied())
             else {
                 return;
@@ -348,7 +359,10 @@ pub fn page() -> Div {
                 )
             },
         ))
-        .child(show(move || d.screen.with(Option::is_some), move || choices(d)))
+        .child(show(
+            move || d.screen.with(Option::is_some),
+            move || choices(d),
+        ))
         .child(cp_check(
             "Make this my main display",
             Binding::new(
@@ -397,15 +411,27 @@ fn layout_picture(d: Display) -> Div {
         .dyn_style(|s| {
             let c = scheme();
             s.rounded(corner(3.0))
-                .bg(if dark_look() { LAYOUT_DARK } else { LAYOUT_LIGHT })
+                .bg(if dark_look() {
+                    LAYOUT_DARK
+                } else {
+                    LAYOUT_LIGHT
+                })
                 .border_color(c.field_border)
         })
         .child(dyn_view(move || {
             let list = d.screens.get();
             let width = frame_width.get() as f64;
-            let right = list.iter().map(|s| s.x + s.logical_width()).fold(1.0, f64::max);
-            let bottom = list.iter().map(|s| s.y + s.logical_height()).fold(1.0, f64::max);
-            let k = ((width - 40.0) / right).min((LAYOUT_HEIGHT as f64 - 30.0) / bottom).max(0.0);
+            let right = list
+                .iter()
+                .map(|s| s.x + s.logical_width())
+                .fold(1.0, f64::max);
+            let bottom = list
+                .iter()
+                .map(|s| s.y + s.logical_height())
+                .fold(1.0, f64::max);
+            let k = ((width - 40.0) / right)
+                .min((LAYOUT_HEIGHT as f64 - 30.0) / bottom)
+                .max(0.0);
             let left = (width - right * k) / 2.0;
             let top = (LAYOUT_HEIGHT as f64 - bottom * k) / 2.0;
             div().children(
@@ -431,7 +457,10 @@ fn layout_picture(d: Display) -> Div {
 fn screen_tile(d: Display, index: usize, name: String, x: f32, y: f32, w: f32, h: f32) -> Div {
     let chosen = {
         let name = name.clone();
-        memo(move || d.screen.with(|s| s.as_ref().is_some_and(|s| s.name == name)))
+        memo(move || {
+            d.screen
+                .with(|s| s.as_ref().is_some_and(|s| s.name == name))
+        })
     };
     div()
         .absolute()
@@ -448,26 +477,30 @@ fn screen_tile(d: Display, index: usize, name: String, x: f32, y: f32, w: f32, h
             let on = chosen.get();
             s.rounded(corner(2.0))
                 .border(if on { 2.0 } else { 1.0 })
-                .border_color(if on { scheme().field_focus } else { TILE_BORDER })
+                .border_color(if on {
+                    scheme().field_focus
+                } else {
+                    TILE_BORDER
+                })
         })
         .on_click(move |_| {
             d.selected.set(name.clone());
             d.load();
         })
-        .child(
-            text((index + 1).to_string()).dyn_style(move |s| {
-                s.font_family(font())
-                    .text_size((h * 0.5).clamp(1.0, 36.0))
-                    .text_color(TILE_NUMBER)
-                    .bold()
-            }),
-        )
+        .child(text((index + 1).to_string()).dyn_style(move |s| {
+            s.font_family(font())
+                .text_size((h * 0.5).clamp(1.0, 36.0))
+                .text_color(TILE_NUMBER)
+                .bold()
+        }))
 }
 
 /// The screen, its resolution, refresh rate and scale, each a combo box.
 fn choices(d: Display) -> Div {
     let row = |label: &'static str, combo: View| {
-        control_row(12.0).child(form_label(label, LABEL_WIDTH)).child(combo)
+        control_row(12.0)
+            .child(form_label(label, LABEL_WIDTH))
+            .child(combo)
     };
     let screen_combo = dyn_view(move || {
         let labels: Vec<String> = d.screens.with(|list| {
@@ -484,7 +517,10 @@ fn choices(d: Display) -> Div {
                     .unwrap_or(0)
             },
             move |i: usize| {
-                if let Some(name) = d.screens.with_untracked(|l| l.get(i).map(|s| s.name.clone())) {
+                if let Some(name) = d
+                    .screens
+                    .with_untracked(|l| l.get(i).map(|s| s.name.clone()))
+                {
                     d.selected.set(name);
                     d.load();
                 }
@@ -493,7 +529,9 @@ fn choices(d: Display) -> Div {
         untrack(|| cp_combo(labels, current).w(COMBO_WIDTH))
     });
     let size_combo = dyn_view(move || {
-        let labels = d.sizes.with(|l| l.iter().map(|(w, h)| size_label(*w, *h)).collect());
+        let labels = d
+            .sizes
+            .with(|l| l.iter().map(|(w, h)| size_label(*w, *h)).collect());
         let current = Binding::new(
             move || d.size_index.get(),
             move |i: usize| {
@@ -504,7 +542,9 @@ fn choices(d: Display) -> Div {
         untrack(|| cp_combo(labels, current).w(COMBO_WIDTH))
     });
     let rate_combo = dyn_view(move || {
-        let labels = d.rates.with(|l| l.iter().map(|r| format!("{r} Hz")).collect());
+        let labels = d
+            .rates
+            .with(|l| l.iter().map(|r| format!("{r} Hz")).collect());
         untrack(|| cp_combo(labels, d.rate_index).w(COMBO_WIDTH))
     });
     let scale_labels = SCALES.iter().map(|s| scale_label(*s)).collect();
@@ -535,7 +575,11 @@ fn confirm_box(d: Display) -> Div {
             let dark = dark_look();
             s.rounded(corner(3.0))
                 .bg(if dark { CONFIRM_DARK } else { CONFIRM_LIGHT })
-                .border_color(if dark { CONFIRM_BORDER_DARK } else { CONFIRM_BORDER_LIGHT })
+                .border_color(if dark {
+                    CONFIRM_BORDER_DARK
+                } else {
+                    CONFIRM_BORDER_LIGHT
+                })
         })
         .child(tinted_text(
             move || {
@@ -549,4 +593,3 @@ fn confirm_box(d: Display) -> Div {
         .child(cp_button("Keep changes", move || d.keep()))
         .child(cp_button("Revert", move || d.revert()))
 }
-

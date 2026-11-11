@@ -19,9 +19,7 @@ mod orb;
 mod thumbnails;
 mod tray;
 
-pub use launcher_entries::{LauncherEntry, launcher_entry};
 pub use media::media_controls;
-pub use tray::{TRAY_MIME, TrayDrag, place_tray_icon, set_tray_visible, tray_visible};
 
 use crate::settings::{change, motion, settings};
 use crate::theme::{Align, away_from_bar, bar_at_top, parse_hex, theme};
@@ -107,7 +105,9 @@ impl Bar {
         }
     }
 
+    /// Closes every popup of the bar, the notification area's panels too: one at a time.
     pub fn close_popups(&self) {
+        crate::status::close_popups();
         self.preview.set(None);
         self.jump_list.set(None);
         self.context_menu.set(None);
@@ -121,16 +121,22 @@ impl Bar {
             || self.context_menu.with(Option::is_some)
             || self.overflow_open.get()
             || self.tray_menu.with(Option::is_some)
+            || crate::status::popup_open_on(&self.name)
     }
 
     /// A menu, a panel or the thumbnails of the bar are open: an auto-hidden bar stays up.
     fn busy(&self) -> bool {
-        crate::start_menu::is_open_on(&self.name) || self.preview.with(Option::is_some) || self.popup_open()
+        crate::start_menu::is_open_on(&self.name)
+            || self.preview.with(Option::is_some)
+            || self.popup_open()
     }
 
     /// The bar is on the screen, not slid away.
     fn raised(&self) -> bool {
-        !settings().with(|s| s.taskbar_auto_hide) || self.hovered.get() || self.staying.get() || self.busy()
+        !settings().with(|s| s.taskbar_auto_hide)
+            || self.hovered.get()
+            || self.staying.get()
+            || self.busy()
     }
 
     /// Shows the thumbnails of the button `key`, whose middle is at `center`.
@@ -179,7 +185,8 @@ impl Bar {
         if !inside {
             self.staying.set(true);
             let staying = self.staying;
-            self.stay_timer.set(Some(set_timeout(STAY_UP, move || staying.set(false))));
+            self.stay_timer
+                .set(Some(set_timeout(STAY_UP, move || staying.set(false))));
         }
     }
 }
@@ -213,7 +220,11 @@ pub fn install() {
 
 /// The edges the bar is anchored to.
 fn bar_anchor() -> Anchor {
-    let edge = if bar_at_top() { Anchor::TOP } else { Anchor::BOTTOM };
+    let edge = if bar_at_top() {
+        Anchor::TOP
+    } else {
+        Anchor::BOTTOM
+    };
     edge | Anchor::LEFT | Anchor::RIGHT
 }
 
@@ -239,7 +250,11 @@ pub fn open(output: Output) {
     );
     // The side, the height and the room kept for it, as the theme and the settings say.
     let shape = memo(|| {
-        (bar_anchor(), theme().taskbar_height as i32, settings().with(|s| s.taskbar_auto_hide))
+        (
+            bar_anchor(),
+            theme().taskbar_height as i32,
+            settings().with(|s| s.taskbar_auto_hide),
+        )
     });
     {
         let layer = layer.clone();
@@ -247,7 +262,11 @@ pub fn open(output: Output) {
             let (anchor, height, auto_hide) = shape.get();
             layer.set_anchor(anchor);
             layer.set_size(LayerSize::Stretch, LayerSize::Fixed(height));
-            layer.set_exclusive(if auto_hide { Exclusive::None } else { Exclusive::Fixed(height) });
+            layer.set_exclusive(if auto_hide {
+                Exclusive::None
+            } else {
+                Exclusive::Fixed(height)
+            });
         });
     }
     // Only the part of the bar on the screen takes the pointer.
@@ -258,7 +277,10 @@ pub fn open(output: Output) {
                 return InputRegion::Full;
             }
             let (_, height, _) = shape.get();
-            let width = bar.output.current().map_or(bar.output.logical_size.width, |o| o.logical_size.width);
+            let width = bar
+                .output
+                .current()
+                .map_or(bar.output.logical_size.width, |o| o.logical_size.width);
             let strip = HIDDEN_STRIP as i32;
             let y = if bar_at_top() { 0 } else { height - strip };
             InputRegion::Rects(vec![RectI::new(0, y, width.max(1), strip)])
@@ -330,7 +352,8 @@ fn view(bar: Bar) -> Div {
                 (false, true) => -away,
                 (false, false) => away,
             };
-            s.translate_y(y).transition(Transition::ms(motion(SLIDE)).ease_out())
+            s.translate_y(y)
+                .transition(Transition::ms(motion(SLIDE)).ease_out())
         })
         .on_pointer_down(move |e| {
             if e.button == Some(PointerButton::Secondary) {
@@ -351,7 +374,12 @@ fn view(bar: Bar) -> Div {
             }),
             {
                 let bar = bar.clone();
-                move || bar.context_menu.get_untracked().map(context_lines).unwrap_or_default()
+                move || {
+                    bar.context_menu
+                        .get_untracked()
+                        .map(context_lines)
+                        .unwrap_or_default()
+                }
             },
         ));
     let slid = tray::take_drops(slid, bar.clone());
@@ -377,36 +405,69 @@ fn glass() -> Vec<Div> {
             .dyn_style(move |s| {
                 let height = theme().taskbar_height;
                 let middle = (height * BAR_MIDDLE).round();
-                if top { s.top(0.0).h(middle) } else { s.top(middle).bottom(0.0) }
+                if top {
+                    s.top(0.0).h(middle)
+                } else {
+                    s.top(middle).bottom(0.0)
+                }
             })
             .fill(move || {
                 let t = theme();
                 if top {
-                    vertical_gradient(&[(0.0, t.bar_top), (0.1 / BAR_MIDDLE, t.bar_upper), (1.0, t.bar_middle)])
+                    vertical_gradient(&[
+                        (0.0, t.bar_top),
+                        (0.1 / BAR_MIDDLE, t.bar_upper),
+                        (1.0, t.bar_middle),
+                    ])
                 } else {
                     let lower = (0.78 - BAR_MIDDLE) / (1.0 - BAR_MIDDLE);
-                    vertical_gradient(&[(0.0, t.bar_middle), (lower, t.bar_lower), (1.0, t.bar_bottom)])
+                    vertical_gradient(&[
+                        (0.0, t.bar_middle),
+                        (lower, t.bar_lower),
+                        (1.0, t.bar_bottom),
+                    ])
                 }
             })
     };
     let line = |at: fn(bool, f32) -> f32, color: fn() -> Color| {
-        div().absolute().left(0.0).right(0.0).h(1.0).dyn_style(move |s| {
-            s.top(at(bar_at_top(), theme().taskbar_height)).bg(color())
-        })
+        div()
+            .absolute()
+            .left(0.0)
+            .right(0.0)
+            .h(1.0)
+            .dyn_style(move |s| s.top(at(bar_at_top(), theme().taskbar_height)).bg(color()))
     };
     vec![
         band(true),
         band(false),
-        div().absolute().left(0.0).right(0.0).top(0.0).bottom(0.0).dyn_style(|s| {
-            let (colour, strength) = settings().with(|s| (s.glass_color.clone(), s.glass_color_strength));
-            match parse_hex(&colour) {
-                Some(c) if !colour.is_empty() => s.bg(c).opacity(strength.clamp(0.0, 1.0) as f32),
-                _ => s.hidden(),
-            }
-        }),
-        line(|top, h| if top { h - 1.0 } else { 0.0 }, || theme().bar_edge),
-        line(|top, h| if top { h - 2.0 } else { 1.0 }, || theme().bar_highlight),
-        line(|top, h| if top { 0.0 } else { h - 1.0 }, || theme().bar_bottom_edge),
+        div()
+            .absolute()
+            .left(0.0)
+            .right(0.0)
+            .top(0.0)
+            .bottom(0.0)
+            .dyn_style(|s| {
+                let (colour, strength) =
+                    settings().with(|s| (s.glass_color.clone(), s.glass_color_strength));
+                match parse_hex(&colour) {
+                    Some(c) if !colour.is_empty() => {
+                        s.bg(c).opacity(strength.clamp(0.0, 1.0) as f32)
+                    }
+                    _ => s.hidden(),
+                }
+            }),
+        line(
+            |top, h| if top { h - 1.0 } else { 0.0 },
+            || theme().bar_edge,
+        ),
+        line(
+            |top, h| if top { h - 2.0 } else { 1.0 },
+            || theme().bar_highlight,
+        ),
+        line(
+            |top, h| if top { 0.0 } else { h - 1.0 },
+            || theme().bar_bottom_edge,
+        ),
     ]
 }
 
@@ -475,10 +536,22 @@ fn show_desktop(bar: Bar) -> Div {
             let t = theme();
             s.w(t.show_desktop_width).h(t.taskbar_height)
         })
-        .child(div().absolute().left(2.0).top(2.0).right(0.0).bottom(0.0).fill(move || {
-            let c = if ui.hovered() { SHOW_DESKTOP_HOT } else { SHOW_DESKTOP_REST };
-            vertical_gradient(&[(0.0, c[0]), (0.5, c[1]), (1.0, c[2])])
-        }))
+        .child(
+            div()
+                .absolute()
+                .left(2.0)
+                .top(2.0)
+                .right(0.0)
+                .bottom(0.0)
+                .fill(move || {
+                    let c = if ui.hovered() {
+                        SHOW_DESKTOP_HOT
+                    } else {
+                        SHOW_DESKTOP_REST
+                    };
+                    vertical_gradient(&[(0.0, c[0]), (0.5, c[1]), (1.0, c[2])])
+                }),
+        )
         .child(
             div()
                 .absolute()

@@ -20,10 +20,13 @@ use std::sync::mpsc::{Receiver, Sender, channel};
 use std::sync::{Arc, Mutex, OnceLock};
 use std::time::Duration;
 
+/// Where the answer to a request goes.
+type Answer = Box<dyn FnOnce(Option<Value>) + Send>;
+
 /// What goes to the line's thread.
 enum Out {
-    /// A message, and for a request where its answer goes.
-    Line(String, Option<(u64, Box<dyn FnOnce(Option<Value>) + Send>)>),
+    /// A message, and for a request its id and where its answer goes.
+    Line(String, Option<(u64, Answer)>),
 }
 
 struct Line {
@@ -37,7 +40,9 @@ struct Line {
 static LINE: OnceLock<Arc<Line>> = OnceLock::new();
 
 fn path() -> Option<String> {
-    std::env::var("SHOJIWM_WIN7_SOCKET").ok().filter(|p| !p.is_empty())
+    std::env::var("SHOJIWM_WIN7_SOCKET")
+        .ok()
+        .filter(|p| !p.is_empty())
 }
 
 fn line() -> &'static Arc<Line> {
@@ -60,7 +65,7 @@ fn line() -> &'static Arc<Line> {
     })
 }
 
-type Pending = Arc<Mutex<HashMap<u64, Box<dyn FnOnce(Option<Value>) + Send>>>>;
+type Pending = Arc<Mutex<HashMap<u64, Answer>>>;
 
 fn run(path: String, rx: Receiver<Out>, line: Arc<Line>) {
     let pending: Pending = Arc::default();
@@ -83,13 +88,17 @@ fn run(path: String, rx: Receiver<Out>, line: Arc<Line>) {
             std::thread::spawn(move || {
                 for text in BufReader::new(r).lines() {
                     let Ok(text) = text else { break };
-                    let Ok(v) = serde_json::from_str::<Value>(&text) else { continue };
+                    let Ok(v) = serde_json::from_str::<Value>(&text) else {
+                        continue;
+                    };
                     // Events the compositor sends unasked: the Alt+Tab panel's titles.
                     if v.get("event").and_then(Value::as_str) == Some("alt-tab") {
                         crate::dialogs::alt_tab_event(v.get("payload"));
                         continue;
                     }
-                    let Some(id) = v.get("id").and_then(Value::as_u64) else { continue };
+                    let Some(id) = v.get("id").and_then(Value::as_u64) else {
+                        continue;
+                    };
                     if let Some(answer) = answers.lock().unwrap().remove(&id) {
                         answer(v.get("result").cloned());
                     }
@@ -111,7 +120,9 @@ fn run(path: String, rx: Receiver<Out>, line: Arc<Line>) {
                     if let Some((id, answer)) = request {
                         pending.lock().unwrap().insert(id, answer);
                     }
-                    ok = writeln!(writer, "{text}").and_then(|_| writer.flush()).is_ok();
+                    ok = writeln!(writer, "{text}")
+                        .and_then(|_| writer.flush())
+                        .is_ok();
                 }
                 Err(std::sync::mpsc::RecvTimeoutError::Timeout) => {
                     ok = reading.as_ref().is_some_and(|r| !r.is_finished());
@@ -150,9 +161,11 @@ pub fn request(method: &str, params: Value) -> Task<Option<Value>> {
         *next
     };
     let text = json!({ "id": id, "method": method, "params": params }).to_string();
-    let answer: Box<dyn FnOnce(Option<Value>) + Send> = Box::new(move |v| done.complete(v));
+    let answer: Answer = Box::new(move |v| done.complete(v));
     if let Err(e) = line.out.send(Out::Line(text, Some((id, answer)))) {
-        let Out::Line(_, Some((_, answer))) = e.0 else { return task };
+        let Out::Line(_, Some((_, answer))) = e.0 else {
+            return task;
+        };
         answer(None);
     }
     task
@@ -179,7 +192,10 @@ pub fn share_settings() {
     effect(|| {
         let (level, colour, strength) =
             settings().with(|s| (s.glass_blur, s.glass_color.clone(), s.glass_color_strength));
-        send_kept("glass", json!({ "level": level, "colour": colour, "strength": strength }));
+        send_kept(
+            "glass",
+            json!({ "level": level, "colour": colour, "strength": strength }),
+        );
     });
     effect(|| {
         let square = settings().with(|s| s.square_corners);

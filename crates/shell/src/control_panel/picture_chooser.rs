@@ -4,7 +4,7 @@
 //! the built-in desktop picture and the account picture.
 
 use crate::paths::asset;
-use crate::settings::{dark, home, settings};
+use crate::settings::{dark, home};
 use crate::theme::{field_radius, is_kernel, item_radius, scheme, theme};
 use crate::ui::{cp_button, font};
 use anti_webui::prelude::*;
@@ -38,26 +38,6 @@ pub fn built_in_wallpaper() -> PathBuf {
 
 thread_local! {
     static SYSTEM_PICTURE: OnceCell<Option<PathBuf>> = const { OnceCell::new() };
-}
-
-/// The first readable, non-empty file of the places log-on screens read the account picture
-/// from: AccountsService's icon, `~/.face`, then `~/.face.icon`. Looked for once.
-fn system_picture() -> Option<PathBuf> {
-    SYSTEM_PICTURE.with(|cell| {
-        cell.get_or_init(|| {
-            let user = std::env::var("USER").unwrap_or_default();
-            let mut places = vec![PathBuf::from("/var/lib/AccountsService/icons").join(user)];
-            if let Some(home) = home() {
-                places.push(home.join(".face"));
-                places.push(home.join(".face.icon"));
-            }
-            places.into_iter().find(|path| {
-                std::fs::metadata(path).is_ok_and(|m| m.is_file() && m.len() > 0)
-                    && std::fs::File::open(path).is_ok()
-            })
-        })
-        .clone()
-    })
 }
 
 pub use crate::account::user_picture as user_picture_source;
@@ -116,7 +96,13 @@ pub fn picture_chooser(
             },
             String::clone,
             move |path: String| {
-                cell(path, square, selected.clone(), built_in.clone(), on_chosen.clone())
+                cell(
+                    path,
+                    square,
+                    selected.clone(),
+                    built_in.clone(),
+                    on_chosen.clone(),
+                )
             },
         )
     };
@@ -127,7 +113,11 @@ pub fn picture_chooser(
                 "No picture found in your Pictures folder. Type a path below.".to_owned()
             } else {
                 let now = selected();
-                if now.is_empty() { built_in_label.to_owned() } else { now }
+                if now.is_empty() {
+                    built_in_label.to_owned()
+                } else {
+                    now
+                }
             }
         }
     };
@@ -135,14 +125,7 @@ pub fn picture_chooser(
         .flex()
         .flex_col()
         .gap(10.0)
-        .child(
-            div()
-                .flex()
-                .flex_row()
-                .flex_wrap()
-                .gap(10.0)
-                .child(cells),
-        )
+        .child(div().flex().flex_row().flex_wrap().gap(10.0).child(cells))
         .child(
             div()
                 .min_w(0.0)
@@ -167,7 +150,11 @@ fn cell(
     on_chosen: Rc<dyn Fn(String)>,
 ) -> Div {
     let ui = Interaction::new();
-    let (width, height) = if square { (SQUARE_CELL, SQUARE_CELL) } else { CELL };
+    let (width, height) = if square {
+        (SQUARE_CELL, SQUARE_CELL)
+    } else {
+        CELL
+    };
     let is_selected = {
         let path = path.clone();
         memo(move || selected() == path)
@@ -175,7 +162,11 @@ fn cell(
     let source = {
         let path = path.clone();
         move || {
-            if path.is_empty() { built_in() } else { PathBuf::from(&path) }
+            if path.is_empty() {
+                built_in()
+            } else {
+                PathBuf::from(&path)
+            }
         }
     };
     div()
@@ -235,11 +226,13 @@ fn path_row(on_chosen: Rc<dyn Fn(String)>) -> Div {
         .border(1.0)
         .dyn_style(move |s| {
             let c = scheme();
-            s.rounded(field_radius()).bg(c.field).border_color(if focused.get() {
-                c.field_focus
-            } else {
-                c.field_border
-            })
+            s.rounded(field_radius())
+                .bg(c.field)
+                .border_color(if focused.get() {
+                    c.field_focus
+                } else {
+                    c.field_border
+                })
         })
         .child(
             text_input()

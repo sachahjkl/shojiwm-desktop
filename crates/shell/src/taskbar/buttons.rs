@@ -141,14 +141,23 @@ pub(super) fn buttons(bar: Bar) -> Div {
                     } else {
                         width
                     };
-                    let slot = Slot { key: g.key.clone(), x, w };
+                    let slot = Slot {
+                        key: g.key.clone(),
+                        x,
+                        w,
+                    };
                     x += w + t.task_button_gap;
                     slot
                 })
                 .collect()
         })
     });
-    let row = Row { groups, slots, drag_from: signal(None), drop_before: signal(None) };
+    let row = Row {
+        groups,
+        slots,
+        drag_from: signal(None),
+        drop_before: signal(None),
+    };
     let pin_at = move |id: String, before: usize| {
         row.drop_before.set(None);
         // Once the drop is over: the change builds the buttons again.
@@ -214,19 +223,39 @@ impl Plate {
         let t = theme();
         match self {
             Plate::Rest => (
-                [t.button_rest_top, t.button_rest_upper, t.button_rest_lower, t.button_rest_bottom],
+                [
+                    t.button_rest_top,
+                    t.button_rest_upper,
+                    t.button_rest_lower,
+                    t.button_rest_bottom,
+                ],
                 t.button_rest_border,
             ),
             Plate::Active => (
-                [t.button_active_top, t.button_active_upper, t.button_active_lower, t.button_active_bottom],
+                [
+                    t.button_active_top,
+                    t.button_active_upper,
+                    t.button_active_lower,
+                    t.button_active_bottom,
+                ],
                 t.button_active_border,
             ),
             Plate::Hover => (
-                [t.button_hover_top, t.button_hover_upper, t.button_hover_lower, t.button_hover_bottom],
+                [
+                    t.button_hover_top,
+                    t.button_hover_upper,
+                    t.button_hover_lower,
+                    t.button_hover_bottom,
+                ],
                 t.button_hover_border,
             ),
             Plate::Pressed => (
-                [t.button_pressed_top, t.button_pressed_upper, t.button_pressed_lower, t.button_pressed_bottom],
+                [
+                    t.button_pressed_top,
+                    t.button_pressed_upper,
+                    t.button_pressed_lower,
+                    t.button_pressed_bottom,
+                ],
                 t.button_rest_border,
             ),
         }
@@ -257,20 +286,31 @@ fn plate(kind: Plate, shown: impl Fn() -> bool + 'static) -> Div {
             s.rounded(corner((item_radius() - 1.0).max(0.0)))
                 .border_color(kind.colours().1)
                 .opacity(if on { 1.0 } else { 0.0 })
-                .transition(Transition::ms(motion(if on { t.hover_in } else { t.hover_out })))
+                .transition(Transition::ms(motion(if on {
+                    t.hover_in
+                } else {
+                    t.hover_out
+                })))
         })
 }
 
 fn task_button(bar: Bar, row: Row, key: String) -> Div {
     let group = {
         let key = key.clone();
-        memo(move || row.groups.with(|g| g.iter().find(|g| g.key == key).cloned()))
+        memo(move || {
+            row.groups
+                .with(|g| g.iter().find(|g| g.key == key).cloned())
+        })
     };
     let index = {
         let key = key.clone();
         memo(move || row.slots.with(|s| s.iter().position(|s| s.key == key)))
     };
-    let slot = memo(move || index.get().and_then(|i| row.slots.with(|s| s.get(i).cloned())));
+    let slot = memo(move || {
+        index
+            .get()
+            .and_then(|i| row.slots.with(|s| s.get(i).cloned()))
+    });
     let ui = Interaction::new();
     let anchor = node_ref();
     let reordering = signal(false);
@@ -282,7 +322,10 @@ fn task_button(bar: Bar, row: Row, key: String) -> Div {
     let icon_only = move || idle() || compact.get();
     let current = memo(move || group.with(|g| g.as_ref().is_some_and(group_is_current)));
     let shows = memo(move || {
-        let id = group.with(|g| g.as_ref().and_then(|g| g.entry.as_ref().map(|e| e.id.clone())))?;
+        let id = group.with(|g| {
+            g.as_ref()
+                .and_then(|g| g.entry.as_ref().map(|e| e.id.clone()))
+        })?;
         launcher_entry(&id)
     });
     let body_w = move || slot.get().map_or(0.0, |s| s.w) - theme().stack_room;
@@ -290,7 +333,11 @@ fn task_button(bar: Bar, row: Row, key: String) -> Div {
     let label = memo(move || {
         group.with(|g| match g {
             Some(g) if g.windows.len() > 1 => g.name.clone(),
-            Some(g) => g.windows.first().map(title_of).unwrap_or_else(|| g.name.clone()),
+            Some(g) => g
+                .windows
+                .first()
+                .map(title_of)
+                .unwrap_or_else(|| g.name.clone()),
             None => String::new(),
         })
     });
@@ -345,7 +392,11 @@ fn task_button(bar: Bar, row: Row, key: String) -> Div {
             let t = theme();
             let entry = shows.get();
             let urgent = entry.is_some_and(|e| e.urgent);
-            let share = if urgent { Some(1.0) } else { entry.and_then(|e| e.progress) };
+            let share = if urgent {
+                Some(1.0)
+            } else {
+                entry.and_then(|e| e.progress)
+            };
             let s = s
                 .h(t.task_button_height - 4.0)
                 .rounded(corner((item_radius() - 1.0).max(0.0)))
@@ -365,10 +416,15 @@ fn task_button(bar: Bar, row: Row, key: String) -> Div {
         .items_center()
         .justify_center()
         .dyn_style(move |s| {
-            let s = s.w(body_w()).translate_y(if ui.pressed() { 1.0 } else { 0.0 });
+            let s = s
+                .w(body_w())
+                .translate_y(if ui.pressed() { 1.0 } else { 0.0 });
             if icon_only() { s } else { s.hidden() }
         })
-        .child(shell_icon(move || icon.get(), untrack(|| theme().task_icon_size)));
+        .child(shell_icon(
+            move || icon.get(),
+            untrack(|| theme().task_icon_size),
+        ));
     let words = move |color: Color, dy: f32| {
         div()
             .absolute()
@@ -394,7 +450,10 @@ fn task_button(bar: Bar, row: Row, key: String) -> Div {
             let s = s.w(body_w());
             if icon_only() { s.hidden() } else { s }
         })
-        .child(shell_icon(move || icon.get(), untrack(|| theme().task_icon_size)))
+        .child(shell_icon(
+            move || icon.get(),
+            untrack(|| theme().task_icon_size),
+        ))
         .child(
             div()
                 .relative()
@@ -402,7 +461,10 @@ fn task_button(bar: Bar, row: Row, key: String) -> Div {
                 .min_w(0.0)
                 .dyn_style(move |s| {
                     let t = theme();
-                    let s = s.font_family(font()).text_size(t.font_size).h(t.font_size * 1.4);
+                    let s = s
+                        .font_family(font())
+                        .text_size(t.font_size)
+                        .h(t.font_size * 1.4);
                     if body_w() > LABEL_ROOM { s } else { s.hidden() }
                 })
                 .child(words(LABEL_SHADOW, 1.0))
@@ -426,9 +488,20 @@ fn task_button(bar: Bar, row: Row, key: String) -> Div {
         .fill(|| vertical_gradient(&[(0.0, BADGE_TOP), (1.0, BADGE_BOTTOM)]))
         .dyn_style(move |s| {
             let t = theme();
-            let left = if icon_only() { body_w() / 2.0 + 2.0 } else { INSIDE + t.task_icon_size - 8.0 };
-            let s = s.left(left).rounded(corner(BADGE_HEIGHT / 2.0)).font_family(font());
-            if shows.get().and_then(|e| e.count).is_some_and(|n| n > 0) { s } else { s.hidden() }
+            let left = if icon_only() {
+                body_w() / 2.0 + 2.0
+            } else {
+                INSIDE + t.task_icon_size - 8.0
+            };
+            let s = s
+                .left(left)
+                .rounded(corner(BADGE_HEIGHT / 2.0))
+                .font_family(font());
+            if shows.get().and_then(|e| e.count).is_some_and(|n| n > 0) {
+                s
+            } else {
+                s.hidden()
+            }
         })
         .child(text(move || match shows.get().and_then(|e| e.count) {
             Some(n) if n > 99 => "99+".to_owned(),
@@ -454,7 +527,9 @@ fn task_button(bar: Bar, row: Row, key: String) -> Div {
             let bar = hover_bar.clone();
             let key = hover_key.clone();
             let wait = Duration::from_millis(untrack(|| theme().thumb_delay) as u64);
-            rest.set(Some(set_timeout(wait, move || bar.show_preview(key, center()))));
+            rest.set(Some(set_timeout(wait, move || {
+                bar.show_preview(key, center())
+            })));
         } else if !inside {
             hover_bar.hide_preview_soon();
         }
@@ -537,7 +612,12 @@ fn task_button(bar: Bar, row: Row, key: String) -> Div {
         .child(alone)
         .child(labelled)
         .child(badge)
-        .child(super::jump_list::jump_list(bar.clone(), key.clone(), group, anchor))
+        .child(super::jump_list::jump_list(
+            bar.clone(),
+            key.clone(),
+            group,
+            anchor,
+        ))
         .on_hover(on_hover)
         .on_grab(on_grab)
         .on_pointer_down(move |e| {
@@ -545,8 +625,11 @@ fn task_button(bar: Bar, row: Row, key: String) -> Div {
                 e.stop_propagation();
                 menu_bar.preview.set(None);
                 menu_bar.tray_menu.set(None);
-                let again = menu_bar.jump_list.get_untracked().as_deref() == Some(menu_key.as_str());
-                menu_bar.jump_list.set(if again { None } else { Some(menu_key.clone()) });
+                let again =
+                    menu_bar.jump_list.get_untracked().as_deref() == Some(menu_key.as_str());
+                menu_bar
+                    .jump_list
+                    .set(if again { None } else { Some(menu_key.clone()) });
             }
         })
         .on_click(move |e| {

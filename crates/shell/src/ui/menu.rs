@@ -212,10 +212,12 @@ fn menu_line(state: MenuState, i: usize, line: &MenuLine, gutter: bool) -> View 
             .flex_row()
             .items_center()
             .h(SEPARATOR_HEIGHT)
-            .child(div().flex_1().h(1.0).dyn_style(|s| {
-                s.mx(theme().popup_pad_x / 2.0)
-                    .bg(scheme().menu_divider)
-            }))
+            .child(
+                div()
+                    .flex_1()
+                    .h(1.0)
+                    .dyn_style(|s| s.mx(theme().popup_pad_x / 2.0).bg(scheme().menu_divider)),
+            )
             .into_view(),
         Kind::Heading => line_row(state, i, line, gutter, false).into_view(),
         Kind::Item => {
@@ -295,7 +297,9 @@ fn line_row(state: MenuState, i: usize, line: &MenuLine, gutter: bool, choosable
                     .letter_spacing(t.heading_spacing)
                     .text_color(c.menu_heading)
             } else {
-                s.font_family(font()).text_size(t.font_size).text_color(c.text)
+                s.font_family(font())
+                    .text_size(t.font_size)
+                    .text_color(c.text)
             }
         })
         .child(text(move || {
@@ -379,7 +383,11 @@ fn pin_button(pinned: bool, toggle: Rc<dyn Fn()>, shown: impl Fn() -> bool + 'st
             } else {
                 s.bg(Color::TRANSPARENT).border_color(Color::TRANSPARENT)
             };
-            if shown() || ui.hovered() { s } else { s.hidden() }
+            if shown() || ui.hovered() {
+                s
+            } else {
+                s.hidden()
+            }
         })
         .child(
             img(move || ink_asset(if pinned { "pin-on.svg" } else { "pin.svg" }))
@@ -422,7 +430,11 @@ pub fn menu_row(
     let large = memo(|| settings().with(|s| s.start_menu_large_icons));
     let icon = dyn_view(move || {
         let t = theme();
-        let size = if large.get() { t.menu_icon_size } else { t.menu_icon_size_small };
+        let size = if large.get() {
+            t.menu_icon_size
+        } else {
+            t.menu_icon_size_small
+        };
         icon_box(icon.clone(), size)
     });
     let words = text_fn(label);
@@ -435,7 +447,11 @@ pub fn menu_row(
         .dyn_style(move |s| {
             let t = theme();
             let c = scheme();
-            let s = if bold || heading { s.font_weight(FontWeight::BOLD) } else { s };
+            let s = if bold || heading {
+                s.font_weight(FontWeight::BOLD)
+            } else {
+                s
+            };
             if heading {
                 s.font_family(heading_font())
                     .text_size(t.font_size_small)
@@ -470,7 +486,11 @@ pub fn menu_row(
         .dyn_style(move |s| {
             let t = theme();
             let c = scheme();
-            let height = if large.get() { t.menu_row_height } else { t.menu_row_height_small };
+            let height = if large.get() {
+                t.menu_row_height
+            } else {
+                t.menu_row_height_small
+            };
             let s = s.h(height).rounded(item_radius());
             if lit() {
                 s.bg(c.selection).border_color(c.selection_border)
@@ -484,7 +504,10 @@ pub fn menu_row(
         row.child(
             div()
                 .flex_none()
-                .dyn_style(|s| s.text_size(theme().font_size).text_color(scheme().text_muted))
+                .dyn_style(|s| {
+                    s.text_size(theme().font_size)
+                        .text_color(scheme().text_muted)
+                })
                 .child("\u{25B8}"),
         )
     } else {

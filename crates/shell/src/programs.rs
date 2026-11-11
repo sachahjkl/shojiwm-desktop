@@ -9,13 +9,18 @@ const SESSION: &[(&str, &str, &str)] = &[
     ("terminal", "SHOJIWM_WIN7_TERMINAL", "kitty"),
     ("fileManager", "SHOJIWM_WIN7_FILE_MANAGER", "thunar"),
     ("taskManager", "SHOJIWM_WIN7_TASK_MANAGER", "inspecteur"),
-    ("systemMonitor", "SHOJIWM_WIN7_SYSTEM_MONITOR", "inspecteur --section performance"),
+    (
+        "systemMonitor",
+        "SHOJIWM_WIN7_SYSTEM_MONITOR",
+        "inspecteur --section performance",
+    ),
     ("clipboard", "SHOJIWM_WIN7_CLIPBOARD", ""),
-    ("screenshot", "SHOJIWM_WIN7_SCREENSHOT", "grim - | wl-copy --type image/png"),
+    (
+        "screenshot",
+        "SHOJIWM_WIN7_SCREENSHOT",
+        "grim - | wl-copy --type image/png",
+    ),
 ];
-
-/// The browser the desktop names (Apps.qml's `browser`).
-pub const BROWSER: &str = "chromium";
 
 /// The session's command for a key, before any choice in Default Programs.
 pub fn session_program(key: &str) -> String {
@@ -40,7 +45,11 @@ pub fn program(key: &str) -> String {
             .map(String::from)
             .unwrap_or_default()
     });
-    if chosen.is_empty() { session_program(key) } else { chosen }
+    if chosen.is_empty() {
+        session_program(key)
+    } else {
+        chosen
+    }
 }
 
 /// What the compositor's keys start (`src/programs.ts`).

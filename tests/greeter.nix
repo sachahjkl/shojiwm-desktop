@@ -1,10 +1,10 @@
 # The log-on screen end to end, in VMs, through nixosModules.greeter:
 #
 #   - machine: greetd starts the greeter's Hyprland, which starts
-#     greeter.qml; the password is typed; the session starts once that
-#     Hyprland has left, and the session chosen is kept;
-#   - fallback: Quickshell dies before any log-on; greetd then shows its
-#     text log-on, which starts the default session.
+#     `shojiwm-shell greeter`; the password is typed; the session starts
+#     once that Hyprland has left, and the session chosen is kept;
+#   - fallback: the log-on screen dies before any log-on; greetd then shows
+#     its text log-on, which starts the default session.
 {
   pkgs,
   module,
@@ -57,7 +57,7 @@ in
     };
 
     testScript = ''
-      greeter_up = "pgrep -u greeter -f 'quickshell -p /etc/shojiwm-win7/greeter/greeter.qml'"
+      greeter_up = "pgrep -u greeter -f 'shojiwm-shell greeter'"
 
       # The log-on screen logs on.
       machine.wait_for_unit("greetd.service")
@@ -67,13 +67,13 @@ in
       machine.send_chars("secret\n")
       machine.wait_for_file("/tmp/session-started", timeout=60)
       machine.wait_until_fails("pgrep -u greeter -x Hyprland", timeout=30)
-      # The state folder follows the stable path, so it outlives updates.
-      machine.succeed("find /var/lib/greeter/.local/state -name last-session -exec grep -qx marker {} +")
+      # The session chosen is kept for the next log-on.
+      machine.succeed("grep -qx marker /var/lib/greeter/.local/state/shojiwm-win7/last-session")
 
       # A log-on screen that dies gives way to the text log-on.
       fallback.wait_for_unit("greetd.service")
       fallback.wait_until_succeeds(greeter_up, timeout=120)
-      fallback.succeed("pkill -KILL -u greeter -x quickshell || pkill -KILL -u greeter -f 'quickshell -p'")
+      fallback.succeed("pkill -KILL -u greeter -f 'shojiwm-shell greeter'")
       fallback.wait_until_succeeds("pgrep -u greeter -x agreety", timeout=60)
       fallback.wait_until_tty_matches("1", "login:", timeout=30)
       fallback.send_chars("alice\n")

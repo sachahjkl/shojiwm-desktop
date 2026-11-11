@@ -5,21 +5,30 @@
 
 use super::Bar;
 use crate::apps::{
-    WindowGroup, file_icon, is_taskbar_pinned, launch, open_with, pinned_files_for, recent_unpinned,
-    set_file_pinned, set_taskbar_pinned,
+    WindowGroup, file_icon, is_taskbar_pinned, launch, open_with, pinned_files_for,
+    recent_unpinned, set_file_pinned, set_taskbar_pinned,
 };
 use crate::ui::{MenuLine, bar_menu_options, popup_menu};
 use anti_webui::prelude::*;
 
 /// The jump list of the button `key`, open while the bar says so. Put it in the button, whose
 /// box is `anchor`.
-pub(super) fn jump_list(bar: Bar, key: String, group: Memo<Option<WindowGroup>>, anchor: NodeRef) -> Show {
+pub(super) fn jump_list(
+    bar: Bar,
+    key: String,
+    group: Memo<Option<WindowGroup>>,
+    anchor: NodeRef,
+) -> Show {
     let open = bar.jump_list;
     popup_menu(
         move || open.with(|j| j.as_deref() == Some(key.as_str())),
         move || bar.jump_list.set(None),
         untrack(|| bar_menu_options(anchor)),
-        move || untrack(|| group.get()).map(|g| lines(&g)).unwrap_or_default(),
+        move || {
+            untrack(|| group.get())
+                .map(|g| lines(&g))
+                .unwrap_or_default()
+        },
     )
 }
 
@@ -32,7 +41,10 @@ fn lines(group: &WindowGroup) -> Vec<MenuLine> {
             lines.push(MenuLine::heading("Pinned"));
         }
         for file in pinned {
-            let (open, unpin) = ((entry.clone(), file.path.clone()), (entry.clone(), file.path.clone()));
+            let (open, unpin) = (
+                (entry.clone(), file.path.clone()),
+                (entry.clone(), file.path.clone()),
+            );
             lines.push(
                 MenuLine::item(file.name.clone(), move || open_with(&open.0, &open.1))
                     .icon(file_icon(&file.name))
@@ -45,7 +57,10 @@ fn lines(group: &WindowGroup) -> Vec<MenuLine> {
             files_or_tasks = true;
         }
         for file in recent {
-            let (open, pin) = ((entry.clone(), file.path.clone()), (entry.clone(), file.path.clone()));
+            let (open, pin) = (
+                (entry.clone(), file.path.clone()),
+                (entry.clone(), file.path.clone()),
+            );
             lines.push(
                 MenuLine::item(file.name.clone(), move || open_with(&open.0, &open.1))
                     .icon(file_icon(&file.name))
@@ -69,7 +84,11 @@ fn lines(group: &WindowGroup) -> Vec<MenuLine> {
     if files_or_tasks {
         lines.push(MenuLine::separator());
     }
-    let open_label = if group.name.is_empty() { "Open".to_owned() } else { group.name.clone() };
+    let open_label = if group.name.is_empty() {
+        "Open".to_owned()
+    } else {
+        group.name.clone()
+    };
     let start = group.entry.clone();
     lines.push(
         MenuLine::item(open_label, move || {
@@ -82,13 +101,23 @@ fn lines(group: &WindowGroup) -> Vec<MenuLine> {
     );
     if let Some(entry) = &group.entry {
         let pinned = is_taskbar_pinned(entry);
-        let label = if pinned { "Unpin this program from taskbar" } else { "Pin this program to taskbar" };
+        let label = if pinned {
+            "Unpin this program from taskbar"
+        } else {
+            "Pin this program to taskbar"
+        };
         let entry = entry.clone();
-        lines.push(MenuLine::item(label, move || set_taskbar_pinned(&entry, !pinned)));
+        lines.push(MenuLine::item(label, move || {
+            set_taskbar_pinned(&entry, !pinned)
+        }));
     }
     if !group.windows.is_empty() {
         lines.push(MenuLine::separator());
-        let label = if group.windows.len() > 1 { "Close all windows" } else { "Close window" };
+        let label = if group.windows.len() > 1 {
+            "Close all windows"
+        } else {
+            "Close window"
+        };
         let windows = group.windows.clone();
         lines.push(MenuLine::item(label, move || {
             for w in &windows {

@@ -14,14 +14,12 @@
 //! - while the launcher is open: a catcher over its screen, and the launcher's panel.
 
 mod launcher;
-pub mod launcher_entries;
 mod menu;
 mod places;
 pub mod power;
 mod search;
 mod user_tile;
 
-pub use power::power_split_button;
 pub use user_tile::{user_picture, user_tile};
 
 use crate::settings::settings;
@@ -189,7 +187,11 @@ fn catcher_layer(output: &Output) {
     );
     effect(move || {
         let open = state().open_on.with(|o| !o.is_empty());
-        layer.set_input_region(if open { InputRegion::Full } else { InputRegion::Empty });
+        layer.set_input_region(if open {
+            InputRegion::Full
+        } else {
+            InputRegion::Empty
+        });
     });
 }
 
@@ -203,7 +205,11 @@ fn menu_place() -> (Anchor, Margin) {
         left: t.menu_margin.round() as i32,
         right: 0,
     };
-    let edge = if bar_at_top() { Anchor::TOP } else { Anchor::BOTTOM };
+    let edge = if bar_at_top() {
+        Anchor::TOP
+    } else {
+        Anchor::BOTTOM
+    };
     (edge | Anchor::LEFT, margin)
 }
 
@@ -237,9 +243,10 @@ fn menu_layer(output: Output) {
             .output(&output)
             .namespace("shojiwm-win7-start"),
         move || {
-            div()
-                .size_full()
-                .child(show(move || open.get(), move || menu::start_menu(content_name.clone())))
+            div().size_full().child(show(
+                move || open.get(),
+                move || menu::start_menu(content_name.clone()),
+            ))
         },
     );
     {
@@ -300,7 +307,10 @@ fn launcher_layers() {
                 LayerOptions::new()
                     .layer(Layer::Overlay)
                     .anchor(Anchor::TOP)
-                    .margin(Margin { top, ..Default::default() })
+                    .margin(Margin {
+                        top,
+                        ..Default::default()
+                    })
                     .size(width, height)
                     .exclusive(Exclusive::Ignore)
                     .keyboard(Keyboard::Exclusive)

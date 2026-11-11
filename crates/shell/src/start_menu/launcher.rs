@@ -49,12 +49,9 @@ struct Sizes {
 fn sizes(screen: (f32, f32)) -> Sizes {
     let t = theme();
     let header = t.menu_search_height + FIELD_EXTRA + t.menu_padding * 2.0;
-    let max_list = ((screen.1 * MAX_HEIGHT_SHARE).round()
-        - t.taskbar_height
-        - header
-        - t.menu_padding
-        - 8.0)
-        .max(0.0);
+    let max_list =
+        ((screen.1 * MAX_HEIGHT_SHARE).round() - t.taskbar_height - header - t.menu_padding - 8.0)
+            .max(0.0);
     let max_width = (screen.0 * MAX_WIDTH_SHARE).round();
     Sizes {
         header,
@@ -75,7 +72,10 @@ fn screen_of(output: &Output) -> (f32, f32) {
 /// The size of the launcher's layer on a screen. Reading it tracks the theme and the settings.
 pub(super) fn window_size(output: &Output) -> (i32, i32) {
     let s = sizes(screen_of(output));
-    (s.window_width.round() as i32, s.window_height.round() as i32)
+    (
+        s.window_width.round() as i32,
+        s.window_height.round() as i32,
+    )
 }
 
 /// Which edges of the panel a drag moves.
@@ -138,7 +138,12 @@ pub(super) fn launcher(output: Output) -> Div {
         let s = sz.get();
         if compact.get() {
             let rows = compact_rows.get();
-            s.header + if rows > 0.0 { rows * row_height() + t.menu_padding } else { 0.0 }
+            s.header
+                + if rows > 0.0 {
+                    rows * row_height() + t.menu_padding
+                } else {
+                    0.0
+                }
         } else {
             s.header + list_height.get() + t.menu_padding
         }
@@ -236,7 +241,11 @@ pub(super) fn launcher(output: Output) -> Div {
                 .h(t.menu_search_height + FIELD_EXTRA)
                 .rounded(field_radius())
                 .bg(c.field)
-                .border_color(if focused.get() { c.field_focus } else { c.field_border })
+                .border_color(if focused.get() {
+                    c.field_focus
+                } else {
+                    c.field_border
+                })
         })
         .child(
             img(asset("search.svg"))
@@ -272,7 +281,11 @@ pub(super) fn launcher(output: Output) -> Div {
                 .right(t.menu_padding)
                 .top(sz.get().header)
                 .bottom(t.menu_padding);
-            if compact.get() && !search.active() { s.hidden() } else { s }
+            if compact.get() && !search.active() {
+                s.hidden()
+            } else {
+                s
+            }
         })
         .child(aero_scroll(search::results(search, pick, close_launcher, false)).flex_1());
     // The panel is centred, with its top fixed: a side sets the width to twice the pointer's
@@ -286,7 +299,11 @@ pub(super) fn launcher(output: Output) -> Div {
             match e.phase {
                 GrabPhase::Start | GrabPhase::Move => {
                     if let Some(left) = which.moves_width() {
-                        let from_middle = if left { s.window_width / 2.0 - x } else { x - s.window_width / 2.0 };
+                        let from_middle = if left {
+                            s.window_width / 2.0 - x
+                        } else {
+                            x - s.window_width / 2.0
+                        };
                         drag_width.set(Some((2.0 * from_middle).round()));
                     }
                     if which.moves_height() {
@@ -296,8 +313,12 @@ pub(super) fn launcher(output: Output) -> Div {
                     }
                 }
                 GrabPhase::End | GrabPhase::Cancel => {
-                    let width = drag_width.get_untracked().map(|_| untrack(|| panel_width.get()));
-                    let height = drag_list.get_untracked().map(|_| untrack(|| list_height.get()));
+                    let width = drag_width
+                        .get_untracked()
+                        .map(|_| untrack(|| panel_width.get()));
+                    let height = drag_list
+                        .get_untracked()
+                        .map(|_| untrack(|| list_height.get()));
                     if width.is_some() || height.is_some() {
                         change(|s| {
                             if let Some(w) = width {
@@ -315,16 +336,34 @@ pub(super) fn launcher(output: Output) -> Div {
         };
         let el = div().absolute().grab_threshold(0.0).on_grab(grabbed);
         match which {
-            Edge::Left => el.left(0.0).top(0.0).bottom(0.0).w(EDGE).cursor(CursorIcon::EwResize),
-            Edge::Right => el.right(0.0).top(0.0).bottom(0.0).w(EDGE).cursor(CursorIcon::EwResize),
+            Edge::Left => el
+                .left(0.0)
+                .top(0.0)
+                .bottom(0.0)
+                .w(EDGE)
+                .cursor(CursorIcon::EwResize),
+            Edge::Right => el
+                .right(0.0)
+                .top(0.0)
+                .bottom(0.0)
+                .w(EDGE)
+                .cursor(CursorIcon::EwResize),
             Edge::Bottom => el
                 .left(EDGE)
                 .right(EDGE)
                 .bottom(0.0)
                 .h(EDGE)
                 .cursor(CursorIcon::NsResize),
-            Edge::BottomLeft => el.left(0.0).bottom(0.0).size(CORNER).cursor(CursorIcon::Move),
-            Edge::BottomRight => el.right(0.0).bottom(0.0).size(CORNER).cursor(CursorIcon::Move),
+            Edge::BottomLeft => el
+                .left(0.0)
+                .bottom(0.0)
+                .size(CORNER)
+                .cursor(CursorIcon::Move),
+            Edge::BottomRight => el
+                .right(0.0)
+                .bottom(0.0)
+                .size(CORNER)
+                .cursor(CursorIcon::Move),
         }
     };
     let panel = div()
@@ -361,7 +400,11 @@ pub(super) fn launcher(output: Output) -> Div {
         .flex_col()
         .items_center()
         .select_none()
-        .dyn_style(|s| s.font_family(font()).text_size(theme().font_size).text_color(scheme().text))
+        .dyn_style(|s| {
+            s.font_family(font())
+                .text_size(theme().font_size)
+                .text_color(scheme().text)
+        })
         .on_pointer_down(|_| close_launcher())
         .child(panel)
 }

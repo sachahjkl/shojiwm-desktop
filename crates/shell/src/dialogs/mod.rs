@@ -14,13 +14,12 @@ mod screen_saver;
 mod shutdown;
 
 pub use alt_tab::alt_tab_event;
-pub use crate::power::{POWER_ACTIONS, PowerAction, run_power};
 
 use crate::ipc;
 use crate::settings::settings;
 use anti_webui::prelude::*;
-use anti_webui::shell::prelude::*;
 use anti_webui::shell::lock_state;
+use anti_webui::shell::prelude::*;
 use std::rc::Rc;
 use std::sync::OnceLock;
 use std::time::Duration;
@@ -126,7 +125,7 @@ fn layer_while<V: IntoView>(
         }
         let inside = output.clone();
         let view = view.clone();
-        let options = untrack(|| options()).output(&output);
+        let options = untrack(&options).output(&output);
         open_layer(options, move || view(inside));
     });
 }

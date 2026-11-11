@@ -34,7 +34,11 @@ pub fn built_in() -> PathBuf {
 /// The desktop's picture now. Reading it tracks the settings and the theme.
 pub fn source() -> PathBuf {
     let chosen = settings().with(|s| s.wallpaper.clone());
-    if chosen.is_empty() { built_in() } else { PathBuf::from(chosen) }
+    if chosen.is_empty() {
+        built_in()
+    } else {
+        PathBuf::from(chosen)
+    }
 }
 
 /// The picture, the size of the desktop, placed as the settings say.
@@ -112,7 +116,13 @@ fn schedule(turn: std::rc::Rc<Cell<Option<Timeout>>>, every: Duration) {
 /// Shows the next picture of the show now.
 pub fn next() {
     let (folder, shuffle, current) = untrack(|| {
-        settings().with(|s| (s.slideshow_folder.clone(), s.slideshow_shuffle, s.wallpaper.clone()))
+        settings().with(|s| {
+            (
+                s.slideshow_folder.clone(),
+                s.slideshow_shuffle,
+                s.wallpaper.clone(),
+            )
+        })
     });
     if folder.is_empty() {
         return;

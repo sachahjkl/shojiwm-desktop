@@ -34,9 +34,13 @@ pub fn page() -> Div {
             move || sound.sinks().is_empty() && sound.sources().is_empty(),
             || note("PipeWire lists no sound device."),
         ))
-        .child(div().pt(6.0).child(cp_link("Open the volume mixer", false, || {
-            crate::programs::run(MIXER)
-        })))
+        .child(
+            div()
+                .pt(6.0)
+                .child(cp_link("Open the volume mixer", false, || {
+                    crate::programs::run(MIXER)
+                })),
+        )
 }
 
 /// A device: its icon, its name, "Default Device" or its description, and "Set Default".
@@ -45,7 +49,11 @@ fn device_row(device: AudioDevice, playback: bool) -> Div {
     let sound = audio();
     let id = device.id;
     let is_default = memo(move || {
-        let default = if playback { sound.default_sink() } else { sound.default_source() };
+        let default = if playback {
+            sound.default_sink()
+        } else {
+            sound.default_source()
+        };
         default.is_some_and(|d| d.id == id)
     });
     let icon = if playback {
@@ -69,15 +77,11 @@ fn device_row(device: AudioDevice, playback: bool) -> Div {
         .flex_1()
         .min_w(0.0)
         .overflow_clip()
-        .child(
-            text(name)
-                .whitespace_nowrap()
-                .dyn_style(|s| {
-                    s.font_family(font())
-                        .text_size(theme().font_size)
-                        .text_color(scheme().text)
-                }),
-        )
+        .child(text(name).whitespace_nowrap().dyn_style(|s| {
+            s.font_family(font())
+                .text_size(theme().font_size)
+                .text_color(scheme().text)
+        }))
         .child(
             muted_small(move || {
                 if is_default.get() {
@@ -88,7 +92,11 @@ fn device_row(device: AudioDevice, playback: bool) -> Div {
             })
             .whitespace_nowrap()
             .dyn_style(move |s| {
-                if is_default.get() { s.text_color(DEFAULT_GREEN) } else { s }
+                if is_default.get() {
+                    s.text_color(DEFAULT_GREEN)
+                } else {
+                    s
+                }
             }),
         );
     let chosen = device.clone();
@@ -111,7 +119,14 @@ fn device_row(device: AudioDevice, playback: bool) -> Div {
                 s.bg(Color::TRANSPARENT).border_color(Color::TRANSPARENT)
             }
         })
-        .child(div().flex_none().w(28.0).flex().justify_center().child(icon))
+        .child(
+            div()
+                .flex_none()
+                .w(28.0)
+                .flex()
+                .justify_center()
+                .child(icon),
+        )
         .child(words)
         .child(show(
             move || !is_default.get(),

@@ -154,7 +154,9 @@ impl Greeter {
     fn new() -> Self {
         let chosen = std::fs::read_to_string(last_session_file())
             .map(|text| text.trim().to_owned())
-            .unwrap_or_else(|_| std::env::var("SHOJIWM_GREETER_DEFAULT_SESSION").unwrap_or_default());
+            .unwrap_or_else(|_| {
+                std::env::var("SHOJIWM_GREETER_DEFAULT_SESSION").unwrap_or_default()
+            });
         Self {
             auth: Auth::new(authenticate),
             sessions: signal(read_sessions()),
@@ -257,7 +259,13 @@ fn on_response(response: Response) {
             quit();
         }
         (_, Response::Success) => launch(greeter),
-        (_, Response::Error { auth: wrong, description }) => {
+        (
+            _,
+            Response::Error {
+                auth: wrong,
+                description,
+            },
+        ) => {
             send(Sent::Cancel, Request::CancelSession);
             if wrong {
                 fail(auth, INCORRECT);
@@ -368,7 +376,11 @@ fn session_picker(greeter: Greeter) -> Div {
                     let hot = ui.hovered() || open.get();
                     s.rounded(corner(3.0))
                         .bg(if hot { PICKER_FILL_HOT } else { PICKER_FILL })
-                        .border_color(if hot { PICKER_BORDER_HOT } else { PICKER_BORDER })
+                        .border_color(if hot {
+                            PICKER_BORDER_HOT
+                        } else {
+                            PICKER_BORDER
+                        })
                 })
                 .child(
                     shadow_text(move || {
@@ -392,7 +404,13 @@ fn session_picker(greeter: Greeter) -> Div {
 fn surface(primary: Memo<bool>, greeter: Greeter, account: Account) -> Div {
     div()
         .size_full()
-        .dyn_style(move |s| s.bg(if primary.get() { LOGON_BLUE } else { Color::BLACK }))
+        .dyn_style(move |s| {
+            s.bg(if primary.get() {
+                LOGON_BLUE
+            } else {
+                Color::BLACK
+            })
+        })
         .child(dyn_view(move || {
             let primary = primary.get();
             let account = account.clone();
@@ -438,8 +456,7 @@ pub fn run() -> Result<(), String> {
             };
             for_each_output(move |output| {
                 let output_name = output.name.clone();
-                let primary =
-                    memo(move || crate::desktop::primary_output_name() == output_name);
+                let primary = memo(move || crate::desktop::primary_output_name() == output_name);
                 let account = account.clone();
                 let layer = open_layer(
                     LayerOptions::new()

@@ -1,24 +1,25 @@
 # The Windows 7 log-on screen as the display manager: greetd starts a
 # Hyprland of its own with the screens given here, and that Hyprland runs
-# shell/greeter.qml. Once Quickshell has started the chosen session, the
+# `shojiwm-shell greeter`. Once it has started the chosen session, the
 # Hyprland leaves and greetd runs the session.
 #
-# If the log-on screen leaves without starting a session (Quickshell
-# crashed, or Ctrl+Alt+Delete left a log-on screen that drew nothing),
-# greetd shows its text log-on (agreety) instead, which starts the default
-# session: a broken log-on screen never keeps you out.
+# If the log-on screen leaves without starting a session (it crashed, or
+# Ctrl+Alt+Delete left a log-on screen that drew nothing), greetd shows its
+# text log-on (agreety) instead, which starts the default session: a broken
+# log-on screen never keeps you out.
 #
-# The shell is served from /etc/shojiwm-win7/greeter, a path that does not
-# change with the package: Quickshell names its state folder after the
-# path, and keeps the last session chosen there.
-{package}: {
+# The greeter keeps the last session chosen in its state folder
+# (~greeter/.local/state/shojiwm-win7/last-session).
+{
+  package,
+  shell,
+}: {
   config,
   lib,
   pkgs,
   ...
 }: let
   cfg = config.services.shojiwm-win7-greeter;
-  shellPath = "/etc/shojiwm-win7/greeter/greeter.qml";
   sessions = "${config.services.displayManager.sessionData.desktops}/share/wayland-sessions";
 
   # In the greeter's Hyprland: the log-on screen, then out. The mark tells
@@ -28,7 +29,9 @@
     export SHOJIWM_GREETER_SESSIONS=${sessions}
     export SHOJIWM_GREETER_DEFAULT_SESSION=${lib.escapeShellArg cfg.defaultSession}
     export SHOJIWM_WIN7_PRIMARY_SCREEN=${lib.escapeShellArg cfg.mainScreen}
-    if ${lib.getExe pkgs.quickshell} -p ${shellPath}; then
+    # The pictures of the log-on screen are the configuration's.
+    export SHOJIWM_SHELL_DIR=${package}/shell
+    if ${lib.getExe shell} greeter; then
       touch "$XDG_RUNTIME_DIR/shojiwm-win7-greeter-launched"
     fi
     # The configuration is Lua: dispatch takes a Lua call.
@@ -160,15 +163,13 @@ in {
   };
 
   config = lib.mkIf cfg.enable {
-    environment.etc."shojiwm-win7/greeter".source = "${package}/shell";
-
     services.greetd = {
       enable = true;
       settings.default_session.command = "${greeter}";
     };
 
     # The greeter keeps the last session chosen in its state folder
-    # (~/.local/state), and Quickshell its cache.
+    # (~/.local/state).
     users.users.greeter = {
       home = "/var/lib/greeter";
       createHome = true;

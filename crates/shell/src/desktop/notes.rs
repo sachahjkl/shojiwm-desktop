@@ -123,12 +123,17 @@ fn load() -> Vec<Note> {
     std::fs::read_to_string(path())
         .ok()
         .and_then(|text| serde_json::from_str::<Value>(&text).ok())
-        .and_then(|v| v.as_array().map(|list| list.iter().filter_map(Note::from_json).collect()))
+        .and_then(|v| {
+            v.as_array()
+                .map(|list| list.iter().filter_map(Note::from_json).collect())
+        })
         .unwrap_or_default()
 }
 
 fn save() {
-    let list: Vec<Value> = store().notes.with_untracked(|n| n.iter().map(Note::to_json).collect());
+    let list: Vec<Value> = store()
+        .notes
+        .with_untracked(|n| n.iter().map(Note::to_json).collect());
     let _ = std::fs::create_dir_all(state_dir());
     let text = serde_json::to_string(&Value::Array(list)).unwrap_or_default();
     let partial = path().with_extension("json.partial");
@@ -194,7 +199,10 @@ pub fn stop_editing() {
 pub fn view(screen: String, area: Signal<(f32, f32)>) -> impl IntoView {
     let s = store();
     for_each(
-        move || s.notes.with(|n| n.iter().filter(|n| n.screen == screen).cloned().collect()),
+        move || {
+            s.notes
+                .with(|n| n.iter().filter(|n| n.screen == screen).cloned().collect())
+        },
         |note: &Note| note.id.clone(),
         move |note| note_view(note, area),
     )
@@ -322,7 +330,10 @@ fn note_view(note: Note, area: Signal<(f32, f32)>) -> Div {
             GrabPhase::Start => sized_from.set(size.get_untracked()),
             GrabPhase::Move => {
                 let (w, h) = sized_from.get();
-                size.set(((w + g.total.x).max(MIN_WIDTH), (h + g.total.y).max(MIN_HEIGHT)));
+                size.set((
+                    (w + g.total.x).max(MIN_WIDTH),
+                    (h + g.total.y).max(MIN_HEIGHT),
+                ));
             }
             GrabPhase::End => {
                 let (w, h) = size.get_untracked();
@@ -343,9 +354,16 @@ fn note_view(note: Note, area: Signal<(f32, f32)>) -> Div {
             s.left(x).top(y).w(w).h(h)
         })
         // A soft shadow under the sheet.
-        .child(div().absolute().left(3.0).top(3.0).right(-3.0).bottom(-4.0).bg(SHADOW).dyn_style(
-            |s| s.rounded(corner(2.0)),
-        ))
+        .child(
+            div()
+                .absolute()
+                .left(3.0)
+                .top(3.0)
+                .right(-3.0)
+                .bottom(-4.0)
+                .bg(SHADOW)
+                .dyn_style(|s| s.rounded(corner(2.0))),
+        )
         .child(
             div()
                 .absolute()

@@ -41,7 +41,10 @@ pub enum Kind {
 impl Kind {
     /// The system icons are no files: they are not renamed, trashed or dragged out.
     pub fn is_system(self) -> bool {
-        matches!(self, Kind::Trash | Kind::Computer | Kind::UserFiles | Kind::ControlPanel)
+        matches!(
+            self,
+            Kind::Trash | Kind::Computer | Kind::UserFiles | Kind::ControlPanel
+        )
     }
 
     /// The Settings name of a system icon (`desktop_system_icons`).
@@ -77,7 +80,14 @@ pub struct Item {
 impl Item {
     fn system(kind: Kind, name: &str, path: &str) -> Self {
         Self {
-            key: format!("{}:", if kind == Kind::Trash { "trash" } else { kind.setting() }),
+            key: format!(
+                "{}:",
+                if kind == Kind::Trash {
+                    "trash"
+                } else {
+                    kind.setting()
+                }
+            ),
             kind,
             path: path.to_owned(),
             name: name.to_owned(),
@@ -107,11 +117,17 @@ impl Item {
     /// The picture of the icon: a path, or a name of the icon theme. Reading it tracks whether
     /// the Recycle Bin is full.
     pub fn icon(&self) -> String {
-        let file = |name: &str| asset(&format!("icons/{name}")).to_string_lossy().into_owned();
+        let file = |name: &str| {
+            asset(&format!("icons/{name}"))
+                .to_string_lossy()
+                .into_owned()
+        };
         match self.kind {
-            Kind::Trash => {
-                file(if trash_full() { "recycle-bin-full.png" } else { "recycle-bin.png" })
-            }
+            Kind::Trash => file(if trash_full() {
+                "recycle-bin-full.png"
+            } else {
+                "recycle-bin.png"
+            }),
             Kind::Folder => file("folder.png"),
             Kind::Computer => file("computer.png"),
             Kind::UserFiles => file("home.png"),
@@ -137,16 +153,23 @@ fn file_icon(suffix: &str) -> String {
     const KINDS: &[(&str, &[&str])] = &[
         (
             "file-image",
-            &["png", "jpg", "jpeg", "gif", "webp", "svg", "bmp", "tif", "tiff", "avif", "heic"],
+            &[
+                "png", "jpg", "jpeg", "gif", "webp", "svg", "bmp", "tif", "tiff", "avif", "heic",
+            ],
         ),
-        ("file-audio", &["mp3", "flac", "ogg", "opus", "wav", "m4a", "aac"]),
+        (
+            "file-audio",
+            &["mp3", "flac", "ogg", "opus", "wav", "m4a", "aac"],
+        ),
         ("file-video", &["mp4", "mkv", "webm", "avi", "mov", "m4v"]),
     ];
     let name = KINDS
         .iter()
         .find(|(_, list)| list.contains(&suffix))
         .map_or("file", |(kind, _)| kind);
-    asset(&format!("icons/{name}.png")).to_string_lossy().into_owned()
+    asset(&format!("icons/{name}.png"))
+        .to_string_lossy()
+        .into_owned()
 }
 
 // ----- the shared state ------------------------------------------------------------------------
@@ -240,7 +263,8 @@ pub fn trash_full() -> bool {
 /// the folders and the files. Reading it tracks the folder and the settings.
 pub fn items() -> Vec<Item> {
     let mut files = model().files.get();
-    let (sort, system) = settings().with(|s| (s.desktop_sort.clone(), s.desktop_system_icons.clone()));
+    let (sort, system) =
+        settings().with(|s| (s.desktop_sort.clone(), s.desktop_system_icons.clone()));
     files.sort_by(|a, b| {
         use std::cmp::Ordering;
         let by_kind = b.is_dir().cmp(&a.is_dir());
@@ -258,13 +282,19 @@ pub fn items() -> Vec<Item> {
         };
         by_sort.then_with(|| a.name.to_lowercase().cmp(&b.name.to_lowercase()))
     });
-    let home = home().map(|h| h.to_string_lossy().into_owned()).unwrap_or_default();
+    let home = home()
+        .map(|h| h.to_string_lossy().into_owned())
+        .unwrap_or_default();
     // The system icons as Windows 7's Desktop Icon Settings lists them, the Recycle Bin on top.
     let mut list = vec![Item::system(Kind::Trash, "Recycle Bin", "trash:///")];
     for (kind, name, path) in [
         (Kind::Computer, "Computer".to_owned(), "/".to_owned()),
         (Kind::UserFiles, user_name(), home),
-        (Kind::ControlPanel, "Control Panel".to_owned(), String::new()),
+        (
+            Kind::ControlPanel,
+            "Control Panel".to_owned(),
+            String::new(),
+        ),
     ] {
         if system.iter().any(|s| s == kind.setting()) {
             list.push(Item::system(kind, &name, &path));
@@ -386,7 +416,9 @@ fn read_shortcut(path: &Path) -> (String, String) {
 
 fn shortcut_icon(icon: &str, exec: &str) -> String {
     const PIXELS: u32 = 48;
-    if icon.starts_with('/') || (!icon.is_empty() && anti_webui::shell::icon_path(icon, PIXELS).is_some()) {
+    if icon.starts_with('/')
+        || (!icon.is_empty() && anti_webui::shell::icon_path(icon, PIXELS).is_some())
+    {
         return icon.to_owned();
     }
     let command = exec
@@ -397,7 +429,9 @@ fn shortcut_icon(icon: &str, exec: &str) -> String {
     let command = command.rsplit('/').next().unwrap_or("").to_lowercase();
     if !command.is_empty() {
         let found = apps().all().into_iter().find(|app| {
-            app.id.trim_end_matches(".desktop").eq_ignore_ascii_case(&command)
+            app.id
+                .trim_end_matches(".desktop")
+                .eq_ignore_ascii_case(&command)
                 || app.name.eq_ignore_ascii_case(&command)
         });
         if let Some(name) = found.and_then(|app| app.icon) {
@@ -496,7 +530,11 @@ pub fn rename(item: &Item, name: &str) -> Option<String> {
 
 /// The first "New folder", "New folder (2)" and so on that is free.
 fn free_name(base: &str, extension: &str) -> String {
-    let taken: Vec<String> = untrack(|| model().files.with(|f| f.iter().map(|i| i.name.clone()).collect()));
+    let taken: Vec<String> = untrack(|| {
+        model()
+            .files
+            .with(|f| f.iter().map(|i| i.name.clone()).collect())
+    });
     let mut name = format!("{base}{extension}");
     let mut n = 2;
     while taken.contains(&name) {
@@ -513,11 +551,18 @@ pub fn new_folder() {
 
 pub fn new_text_document() {
     let path = folder().join(free_name("New Text Document", ".txt"));
-    let _ = std::fs::OpenOptions::new().create(true).append(true).open(path);
+    let _ = std::fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(path);
     rescan_later();
 }
 
 /// The terminal, in the desktop folder.
 pub fn open_terminal() {
-    run(&format!("cd {} && {}", quote(&folder_string()), program("terminal")));
+    run(&format!(
+        "cd {} && {}",
+        quote(&folder_string()),
+        program("terminal")
+    ));
 }
