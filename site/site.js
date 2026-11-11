@@ -1,5 +1,5 @@
-// The site's behaviour: the Aero / Kernel switch, the lightbox, the gallery's filters and the
-// documentation's table of contents. Every part works on the HTML as it is: without this
+// The site's behaviour: the Aero / Kernel switch, the lightbox, the gallery's filters, the
+// documentation's table of contents and the changelog page. Every part works on the HTML as it is: without this
 // script, a screenshot is a link to its file and every gallery picture shows.
 
 "use strict";
@@ -330,9 +330,202 @@ function setUpToc() {
   }
 }
 
+/* ----- the changelog ------------------------------------------------------------------------ */
+
+// The changelog page fills its container from changelog.md, the CHANGELOG.md of the repository
+// that the Pages workflow copies beside the site. The renderer reads only the Markdown that the
+// file uses (Keep a Changelog) and builds every node with createElement and textContent: the
+// file's text never goes through innerHTML.
+
+const CHANGELOG_ON_GITHUB = "https://github.com/sachahjkl/shojiwm-desktop/blob/main/CHANGELOG.md";
+
+// The sections of Keep a Changelog; each one gets its own tag colour.
+const CHANGE_KINDS = ["added", "changed", "deprecated", "removed", "fixed", "security"];
+
+// Only http, https and relative addresses become links.
+function safeHref(url) {
+  if (/^https?:\/\//i.test(url)) {
+    return url;
+  }
+  if (/^[a-z][a-z0-9+.-]*:/i.test(url) || url.startsWith("//")) {
+    return null;
+  }
+  return url;
+}
+
+// Appends the inline Markdown of text to parent: **bold**, `code` and [text](url).
+function appendInline(parent, text) {
+  const pattern = /`([^`]+)`|\*\*(.+?)\*\*|\[([^\]]+)\]\(([^)\s]+)\)/g;
+  let last = 0;
+  for (const match of text.matchAll(pattern)) {
+    if (match.index > last) {
+      parent.append(text.slice(last, match.index));
+    }
+    if (match[1] !== undefined) {
+      const code = document.createElement("code");
+      code.textContent = match[1];
+      parent.append(code);
+    } else if (match[2] !== undefined) {
+      const strong = document.createElement("strong");
+      appendInline(strong, match[2]);
+      parent.append(strong);
+    } else {
+      const href = safeHref(match[4]);
+      if (href) {
+        const link = document.createElement("a");
+        link.href = href;
+        appendInline(link, match[3]);
+        parent.append(link);
+      } else {
+        appendInline(parent, match[3]);
+      }
+    }
+    last = match.index + match[0].length;
+  }
+  if (last < text.length) {
+    parent.append(text.slice(last));
+  }
+}
+
+// "## [0.1.0] - 2026-11-11" or "## [Unreleased]": the section of one version.
+function versionSection(title) {
+  const match = /^\[([^\]]+)\](?:\s+-\s+(.+))?$/.exec(title);
+  const name = match ? match[1] : title;
+  const date = match?.[2]?.trim();
+  const unreleased = name.toLowerCase() === "unreleased";
+  const section = document.createElement("section");
+  section.className = "cl-version";
+  section.id = unreleased ? "unreleased" : `v${name.replace(/[^\w.-]/g, "-")}`;
+  const heading = document.createElement("h2");
+  const label = document.createElement("a");
+  label.className = "cl-name";
+  label.href = `#${section.id}`;
+  label.textContent = unreleased ? "Unreleased" : name;
+  heading.append(label);
+  if (date) {
+    const time = document.createElement(/^\d{4}-\d{2}-\d{2}$/.test(date) ? "time" : "span");
+    time.className = "cl-date";
+    if (time.tagName === "TIME") {
+      time.dateTime = date;
+    }
+    time.textContent = date;
+    heading.append(" ", time);
+  }
+  section.append(heading);
+  return section;
+}
+
+function renderChangelog(markdown) {
+  const fragment = document.createDocumentFragment();
+  let parent = fragment; // the version section, once the first "##" is read
+  let list = null;
+  let item = null; // { node, text } of the list item being read
+  let paragraph = null; // the lines of the paragraph being read
+
+  function flushItem() {
+    if (item) {
+      appendInline(item.node, item.text);
+      item = null;
+    }
+  }
+  function flushParagraph() {
+    if (paragraph) {
+      const p = document.createElement("p");
+      appendInline(p, paragraph.join(" "));
+      parent.append(p);
+      paragraph = null;
+    }
+  }
+  function flushAll() {
+    flushItem();
+    flushParagraph();
+    list = null;
+  }
+
+  for (const raw of markdown.split(/\r?\n/)) {
+    const line = raw.trimEnd();
+    if (/^#\s/.test(line)) {
+      flushAll(); // the page has its own title
+    } else if (/^##\s/.test(line)) {
+      flushAll();
+      parent = versionSection(line.slice(3).trim());
+      fragment.append(parent);
+    } else if (/^###\s/.test(line)) {
+      flushAll();
+      const title = line.slice(4).trim();
+      const heading = document.createElement("h3");
+      const kind = title.toLowerCase();
+      heading.className = CHANGE_KINDS.includes(kind) ? `cl-kind cl-${kind}` : "cl-kind";
+      heading.textContent = title;
+      parent.append(heading);
+    } else if (/^\[[^\]]+\]:\s/.test(line)) {
+      flushAll(); // a link reference (the versions' compare links): not shown
+    } else if (/^[-*]\s/.test(line)) {
+      flushItem();
+      flushParagraph();
+      if (!list) {
+        list = document.createElement("ul");
+        list.className = "cl-list";
+        parent.append(list);
+      }
+      item = { node: document.createElement("li"), text: line.slice(2).trim() };
+      list.append(item.node);
+    } else if (line.trim() === "") {
+      flushItem();
+      flushParagraph();
+    } else if (item && /^\s/.test(line)) {
+      item.text += ` ${line.trim()}`;
+    } else {
+      flushItem();
+      list = null;
+      if (!paragraph) {
+        paragraph = [];
+      }
+      paragraph.push(line.trim());
+    }
+  }
+  flushAll();
+  return fragment;
+}
+
+function changelogError(container) {
+  const p = document.createElement("p");
+  p.className = "cl-error";
+  p.append("The changelog could not be loaded. Read ");
+  const link = document.createElement("a");
+  link.href = CHANGELOG_ON_GITHUB;
+  link.textContent = "CHANGELOG.md on GitHub";
+  p.append(link, ".");
+  container.replaceChildren(p);
+}
+
+async function setUpChangelog() {
+  const container = document.querySelector("[data-changelog]");
+  if (!container) {
+    return;
+  }
+  container.setAttribute("aria-busy", "true");
+  try {
+    const response = await fetch(container.dataset.changelog, { cache: "no-cache" });
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+    container.replaceChildren(renderChangelog(await response.text()));
+    // The address can name a version (#v0.1.0): scroll to it now that it exists.
+    if (location.hash) {
+      document.getElementById(location.hash.slice(1))?.scrollIntoView();
+    }
+  } catch {
+    changelogError(container);
+  } finally {
+    container.removeAttribute("aria-busy");
+  }
+}
+
 setUpLook();
 setUpGallery();
 setUpToc();
+setUpChangelog();
 if (typeof HTMLDialogElement === "function") {
   createLightbox();
 }

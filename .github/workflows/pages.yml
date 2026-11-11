@@ -1,4 +1,4 @@
-# Publishes site/ to GitHub Pages, with the logo and the screenshots of assets/site beside it:
+# Publishes site/ to GitHub Pages, with CHANGELOG.md as changelog.md (read by changelog.html), the logo and the screenshots of assets/site beside it:
 # assets/site/*.png in shots/, the Kernel captures in shots/kernel/, the close-ups in shots/details/.
 # Pages use the "GitHub Actions" source (set once: gh api -X POST repos/sachahjkl/shojiwm-desktop/pages -f build_type=workflow).
 name: Pages
@@ -8,6 +8,7 @@ on:
     branches: [main]
     paths:
       - "site/**"
+      - "CHANGELOG.md"
       - "assets/logo.svg"
       - "assets/site/**"
       - ".project/image.png"
@@ -37,6 +38,7 @@ jobs:
       - run: |
           mkdir -p _site/shots/kernel _site/shots/details
           cp -R site/. _site/
+          cp CHANGELOG.md _site/changelog.md
           cp assets/logo.svg _site/logo.svg
           cp .project/image.png _site/logo.png
           cp assets/site/*.png _site/shots/

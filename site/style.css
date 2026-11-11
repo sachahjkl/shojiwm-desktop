@@ -1029,6 +1029,148 @@ html.lightbox-open {
   overflow: hidden;
 }
 
+/* ----- the changelog ----- */
+
+/* The tag colours of the change kinds; Changed and Removed use the look's accent and signal. */
+.changelog-body {
+  --kind-added: #1f7a3d;
+  --kind-fixed: #9a5b00;
+  --kind-changed: var(--accent);
+  --kind-removed: var(--signal);
+}
+
+@media (prefers-color-scheme: dark) {
+  .changelog-body {
+    --kind-added: #5cc983;
+    --kind-fixed: #e2a64a;
+  }
+}
+
+.cl-version {
+  max-width: var(--measure);
+  margin-top: 2.4rem;
+  padding-top: 1.6rem;
+  border-top: 1px solid var(--rule);
+}
+
+.cl-version:first-child {
+  margin-top: 1.6rem;
+}
+
+.changelog-body .cl-version h2 {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem 0.8rem;
+  margin: 0 0 0.6rem;
+}
+
+/* Kernel's accent bar is a flex item here: the gap already spaces it. */
+:root[data-look="kernel"] .changelog-body .cl-version h2::before {
+  margin-right: -0.2rem;
+  align-self: center;
+}
+
+.cl-version {
+  scroll-margin-top: 5rem;
+}
+
+.cl-name {
+  color: inherit;
+  text-decoration: none;
+}
+
+.cl-name:hover {
+  text-decoration: underline;
+}
+
+.cl-date {
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 400;
+  font-family: var(--font-mono);
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+/* The kind of change, as a small tag: Added, Changed, Fixed, Removed. */
+.changelog-body .cl-version h3 {
+  --kind: var(--muted);
+  display: inline-block;
+  margin: 1.4rem 0 0.6rem;
+  padding: 0.15rem 0.55rem;
+  border: 1px solid color-mix(in srgb, var(--kind) 45%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--kind) 12%, transparent);
+  color: var(--kind);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  line-height: 1.4;
+}
+
+.changelog-body .cl-added {
+  --kind: var(--kind-added);
+}
+
+.changelog-body .cl-changed {
+  --kind: var(--kind-changed);
+}
+
+.changelog-body .cl-fixed {
+  --kind: var(--kind-fixed);
+}
+
+.changelog-body .cl-removed,
+.changelog-body .cl-deprecated,
+.changelog-body .cl-security {
+  --kind: var(--kind-removed);
+}
+
+/* Kernel: square tags in the monospace face, as the rest of its titles. */
+:root[data-look="kernel"] .changelog-body .cl-version h3 {
+  border-radius: var(--radius-small);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+}
+
+.cl-list {
+  padding-left: 1.2rem;
+}
+
+.cl-list li + li {
+  margin-top: 0.55rem;
+}
+
+.cl-list li::marker {
+  color: var(--rule-strong);
+}
+
+.cl-error {
+  color: var(--muted);
+}
+
+@media (max-width: 600px) {
+  .cl-version {
+    margin-top: 1.8rem;
+    padding-top: 1.2rem;
+  }
+
+  .changelog-body .cl-version h2 {
+    gap: 0.1rem 0.6rem;
+  }
+
+  .cl-date {
+    font-size: 0.82rem;
+  }
+
+  .cl-list {
+    padding-left: 1rem;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
