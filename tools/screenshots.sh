@@ -13,19 +13,95 @@
 #   KEEP=1 tools/screenshots.sh     # keep the session running at the end
 #   THEME=kernel OUT=/tmp/k UNTIL=desktop tools/screenshots.sh
 #                                   # another theme, into another folder, up to one picture
+#   SIDE=top tools/screenshots.sh   # the taskbar at the top (default: bottom)
 #
 # The shell is this flake's (crates/shell). The compositor can be overridden
 # with SHOJIWM_FLAKE (a local clone: SHOJIWM_FLAKE=path:/src/ShojiWM#default).
 # The default is the integration branch of the fork, which carries what this
 # configuration uses before upstream has it (labels' textShadow).
+#
+# BUILD says how the shell and the compositor are built:
+#
+#   BUILD=cargo (default)  the shell with `cargo build` (dev profile, its own
+#                          target dir), in this flake's `shell` dev shell: a
+#                          change rebuilds in seconds. The compositor is
+#                          SHOJIWM_FLAKE's, as with nix, unless SHOJIWM_SRC
+#                          names a ShojiWM checkout: then `cargo build
+#                          --release -p shoji_wm` there, in its dev shell,
+#                          into ~/.cache/shojiwm-target, so only the crates
+#                          that changed rebuild.
+#   BUILD=nix              both as Nix packages, in release: every change
+#                          rebuilds all of it (15 to 20 minutes). SHOJIWM_SRC
+#                          is not read.
+#
+#   SHOJIWM_SRC=~/src/ShojiWM tools/screenshots.sh
+#                                   # a compositor being worked on
+#   BUILD=nix tools/screenshots.sh  # the pictures that are published
 set -euo pipefail
 
 repo="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 out="${OUT:-$repo/assets/site}"
 
 if [ "${1:-}" != "--inner" ]; then
+  shojiwm_flake="${SHOJIWM_FLAKE:-github:sachahjkl/ShojiWM/integration#default}"
+  # The compositor first and the shell last in PATH, as they always were.
+  compositor=("$shojiwm_flake")
+  shell=("path:$repo#shell")
+  case "${BUILD:-cargo}" in
+    nix) ;;
+    cargo)
+      # What a dev shell gives the build, read back from a file: a dev shell
+      # may write to stdout itself (ShojiWM's greets).
+      env_file="$(mktemp)"
+
+      # The shell: the binary, and the libraries the Nix wrapper puts on its
+      # path (the dev shell's LD_LIBRARY_PATH is the same list). The
+      # programs the wrapper adds (dconf, gio, setsid, xdg-open) are in the
+      # nix shell below.
+      printf '==> %s\n' "building the shell (cargo, dev profile)"
+      nix develop "$repo#shell" -c bash -c \
+        'cargo build --manifest-path "$1/crates/shell/Cargo.toml" &&
+         printf "%s\n" "$LD_LIBRARY_PATH" >"$2"' \
+        bash "$repo" "$env_file"
+      SHOTS_SHELL_BIN="$repo/crates/shell/target/debug/shojiwm-shell"
+      SHOTS_SHELL_LIBS="$(cat "$env_file")"
+      export SHOTS_SHELL_BIN SHOTS_SHELL_LIBS
+      shell=("nixpkgs#util-linux" "nixpkgs#xdg-utils")
+
+      # The compositor, from a checkout. Its wrapper (nix/package.nix) is
+      # remade below, from what its dev shell holds: the runtime's files
+      # are the checkout's own (packages/shoji_wm, tools/), and
+      # xwayland-satellite is built in.
+      if [ -n "${SHOJIWM_SRC:-}" ]; then
+        SHOTS_WM_SRC="$(cd "$SHOJIWM_SRC" && pwd)"
+        target="$HOME/.cache/shojiwm-target"
+        printf '==> %s\n' "building ShojiWM in $SHOTS_WM_SRC (cargo, release, into $target)"
+        nix develop "$SHOTS_WM_SRC" -c bash -c \
+          'cd "$1" && CARGO_TARGET_DIR="$2" cargo build --release -p shoji_wm &&
+           printf "%s\n" "$LD_LIBRARY_PATH" "$GBM_BACKENDS_PATH" \
+             "$LIBGL_DRIVERS_PATH" "$__EGL_VENDOR_LIBRARY_DIRS" >"$3"' \
+          bash "$SHOTS_WM_SRC" "$target" "$env_file"
+        {
+          read -r SHOTS_WM_LIBS
+          read -r SHOTS_WM_GBM
+          read -r SHOTS_WM_DRI
+          read -r SHOTS_WM_EGL
+        } <"$env_file"
+        SHOTS_WM_BIN="$target/release/shoji_wm"
+        export SHOTS_WM_SRC SHOTS_WM_BIN SHOTS_WM_LIBS SHOTS_WM_GBM SHOTS_WM_DRI SHOTS_WM_EGL
+        # The wrapper puts Xwayland and dbus on PATH; dbus is below.
+        compositor=("nixpkgs#xwayland")
+      fi
+      rm -f "$env_file"
+      ;;
+    *)
+      printf 'BUILD is cargo or nix, not %s\n' "$BUILD" >&2
+      exit 1
+      ;;
+  esac
+
   exec nix shell \
-    "${SHOJIWM_FLAKE:-github:sachahjkl/ShojiWM/integration#default}" \
+    "${compositor[@]}" \
     "nixpkgs#xorg-server" \
     "nixpkgs#xdotool" \
     "nixpkgs#imagemagick" \
@@ -34,7 +110,7 @@ if [ "${1:-}" != "--inner" ]; then
     "nixpkgs#copyq" \
     "nixpkgs#dconf" \
     "nixpkgs#glib" \
-    "path:$repo#shell" \
+    "${shell[@]}" \
     -c env -u DBUS_SESSION_BUS_ADDRESS -u WAYLAND_DISPLAY -u DISPLAY \
     -u SHOJIWM_SOCKET -u SHOJIWM_DESKTOP_KEYS -u SHOJIWM_DESKTOP_SOCKET \
     bash "${BASH_SOURCE[0]}" --inner
@@ -53,7 +129,6 @@ fi
 say() { printf '==> %s\n' "$*"; }
 
 work="$(mktemp -d /tmp/shojiwm-desktop-shots.XXXXXX)"
-display=":97"
 screen="1600x1000"
 
 # ---------------------------------------------------------------------------
@@ -131,6 +206,7 @@ chmod -R u+w "$XDG_CONFIG_HOME/shojiwm"
 cat >"$XDG_CONFIG_HOME/shojiwm/settings.json" <<JSON
 {
   "theme": "${THEME:-aero}",
+  "taskbarSide": "${SIDE:-bottom}",
   "lockAfterMinutes": 0,
   "startPinned": ["foot.desktop", "footclient.desktop"],
   "taskbarPinned": ["foot.desktop", "footclient.desktop"],
@@ -199,11 +275,18 @@ cleanup() {
 }
 trap cleanup EXIT
 
-say "starting Xvfb on $display"
-Xvfb "$display" -screen 0 "${screen}x24" >"$work/xvfb.log" 2>&1 &
+# Xvfb takes a free display itself and writes its number (-displayfd): several
+# sessions can run side by side without taking the same one.
+say "starting Xvfb"
+exec {display_fd}<> <(:)
+Xvfb -displayfd "$display_fd" -screen 0 "${screen}x24" >"$work/xvfb.log" 2>&1 &
 pids+=("$!")
+read -r -t 30 -u "$display_fd" display_number
+exec {display_fd}>&-
+display=":$display_number"
 export DISPLAY="$display"
-sleep 2
+say "Xvfb is on $display"
+sleep 1
 
 say "starting ShojiWM (nested backend, software rendering)"
 export LIBGL_ALWAYS_SOFTWARE=1
@@ -212,9 +295,32 @@ export LIBGL_ALWAYS_SOFTWARE=1
 {
   # Its errors, and the backtrace of a panic, go to $work/shell.log.
   mkdir -p "$work/bin"
-  printf '#!/bin/sh\nRUST_BACKTRACE=1 exec %s "$@" 2>>"%s"\n' \
-    "$(command -v shojiwm-shell)" "$work/shell.log" >"$work/bin/shojiwm-shell"
+  if [ -n "${SHOTS_SHELL_BIN:-}" ]; then
+    # The cargo build, with the libraries the Nix wrapper adds.
+    cat >"$work/bin/shojiwm-shell" <<SH
+#!/bin/sh
+export LD_LIBRARY_PATH="$SHOTS_SHELL_LIBS\${LD_LIBRARY_PATH:+:\$LD_LIBRARY_PATH}"
+RUST_BACKTRACE=1 exec "$SHOTS_SHELL_BIN" "\$@" 2>>"$work/shell.log"
+SH
+  else
+    printf '#!/bin/sh\nRUST_BACKTRACE=1 exec %s "$@" 2>>"%s"\n' \
+      "$(command -v shojiwm-shell)" "$work/shell.log" >"$work/bin/shojiwm-shell"
+  fi
   chmod +x "$work/bin/shojiwm-shell"
+  if [ -n "${SHOTS_WM_BIN:-}" ]; then
+    # The compositor's cargo build, with what nix/package.nix's wrapper sets.
+    cat >"$work/bin/shoji_wm" <<SH
+#!/bin/sh
+export SHOJI_RUNTIME_DIR="$SHOTS_WM_SRC"
+export SHOJI_DECORATION_RUNTIME="$SHOTS_WM_SRC/tools/decoration-runtime.ts"
+export LD_LIBRARY_PATH="$SHOTS_WM_LIBS\${LD_LIBRARY_PATH:+:\$LD_LIBRARY_PATH}"
+export GBM_BACKENDS_PATH="\${GBM_BACKENDS_PATH:+\$GBM_BACKENDS_PATH:}$SHOTS_WM_GBM"
+export LIBGL_DRIVERS_PATH="\${LIBGL_DRIVERS_PATH:+\$LIBGL_DRIVERS_PATH:}$SHOTS_WM_DRI"
+export __EGL_VENDOR_LIBRARY_DIRS="\${__EGL_VENDOR_LIBRARY_DIRS:+\$__EGL_VENDOR_LIBRARY_DIRS:}$SHOTS_WM_EGL"
+exec "$SHOTS_WM_BIN" "\$@"
+SH
+    chmod +x "$work/bin/shoji_wm"
+  fi
   export PATH="$work/bin:$PATH"
   mesa="$(nix build --no-link --print-out-paths nixpkgs#mesa | head -1)"
   export VK_ICD_FILENAMES="$(echo "$mesa"/share/vulkan/icd.d/lvp_icd.*.json)"
@@ -249,9 +355,10 @@ shell_call() {
 }
 
 # Whether the shell is still up. It is the first thing to check when a
-# picture comes out without a taskbar.
+# picture comes out without a taskbar. The shell runs from bin/ (Nix) or
+# target/debug/ (cargo).
 alive() {
-  if pgrep -f 'bin/shojiwm-shell$' >/dev/null; then
+  if pgrep -f '/shojiwm-shell$' >/dev/null; then
     say "shell: up ($1)"
   else
     say "shell: GONE ($1)"
@@ -309,19 +416,20 @@ fi
 
 geometry="$(xdotool getwindowgeometry --shell "$window")"
 eval "$geometry"
-# The middle of the bar: at the bottom in Aero, at the top in Kernel. Under a
-# bar at the top, the windows open lower by its height (bar_above).
-if [ "${THEME:-aero}" = kernel ]; then
-  bar_y=16
-  bar_above=32
+# The bar: 40 px in Aero, 32 in Kernel, at the bottom unless SIDE=top. bar_y is its middle;
+# under a bar at the top, the windows open lower by its height (bar_above).
+if [ "${THEME:-aero}" = kernel ]; then bar_h=32; else bar_h=40; fi
+if [ "${SIDE:-bottom}" = top ]; then
+  bar_y=$((bar_h / 2))
+  bar_above=$bar_h
 else
-  bar_y=$((HEIGHT - 20))
+  bar_y=$((HEIGHT - bar_h / 2))
   bar_above=0
 fi
-# A height `d` above Aero's bottom bar (40 px), as it is under Kernel's top bar (32 px): the
-# popups of the bar open away from it.
+# A height `d` above Aero's bottom bar (40 px), as it is from this bar: the popups of the bar
+# open away from it.
 from_bar() {
-  if [ "$bar_above" -gt 0 ]; then echo $((32 + $1 - 40)); else echo $((HEIGHT - $1)); fi
+  if [ "$bar_above" -gt 0 ]; then echo $((bar_h + $1 - 40)); else echo $((HEIGHT - ($1 - 40 + bar_h))); fi
 }
 
 # Move the front window clear of the one behind it, so both frames show and
@@ -349,7 +457,7 @@ shot "start-menu"
 
 say "a place under the pointer, in the user's tile"
 # The Start menu's glass, 560 px high, 2 px from the bar: under it in Aero, over it in Kernel.
-if [ "$bar_above" -gt 0 ]; then glass_top=$((32 + 2)); else glass_top=$((HEIGHT - 40 - 2 - 560)); fi
+if [ "$bar_above" -gt 0 ]; then glass_top=$((bar_h + 2)); else glass_top=$((HEIGHT - bar_h - 2 - 560)); fi
 xdotool mousemove --window "$window" 380 $((glass_top + 92))
 sleep 2
 shot "start-menu-place"
@@ -392,10 +500,21 @@ sleep 2
 alive "menu closed"
 
 say "the taskbar thumbnails"
+# Two moves: the button must see the pointer come in, not land on it.
+xdotool mousemove --window "$window" 72 "$bar_y"
+sleep 0.3
 xdotool mousemove --window "$window" 78 "$bar_y"
 sleep 3
 shot "taskbar-thumbnail"
 alive "taskbar-thumbnail"
+# Resting on the first card: its window stands out (a gold glow), the pointer going up from
+# the button into the cards.
+xdotool mousemove --window "$window" 100 "$(from_bar 100)"
+sleep 0.3
+xdotool mousemove --window "$window" 102 "$(from_bar 103)"
+sleep 2
+shot "thumbnail-highlight"
+alive "thumbnail-highlight"
 xdotool mousemove --window "$window" $((WIDTH / 2)) $((HEIGHT / 2))
 sleep 2
 

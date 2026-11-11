@@ -349,23 +349,38 @@
 
     devShells = forAllSystems (system: let
       pkgs = pkgsFor system;
+
+      # What the shell loads at run time (shellRuntime), for `cargo run`.
+      shellLibraryPath = pkgs.lib.makeLibraryPath (shellRuntime pkgs);
+
+      # Only what `cargo build` of the shell needs, with no Git hooks:
+      # tools/screenshots.sh builds the shell in it.
+      shell = pkgs.mkShell {
+        packages =
+          [
+            pkgs.cargo
+            pkgs.rustc
+            pkgs.pkg-config
+          ]
+          ++ shellLibraries pkgs;
+
+        LD_LIBRARY_PATH = shellLibraryPath;
+      };
     in {
+      inherit shell;
+
       default = pkgs.mkShell {
+        inputsFrom = [shell];
         packages =
           [
             pkgs.typescript
             pkgs.prettier
-            pkgs.cargo
-            pkgs.rustc
             pkgs.clippy
             pkgs.rustfmt
-            pkgs.pkg-config
           ]
-          ++ shellLibraries pkgs
           ++ self.checks.${system}.pre-commit.enabledPackages;
 
-        # What the shell loads at run time (shellRuntime), for `cargo run`.
-        LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath (shellRuntime pkgs);
+        LD_LIBRARY_PATH = shellLibraryPath;
 
         inherit (self.checks.${system}.pre-commit) shellHook;
       };
