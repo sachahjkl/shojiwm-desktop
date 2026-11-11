@@ -8,11 +8,20 @@
 
 #![recursion_limit = "256"]
 
+mod apps;
 mod compositor;
+mod control_panel;
+mod desktop;
+mod dialogs;
+mod greeter;
 mod ipc;
+mod lock;
 mod paths;
 mod programs;
 mod settings;
+mod start_menu;
+mod status;
+mod taskbar;
 mod theme;
 mod theme_values;
 mod ui;
@@ -28,12 +37,31 @@ fn main() {
         }
         return;
     }
+    if args.first().map(String::as_str) == Some("greeter") {
+        if let Err(e) = greeter::run() {
+            eprintln!("shojiwm-shell greeter: {e}");
+            std::process::exit(1);
+        }
+        return;
+    }
     let result = Shell::new()
         .namespace("shojiwm-shell")
         .app_id("shojiwm-shell")
         .run(|| {
             ipc::serve();
             compositor::share_settings();
+            apps::install();
+            status::install();
+            taskbar::install();
+            dialogs::install();
+            lock::install();
+            control_panel::install();
+            for_each_output(|output| {
+                desktop::open(output.clone());
+                taskbar::open(output);
+            });
+            // After the bars: its click-catcher stands over them.
+            start_menu::install();
             ipc::handle("appearance", |function, args| match function {
                 "setDark" => {
                     settings::set_dark(args.first().is_some_and(|a| a == "true"));

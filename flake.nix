@@ -39,7 +39,7 @@
       pkgs.libxkbcommon
       pkgs.wayland
       pkgs.pam
-      pkgs.xorg.libxcb
+      pkgs.libxcb
     ];
     shellRuntime = pkgs: [
       pkgs.vulkan-loader

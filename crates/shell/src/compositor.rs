@@ -84,6 +84,11 @@ fn run(path: String, rx: Receiver<Out>, line: Arc<Line>) {
                 for text in BufReader::new(r).lines() {
                     let Ok(text) = text else { break };
                     let Ok(v) = serde_json::from_str::<Value>(&text) else { continue };
+                    // Events the compositor sends unasked: the Alt+Tab panel's titles.
+                    if v.get("event").and_then(Value::as_str) == Some("alt-tab") {
+                        crate::dialogs::alt_tab_event(v.get("payload"));
+                        continue;
+                    }
                     let Some(id) = v.get("id").and_then(Value::as_u64) else { continue };
                     if let Some(answer) = answers.lock().unwrap().remove(&id) {
                         answer(v.get("result").cloned());

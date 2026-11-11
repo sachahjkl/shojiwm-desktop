@@ -13,6 +13,8 @@
 #   KEEP=1 tools/screenshots.sh     # keep the session running at the end
 #   THEME=kernel OUT=/tmp/k UNTIL=desktop tools/screenshots.sh
 #                                   # another theme, into another folder, up to one picture
+#   SHELL_IMPL=native tools/screenshots.sh
+#                                   # the shell on AntiWebUI (crates/shell) instead of Quickshell
 #
 # The Quickshell is this flake's (a fix of its dmabuf code: see flake.nix);
 # override it with QUICKSHELL_FLAKE, and the compositor
@@ -36,6 +38,7 @@ if [ "${1:-}" != "--inner" ]; then
     "nixpkgs#copyq" \
     "nixpkgs#dconf" \
     "nixpkgs#glib" \
+    ${SHELL_IMPL:+"path:$repo#shell"} \
     -c env -u DBUS_SESSION_BUS_ADDRESS -u WAYLAND_DISPLAY -u DISPLAY \
     -u SHOJIWM_SOCKET -u SHOJIWM_WIN7_KEYS -u SHOJIWM_WIN7_SOCKET \
     bash "${BASH_SOURCE[0]}" --inner
@@ -207,6 +210,13 @@ sleep 2
 
 say "starting ShojiWM (nested backend, software rendering)"
 export LIBGL_ALWAYS_SOFTWARE=1
+if [ "${SHELL_IMPL:-}" = native ]; then
+  # The compositor starts shojiwm-shell; wgpu draws it with Vulkan in
+  # software (lavapipe).
+  export SHOJIWM_WIN7_SHELL=native
+  mesa="$(nix build --no-link --print-out-paths nixpkgs#mesa | head -1)"
+  export VK_ICD_FILENAMES="$(echo "$mesa"/share/vulkan/icd.d/lvp_icd.*.json)"
+fi
 shoji_wm >"$work/shoji.log" 2>&1 &
 pids+=("$!")
 
@@ -231,10 +241,19 @@ window="$(xdotool search --onlyvisible --class . | tail -1)"
 xdotool windowfocus "$window"
 say "nested window $window ($(xdotool getwindowgeometry "$window" | tr '\n' ' '))"
 
+# A command to the shell, whichever it is.
+shell_call() {
+  if [ "${SHELL_IMPL:-}" = native ]; then
+    shojiwm-shell msg "$@" || true
+  else
+    quickshell -p "$XDG_CONFIG_HOME/shojiwm/shell" ipc call "$@" || true
+  fi
+}
+
 # Whether the shell is still up. It is the first thing to check when a
 # picture comes out without a taskbar.
 alive() {
-  if pgrep -f "quickshell --path $XDG_CONFIG_HOME/" >/dev/null; then
+  if pgrep -f "quickshell --path $XDG_CONFIG_HOME/" >/dev/null || pgrep -x shojiwm-shell >/dev/null || pgrep -f '/bin/.shojiwm-shell-wrapped' >/dev/null; then
     say "shell: up ($1)"
   else
     say "shell: GONE ($1)"
@@ -320,7 +339,7 @@ say "wrote assets/site/frames.png"
 alive "after the first picture"
 
 say "the Start menu"
-quickshell -p "$XDG_CONFIG_HOME/shojiwm/shell" ipc call startmenu toggle || true
+shell_call startmenu toggle
 sleep 3
 alive "menu open"
 shot "start-menu"
@@ -446,7 +465,7 @@ sleep 2
 
 say "the launcher, Super+Shift+D"
 xdotool windowfocus "$window"
-quickshell -p "$XDG_CONFIG_HOME/shojiwm/shell" ipc call launcher toggle || true
+shell_call launcher toggle
 sleep 2
 shot "launcher"
 alive "launcher"
@@ -489,7 +508,7 @@ xdotool keyup alt
 sleep 2
 
 say "the Control Panel"
-qs() { quickshell -p "$XDG_CONFIG_HOME/shojiwm/shell" ipc call "$@" || true; }
+qs() { shell_call "$@"; }
 qs controlpanel open
 sleep 4
 shot "control-panel"

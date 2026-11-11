@@ -52,6 +52,22 @@ const BROWSER = ["chromium", "--ozone-platform-hint=auto"];
 /** Where the Quickshell shell lives, as a shell word. */
 const SHELL_PATH = "~/.config/shojiwm/shell";
 
+// The shell: the Quickshell one (shell/), or with SHOJIWM_WIN7_SHELL=native the
+// one on AntiWebUI (crates/shell, `shojiwm-shell`), which replaces it. Both
+// take the same commands: `<target> <function> [args]`.
+const NATIVE_SHELL = COMPOSITOR.env.get("SHOJIWM_WIN7_SHELL") === "native";
+const SHELL_COMMAND = NATIVE_SHELL
+  ? "exec shojiwm-shell"
+  : `exec quickshell --path ${SHELL_PATH}`;
+
+/** The command line that sends the shell a command. */
+function shellCall(target: string, ...args: string[]): string {
+  const quoted = args.map((arg) => `"${arg}"`).join(" ");
+  return NATIVE_SHELL
+    ? `shojiwm-shell msg ${target} ${quoted}`
+    : `quickshell -p ${SHELL_PATH} ipc call ${target} ${quoted}`;
+}
+
 COMPOSITOR.env.apply({
   QT_QPA_PLATFORM: "wayland;xcb",
   ELECTRON_OZONE_PLATFORM_HINT: "wayland",
@@ -62,7 +78,7 @@ COMPOSITOR.env.publish();
 
 // The taskbar, the Start menu and the wallpaper.
 COMPOSITOR.process.once("shell", {
-  command: `exec quickshell --path ${SHELL_PATH}`,
+  command: SHELL_COMMAND,
   runPolicy: "once-per-session",
   env: {
     // Qt asks for a text-input protocol as soon as the search box of the
@@ -152,7 +168,7 @@ function withFocused(action: (window: WaylandWindow) => void): () => void {
 function toggleStartMenu(): void {
   const monitor = WINDOWS.outputName() ?? "";
   COMPOSITOR.process.spawn({
-    command: `quickshell -p ${SHELL_PATH} ipc call startmenu toggleOn "${monitor}"`,
+    command: shellCall("startmenu", "toggleOn", monitor),
   });
 }
 
@@ -173,7 +189,7 @@ COMPOSITOR.key.bind("browser", "Super+B", () => {
 function openShutdownDialog(): void {
   const monitor = WINDOWS.outputName() ?? "";
   COMPOSITOR.process.spawn({
-    command: `quickshell -p ${SHELL_PATH} ipc call shutdown openOn "${monitor}"`,
+    command: shellCall("shutdown", "openOn", monitor),
   });
 }
 
@@ -253,7 +269,7 @@ COMPOSITOR.key.bind(
 );
 COMPOSITOR.key.bind("lock", "Super+L", () => {
   COMPOSITOR.process.spawn({
-    command: `quickshell -p ${SHELL_PATH} ipc call lock lock`,
+    command: shellCall("lock", "lock"),
   });
 });
 // Print Screen and Ctrl+Print Screen: the Control Panel's screenshot program,
@@ -271,7 +287,7 @@ for (const [id, key] of [
 COMPOSITOR.key.bind("admin-menu", "Super+X", () => {
   const monitor = WINDOWS.outputName() ?? "";
   COMPOSITOR.process.spawn({
-    command: `quickshell -p ${SHELL_PATH} ipc call adminmenu toggleOn "${monitor}"`,
+    command: shellCall("adminmenu", "toggleOn", monitor),
   });
 });
 // Super+Shift+D: the shell's launcher, the Start menu's search in the middle
@@ -279,7 +295,7 @@ COMPOSITOR.key.bind("admin-menu", "Super+X", () => {
 COMPOSITOR.key.bind("launcher", "Super+Shift+D", () => {
   const monitor = WINDOWS.outputName() ?? "";
   COMPOSITOR.process.spawn({
-    command: `quickshell -p ${SHELL_PATH} ipc call launcher toggleOn "${monitor}"`,
+    command: shellCall("launcher", "toggleOn", monitor),
   });
 });
 // More keys from SHOJIWM_WIN7_KEYS: a JSON object of shortcut to shell
@@ -315,12 +331,12 @@ NUMBER_ROW.forEach((keys, index) => {
   for (const key of keys) {
     COMPOSITOR.key.bind(`taskbar-${key}`, `Super+${key}`, () => {
       COMPOSITOR.process.spawn({
-        command: `quickshell -p ${SHELL_PATH} ipc call taskbar activate ${number}`,
+        command: shellCall("taskbar", "activate", String(number)),
       });
     });
     COMPOSITOR.key.bind(`taskbar-new-${key}`, `Super+Shift+${key}`, () => {
       COMPOSITOR.process.spawn({
-        command: `quickshell -p ${SHELL_PATH} ipc call taskbar launchNew ${number}`,
+        command: shellCall("taskbar", "launchNew", String(number)),
       });
     });
   }
@@ -340,7 +356,7 @@ COMPOSITOR.key.bind("clipboard-history", "Super+V", () => {
 COMPOSITOR.key.bind("run", "Super+R", () => {
   const monitor = WINDOWS.outputName() ?? "";
   COMPOSITOR.process.spawn({
-    command: `quickshell -p ${SHELL_PATH} ipc call run toggleOn "${monitor}"`,
+    command: shellCall("run", "toggleOn", monitor),
   });
 });
 
