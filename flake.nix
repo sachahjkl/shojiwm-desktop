@@ -32,7 +32,7 @@
     forAllSystems = nixpkgs.lib.genAttrs systems;
     pkgsFor = system: nixpkgs.legacyPackages.${system};
 
-    version = "0.1.0";
+    version = "0.2.0";
 
     # The Odin compiler of tools/desktoptool, the one gui_toolkit asks for (its odin.version). Odin publishes it
     # statically linked for x86_64 Linux: nothing to patch. Its run links with clang.
