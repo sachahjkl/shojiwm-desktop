@@ -415,10 +415,12 @@ export function aeroFrame(
         background: "#00000000",
       }}
       interaction={{
+        // Maximised, no edge resizes: the bands would sit over the client's
+        // own edges (a browser's scroll bar) and take its clicks.
         resizeHitArea: {
-          edgePx: 6,
-          cornerPx: 16,
-          insetPx: 6,
+          edgePx: computed(() => (maximized() ? 0 : 6)),
+          cornerPx: computed(() => (maximized() ? 0 : 16)),
+          insetPx: computed(() => (maximized() ? 0 : 6)),
         },
       }}
     >
