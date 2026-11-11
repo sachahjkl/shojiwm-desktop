@@ -7,10 +7,11 @@
 /* ----- the look: Aero or Kernel ------------------------------------------------------------- */
 
 // The head sets data-look before the first paint (see the inline script of each page).
-const LOOKS = ["aero", "kernel"];
+const LOOKS = ["kernel", "aero"];
 
+// Kernel is the default theme, so the default look.
 function currentLook() {
-  return document.documentElement.dataset.look === "kernel" ? "kernel" : "aero";
+  return document.documentElement.dataset.look === "aero" ? "aero" : "kernel";
 }
 
 // Swaps every picture that has a Kernel version (data-kernel) to the look chosen.
@@ -22,9 +23,6 @@ function applyLook(look) {
     // Storage refused: the choice lasts for this page only.
   }
   for (const img of document.querySelectorAll("img[data-kernel]")) {
-    if (!img.dataset.aero) {
-      img.dataset.aero = img.getAttribute("src");
-    }
     const src = look === "kernel" ? img.dataset.kernel : img.dataset.aero;
     img.setAttribute("src", src);
     const link = img.closest("a");

@@ -1,16 +1,16 @@
 <!doctype html>
-<html lang="en" data-look="aero">
+<html lang="en" data-look="kernel">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light dark">
 <title>shojiwm-desktop: a complete desktop for the ShojiWM Wayland compositor</title>
-<meta name="description" content="A complete desktop for the ShojiWM Wayland compositor: window frames, window groups, a taskbar, a Start menu, a notification area, a Control Panel, a lock screen and a log-on screen, in two themes, Aero and Kernel.">
+<meta name="description" content="A complete desktop for the ShojiWM Wayland compositor: window frames, window groups, a taskbar, a Start menu, a notification area, a Control Panel, a lock screen and a log-on screen, in two themes, Kernel and Aero.">
 <link rel="icon" type="image/svg+xml" href="logo.svg">
 <link rel="icon" type="image/png" sizes="512x512" href="logo.png">
 <link rel="apple-touch-icon" href="logo.png">
 <link rel="stylesheet" href="style.css">
-<script>try{if(localStorage.getItem("look")==="kernel")document.documentElement.dataset.look="kernel"}catch(e){}</script>
+<script>try{if(localStorage.getItem("look")==="aero")document.documentElement.dataset.look="aero"}catch(e){}</script>
 <script src="site.js" defer></script>
 </head>
 <body>
@@ -35,7 +35,7 @@
 <h1 id="title">A complete desktop for ShojiWM</h1>
 <p class="lead">shojiwm-desktop turns the <a href="https://github.com/bea4dev/ShojiWM">ShojiWM</a> Wayland compositor
   into a full desktop: window frames, window groups, a taskbar, a Start menu, a notification area, a Control Panel, a
-  lock screen and a log-on screen. It comes in two themes, Aero and Kernel, and you change between them while the
+  lock screen and a log-on screen. It comes in two themes, Kernel (the default) and Aero, and you change between them while the
   session runs.</p>
 <div class="actions">
 <a class="button primary" href="docs.html#install">Install</a>
@@ -46,14 +46,14 @@
 
 <div class="look-row">
 <div class="look-switch" role="group" aria-label="Theme of the screenshots" hidden>
-<button type="button" data-look="aero" aria-pressed="true">Aero</button>
-<button type="button" data-look="kernel" aria-pressed="false">Kernel</button>
+<button type="button" data-look="kernel" aria-pressed="true">Kernel</button>
+<button type="button" data-look="aero" aria-pressed="false">Aero</button>
 </div>
-<span>The screenshots on this page show the <strong data-look-label>Aero</strong> theme.</span>
+<span>The screenshots on this page show the <strong data-look-label>Kernel</strong> theme.</span>
 </div>
 
 <figure class="shot">
-<a href="shots/desktop.png" data-lightbox><img src="shots/desktop.png" data-kernel="shots/kernel/desktop.png" alt="The desktop: desktop icons, two windows in their frames, the CPU meter and clock gadgets, and the taskbar with the notification area and the clock" width="1280" height="800" fetchpriority="high"></a>
+<a href="shots/kernel/desktop.png" data-lightbox><img src="shots/kernel/desktop.png" data-kernel="shots/kernel/desktop.png" data-aero="shots/desktop.png" alt="The desktop: desktop icons, two windows in their frames, the CPU meter and clock gadgets, and the taskbar with the notification area and the clock" width="1280" height="800" fetchpriority="high"></a>
 <figcaption>The desktop, captured from a real session. Every picture on this site comes from
   <code>tools/screenshots.sh</code>, which runs the whole desktop on a machine with no display.</figcaption>
 </figure>
@@ -76,13 +76,13 @@
 </div>
 <div>
 <figure class="shot">
-<a href="shots/snap.png" data-lightbox><img src="shots/snap.png" data-kernel="shots/kernel/snap.png" alt="Aero Snap: a window dragged to the left edge, and the rectangle it will take" width="1280" height="800" loading="lazy" decoding="async"></a>
+<a href="shots/kernel/snap.png" data-lightbox><img src="shots/kernel/snap.png" data-kernel="shots/kernel/snap.png" data-aero="shots/snap.png" alt="Aero Snap: a window dragged to the left edge, and the rectangle it will take" width="1280" height="800" loading="lazy" decoding="async"></a>
 <figcaption>Aero Snap: the rectangle the window will take at the left edge.</figcaption>
 </figure>
 <div class="more">
-<figure class="shot"><a href="shots/frames.png" data-lightbox><img src="shots/frames.png" data-kernel="shots/kernel/frames.png" alt="Two window frames, the focused one in front" width="1280" height="800" loading="lazy" decoding="async"></a><figcaption>Frames</figcaption></figure>
-<figure class="shot"><a href="shots/alt-tab.png" data-lightbox><img src="shots/alt-tab.png" data-kernel="shots/kernel/alt-tab.png" alt="The Alt+Tab panel with live thumbnails" width="1280" height="800" loading="lazy" decoding="async"></a><figcaption>Alt+Tab</figcaption></figure>
-<figure class="shot"><a href="shots/peek.png" data-lightbox><img src="shots/peek.png" data-kernel="shots/kernel/peek.png" alt="Aero Peek: the windows as outlines over the desktop" width="1280" height="800" loading="lazy" decoding="async"></a><figcaption>Aero Peek</figcaption></figure>
+<figure class="shot"><a href="shots/kernel/frames.png" data-lightbox><img src="shots/kernel/frames.png" data-kernel="shots/kernel/frames.png" data-aero="shots/frames.png" alt="Two window frames, the focused one in front" width="1280" height="800" loading="lazy" decoding="async"></a><figcaption>Frames</figcaption></figure>
+<figure class="shot"><a href="shots/kernel/alt-tab.png" data-lightbox><img src="shots/kernel/alt-tab.png" data-kernel="shots/kernel/alt-tab.png" data-aero="shots/alt-tab.png" alt="The Alt+Tab panel with live thumbnails" width="1280" height="800" loading="lazy" decoding="async"></a><figcaption>Alt+Tab</figcaption></figure>
+<figure class="shot"><a href="shots/kernel/peek.png" data-lightbox><img src="shots/kernel/peek.png" data-kernel="shots/kernel/peek.png" data-aero="shots/peek.png" alt="Aero Peek: the windows as outlines over the desktop" width="1280" height="800" loading="lazy" decoding="async"></a><figcaption>Aero Peek</figcaption></figure>
 </div>
 </div>
 </article>
@@ -100,11 +100,11 @@
 </div>
 <div>
 <figure class="shot">
-<a href="shots/group-tabs.png" data-lightbox><img src="shots/group-tabs.png" data-kernel="shots/kernel/group-tabs.png" alt="Two windows in one frame, as two tabs in the caption" width="1280" height="800" loading="lazy" decoding="async"></a>
+<a href="shots/kernel/group-tabs.png" data-lightbox><img src="shots/kernel/group-tabs.png" data-kernel="shots/kernel/group-tabs.png" data-aero="shots/group-tabs.png" alt="Two windows in one frame, as two tabs in the caption" width="1280" height="800" loading="lazy" decoding="async"></a>
 <figcaption>Two windows in one frame, as tabs.</figcaption>
 </figure>
 <div class="more">
-<figure class="shot"><a href="shots/group-ghost.png" data-lightbox><img src="shots/group-ghost.png" data-kernel="shots/kernel/group-ghost.png" alt="A see-through window held over another window's caption, and the ghost tab that shows where it will go" width="1280" height="800" loading="lazy" decoding="async"></a><figcaption>The ghost tab</figcaption></figure>
+<figure class="shot"><a href="shots/kernel/group-ghost.png" data-lightbox><img src="shots/kernel/group-ghost.png" data-kernel="shots/kernel/group-ghost.png" data-aero="shots/group-ghost.png" alt="A see-through window held over another window's caption, and the ghost tab that shows where it will go" width="1280" height="800" loading="lazy" decoding="async"></a><figcaption>The ghost tab</figcaption></figure>
 </div>
 </div>
 </article>
@@ -121,13 +121,13 @@
 </div>
 <div>
 <figure class="shot">
-<a href="shots/start-menu.png" data-lightbox><img src="shots/start-menu.png" data-kernel="shots/kernel/start-menu.png" alt="The Start menu: pinned programs, the folders, the search box and the power button" width="1280" height="800" loading="lazy" decoding="async"></a>
+<a href="shots/kernel/start-menu.png" data-lightbox><img src="shots/kernel/start-menu.png" data-kernel="shots/kernel/start-menu.png" data-aero="shots/start-menu.png" alt="The Start menu: pinned programs, the folders, the search box and the power button" width="1280" height="800" loading="lazy" decoding="async"></a>
 <figcaption>The Start menu.</figcaption>
 </figure>
 <div class="more">
-<figure class="shot"><a href="shots/launcher-search.png" data-lightbox><img src="shots/launcher-search.png" data-kernel="shots/kernel/launcher-search.png" alt="The launcher while typing, with the matched letters highlighted" width="1280" height="800" loading="lazy" decoding="async"></a><figcaption>The launcher</figcaption></figure>
-<figure class="shot"><a href="shots/jump-list.png" data-lightbox><img src="shots/jump-list.png" data-kernel="shots/kernel/jump-list.png" alt="A jump list with recent files" width="1280" height="800" loading="lazy" decoding="async"></a><figcaption>A jump list</figcaption></figure>
-<figure class="shot"><a href="shots/taskbar-thumbnail.png" data-lightbox><img src="shots/taskbar-thumbnail.png" data-kernel="shots/kernel/taskbar-thumbnail.png" alt="The windows behind a taskbar button, as cards" width="1280" height="800" loading="lazy" decoding="async"></a><figcaption>Thumbnails</figcaption></figure>
+<figure class="shot"><a href="shots/kernel/launcher-search.png" data-lightbox><img src="shots/kernel/launcher-search.png" data-kernel="shots/kernel/launcher-search.png" data-aero="shots/launcher-search.png" alt="The launcher while typing, with the matched letters highlighted" width="1280" height="800" loading="lazy" decoding="async"></a><figcaption>The launcher</figcaption></figure>
+<figure class="shot"><a href="shots/kernel/jump-list.png" data-lightbox><img src="shots/kernel/jump-list.png" data-kernel="shots/kernel/jump-list.png" data-aero="shots/jump-list.png" alt="A jump list with recent files" width="1280" height="800" loading="lazy" decoding="async"></a><figcaption>A jump list</figcaption></figure>
+<figure class="shot"><a href="shots/kernel/taskbar-thumbnail.png" data-lightbox><img src="shots/kernel/taskbar-thumbnail.png" data-kernel="shots/kernel/taskbar-thumbnail.png" data-aero="shots/taskbar-thumbnail.png" alt="The windows behind a taskbar button, as cards" width="1280" height="800" loading="lazy" decoding="async"></a><figcaption>Thumbnails</figcaption></figure>
 </div>
 </div>
 </article>
@@ -146,12 +146,12 @@
 </div>
 <div>
 <figure class="shot">
-<a href="shots/calendar.png" data-lightbox><img src="shots/calendar.png" data-kernel="shots/kernel/calendar.png" alt="The calendar over the clock" width="1280" height="800" loading="lazy" decoding="async"></a>
+<a href="shots/kernel/calendar.png" data-lightbox><img src="shots/kernel/calendar.png" data-kernel="shots/kernel/calendar.png" data-aero="shots/calendar.png" alt="The calendar over the clock" width="1280" height="800" loading="lazy" decoding="async"></a>
 <figcaption>The calendar over the clock.</figcaption>
 </figure>
 <div class="more">
-<figure class="shot"><a href="shots/tray-overflow.png" data-lightbox><img src="shots/tray-overflow.png" data-kernel="shots/kernel/tray-overflow.png" alt="The hidden notification icons behind the arrow" width="1280" height="800" loading="lazy" decoding="async"></a><figcaption>Hidden icons</figcaption></figure>
-<figure class="shot"><a href="shots/tray-menu.png" data-lightbox><img src="shots/tray-menu.png" data-kernel="shots/kernel/tray-menu.png" alt="The menu of a notification-area item" width="1280" height="800" loading="lazy" decoding="async"></a><figcaption>A tray menu</figcaption></figure>
+<figure class="shot"><a href="shots/kernel/tray-overflow.png" data-lightbox><img src="shots/kernel/tray-overflow.png" data-kernel="shots/kernel/tray-overflow.png" data-aero="shots/tray-overflow.png" alt="The hidden notification icons behind the arrow" width="1280" height="800" loading="lazy" decoding="async"></a><figcaption>Hidden icons</figcaption></figure>
+<figure class="shot"><a href="shots/kernel/tray-menu.png" data-lightbox><img src="shots/kernel/tray-menu.png" data-kernel="shots/kernel/tray-menu.png" data-aero="shots/tray-menu.png" alt="The menu of a notification-area item" width="1280" height="800" loading="lazy" decoding="async"></a><figcaption>A tray menu</figcaption></figure>
 </div>
 </div>
 </article>
@@ -169,7 +169,7 @@
 </div>
 <div>
 <figure class="shot">
-<a href="shots/desktop-menu.png" data-lightbox><img src="shots/desktop-menu.png" data-kernel="shots/kernel/desktop-menu.png" alt="The desktop's menu with View open, and the desktop icons" width="1280" height="800" loading="lazy" decoding="async"></a>
+<a href="shots/kernel/desktop-menu.png" data-lightbox><img src="shots/kernel/desktop-menu.png" data-kernel="shots/kernel/desktop-menu.png" data-aero="shots/desktop-menu.png" alt="The desktop's menu with View open, and the desktop icons" width="1280" height="800" loading="lazy" decoding="async"></a>
 <figcaption>The desktop's menu, with View open.</figcaption>
 </figure>
 </div>
@@ -188,13 +188,13 @@
 </div>
 <div>
 <figure class="shot">
-<a href="shots/control-panel.png" data-lightbox><img src="shots/control-panel.png" data-kernel="shots/kernel/control-panel.png" alt="The Control Panel's home page with its categories" width="1280" height="800" loading="lazy" decoding="async"></a>
+<a href="shots/kernel/control-panel.png" data-lightbox><img src="shots/kernel/control-panel.png" data-kernel="shots/kernel/control-panel.png" data-aero="shots/control-panel.png" alt="The Control Panel's home page with its categories" width="1280" height="800" loading="lazy" decoding="async"></a>
 <figcaption>The Control Panel's home page.</figcaption>
 </figure>
 <div class="more">
-<figure class="shot"><a href="shots/control-panel-dark.png" data-lightbox><img src="shots/control-panel-dark.png" data-kernel="shots/kernel/control-panel-dark.png" alt="The Control Panel in dark" width="1280" height="800" loading="lazy" decoding="async"></a><figcaption>Dark</figcaption></figure>
-<figure class="shot"><a href="shots/control-panel-scroll.png" data-lightbox><img src="shots/control-panel-scroll.png" data-kernel="shots/kernel/control-panel-scroll.png" alt="The Desktop Background page with its scroll bar" width="1280" height="800" loading="lazy" decoding="async"></a><figcaption>Background</figcaption></figure>
-<figure class="shot"><a href="shots/control-panel-lock.png" data-lightbox><img src="shots/control-panel-lock.png" data-kernel="shots/kernel/control-panel-lock.png" alt="The lock screen page of the Control Panel" width="1280" height="800" loading="lazy" decoding="async"></a><figcaption>Lock screen</figcaption></figure>
+<figure class="shot"><a href="shots/kernel/control-panel-dark.png" data-lightbox><img src="shots/kernel/control-panel-dark.png" data-kernel="shots/kernel/control-panel-dark.png" data-aero="shots/control-panel-dark.png" alt="The Control Panel in dark" width="1280" height="800" loading="lazy" decoding="async"></a><figcaption>Dark</figcaption></figure>
+<figure class="shot"><a href="shots/kernel/control-panel-scroll.png" data-lightbox><img src="shots/kernel/control-panel-scroll.png" data-kernel="shots/kernel/control-panel-scroll.png" data-aero="shots/control-panel-scroll.png" alt="The Desktop Background page with its scroll bar" width="1280" height="800" loading="lazy" decoding="async"></a><figcaption>Background</figcaption></figure>
+<figure class="shot"><a href="shots/kernel/control-panel-lock.png" data-lightbox><img src="shots/kernel/control-panel-lock.png" data-kernel="shots/kernel/control-panel-lock.png" data-aero="shots/control-panel-lock.png" alt="The lock screen page of the Control Panel" width="1280" height="800" loading="lazy" decoding="async"></a><figcaption>Lock screen</figcaption></figure>
 </div>
 </div>
 </article>
@@ -210,12 +210,12 @@
 </div>
 <div>
 <figure class="shot">
-<a href="shots/lock-screen.png" data-lightbox><img src="shots/lock-screen.png" data-kernel="shots/kernel/lock-screen.png" alt="The lock screen: the clock, the account picture, the name and the password field" width="1280" height="800" loading="lazy" decoding="async"></a>
+<a href="shots/kernel/lock-screen.png" data-lightbox><img src="shots/kernel/lock-screen.png" data-kernel="shots/kernel/lock-screen.png" data-aero="shots/lock-screen.png" alt="The lock screen: the clock, the account picture, the name and the password field" width="1280" height="800" loading="lazy" decoding="async"></a>
 <figcaption>The lock screen.</figcaption>
 </figure>
 <div class="more">
-<figure class="shot"><a href="shots/lock-screen-wrong.png" data-lightbox><img src="shots/lock-screen-wrong.png" data-kernel="shots/kernel/lock-screen-wrong.png" alt="The lock screen after a wrong password" width="1280" height="800" loading="lazy" decoding="async"></a><figcaption>Wrong password</figcaption></figure>
-<figure class="shot"><a href="shots/lock-screen-dark.png" data-lightbox><img src="shots/lock-screen-dark.png" data-kernel="shots/kernel/lock-screen-dark.png" alt="The lock screen in dark" width="1280" height="800" loading="lazy" decoding="async"></a><figcaption>Dark</figcaption></figure>
+<figure class="shot"><a href="shots/kernel/lock-screen-wrong.png" data-lightbox><img src="shots/kernel/lock-screen-wrong.png" data-kernel="shots/kernel/lock-screen-wrong.png" data-aero="shots/lock-screen-wrong.png" alt="The lock screen after a wrong password" width="1280" height="800" loading="lazy" decoding="async"></a><figcaption>Wrong password</figcaption></figure>
+<figure class="shot"><a href="shots/kernel/lock-screen-dark.png" data-lightbox><img src="shots/kernel/lock-screen-dark.png" data-kernel="shots/kernel/lock-screen-dark.png" data-aero="shots/lock-screen-dark.png" alt="The lock screen in dark" width="1280" height="800" loading="lazy" decoding="async"></a><figcaption>Dark</figcaption></figure>
 </div>
 </div>
 </article>

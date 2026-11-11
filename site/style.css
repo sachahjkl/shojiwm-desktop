@@ -315,9 +315,11 @@ li + li {
   background: var(--code-bg);
 }
 
+/* The page you are on: the entry set in ink on a soft plate, as a selected tab. */
 .nav a[aria-current="page"] {
   color: var(--ink);
-  box-shadow: inset 0 -2px 0 var(--accent);
+  font-weight: 600;
+  background: var(--code-bg);
 }
 
 /* ----- the footer -------------------------------------------------------------------------- */
