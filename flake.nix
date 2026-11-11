@@ -1,5 +1,5 @@
 {
-  description = "A Windows 7 Aero desktop for the ShojiWM Wayland compositor";
+  description = "A complete Wayland desktop environment, built on ShojiWM";
 
   inputs = {
     nixpkgs.url = "https://flakehub.com/f/NixOS/nixpkgs/0.2605";
@@ -129,7 +129,7 @@
         '';
 
         meta = {
-          description = "A Windows 7 Aero desktop for ShojiWM";
+          description = "A complete Wayland desktop environment, built on ShojiWM";
           homepage = "https://github.com/sachahjkl/shojiwm-desktop";
           license = nixpkgs.lib.licenses.mit;
           platforms = nixpkgs.lib.platforms.linux;

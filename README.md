@@ -4,9 +4,11 @@
 
 Site and documentation: <https://desktop.froment.software/>
 
-A complete desktop for [ShojiWM](https://github.com/bea4dev/ShojiWM), the
-Wayland compositor you configure in TypeScript, in two themes: **Aero**
-(Windows 7's glass) and **Kernel**.
+A complete Wayland desktop environment, built on [ShojiWM](https://github.com/bea4dev/ShojiWM).
+
+It gives the compositor window frames and window groups, a taskbar, a Start
+menu, a notification area, a Control Panel, a lock screen and a log-on screen,
+in two themes: **Kernel** (the default) and **Aero** (Windows 7's glass).
 
 It has three parts:
 
