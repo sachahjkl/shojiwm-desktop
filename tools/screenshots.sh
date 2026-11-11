@@ -292,14 +292,21 @@ fi
 
 geometry="$(xdotool getwindowgeometry --shell "$window")"
 eval "$geometry"
-# The middle of the bar: at the bottom in Aero, at the top in Kernel.
-if [ "${THEME:-aero}" = kernel ]; then bar_y=20; else bar_y=$((HEIGHT - 20)); fi
+# The middle of the bar: at the bottom in Aero, at the top in Kernel. Under a
+# bar at the top, the windows open lower by its height (bar_above).
+if [ "${THEME:-aero}" = kernel ]; then
+  bar_y=16
+  bar_above=32
+else
+  bar_y=$((HEIGHT - 20))
+  bar_above=0
+fi
 
 # Move the front window clear of the one behind it, so both frames show and
 # its bottom edge stays above the taskbar.
-xdotool mousemove --window "$window" 500 25
+xdotool mousemove --window "$window" 500 $((25 + bar_above))
 xdotool mousedown 1
-xdotool mousemove --window "$window" 575 118
+xdotool mousemove --window "$window" 575 $((118 + bar_above))
 sleep 1
 xdotool mouseup 1
 sleep 2

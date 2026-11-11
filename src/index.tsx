@@ -79,32 +79,21 @@ COMPOSITOR.process.once("shell", {
 // Decoration policy
 // ---------------------------------------------------------------------------
 
-// Programs that keep their own title bar, by app id: Ghostty's has its tabs.
-const OWN_TITLE_BAR = new Set(["com.mitchellh.ghostty"]);
-
-// Draw the Aero frame for every client that lets us, and keep the client's
-// own title bar when it insists on one (Firefox, GTK header bars) or is one
-// of OWN_TITLE_BAR. A client that speaks no decoration protocol (GTK 4, as
-// File Roller) draws its own, as xdg-shell has it: a frame would add a
-// second title bar. ShojiWM asks again when the app id changes.
-COMPOSITOR.window.decoration.configure((window, context) => ({
-  mode:
-    OWN_TITLE_BAR.has(window.appId() ?? "") || !context.canNegotiate
-      ? "client"
-      : (context.clientPreference ?? "server"),
+// Draw the theme's frame for every client that lets us, and keep the
+// client's own title bar when it insists on one (Firefox, GTK header bars).
+// A client that speaks no decoration protocol (GTK 4, as File Roller) draws
+// its own, as xdg-shell has it: a frame would add a second title bar.
+// Ghostty asks for ours (window-decoration = server); its tabs are windows of
+// one group in our frame (src/groups.ts, TABBED_PROGRAMS).
+COMPOSITOR.window.decoration.configure((_window, context) => ({
+  mode: context.canNegotiate
+    ? (context.clientPreference ?? "server")
+    : "client",
 }));
 
 // GTK 3 applications such as Thunar pick their title bar once, from this
-// default, and ignore later per-window answers. Ghostty does too: told
-// "client" here, it draws its own title bar.
-COMPOSITOR.window.decoration.kdeDefaultMode((client) => {
-  const program = (client.executable ?? client.command[0] ?? "")
-    .split("/")
-    .pop();
-  return program === "ghostty" || program === ".ghostty-wrapped"
-    ? "client"
-    : "server";
-});
+// default, and ignore later per-window answers.
+COMPOSITOR.window.decoration.kdeDefaultMode(() => "server");
 
 // Triple buffering.
 COMPOSITOR.rendering.framePacing = "throughput";
@@ -229,6 +218,23 @@ COMPOSITOR.key.bind(
   "window-to-right-output",
   "Super+Shift+Right",
   withFocused((window) => WINDOWS.moveToOutput(window, 1)),
+);
+// The tabs of a group (src/groups.ts): the next, the one before, and the
+// shown one out of its group.
+COMPOSITOR.key.bind(
+  "next-tab",
+  "Super+Ctrl+Right",
+  withFocused((window) => WINDOWS.nextTab(window, 1)),
+);
+COMPOSITOR.key.bind(
+  "previous-tab",
+  "Super+Ctrl+Left",
+  withFocused((window) => WINDOWS.nextTab(window, -1)),
+);
+COMPOSITOR.key.bind(
+  "detach-tab",
+  "Super+Ctrl+Down",
+  withFocused((window) => WINDOWS.detachTab(window)),
 );
 COMPOSITOR.key.bind(
   "minimize-others",
@@ -463,8 +469,20 @@ COMPOSITOR.window.composition = (window: WaylandWindow) => {
   const forceRectSize = computed(
     () => window.isResizable() && !window.isTransient(),
   );
-  const idle = computed<boolean>(() => minimized());
-  const interactive = computed(() => !minimized());
+  // A tab its group does not show is away: not drawn, not reached (idle
+  // takes it out of the pointer's way, over the shown tab at the same place).
+  const away = computed(() => WINDOWS.groups.isAway(window.id));
+  const idle = computed<boolean>(() => minimized() || away());
+  const interactive = computed(() => !minimized() && !away());
+  // See-through while dragged over another group's caption it would join,
+  // so the ghost tab under it shows (not while it moves along its own).
+  const opacity = computed(() => {
+    const drop = WINDOWS.groups.drop();
+    return drop?.dragged === window.id &&
+      !WINDOWS.groups.members(window.id).includes(drop.target)
+      ? 0.55
+      : 1;
+  });
 
   // Fullscreen: nothing but the client surface, edge to edge. Drawing only
   // this is what lets the compositor hand the buffer straight to the display.
@@ -503,6 +521,8 @@ COMPOSITOR.window.composition = (window: WaylandWindow) => {
       forceRectSize={forceRectSize}
       idle={idle}
       interactive={interactive}
+      visible={computed(() => !away())}
+      opacity={opacity}
       // Tell the client it is tiled, so it squares off its own corners.
       tiled={true}
     >
@@ -511,6 +531,11 @@ COMPOSITOR.window.composition = (window: WaylandWindow) => {
         glassSuspended: ALT_TAB.blurSuspended(),
         onMinimize: () => WINDOWS.setMinimized(window, true),
         onToggleMaximize: () => WINDOWS.toggleMaximized(window),
+        tabs: {
+          groups: WINDOWS.groups,
+          windowOf: (id) => WINDOWS.windowById(id),
+          onTabPress: (tab) => WINDOWS.pressTab(tab),
+        },
       })}
     </ManagedWindow>
   );

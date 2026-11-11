@@ -49,6 +49,11 @@ export const AERO_METRICS = {
   captionMaximized: FRAME.captionMaximized,
   border: FRAME.border,
   borderMaximized: FRAME.borderMaximized,
+  // The tab strip of a group (groups.ts): where the icon starts, to the
+  // caption buttons (their 103 px group, 7 px from the right edge).
+  tabsLeft: FRAME.iconLeft,
+  tabsRight: FRAME.buttonRight + 103 + FRAME.iconGap,
+  tabMaxWidth: 220,
 };
 
 /** Widths of the three caption buttons, dark separators included. */

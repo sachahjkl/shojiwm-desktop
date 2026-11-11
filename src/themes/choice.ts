@@ -9,6 +9,7 @@
  * them, and the frames (`frames.tsx`) import the window manager.
  */
 import { signal } from "shoji_wm";
+import type { TabMetrics } from "../groups";
 import { AERO_METRICS } from "./aero/metrics";
 import { KERNEL_METRICS } from "./kernel/metrics";
 
@@ -16,8 +17,11 @@ export type ThemeName = "aero" | "kernel";
 
 export const THEME_NAMES: readonly ThemeName[] = ["aero", "kernel"];
 
-/** The room a frame takes around the client surface, in logical pixels. */
-export interface FrameMetrics {
+/**
+ * The room a frame takes around the client surface, and its tab strip
+ * (groups.ts), in logical pixels.
+ */
+export interface FrameMetrics extends TabMetrics {
   /** Window top to client top. */
   caption: number;
   /** The same, maximised. */

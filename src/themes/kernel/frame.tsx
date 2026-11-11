@@ -28,6 +28,23 @@ import type { CompositionRenderable } from "shoji_wm/types";
 import type { FrameOptions } from "../frames";
 import { WIN_MAXIMIZED } from "../../window-manager";
 import { KCOLOR, KFONT_TEXT, KFONT_TITLE, KFRAME } from "./metrics";
+import { captionTabs, type TabStyle } from "../tabs";
+
+/** The tabs of a group, on the caption plate. */
+const KTAB: TabStyle = {
+  active: "#ffffff24",
+  hover: "#ffffff14",
+  separator: "#ffffff26",
+  ghost: "#3f7fcd40",
+  ghostLine: "#7fb2eaff",
+  text: KCOLOR.title,
+  textAway: KCOLOR.titleInactive,
+  textGlow: null,
+  fontFamily: KFONT_TITLE,
+  fontSize: 12,
+  radius: 2,
+  closeIcon: "./assets/kernel/close.svg",
+};
 
 /** `#rrggbbaa` to the four numbers a shader uniform takes. */
 function colour(hex: string): [number, number, number, number] {
@@ -275,29 +292,38 @@ export function kernelFrame(
         flexShrink: 0,
       }}
     >
-      <AppIcon
-        icon={window.icon}
-        style={{
-          width: KFRAME.iconSize,
-          height: KFRAME.iconSize,
-          flexShrink: 0,
-          opacity: focused((on: boolean) => (on ? 1 : 0.6)),
-        }}
-      />
-      <Label
-        text={window.title}
-        style={{
-          color: focused((on: boolean) =>
-            on ? KCOLOR.title : KCOLOR.titleInactive,
-          ),
-          fontFamily: KFONT_TITLE,
-          fontSize: KFRAME.fontSize,
-          textOverflow: "ellipsis",
-          flexShrink: 1,
-          minWidth: 0,
-        }}
-      />
-      <Box style={{ flexGrow: 1, minWidth: 0 }} />
+      {captionTabs(
+        window,
+        computed(() => buttonHeight() - 3),
+        KTAB,
+        options.tabs,
+        KFRAME.iconGap,
+        [
+          <AppIcon
+            icon={window.icon}
+            style={{
+              width: KFRAME.iconSize,
+              height: KFRAME.iconSize,
+              flexShrink: 0,
+              opacity: focused((on: boolean) => (on ? 1 : 0.6)),
+            }}
+          />,
+          <Label
+            text={window.title}
+            style={{
+              color: focused((on: boolean) =>
+                on ? KCOLOR.title : KCOLOR.titleInactive,
+              ),
+              fontFamily: KFONT_TITLE,
+              fontSize: KFRAME.fontSize,
+              textOverflow: "ellipsis",
+              flexShrink: 1,
+              minWidth: 0,
+            }}
+          />,
+          <Box style={{ flexGrow: 1, minWidth: 0 }} />,
+        ],
+      )}
       {/* (the group fills the caption's height and sits at its top: the row's centring cannot push it down,
           and it stops short of the dark line under the caption) */}
       <Box

@@ -31,6 +31,11 @@ export const KERNEL_METRICS = {
   captionMaximized: KFRAME.captionMaximized,
   border: KFRAME.border,
   borderMaximized: KFRAME.borderMaximized,
+  // The tab strip of a group (groups.ts): where the icon starts, to the
+  // caption buttons (two of 40 px, the close one of 46).
+  tabsLeft: KFRAME.iconLeft,
+  tabsRight: 1 + 2 * KFRAME.buttonWidth + KFRAME.closeWidth + KFRAME.iconGap,
+  tabMaxWidth: 220,
 };
 
 /** Colours, `#rrggbbaa`. */

@@ -9,6 +9,7 @@ import type { CompositionRenderable } from "shoji_wm/types";
 import { aeroFrame } from "./aero/frame";
 import { kernelFrame } from "./kernel/frame";
 import { themeName, type ThemeName } from "./choice";
+import type { TabOptions } from "./tabs";
 
 /** What a frame is given, whatever the theme. */
 export interface FrameOptions {
@@ -18,6 +19,8 @@ export interface FrameOptions {
   glassSuspended: boolean;
   onMinimize: () => void;
   onToggleMaximize: () => void;
+  /** The window's group, drawn as tabs in its caption. */
+  tabs: TabOptions;
 }
 
 const FRAMES: Record<

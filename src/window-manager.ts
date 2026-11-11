@@ -34,6 +34,12 @@ import type {
   WindowSizeConstraints,
 } from "shoji_wm/types";
 import { TIMING, motion } from "./motion";
+import {
+  TABBED_PROGRAMS,
+  WindowGroups,
+  tabLayout,
+  type DropTarget,
+} from "./groups";
 import { frameMetrics } from "./themes/choice";
 
 /** The frame rectangle of a window: the chrome, not the client surface. */
@@ -81,6 +87,10 @@ const DOUBLE_CLICK_MS = 400;
 const CLICK_SLACK_PX = 4;
 /** How close to an edge the pointer must be for Aero Snap, in logical px. */
 const SNAP_EDGE_PX = 8;
+/** How far a pressed tab moves before it is dragged rather than clicked. */
+const TAB_DRAG_PX = 6;
+/** Where a tab taken out with the keyboard goes, from its group's place. */
+const DETACH_OFFSET_PX = 32;
 
 /** Where a dragged window would land. */
 export type SnapZoneKind = "maximize" | "left" | "right";
@@ -176,6 +186,16 @@ function maxSize(
   return max && max > 0 ? max + extra : Number.POSITIVE_INFINITY;
 }
 
+/** A tab dragged by the move of its frame (FloatingWindowManager.moveTab). */
+interface TabDrag {
+  tab: WaylandWindow;
+  /** Out of its group, following the pointer. */
+  detached: boolean;
+  /** Where the pointer holds it, from its top left corner. */
+  grabX: number;
+  grabY: number;
+}
+
 export class FloatingWindowManager {
   private readonly stack = createWindowStack();
   private readonly windowsById = new Map<string, WaylandWindow>();
@@ -232,6 +252,12 @@ export class FloatingWindowManager {
    */
   public readonly snapPreview: Signal<SnapZone | null> =
     signal<SnapZone | null>(null);
+  /** Windows shown as tabs of one frame (groups.ts). */
+  public readonly groups = new WindowGroups();
+  /** The tab last pressed, until the move its press starts takes it. */
+  private tabPress: string | null = null;
+  /** The move of a frame that drags one of its tabs. */
+  private tabDrag: TabDrag | null = null;
 
   // ----- queries ----------------------------------------------------------
 
@@ -240,16 +266,24 @@ export class FloatingWindowManager {
     return this.stack.zIndex(window);
   }
 
-  /** Every managed window, most recently focused first. */
+  /**
+   * Every managed window, most recently focused first. A tab its group does
+   * not show is left out: it is reached through its group.
+   */
   public recentWindows(): WaylandWindow[] {
     const windows: WaylandWindow[] = [];
     for (const id of this.mru) {
       const window = this.windowsById.get(id);
-      if (window) {
+      if (window && !this.groups.isAwayPeek(id)) {
         windows.push(window);
       }
     }
     return windows;
+  }
+
+  /** A managed window by id. */
+  public windowById(id: string): WaylandWindow | undefined {
+    return this.windowsById.get(id);
   }
 
   /** The output the pointer was last seen on. */
@@ -425,6 +459,7 @@ export class FloatingWindowManager {
     } else {
       window.state[WIN_RECT].set(this.initialRect(window));
     }
+    this.openAsTab(window);
 
     window.scheduleAnimation({
       channel: OPEN_CHANNEL,
@@ -448,12 +483,19 @@ export class FloatingWindowManager {
   public onStartClose(window: WaylandWindow): void {
     this.rememberPlace(window);
     this.closing.add(window.id);
+    // A tab of a group: the next tab takes its place (and the keyboard, if
+    // it was the shown one). An away tab goes without a trace.
+    const wasAway = this.groups.isAwayPeek(window.id);
+    const shownNext = this.leaveGroup(window);
+    this.mru = this.mru.filter((id) => id !== window.id);
+    if (wasAway) {
+      return;
+    }
     // The next window takes the keyboard now, as on Windows, from the most
     // recently used ones, before anything else can.
-    this.mru = this.mru.filter((id) => id !== window.id);
-    const next = this.recentWindows().find(
-      (other) => !other.state[WIN_MINIMIZED](),
-    );
+    const next =
+      shownNext ??
+      this.recentWindows().find((other) => !other.state[WIN_MINIMIZED]());
     this.afterClose = next?.id ?? null;
     next?.focus();
 
@@ -480,6 +522,7 @@ export class FloatingWindowManager {
   public onClose(window: WaylandWindow): void {
     // A window can also go without the close animation (onStartClose).
     this.rememberPlace(window);
+    this.leaveGroup(window);
     this.appIds.delete(window.id);
     this.closing.delete(window.id);
     this.stack.remove(window);
@@ -502,6 +545,9 @@ export class FloatingWindowManager {
   public onFocus(window: WaylandWindow, focused: boolean): void {
     if (!focused) {
       return;
+    }
+    if (this.groups.isAwayPeek(window.id)) {
+      this.showTab(window);
     }
     this.stack.raise(window);
     this.mru = [window.id, ...this.mru.filter((id) => id !== window.id)];
@@ -528,6 +574,20 @@ export class FloatingWindowManager {
       if (event.phase === "end" || event.phase === "cancel") {
         this.suppressedDragId = null;
       }
+      return;
+    }
+
+    // A press on a tab: the move is the tab's (moveTab).
+    if (event.phase === "start" && this.tabPress !== null) {
+      const tab = this.windowsById.get(this.tabPress);
+      this.tabPress = null;
+      this.tabDrag =
+        tab && this.groups.membersPeek(window.id).includes(tab.id)
+          ? { tab, detached: false, grabX: 0, grabY: 0 }
+          : null;
+    }
+    if (this.tabDrag) {
+      this.moveTab(event, this.tabDrag);
       return;
     }
 
@@ -573,6 +633,7 @@ export class FloatingWindowManager {
       window.state[WIN_RECT].set(base);
       this.moveDrag = null;
       this.setSnapPreview(null);
+      this.groups.setDrop(null);
       return;
     }
 
@@ -583,16 +644,24 @@ export class FloatingWindowManager {
       height: base.height,
     });
 
-    this.setSnapPreview(this.snapZoneAt(event));
+    // Over another window's caption the window would join its group (a
+    // ghost tab shows where); elsewhere, an edge of the screen snaps it.
+    const drop = this.dropAt(event.currentPointer, window);
+    this.groups.setDrop(drop);
+    this.setSnapPreview(drop ? null : this.snapZoneAt(event));
 
     if (event.phase === "end") {
       const zone = this.snapPreview.peek();
       this.setSnapPreview(null);
+      this.groups.setDrop(null);
       this.moveDrag = null;
 
       this.noteClick(event);
 
-      if (zone) {
+      if (drop) {
+        // The whole group goes over, in its order, the dragged window shown.
+        this.dropInto(this.groups.membersPeek(window.id), drop, window);
+      } else if (zone) {
         this.applySnap(window, zone.kind);
       }
     }
@@ -1091,6 +1160,10 @@ export class FloatingWindowManager {
 
   /** Show a window and give it the keyboard. Used by Alt+Tab and the taskbar. */
   public activate(window: WaylandWindow): void {
+    if (this.groups.isAwayPeek(window.id)) {
+      this.showTab(window);
+      return;
+    }
     if (window.state[WIN_MINIMIZED]()) {
       this.setMinimized(window, false);
       return;
@@ -1116,6 +1189,332 @@ export class FloatingWindowManager {
       }
     }
     return undefined;
+  }
+
+  // ----- groups -----------------------------------------------------------
+
+  /**
+   * `window` takes `from`'s place: its rectangle, its maximised or snapped
+   * state, shown and not minimised. Used when a tab replaces another.
+   */
+  private takePlace(window: WaylandWindow, from: WaylandWindow): void {
+    if (window === from) {
+      return;
+    }
+    const maximized = from.state[WIN_MAXIMIZED]();
+    window.state[WIN_RESTORE_RECT].set(from.state[WIN_RESTORE_RECT]());
+    window.state[WIN_SNAPPED].set(from.state[WIN_SNAPPED]());
+    window.state[WIN_RECT].set(snapshotRect(from.state[WIN_RECT]()));
+    if (window.state[WIN_MAXIMIZED]() !== maximized) {
+      window.state[WIN_MAXIMIZED].set(maximized);
+      if (maximized) {
+        window.maximize();
+      } else {
+        window.unmaximize();
+      }
+    }
+    // The tab it replaces is hidden by its group, not minimised: it shows
+    // again as it was when its tab is chosen.
+    window.state[WIN_MINIMIZED].set(from.state[WIN_MINIMIZED]());
+    from.state[WIN_MINIMIZED].set(false);
+  }
+
+  /** Show `window`'s tab in its group, give it the keyboard. */
+  public showTab(window: WaylandWindow): void {
+    const before = this.groups.activate(window.id);
+    const shown = this.windowsById.get(before);
+    if (shown && shown !== window) {
+      this.takePlace(window, shown);
+    }
+    if (window.state[WIN_MINIMIZED]()) {
+      this.setMinimized(window, false);
+      return;
+    }
+    this.stack.raise(window);
+    window.focus();
+  }
+
+  /** The tab `step` places from the one shown (Super+Ctrl+Left or Right). */
+  public nextTab(window: WaylandWindow, step: number): void {
+    const next = this.windowsById.get(this.groups.neighbour(window.id, step));
+    if (next && next !== window) {
+      this.showTab(next);
+    }
+  }
+
+  /**
+   * Take the window out of its group. If it was the shown tab, the next one
+   * takes its place and is returned.
+   */
+  private leaveGroup(window: WaylandWindow): WaylandWindow | null {
+    if (!this.groups.isGrouped(window.id)) {
+      return null;
+    }
+    const wasAway = this.groups.isAwayPeek(window.id);
+    const nextId = this.groups.remove(window.id);
+    const next = nextId ? this.windowsById.get(nextId) : undefined;
+    if (!next) {
+      return null;
+    }
+    if (!wasAway) {
+      this.takePlace(next, window);
+      this.stack.raise(next);
+    }
+    return next;
+  }
+
+  /** Super+Ctrl+Down: the shown tab leaves its group, a little aside. */
+  public detachTab(window: WaylandWindow): void {
+    if (!this.groups.isGrouped(window.id)) {
+      return;
+    }
+    const next = this.leaveGroup(window);
+    if (window.state[WIN_MAXIMIZED]()) {
+      this.setMaximized(window, false);
+    }
+    const rect = snapshotRect(window.state[WIN_RECT]());
+    window.state[WIN_RECT].set({
+      ...rect,
+      x: rect.x + DETACH_OFFSET_PX,
+      y: rect.y + DETACH_OFFSET_PX,
+    });
+    window.state[WIN_SNAPPED].set(null);
+    if (next) {
+      this.stack.raise(window);
+    }
+    window.focus();
+  }
+
+  /**
+   * The drop a drag would make with the pointer at `point`: the caption of
+   * the front window there, and the tab place under the pointer. null when
+   * the pointer is over no caption, or over another part of a window (the
+   * windows of `dragged`'s group are looked through).
+   */
+  private dropAt(
+    point: { x: number; y: number },
+    dragged: WaylandWindow,
+  ): DropTarget | null {
+    if (usesClientDecoration(dragged)) {
+      return null;
+    }
+    const own = new Set(this.groups.membersPeek(dragged.id));
+    const metrics = frameMetrics();
+    const candidates = [...this.windowsById.values()]
+      .filter(
+        (window) =>
+          !own.has(window.id) &&
+          !this.closing.has(window.id) &&
+          !this.groups.isAwayPeek(window.id) &&
+          !window.state[WIN_MINIMIZED]() &&
+          !window.state[WIN_FULLSCREEN](),
+      )
+      .sort(
+        (a, b) => this.stack.zIndex(b).peek() - this.stack.zIndex(a).peek(),
+      );
+    for (const window of candidates) {
+      const rect = window.state[WIN_RECT]();
+      const x = read(rect.x);
+      const y = read(rect.y);
+      const width = read(rect.width);
+      const height = read(rect.height);
+      if (
+        point.x < x ||
+        point.x >= x + width ||
+        point.y < y ||
+        point.y >= y + height
+      ) {
+        continue;
+      }
+      const caption = window.state[WIN_MAXIMIZED]()
+        ? metrics.captionMaximized
+        : metrics.caption;
+      if (usesClientDecoration(window) || point.y >= y + caption) {
+        // The pointer is on this window, not on a caption with tabs.
+        return null;
+      }
+      const tabs = this.groups.membersPeek(window.id).length;
+      const layout = tabLayout(width, tabs + 1, metrics);
+      const index = clamp(
+        Math.floor((point.x - x - layout.left) / Math.max(1, layout.width)),
+        0,
+        tabs,
+      );
+      return { dragged: dragged.id, target: window.id, index };
+    }
+    return null;
+  }
+
+  /**
+   * Put `ids` (in order) among the tabs of the drop's target, at its place,
+   * and show `shown` in the place of the tab shown before.
+   */
+  private dropInto(
+    ids: string[],
+    drop: DropTarget,
+    shown: WaylandWindow,
+  ): void {
+    const before = this.windowsById.get(this.groups.activeOf(drop.target));
+    ids.forEach((id, at) => {
+      this.groups.join(id, drop.target, drop.index + at);
+    });
+    this.groups.activate(shown.id);
+    if (before) {
+      this.takePlace(shown, before);
+    }
+    this.stack.raise(shown);
+    shown.focus();
+  }
+
+  /** A new window of a program in TABBED_PROGRAMS opens as a tab of its last window. */
+  private openAsTab(window: WaylandWindow): void {
+    const appId = window.appId();
+    if (
+      !appId ||
+      !TABBED_PROGRAMS.has(appId) ||
+      window.isTransient() ||
+      usesClientDecoration(window)
+    ) {
+      return;
+    }
+    const host = this.recentWindows().find(
+      (other) =>
+        other !== window &&
+        other.appId() === appId &&
+        !this.closing.has(other.id) &&
+        !other.isTransient() &&
+        !other.state[WIN_MINIMIZED]() &&
+        !usesClientDecoration(other),
+    );
+    if (!host) {
+      return;
+    }
+    const tabs = this.groups.membersPeek(host.id).length;
+    this.dropInto(
+      [window.id],
+      { dragged: window.id, target: host.id, index: tabs },
+      window,
+    );
+  }
+
+  /**
+   * A press on a tab (themes/tabs.tsx). ShojiWM goes on with a move of the
+   * frame's window (a press on a caption is one); `onWindowMove` turns it
+   * into the tab's: a click shows it, a drag along the strip moves it among
+   * its tabs, out of the strip the window leaves its group and follows the
+   * pointer, and over another caption it would join that group.
+   */
+  public pressTab(tab: WaylandWindow): void {
+    this.tabPress = tab.id;
+  }
+
+  /** The move of a frame started by a press on one of its tabs. */
+  private moveTab(event: WindowMoveEvent, drag: TabDrag): void {
+    const tab = drag.tab;
+    const host = event.window;
+    const point = event.currentPointer;
+    const end = (): void => {
+      this.groups.setDrop(null);
+      this.tabDrag = null;
+    };
+    if (event.phase === "cancel") {
+      end();
+      return;
+    }
+    if (!drag.detached && this.isClick(event)) {
+      if (event.phase === "end") {
+        end();
+        this.showTab(tab);
+      }
+      return;
+    }
+    if (!drag.detached) {
+      const own = this.ownStripAt(point, tab, host);
+      if (own) {
+        this.groups.setDrop(own);
+        if (event.phase === "end") {
+          end();
+          this.groups.reorder(tab.id, own.index);
+        }
+        return;
+      }
+      // Out of the strip: the tab leaves its group, at the frame's size,
+      // the pointer where it held the caption.
+      const rect = snapshotRect(host.state[WIN_RECT]());
+      drag.grabX = clamp(event.startPointer.x - rect.x, 0, rect.width);
+      drag.grabY = clamp(
+        event.startPointer.y - rect.y,
+        0,
+        frameMetrics().caption,
+      );
+      const wasAway = this.groups.isAwayPeek(tab.id);
+      this.leaveGroup(tab);
+      if (wasAway) {
+        this.takePlace(tab, host);
+        host.state[WIN_MINIMIZED].set(false);
+      }
+      if (tab.state[WIN_MAXIMIZED]()) {
+        const restore = tab.state[WIN_RESTORE_RECT]() ?? rect;
+        tab.state[WIN_MAXIMIZED].set(false);
+        tab.unmaximize();
+        tab.state[WIN_RECT].set(snapshotRect(restore));
+        drag.grabX = Math.min(drag.grabX, read(restore.width) / 2);
+      }
+      tab.state[WIN_SNAPPED].set(null);
+      drag.detached = true;
+      this.stack.raise(tab);
+      tab.focus();
+    }
+    const rect = snapshotRect(tab.state[WIN_RECT]());
+    tab.state[WIN_RECT].set({
+      ...rect,
+      x: Math.round(point.x - drag.grabX),
+      y: Math.round(point.y - drag.grabY),
+    });
+    const drop = this.dropAt(point, tab);
+    this.groups.setDrop(drop);
+    if (event.phase === "end") {
+      end();
+      if (drop) {
+        this.dropInto([tab.id], drop, tab);
+      }
+    }
+  }
+
+  /**
+   * While a tab is dragged along its own strip: its new place there, as a
+   * drop on its own group. null once the pointer is off the strip.
+   */
+  private ownStripAt(
+    point: { x: number; y: number },
+    window: WaylandWindow,
+    shown: WaylandWindow,
+  ): DropTarget | null {
+    const metrics = frameMetrics();
+    const rect = shown.state[WIN_RECT]();
+    const x = read(rect.x);
+    const y = read(rect.y);
+    const width = read(rect.width);
+    const caption = shown.state[WIN_MAXIMIZED]()
+      ? metrics.captionMaximized
+      : metrics.caption;
+    // A little slack above and below, so a drag along the strip stays on it.
+    if (
+      point.x < x ||
+      point.x >= x + width ||
+      point.y < y - 12 ||
+      point.y >= y + caption + 12
+    ) {
+      return null;
+    }
+    const others = this.groups.membersPeek(window.id).length - 1;
+    const layout = tabLayout(width, others + 1, metrics);
+    const index = clamp(
+      Math.floor((point.x - x - layout.left) / Math.max(1, layout.width)),
+      0,
+      others,
+    );
+    return { dragged: window.id, target: shown.id, index };
   }
 
   // ----- client requests --------------------------------------------------

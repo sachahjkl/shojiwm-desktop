@@ -31,6 +31,7 @@ import {
 } from "shoji_wm";
 import type { CompositionRenderable } from "shoji_wm/types";
 import type { FrameOptions } from "../frames";
+import { captionTabs, type TabStyle } from "../tabs";
 import { CAPTION_BUTTON, COLOR, FONT, FRAME } from "./metrics";
 import { WIN_MAXIMIZED } from "../../window-manager";
 import { corner, squareCorners } from "./corners";
@@ -185,6 +186,22 @@ const CaptionTitle = ({ window }: { window: WaylandWindow }) => (
   />
 );
 
+/** The tabs of a group: lighter glass behind the shown one, black titles on a glow. */
+const ATAB: TabStyle = {
+  active: "#ffffff59",
+  hover: "#ffffff33",
+  separator: "#00000033",
+  ghost: "#ffffff40",
+  ghostLine: "#ffffffcc",
+  text: COLOR.titleActive,
+  textAway: COLOR.titleInactive,
+  textGlow: COLOR.titleGlowActive,
+  fontFamily: FONT,
+  fontSize: FRAME.fontSize,
+  radius: 4,
+  closeIcon: "./assets/tab-close-dark.svg",
+};
+
 /** `#rrggbbaa` to the four numbers a shader uniform takes. */
 function colour(hex: string): [number, number, number, number] {
   const value = hex.replace("#", "");
@@ -321,16 +338,25 @@ export function aeroFrame(
   };
 
   const caption = [
-    <AppIcon
-      icon={window.icon}
-      style={{
-        width: FRAME.iconSize,
-        height: FRAME.iconSize,
-        flexShrink: 0,
-      }}
-    />,
-    <CaptionTitle window={window} />,
-    <Box style={{ flexGrow: 1, minWidth: 0 }} />,
+    captionTabs(
+      window,
+      computed(() => captionHeight() - buttonTop() - 3),
+      ATAB,
+      options.tabs,
+      FRAME.iconGap,
+      [
+        <AppIcon
+          icon={window.icon}
+          style={{
+            width: FRAME.iconSize,
+            height: FRAME.iconSize,
+            flexShrink: 0,
+          }}
+        />,
+        <CaptionTitle window={window} />,
+        <Box style={{ flexGrow: 1, minWidth: 0 }} />,
+      ],
+    ),
     // The group hangs from the top of the caption. The wrapper fills the
     // caption's content box so that `alignItems: center` above cannot push
     // the buttons down; inside it they sit at the top, as Windows draws
