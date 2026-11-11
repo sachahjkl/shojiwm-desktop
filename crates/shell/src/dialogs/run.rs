@@ -2,18 +2,25 @@
 //! `RunState`): the glass frame with its caption, the page with the run icon and the sentence,
 //! the Open field with the history under its arrow, then OK and Cancel.
 //!
-//! The field starts with the last command, selected. Typing completes from the history; Down,
-//! F4 or the arrow opens the history; Return runs, Escape closes the list, then the dialog. What
+//! The field starts with the last command, selected. Typing opens the suggestions under it
+//! (`completion`): the history, the programs, the commands of `PATH`, the names of a path; the
+//! first one that continues the text completes it inline, the rest selected. Down and Up move in
+//! the suggestions, Tab (or Right on a picked one) puts one in the field, Return runs the picked
+//! one, else the text. Without suggestions, Down, F4 or the arrow opens the history. Escape
+//! closes the list, then the dialog. What
 //! a line does follows from its first word: an address opens, an executable file or a program
 //! of `PATH` runs (the whole line, through the shell), another path that exists opens. A
 //! command whose program cannot be found stays in the field, with a message under it.
 
+mod completion;
+
 use super::frame::{button_band, dialog_frame, dialog_page};
 use super::run_close;
 use crate::paths::{asset, state_dir};
-use crate::theme::{bar_at_top, scheme, theme};
-use crate::ui::{cp_button, dark_look, font, ink_asset};
+use crate::theme::{bar_at_top, item_radius, scheme, theme};
+use crate::ui::{cp_button, dark_look, font, ink_asset, marked_text, popup_frame, shell_icon};
 use anti_webui::prelude::*;
+use completion::{Entry, Kind, Suggestion};
 use serde_json::Value;
 use std::cell::Cell;
 use std::path::PathBuf;
@@ -81,19 +88,6 @@ fn remember(command: &str) {
     let _ = std::fs::write(path, Value::from(list).to_string());
 }
 
-/// The most recent command that starts with `prefix`, whatever the case, and is longer.
-fn completion(history: &[String], prefix: &str) -> Option<String> {
-    if prefix.is_empty() {
-        return None;
-    }
-    let lower = prefix.to_lowercase();
-    let length = prefix.chars().count();
-    history
-        .iter()
-        .find(|entry| entry.chars().count() > length && entry.to_lowercase().starts_with(&lower))
-        .cloned()
-}
-
 // ----- running -----------------------------------------------------------------------------------
 
 /// Prints what to do with the first word: open, run or missing.
@@ -159,6 +153,18 @@ struct State {
     /// The last line that could not be found, for the message.
     not_found: Signal<String>,
     field: NodeRef,
+    /// What was typed, without the inline completion: what the suggestions match.
+    query: Signal<String>,
+    suggestions: Signal<Vec<Suggestion>>,
+    /// The suggestion picked with the keys or the pointer; none until then.
+    chosen: Signal<Option<usize>>,
+    /// Escape closed the suggestions: the next edit opens them again.
+    hushed: Signal<bool>,
+    /// The commands of `PATH`, read once in a task when the dialog opens.
+    commands: Signal<Rc<Vec<String>>>,
+    /// The names of the folder last read for a path, and the folder being read.
+    listing: Signal<Option<(PathBuf, Rc<Vec<Entry>>)>>,
+    listing_wanted: Signal<Option<PathBuf>>,
 }
 
 impl State {
@@ -175,6 +181,7 @@ impl State {
             return;
         };
         self.list_open.set(false);
+        self.hushed.set(true);
         self.fill(&entry, last_length);
     }
 
@@ -183,6 +190,108 @@ impl State {
         self.pick.set(0);
         let any = self.history.with_untracked(|h| !h.is_empty());
         self.list_open.update(|open| *open = !*open && any);
+    }
+
+    /// The suggestions show: something matches, and neither the history nor Escape hides them.
+    fn suggesting(&self) -> bool {
+        !self.list_open.get() && !self.hushed.get() && self.suggestions.with(|s| !s.is_empty())
+    }
+
+    /// Finds the suggestions of the query again, none picked.
+    fn refresh(&self) {
+        if !self.query.is_alive() {
+            return;
+        }
+        let query = self.query.get_untracked();
+        let mut found = if query.trim().is_empty() {
+            Vec::new()
+        } else if let Some((dir, start)) = completion::split_path(&query) {
+            let folder = completion::resolve_dir(dir, &home());
+            let entries = self.listing.with_untracked(|l| match l {
+                Some((read, entries)) if *read == folder => Some(entries.clone()),
+                _ => None,
+            });
+            match entries {
+                Some(entries) => completion::path_suggestions(dir, start, &entries),
+                None => {
+                    self.read_folder(folder);
+                    Vec::new()
+                }
+            }
+        } else {
+            completion::rank(&query, self.candidates())
+        };
+        found.retain(|s| s.app.is_some() || s.text != query);
+        self.chosen.set(None);
+        self.suggestions.set(found);
+    }
+
+    /// The history, the programs, then the commands of `PATH`, in that order for the ties.
+    fn candidates(&self) -> Vec<Suggestion> {
+        let commands = self.commands.get_untracked();
+        let on_path = |name: &str| commands.binary_search_by(|c| c.as_str().cmp(name)).is_ok();
+        let mut out: Vec<Suggestion> = self
+            .history
+            .get_untracked()
+            .into_iter()
+            .map(|entry| Suggestion::plain(Kind::Recent, entry))
+            .collect();
+        for app in untrack(crate::apps::applications) {
+            let Some(exec) = crate::apps::exec_line(&app) else {
+                continue;
+            };
+            out.push(Suggestion {
+                kind: Kind::Application,
+                label: app.name.clone(),
+                text: completion::app_command(&exec, on_path),
+                marks: Vec::new(),
+                app: Some(app),
+            });
+        }
+        out.extend(
+            commands
+                .iter()
+                .map(|name| Suggestion::plain(Kind::Command, name.clone())),
+        );
+        out
+    }
+
+    /// Reads the names of `folder` in a task, then finds the suggestions again, unless another
+    /// folder is wanted by then.
+    fn read_folder(&self, folder: PathBuf) {
+        if self.listing_wanted.get_untracked().as_ref() == Some(&folder) {
+            return;
+        }
+        self.listing_wanted.set(Some(folder.clone()));
+        let state = *self;
+        let wanted = folder.clone();
+        task(move || completion::list_dir(&wanted)).then(move |entries| {
+            if !state.query.is_alive()
+                || state.listing_wanted.get_untracked().as_ref() != Some(&folder)
+            {
+                return;
+            }
+            state.listing_wanted.set(None);
+            state.listing.set(Some((folder, Rc::new(entries))));
+            state.refresh();
+        });
+    }
+
+    /// Puts a suggestion in the field, the caret at its end, and finds the suggestions of it:
+    /// the names inside a folder.
+    fn take(&self, index: usize, last_length: &Cell<usize>) {
+        let Some(text) = self
+            .suggestions
+            .with_untracked(|s| s.get(index).map(|s| s.text.clone()))
+        else {
+            return;
+        };
+        self.field.set_text(&text, (text.len(), text.len()));
+        self.typed.set(text.clone());
+        last_length.set(text.chars().count());
+        self.query.set(text);
+        self.hushed.set(false);
+        self.refresh();
     }
 }
 
@@ -197,7 +306,22 @@ pub fn view() -> Div {
         pick: signal(0usize),
         not_found: signal(String::new()),
         field: node_ref(),
+        query: signal(String::new()),
+        suggestions: signal(Vec::new()),
+        chosen: signal(None),
+        hushed: signal(false),
+        commands: signal(Rc::new(Vec::new())),
+        listing: signal(None),
+        listing_wanted: signal(None),
     };
+    task(|| completion::scan_commands(&completion::path_dirs())).then(move |names| {
+        if state.query.is_alive() {
+            state.commands.set(Rc::new(names));
+            if !state.hushed.get_untracked() && !state.query.with_untracked(String::is_empty) {
+                state.refresh();
+            }
+        }
+    });
     // The length before the last edit: completion follows typing, not deleting.
     let last_length = Rc::new(Cell::new(first.chars().count()));
     {
@@ -208,6 +332,7 @@ pub fn view() -> Div {
     let checking = Rc::new(Cell::new(false));
     let accept = Rc::new(move || {
         state.list_open.set(false);
+        state.hushed.set(true);
         let line = state.typed.get_untracked().trim().to_owned();
         if line.is_empty() || checking.get() {
             return;
@@ -281,10 +406,11 @@ pub fn view() -> Div {
                 s.bottom(away)
             }
         })
-        // A press in the window keeps it, and closes the list.
+        // A press in the window keeps it, and closes the lists.
         .on_pointer_down(move |e| {
             e.stop_propagation();
             state.list_open.set(false);
+            state.hushed.set(true);
         });
 
     div()
@@ -299,6 +425,28 @@ fn open_row(state: State, last_length: Rc<Cell<usize>>, accept: Rc<dyn Fn()>) ->
     let field_ui = Interaction::new();
     let keys_length = last_length.clone();
     let list_length = last_length.clone();
+    // Runs a suggestion: an application as the Start menu starts it, anything else as if typed.
+    let run_suggestion: Rc<dyn Fn(usize)> = {
+        let last_length = last_length.clone();
+        let accept = accept.clone();
+        Rc::new(move |index| {
+            let Some(chosen) = state.suggestions.with_untracked(|s| s.get(index).cloned()) else {
+                return;
+            };
+            match &chosen.app {
+                Some(app) => {
+                    remember(&chosen.text);
+                    crate::apps::launch(app);
+                    run_close();
+                }
+                None => {
+                    state.fill(&chosen.text, &last_length);
+                    accept();
+                }
+            }
+        })
+    };
+    let keys_run = run_suggestion.clone();
     let field = text_input()
         .value(state.typed)
         .node_ref(state.field)
@@ -318,10 +466,18 @@ fn open_row(state: State, last_length: Rc<Cell<usize>>, accept: Rc<dyn Fn()>) ->
             let length = typed.chars().count();
             let grew = length > last_length.get();
             last_length.set(length);
+            state.list_open.set(false);
+            state.hushed.set(false);
+            state.query.set(typed.to_owned());
+            state.refresh();
+            // Completion follows typing, not deleting.
             if !grew {
                 return;
             }
-            let Some(found) = state.history.with_untracked(|h| completion(h, typed)) else {
+            let Some(found) = state
+                .suggestions
+                .with_untracked(|s| completion::inline(typed, s))
+            else {
                 return;
             };
             // The rest of the command, selected: typing on replaces it.
@@ -335,10 +491,15 @@ fn open_row(state: State, last_length: Rc<Cell<usize>>, accept: Rc<dyn Fn()>) ->
         .on_key_down(move |e| {
             let count = state.history.with_untracked(Vec::len);
             let open = state.list_open.get_untracked();
+            let suggesting = untrack(|| state.suggesting());
+            let shown = state.suggestions.with_untracked(Vec::len);
+            let chosen = state.chosen.get_untracked();
             match e.key {
                 Key::Named(NamedKey::Enter) => {
                     if open {
                         state.choose(state.pick.get_untracked(), &keys_length);
+                    } else if suggesting && let Some(index) = chosen {
+                        keys_run(index);
                     } else {
                         accept();
                     }
@@ -346,6 +507,8 @@ fn open_row(state: State, last_length: Rc<Cell<usize>>, accept: Rc<dyn Fn()>) ->
                 Key::Named(NamedKey::Escape) => {
                     if open {
                         state.list_open.set(false);
+                    } else if suggesting {
+                        state.hushed.set(true);
                     } else {
                         run_close();
                     }
@@ -353,6 +516,8 @@ fn open_row(state: State, last_length: Rc<Cell<usize>>, accept: Rc<dyn Fn()>) ->
                 Key::Named(NamedKey::ArrowUp) => {
                     if open {
                         state.pick.update(|p| *p = p.saturating_sub(1));
+                    } else if suggesting {
+                        state.chosen.set(chosen.and_then(|i| i.checked_sub(1)));
                     }
                 }
                 Key::Named(NamedKey::ArrowDown) => {
@@ -360,10 +525,20 @@ fn open_row(state: State, last_length: Rc<Cell<usize>>, accept: Rc<dyn Fn()>) ->
                         state
                             .pick
                             .update(|p| *p = (*p + 1).min(count.saturating_sub(1)));
+                    } else if suggesting {
+                        state
+                            .chosen
+                            .set(Some(chosen.map_or(0, |i| (i + 1).min(shown - 1))));
                     } else {
                         state.pick.set(0);
                         state.list_open.set(count > 0);
                     }
+                }
+                Key::Named(NamedKey::Tab) if !open && suggesting => {
+                    state.take(chosen.unwrap_or(0), &keys_length);
+                }
+                Key::Named(NamedKey::ArrowRight) if !open && suggesting && chosen.is_some() => {
+                    state.take(chosen.unwrap_or(0), &keys_length);
                 }
                 Key::Named(NamedKey::F(4)) => state.toggle_list(),
                 _ => return,
@@ -441,7 +616,113 @@ fn open_row(state: State, last_length: Rc<Cell<usize>>, accept: Rc<dyn Fn()>) ->
                 .min_w(0.0)
                 .h(FIELD_HEIGHT)
                 .child(combo)
-                .child(history_list(state, list_length)),
+                .child(history_list(state, list_length))
+                .child(suggestion_list(state, run_suggestion)),
+        )
+}
+
+/// The size of a suggestion's icon.
+const SUGGESTION_ICON: f32 = 16.0;
+
+/// The suggestions, under the field and over the rest of the page, in a popup's frame.
+fn suggestion_list(state: State, run: Rc<dyn Fn(usize)>) -> Show {
+    show(
+        move || state.suggesting(),
+        move || {
+            let run = run.clone();
+            popup_frame()
+                .absolute()
+                .left(0.0)
+                .right(0.0)
+                .top(FIELD_HEIGHT + 2.0)
+                .z_index(10)
+                .px(1.0)
+                .py(2.0)
+                // A press between the rows keeps the list.
+                .on_pointer_down(|e| e.stop_propagation())
+                .child(dyn_view(move || {
+                    let rows: Vec<Div> = state
+                        .suggestions
+                        .get()
+                        .into_iter()
+                        .enumerate()
+                        .map(|(i, s)| suggestion_row(state, i, s, run.clone()))
+                        .collect();
+                    div().flex().flex_col().children(rows)
+                }))
+        },
+    )
+}
+
+/// The icon of a suggestion: the program's, a command's, the run icon for the history, a
+/// folder's or a file's.
+fn suggestion_icon(s: &Suggestion) -> String {
+    let file = |name: &str| asset(name).to_string_lossy().into_owned();
+    match s.kind {
+        Kind::Application => crate::apps::entry_icon(s.app.as_ref()),
+        Kind::Command => crate::apps::FALLBACK_ICON.to_owned(),
+        Kind::Recent => file("icons/run.png"),
+        Kind::Folder => file("icons/folder.png"),
+        Kind::File => crate::apps::file_icon(&s.text),
+    }
+}
+
+/// A suggestion: its icon, its label with the matched letters marked, and its kind, muted.
+fn suggestion_row(state: State, index: usize, s: Suggestion, run: Rc<dyn Fn(usize)>) -> Div {
+    let lit = move || state.chosen.get() == Some(index);
+    div()
+        .flex_none()
+        .flex()
+        .flex_row()
+        .items_center()
+        .gap(7.0)
+        .mx(1.0)
+        .px(4.0)
+        .border(1.0)
+        .on_hover(move |on| {
+            if on {
+                state.chosen.set(Some(index));
+            }
+        })
+        // On the press: the frame closes the lists on it.
+        .on_pointer_down(move |e| {
+            e.stop_propagation();
+            run(index);
+        })
+        .dyn_style(move |st| {
+            let t = theme();
+            let c = scheme();
+            let st = st.h(t.popup_item_height).rounded(item_radius());
+            if lit() {
+                st.bg(c.selection).border_color(c.selection_border)
+            } else {
+                st.bg(Color::TRANSPARENT).border_color(Color::TRANSPARENT)
+            }
+        })
+        .child(shell_icon(suggestion_icon(&s), SUGGESTION_ICON))
+        .child(
+            div()
+                .flex_1()
+                .min_w(0.0)
+                .overflow_clip()
+                .whitespace_nowrap()
+                .dyn_style(|st| {
+                    st.font_family(font())
+                        .text_size(theme().font_size)
+                        .text_color(scheme().text)
+                })
+                .child(marked_text(&s.label, &s.marks)),
+        )
+        .child(
+            div()
+                .flex_none()
+                .whitespace_nowrap()
+                .dyn_style(|st| {
+                    st.font_family(font())
+                        .text_size(theme().font_size_small)
+                        .text_color(scheme().text_muted)
+                })
+                .child(s.kind.word()),
         )
 }
 

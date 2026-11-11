@@ -537,6 +537,11 @@ pub fn launch(entry: &Application) {
     count_launch(&entry.id);
 }
 
+/// The `Exec` line of a program's `.desktop` file, as written, field codes and all.
+pub fn exec_line(entry: &Application) -> Option<String> {
+    desktop_key(&entry.id, "Exec")
+}
+
 /// Runs what was typed in the Start menu's search box, as the Run dialog does: through the
 /// shell, in the home folder, so that arguments, pipes and `~` work. `false` for nothing typed.
 pub fn run_typed(text: &str) -> bool {

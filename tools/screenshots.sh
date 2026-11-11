@@ -610,9 +610,7 @@ alive "launcher"
 xdotool type --delay 80 "fi"
 sleep 2
 shot "launcher-search"
-# The first Escape empties the field, the second closes the launcher.
-xdotool key Escape
-sleep 0.5
+# Escape closes the launcher, typed text or not.
 xdotool key Escape
 sleep 2
 

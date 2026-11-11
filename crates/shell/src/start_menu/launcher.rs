@@ -1,7 +1,7 @@
 //! The launcher (Super+Shift+D): the Start menu's search alone, near the top of the focused
 //! screen (QML `Launcher`). The same search and the same rows: type, then Return starts the
 //! first program, opens the task or the file, or runs what was typed. Up and Down pick a row;
-//! Escape or a click outside closes it.
+//! Escape or a click outside closes it, whatever is typed.
 //!
 //! Under the field, a list: before anything is typed, the programs started last, then every
 //! program; while typing, the results. The sides and the bottom edge resize the panel, and the
@@ -192,13 +192,10 @@ pub(super) fn launcher(output: Output) -> Div {
                 ((shown / untrack(row_height)).floor() as isize - 1).max(1)
             };
             match &e.key {
+                // Escape closes it, typed text or not, as every launcher does.
                 Key::Named(NamedKey::Escape) => {
                     e.prevent_default();
-                    if query.with_untracked(String::is_empty) {
-                        close_launcher();
-                    } else {
-                        query.set(String::new());
-                    }
+                    close_launcher();
                 }
                 Key::Named(NamedKey::ArrowUp) => {
                     e.prevent_default();
@@ -408,5 +405,12 @@ pub(super) fn launcher(output: Output) -> Div {
                 .text_color(scheme().text)
         })
         .on_pointer_down(|_| close_launcher())
+        // Escape too when the field does not have the keys (after a click in the list).
+        .on_key_down(|e| {
+            if matches!(e.key, Key::Named(NamedKey::Escape)) {
+                e.prevent_default();
+                close_launcher();
+            }
+        })
         .child(panel)
 }
