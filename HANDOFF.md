@@ -14,7 +14,7 @@ a real GPU.
 - **The top-right corner of a window and the three caption buttons.** The
   owner looked at the zoomed capture and called it right. The geometry, the
   colours and the placement of `assets/caption/*.svg`, of the group in
-  `src/decoration.tsx`, and of the numbers in `src/theme.ts` that drive them
+  `src/themes/aero/frame.tsx`, and of the numbers in `src/themes/aero/metrics.ts` that drive them
   must stay as they are. Change them only if a measurement proves a bug, and
   say why.
 - **The title text.** The old version drew ten offset copies of the label as
@@ -42,7 +42,7 @@ a real GPU.
 
 1. **Pinned taskbar programs.** `taskbarPinnedIds` in `shell/Apps.qml`. A
    pinned program with no window is an icon-only button (`pinnedButtonWidth`,
-   `pinnedIconSize` in `shell/theme.js`); a click starts it, and its windows
+   `pinnedIconSize` in `shell/themes/aero.js`); a click starts it, and its windows
    then gather behind the same button. With `combineWindows` off, the first
    window takes the pinned button's place and the others follow it. A middle
    click on any button starts another instance.
@@ -225,14 +225,14 @@ removed. What is left:
 - **Glass light.** `frame.frag` lifts the glass towards white along the top
   of the caption and in broad slanted bands (`glass_light`, `sheen`
   uniform: 1 active, 0.55 inactive), the streaks that make Aero read as
-  glass. The four lines are softer than measured (`src/theme.ts`), after
+  glass. The four lines are softer than measured (`src/themes/aero/metrics.ts`), after
   the owner compared with official screenshots and found ours harsh.
 - **Title.** A ShojiWM label ignores its colour's alpha and its opacity
   (both tried: every copy came out opaque white), so a glow cannot be made
   of text copies. The white cloud is three images (`title-glow-left`,
   `-middle`, `-right`), denser than before, with ends of fixed size.
 - **Taskbar.** Translucent blue-grey instead of 80 % near-black
-  (`shell/theme.js`), so the blur shows.
+  (`shell/themes/aero.js`), so the blur shows.
 - **Notification area.** As on Windows 7: icons chosen to show, the
   others behind the arrow in `TrayOverflow.qml`, with "Customize...",
   which opens the Control Panel's "Notification Area Icons" page
@@ -296,7 +296,7 @@ blue one. The glow images are gone.
 
 1. **Look at all of it on a real GPU.** Colours, blur, animation speed and
    input have never been seen outside llvmpipe.
-2. **The inactive window.** `COLOR.glassInactive` in `src/theme.ts:74` is very
+2. **The inactive window.** `COLOR.glassInactive` in `src/themes/aero/metrics.ts` is very
    pale. Windows keeps more colour in it. No 1:1 reference of an inactive
    window could be downloaded, so it is a guess.
 3. **The hover and pressed caption buttons.** `tools/make-caption-svgs.py:52`
@@ -309,7 +309,7 @@ blue one. The glow images are gone.
 5. **The taskbar glass alpha.** Only one wallpaper was available behind a
    reference taskbar, so colour and alpha could not be separated. The
    gradient is right over a dark wallpaper and too dark over a light one.
-6. **Live taskbar thumbnails.** `shell/theme.js` (`liveThumbnails`) turns
+6. **Live taskbar thumbnails.** `shell/themes/aero.js` (`liveThumbnails`) turns
    them on. See the defect below.
 7. **Peek at one window** from its thumbnail. The shell knows a
    `zwlr_foreign_toplevel` handle, the compositor a `WaylandWindow`; nothing
@@ -322,7 +322,7 @@ blue one. The glow images are gone.
 
 | Defect                                                                                                                                 | Where                                                      | Why                                                                                                                                                                                                       |
 | -------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| The glow behind the title is a soft box, not the shape of the letters. It lights the space between two words as much as the words.     | `src/decoration.tsx`, `assets/title-glow-*.svg`            | `SSDStyle` has no shadow and no blur for a `<Label/>`. There is no way to blur a text shape in the config API.                                                                                            |
+| The glow behind the title is a soft box, not the shape of the letters. It lights the space between two words as much as the words.     | `src/themes/aero/frame.tsx`, `assets/title-glow-*.svg`     | `SSDStyle` has no shadow and no blur for a `<Label/>`. There is no way to blur a text shape in the config API.                                                                                            |
 | The Alt+Tab panel has no window title and square corners.                                                                              | `src/alt-tab.tsx:309`                                      | An output composition has no label node and `<Solid>` has no radius.                                                                                                                                      |
 | Live window thumbnails end the shell's Wayland connection.                                                                             | `shell/theme.js:45`, `shell/components/ThumbnailPopup.qml` | With Quickshell 0.3.0 and 0.3.2 against ShojiWM `9e778dc`, asking for a capture kills the client: "fatal error: Invalid argument". Try again on the real session; it may be a software-rendering problem. |
 | The caption button group is 103 px wide. The reference also has a 1 px light bevel outside its left and right dark borders, so 105 px. | `tools/make-caption-svgs.py`                               | Measured late, after the owner validated the corner. Left alone on purpose.                                                                                                                               |
@@ -414,7 +414,7 @@ ShojiWM package, the QML against the Quickshell types, and the formatters.
 
 ### Twelfth pass: neutral lines, round corners, flush buttons
 
-- Every frame and popup line is translucent black or white (`src/theme.ts`,
+- Every frame and popup line is translucent black or white (`src/themes/aero/metrics.ts`,
   `Scheme.qml`, `theme.js`, `PowerPart.qml`, `LockScreen.qml`). The navy and
   cyan in the author's screenshot are those alphas seen over a blue
   wallpaper; never copy them as opaque colours again.
