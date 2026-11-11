@@ -214,6 +214,12 @@ if [ "${SHELL_IMPL:-}" = native ]; then
   # The compositor starts shojiwm-shell; wgpu draws it with Vulkan in
   # software (lavapipe).
   export SHOJIWM_WIN7_SHELL=native
+  # Its errors, and the backtrace of a panic, go to $work/shell.log.
+  mkdir -p "$work/bin"
+  printf '#!/bin/sh\nRUST_BACKTRACE=1 exec %s "$@" 2>>"%s"\n' \
+    "$(command -v shojiwm-shell)" "$work/shell.log" >"$work/bin/shojiwm-shell"
+  chmod +x "$work/bin/shojiwm-shell"
+  export PATH="$work/bin:$PATH"
   mesa="$(nix build --no-link --print-out-paths nixpkgs#mesa | head -1)"
   export VK_ICD_FILENAMES="$(echo "$mesa"/share/vulkan/icd.d/lvp_icd.*.json)"
 fi
@@ -253,7 +259,7 @@ shell_call() {
 # Whether the shell is still up. It is the first thing to check when a
 # picture comes out without a taskbar.
 alive() {
-  if pgrep -f "quickshell --path $XDG_CONFIG_HOME/" >/dev/null || pgrep -x shojiwm-shell >/dev/null || pgrep -f '/bin/.shojiwm-shell-wrapped' >/dev/null; then
+  if pgrep -f "quickshell --path $XDG_CONFIG_HOME/" >/dev/null || pgrep -f 'bin/shojiwm-shell$' >/dev/null; then
     say "shell: up ($1)"
   else
     say "shell: GONE ($1)"
