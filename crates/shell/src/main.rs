@@ -14,6 +14,7 @@ mod compositor;
 mod control_panel;
 mod desktop;
 mod dialogs;
+mod fuzzy;
 mod greeter;
 mod ipc;
 mod lock;

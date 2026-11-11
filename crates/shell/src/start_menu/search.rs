@@ -6,6 +6,8 @@
 //! own lists instead. While typing: the programs that match (AntiWebUI's ranking, best first),
 //! the Control Panel's tasks, then the files of the home folder whose names hold what is typed.
 
+use crate::control_panel::state::{TASKS, Task, find_tasks};
+use crate::fuzzy;
 use crate::paths::asset;
 use crate::power::quoted;
 use crate::settings::{home, settings};
@@ -48,6 +50,8 @@ pub(super) enum Found {
 pub(super) struct Row {
     pub found: Found,
     pub pick: Option<usize>,
+    /// The letters of its label the typed text matched, highlighted (`fuzzy`).
+    pub marks: Vec<usize>,
 }
 
 /// A search: what is typed, and what it finds. Each search box has its own.
@@ -85,22 +89,25 @@ impl Search {
             let needle = typed.to_lowercase();
             let mut out = Vec::new();
             let mut pick = 0;
-            let mut group = |title: &'static str, list: Vec<Found>| {
+            let mut group = |title: &'static str, list: Vec<(Found, Vec<usize>)>| {
                 if list.is_empty() {
                     return;
                 }
                 out.push(Row {
                     found: Found::Heading(title),
                     pick: None,
+                    marks: Vec::new(),
                 });
-                for found in list {
+                for (found, marks) in list {
                     out.push(Row {
                         found,
                         pick: Some(pick),
+                        marks,
                     });
                     pick += 1;
                 }
             };
+            let plain = |found: Found| (found, Vec::new());
             if needle.is_empty() {
                 let count = settings().with(|s| s.launcher_recent_count).max(0) as usize;
                 group(
@@ -108,35 +115,65 @@ impl Search {
                     crate::apps::recent_programs()
                         .into_iter()
                         .take(count)
-                        .map(Found::Program)
+                        .map(|a| plain(Found::Program(a)))
                         .collect(),
                 );
                 group(
                     "All Programs",
-                    apps().all().into_iter().map(Found::Program).collect(),
+                    apps()
+                        .all()
+                        .into_iter()
+                        .map(|a| plain(Found::Program(a)))
+                        .collect(),
                 );
             } else {
+                // Fuzzy on the names, best first; then what only the programs' other words
+                // (generic name, keywords) find, as the desktop's own search ranks them.
+                let mut programs: Vec<(Application, Vec<usize>)> =
+                    fuzzy::rank(&typed, apps().all(), |a| a.name.clone())
+                        .into_iter()
+                        .map(|m| (m.item, m.marks))
+                        .collect();
+                for app in apps().search(&needle) {
+                    if !programs.iter().any(|(p, _)| p.id == app.id) {
+                        programs.push((app, Vec::new()));
+                    }
+                }
                 group(
                     "Programs",
-                    apps()
-                        .search(&needle)
+                    programs
                         .into_iter()
                         .take(PROGRAM_LIMIT)
-                        .map(Found::Program)
+                        .map(|(a, marks)| (Found::Program(a), marks))
                         .collect(),
                 );
+                let task = |t: Task| Found::Task {
+                    text: t.text.to_string(),
+                    page: t.page.to_string(),
+                };
+                let mut tasks: Vec<(Found, Vec<usize>)> =
+                    fuzzy::rank(&typed, TASKS.iter().copied(), |t| t.text.to_owned())
+                        .into_iter()
+                        .map(|m| (task(m.item), m.marks))
+                        .collect();
+                for t in find_tasks(&typed) {
+                    let found = task(t);
+                    if !tasks.iter().any(|(f, _)| *f == found) {
+                        tasks.push((found, Vec::new()));
+                    }
+                }
                 group(
                     "Control Panel",
-                    crate::control_panel::state::find_tasks(&typed)
+                    tasks.into_iter().take(TASK_LIMIT).collect(),
+                );
+                let files = files.get();
+                group(
+                    "Files",
+                    fuzzy::rank(&typed, files, |p| file_name(p))
                         .into_iter()
-                        .take(TASK_LIMIT)
-                        .map(|t| Found::Task {
-                            text: t.text.to_string(),
-                            page: t.page.to_string(),
-                        })
+                        .map(|m| (Found::File(m.item), m.marks))
                         .collect(),
                 );
-                group("Files", files.get().into_iter().map(Found::File).collect());
             }
             out
         });
@@ -210,8 +247,9 @@ fn find_files(query: Signal<String>, files: Signal<Vec<String>>) {
             task(move || {
                 let out = std::process::Command::new("fd")
                     .args(["--max-results", &FILE_LIMIT.to_string(), "--ignore-case"])
-                    .args(["--fixed-strings", "--"])
-                    .arg(&pattern)
+                    // Every name with the typed letters in order: `fuzzy` ranks them.
+                    .arg("--")
+                    .arg(fuzzy::file_pattern(&pattern))
                     .arg(&home)
                     .output();
                 let Ok(out) = out else {
@@ -327,6 +365,7 @@ fn result_row(row: Row, pick: Signal<usize>, done: fn(), program_menus: bool) ->
         label,
         RowLook {
             heading,
+            marks: row.marks.clone(),
             ..Default::default()
         },
         selected,

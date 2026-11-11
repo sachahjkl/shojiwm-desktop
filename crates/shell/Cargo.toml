@@ -25,6 +25,7 @@ anti-webui = { git = "https://github.com/sachahjkl/AntiWebUI.git", rev = "ac53c1
   "shell-system",
 ] }
 serde_json = "1"
+nucleo-matcher = "0.3"
 
 [profile.dev]
 opt-level = 1

@@ -411,6 +411,42 @@ pub struct RowLook {
     pub places: bool,
     /// The pin of a jump list file: pinned or not, and what clicking it does.
     pub pin: Option<(bool, Rc<dyn Fn()>)>,
+    /// The letters of the label a search matched (indices in characters): highlighted, as a
+    /// highlighter pen would, in [`MATCH`] behind [`MATCH_TEXT`].
+    pub marks: Vec<usize>,
+}
+
+/// The highlight behind the letters a search matched: a warm yellow, and dark letters on it, so
+/// that it reads on the light rows of Aero and on the dark ones of Kernel alike.
+pub const MATCH: Color = rgb(0xffd54a);
+pub const MATCH_TEXT: Color = rgb(0x1f1a05);
+
+/// `label` as spans: the letters at `marks` highlighted, the rest plain.
+fn marked_spans(label: &str, marks: &[usize]) -> Vec<Span> {
+    let mut spans = Vec::new();
+    let mut run = String::new();
+    let mut run_marked = false;
+    let flush = |spans: &mut Vec<Span>, run: &mut String, marked: bool| {
+        if run.is_empty() {
+            return;
+        }
+        let text = std::mem::take(run);
+        spans.push(if marked {
+            span(text).bg(MATCH).text_color(MATCH_TEXT).rounded(2.0)
+        } else {
+            span(text)
+        });
+    };
+    for (i, c) in label.chars().enumerate() {
+        let marked = marks.binary_search(&i).is_ok();
+        if marked != run_marked {
+            flush(&mut spans, &mut run, run_marked);
+            run_marked = marked;
+        }
+        run.push(c);
+    }
+    flush(&mut spans, &mut run, run_marked);
+    spans
 }
 
 /// A row of the Start menu: an icon (a name of the icon theme or a file; "" for none) and a
@@ -439,6 +475,7 @@ pub fn menu_row(
     });
     let words = text_fn(label);
     let (bold, places) = (look.bold, look.places);
+    let marks = look.marks.clone();
     let label = div()
         .flex_1()
         .min_w(0.0)
@@ -463,13 +500,17 @@ pub fn menu_row(
                     .text_color(if places { c.places_text } else { c.text })
             }
         })
-        .child(text(move || {
+        .child(dyn_view(move || {
             let now = words();
-            if heading && theme().heading_caps {
+            if !marks.is_empty() {
+                return rich_text(marked_spans(&now, &marks)).into_view();
+            }
+            text(if heading && theme().heading_caps {
                 now.to_uppercase()
             } else {
                 now
-            }
+            })
+            .into_view()
         }));
     let row = div()
         .relative()

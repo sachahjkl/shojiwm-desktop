@@ -17,7 +17,7 @@ use super::search::{self, Search};
 use super::{close_launcher, row_height};
 use crate::paths::asset;
 use crate::settings::{change, settings};
-use crate::theme::{corner, field_radius, popup_radius, scheme, theme};
+use crate::theme::{corner, popup_radius, scheme, theme};
 use crate::ui::{aero_scroll, font, vertical_gradient};
 use anti_webui::prelude::*;
 use anti_webui::shell::prelude::*;
@@ -231,15 +231,17 @@ pub(super) fn launcher(output: Output) -> Div {
         .flex()
         .flex_row()
         .items_center()
-        .border(1.0)
+        // A bar across the top of the panel, inside its outline: a line under it alone, which
+        // lights up while the field has the keys.
+        .border_b(1.0)
         .dyn_style(move |s| {
             let t = theme();
             let c = scheme();
-            s.left(t.menu_padding)
-                .right(t.menu_padding)
-                .top(t.menu_padding)
-                .h(t.menu_search_height + FIELD_EXTRA)
-                .rounded(field_radius())
+            s.left(1.0)
+                .right(1.0)
+                .top(1.0)
+                .h(t.menu_search_height + FIELD_EXTRA + t.menu_padding - 1.0)
+                .rounded_t(popup_radius())
                 .bg(c.field)
                 .border_color(if focused.get() {
                     c.field_focus
