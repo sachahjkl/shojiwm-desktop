@@ -7,7 +7,7 @@
 //! It shows on the main screen only. The lock (`lock`) checks the password with PAM; the
 //! log-on screen (`greeter`) with greetd. Each gives an [`Auth`].
 
-use super::account::{power_button_action, run_power};
+use crate::power::{power_button_action, run_power};
 use super::parts::{logon_button, logon_menu, logon_menu_row, power_split_button, user_tile};
 use crate::paths::asset;
 use crate::settings::{dark, settings};
@@ -312,7 +312,7 @@ pub fn logon_screen(auth: Auth, account: Account) -> Div {
         .child(layout)
         .child(
             power_split_button(
-                || run_power(&power_button_action()),
+                || run_power(power_button_action()),
                 move || power_menu_open.update(|open| *open = !*open),
             )
             .absolute()

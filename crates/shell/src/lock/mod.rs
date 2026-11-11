@@ -14,12 +14,11 @@
 //! others stay black. Only a right password unlocks, checked with PAM ([`pam`]). If the shell
 //! dies, the session stays locked.
 
-mod account;
 mod pam;
 mod parts;
 mod screen;
 
-pub(crate) use account::{accounts_service_picture, full_name, login_name, user_picture};
+pub(crate) use crate::account::{accounts_service_picture, full_name, login_name, user_picture};
 pub(crate) use parts::{MENU_TEXT, logon_menu, logon_menu_row};
 pub(crate) use screen::{Account, Auth, CORNER_MARGIN, LOGON_BLUE, logon_screen};
 

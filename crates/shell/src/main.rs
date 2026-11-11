@@ -8,6 +8,7 @@
 
 #![recursion_limit = "256"]
 
+mod account;
 mod apps;
 mod compositor;
 mod control_panel;
@@ -17,6 +18,7 @@ mod greeter;
 mod ipc;
 mod lock;
 mod paths;
+mod power;
 mod programs;
 mod settings;
 mod start_menu;

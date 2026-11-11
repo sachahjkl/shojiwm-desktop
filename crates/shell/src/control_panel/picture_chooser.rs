@@ -60,15 +60,7 @@ fn system_picture() -> Option<PathBuf> {
     })
 }
 
-/// The account picture: the one chosen in the Control Panel, else the system's, else the drawn
-/// one. Reading it tracks the settings.
-pub fn user_picture_source() -> PathBuf {
-    let chosen = settings().with(|s| s.user_picture.clone());
-    if !chosen.is_empty() {
-        return PathBuf::from(chosen);
-    }
-    system_picture().unwrap_or_else(|| asset("user.svg"))
-}
+pub use crate::account::user_picture as user_picture_source;
 
 /// The folders searched for pictures.
 fn folders() -> Vec<String> {

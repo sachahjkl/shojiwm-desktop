@@ -407,34 +407,7 @@ fn shortcut_icon(icon: &str, exec: &str) -> String {
     asset("icons/run.png").to_string_lossy().into_owned()
 }
 
-/// The user's full name from the password database, else the login name.
-fn user_name() -> String {
-    thread_local! {
-        static NAME: std::cell::RefCell<Option<String>> = const { std::cell::RefCell::new(None) };
-    }
-    NAME.with(|cell| {
-        cell.borrow_mut()
-            .get_or_insert_with(|| {
-                let login = std::env::var("USER").ok().filter(|u| !u.is_empty()).unwrap_or_else(|| {
-                    home()
-                        .and_then(|h| h.file_name().map(|n| n.to_string_lossy().into_owned()))
-                        .unwrap_or_default()
-                });
-                let full = std::process::Command::new("getent")
-                    .args(["passwd", &login])
-                    .output()
-                    .ok()
-                    .and_then(|out| {
-                        let line = String::from_utf8_lossy(&out.stdout).trim().to_owned();
-                        // The GECOS field: the full name first, then extras nobody fills in.
-                        let gecos = line.split(':').nth(4)?.split(',').next()?.trim().to_owned();
-                        (!gecos.is_empty()).then_some(gecos)
-                    });
-                full.unwrap_or(login)
-            })
-            .clone()
-    })
-}
+use crate::account::user_name;
 
 // ----- doing things ----------------------------------------------------------------------------
 

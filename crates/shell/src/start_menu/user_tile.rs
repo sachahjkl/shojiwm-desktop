@@ -46,25 +46,7 @@ fn pick(pair: [Color; 2]) -> Color {
     pair[usize::from(dark_look())]
 }
 
-/// The account picture: the one chosen in the Control Panel, else the system's (AccountsService's
-/// icon, `~/.face`, `~/.face.icon`, the first that can be read and is not empty), else the
-/// built-in one. Reading it tracks the settings.
-pub fn user_picture() -> PathBuf {
-    let chosen = settings().with(|s| s.user_picture.clone());
-    if !chosen.is_empty() {
-        return PathBuf::from(chosen);
-    }
-    let user = std::env::var("USER").unwrap_or_default();
-    let mut candidates = vec![PathBuf::from("/var/lib/AccountsService/icons").join(user)];
-    if let Some(home) = home() {
-        candidates.push(home.join(".face"));
-        candidates.push(home.join(".face.icon"));
-    }
-    candidates
-        .into_iter()
-        .find(|p| std::fs::metadata(p).is_ok_and(|m| m.is_file() && m.len() > 0))
-        .unwrap_or_else(|| asset("user.svg"))
-}
+pub use crate::account::user_picture;
 
 /// The framed picture of `source`, `size` logical pixels square.
 pub fn user_tile(source: impl Fn() -> PathBuf + 'static, size: f32) -> Div {

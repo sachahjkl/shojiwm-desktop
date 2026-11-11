@@ -10,7 +10,7 @@ name = "shojiwm-shell"
 path = "src/main.rs"
 
 [dependencies]
-anti-webui = { git = "https://github.com/bea4dev/AntiWebUI.git", rev = "c54748e", features = [
+anti-webui = { git = "https://github.com/sachahjkl/AntiWebUI.git", rev = "ac53c1c", features = [
   "wayland-shell",
   "shell-network",
   "shell-battery",

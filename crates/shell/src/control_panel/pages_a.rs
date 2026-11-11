@@ -798,7 +798,7 @@ pub fn taskbar_page() -> Div {
     };
     let power_choices = |get: fn() -> String, set: fn(&mut Settings, String)| {
         flow(16.0).children(
-            crate::apps::POWER_ACTIONS
+            crate::power::POWER_ACTIONS
                 .iter()
                 .filter(|action| action.id != "separator")
                 .map(move |action| {
@@ -879,11 +879,11 @@ pub fn taskbar_page() -> Div {
                 ),
         )
         .child(note("The power button:"))
-        .child(power_choices(crate::apps::power_button_action, |s, v| {
+        .child(power_choices(|| crate::power::power_button_action().to_string(), |s, v| {
             s.power_button_action = v
         }))
         .child(note("What the Shut Down dialog (Super+Shift+E) selects:"))
-        .child(power_choices(crate::apps::shutdown_dialog_action, |s, v| {
+        .child(power_choices(|| crate::power::shutdown_dialog_action().to_string(), |s, v| {
             s.shutdown_dialog_action = v
         }))
 }

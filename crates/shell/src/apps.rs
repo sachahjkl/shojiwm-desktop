@@ -86,24 +86,6 @@ pub struct Folder {
     pub entries: Vec<Application>,
 }
 
-/// What the Start menu's power button can do. A separator has the id `separator`.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct PowerAction {
-    pub id: &'static str,
-    pub label: &'static str,
-}
-
-/// What the power button's arrow offers, in order.
-pub const POWER_ACTIONS: &[PowerAction] = &[
-    PowerAction { id: "logoff", label: "Log off" },
-    PowerAction { id: "lock", label: "Lock" },
-    PowerAction { id: "separator", label: "" },
-    PowerAction { id: "restart", label: "Restart" },
-    PowerAction { id: "sleep", label: "Sleep" },
-    PowerAction { id: "hibernate", label: "Hibernate" },
-    PowerAction { id: "shutdown", label: "Shut down" },
-];
-
 /// The state that is not a setting: what was started and how often, the order the buttons were
 /// dragged into, the recent files, the user's folders and name.
 #[derive(Clone, Copy)]
@@ -643,19 +625,7 @@ pub fn home_dir() -> PathBuf {
     home().unwrap_or_else(|| PathBuf::from("/"))
 }
 
-/// `$USER`, else the last part of the home folder.
-pub fn login_name() -> String {
-    std::env::var("USER")
-        .ok()
-        .filter(|u| !u.is_empty())
-        .or_else(|| home_dir().file_name()?.to_str().map(String::from))
-        .unwrap_or_default()
-}
-
-/// The user's full name, else the login name. Reading it tracks it.
-pub fn user_name() -> String {
-    model().user_name.get()
-}
+pub use crate::account::{login_name, user_name};
 
 /// Reads the full name from the password database: the GECOS field's first part.
 fn read_user_name(name: Signal<String>) {
@@ -699,58 +669,6 @@ fn parse_user_dirs(text: String) -> HashMap<String, String> {
             Some((key.to_owned(), value))
         })
         .collect()
-}
-
-// ----- power -----------------------------------------------------------------------------------
-
-pub fn power_action(id: &str) -> Option<PowerAction> {
-    POWER_ACTIONS.iter().copied().find(|a| a.id == id && a.id != "separator")
-}
-
-/// What the power button itself runs, by id: the Control Panel's choice, else shut down.
-pub fn power_button_action() -> String {
-    let chosen = settings().with(|s| s.power_button_action.clone());
-    if power_action(&chosen).is_some() { chosen } else { "shutdown".into() }
-}
-
-/// What the Shut Down dialog selects, by id: the Control Panel's choice, else log off.
-pub fn shutdown_dialog_action() -> String {
-    let chosen = settings().with(|s| s.shutdown_dialog_action.clone());
-    if power_action(&chosen).is_some() { chosen } else { "logoff".into() }
-}
-
-/// The command of a power action; none for the shell's own lock.
-fn power_command(id: &str) -> Option<Vec<String>> {
-    let words = |w: &[&str]| -> Option<Vec<String>> { Some(w.iter().map(|s| s.to_string()).collect()) };
-    match id {
-        "logoff" => match std::env::var("XDG_SESSION_ID").ok().filter(|s| !s.is_empty()) {
-            Some(session) => words(&["loginctl", "terminate-session", session.as_str()]),
-            None => {
-                let login = login_name();
-                words(&["loginctl", "terminate-user", login.as_str()])
-            }
-        },
-        "restart" => words(&["systemctl", "reboot"]),
-        "sleep" => words(&["systemctl", "suspend"]),
-        "hibernate" => words(&["systemctl", "hibernate"]),
-        "shutdown" => words(&["systemctl", "poweroff"]),
-        _ => None,
-    }
-}
-
-/// Runs a power action. Sleep and hibernate lock first when the settings ask, so that the
-/// machine wakes up locked, as Windows does.
-pub fn run_power(id: &str) {
-    if id == "lock" {
-        crate::lock::lock();
-        return;
-    }
-    if (id == "sleep" || id == "hibernate") && settings().get_untracked().lock_on_suspend {
-        crate::lock::lock();
-    }
-    if let Some(command) = power_command(id) {
-        let _ = std::process::Command::new(&command[0]).args(&command[1..]).spawn();
-    }
 }
 
 /// Opens a folder in the file manager: its command line gets the folder as its last word.

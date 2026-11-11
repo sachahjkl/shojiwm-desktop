@@ -9,13 +9,12 @@
 mod admin_menu;
 mod alt_tab;
 mod frame;
-mod power;
 mod run;
 mod screen_saver;
 mod shutdown;
 
 pub use alt_tab::alt_tab_event;
-pub use power::{POWER_ACTIONS, PowerAction, run_power};
+pub use crate::power::{POWER_ACTIONS, PowerAction, run_power};
 
 use crate::ipc;
 use crate::settings::settings;

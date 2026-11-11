@@ -8,7 +8,7 @@
 //! list, then the dialog.
 
 use super::frame::{button_band, dialog_frame, dialog_page};
-use super::power::{POWER_ACTIONS, PowerAction, login_name, run_power};
+use crate::power::{POWER_ACTIONS, PowerAction, login_name, run_power};
 use super::shutdown_close;
 use crate::paths::asset;
 use crate::settings::{home, settings};
@@ -64,7 +64,7 @@ fn description(id: &str) -> &'static str {
 fn actions() -> Vec<PowerAction> {
     let wanted = untrack(|| settings().with(|s| s.shutdown_dialog_action.clone()));
     let first = if POWER_ACTIONS.iter().any(|a| a.id == wanted) { wanted } else { "logoff".into() };
-    let mut list = POWER_ACTIONS.to_vec();
+    let mut list: Vec<PowerAction> = POWER_ACTIONS.iter().copied().filter(|a| a.id != "separator").collect();
     list.sort_by_key(|a| a.id != first);
     list
 }
@@ -224,7 +224,6 @@ fn buttons(state: State, accept: Rc<dyn Fn()>) -> View {
 
 /// The banner: deep blue glass with a light sweep, the account picture and the user's name.
 fn banner() -> Div {
-    let full_name = full_name();
     let sweep = div()
         .absolute()
         .left(-40.0)
@@ -235,10 +234,8 @@ fn banner() -> Div {
         .rotate(-6.0)
         .fill(|| vertical_gradient(&[(0.0, SWEEP[0]), (0.12, SWEEP[1]), (0.55, SWEEP[2])]));
     let name = move || {
-        full_name
-            .get()
-            .filter(|n| !n.is_empty())
-            .unwrap_or_else(|| "Shut Down".into())
+        let full = crate::account::user_name();
+        if full.is_empty() { "Shut Down".to_owned() } else { full }
     };
     let name = Rc::new(name);
     let shadow_name = name.clone();
@@ -502,7 +499,7 @@ fn user_tile(size: f32) -> Div {
     let band = (10.0 * k).round().max(3.0);
     let r = (8.0 * k).max(3.0);
     let layer = |inset: f32| div().absolute().inset(inset);
-    let picture = memo(user_picture);
+    let picture = memo(crate::account::user_picture);
     div()
         .relative()
         .flex_none()
@@ -545,38 +542,3 @@ fn user_tile(size: f32) -> Div {
         )
 }
 
-/// The account picture: the one chosen in the Control Panel, else the system's (AccountsService,
-/// `~/.face`, `~/.face.icon`), else the built-in one.
-fn user_picture() -> PathBuf {
-    let chosen = settings().with(|s| s.user_picture.clone());
-    if !chosen.is_empty() {
-        return PathBuf::from(chosen);
-    }
-    let mut places = vec![PathBuf::from("/var/lib/AccountsService/icons").join(login_name())];
-    if let Some(home) = home() {
-        places.push(home.join(".face"));
-        places.push(home.join(".face.icon"));
-    }
-    places
-        .into_iter()
-        .find(|p| p.is_file())
-        .unwrap_or_else(|| asset("user.svg"))
-}
-
-/// The full name from the password database, else the login name.
-fn full_name() -> Task<String> {
-    let login = login_name();
-    task(move || {
-        let full = std::process::Command::new("getent")
-            .args(["passwd", &login])
-            .output()
-            .ok()
-            .and_then(|out| {
-                let line = String::from_utf8_lossy(&out.stdout).trim().to_owned();
-                // The GECOS field: the full name first, then extras nobody fills in.
-                let gecos = line.split(':').nth(4)?.split(',').next()?.trim().to_owned();
-                (!gecos.is_empty()).then_some(gecos)
-            });
-        full.unwrap_or(login)
-    })
-}

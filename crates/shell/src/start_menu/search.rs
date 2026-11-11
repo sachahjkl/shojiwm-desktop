@@ -6,7 +6,7 @@
 //! own lists instead. While typing: the programs that match (AntiWebUI's ranking, best first),
 //! the Control Panel's tasks, then the files of the home folder whose names hold what is typed.
 
-use super::power::quoted;
+use crate::power::quoted;
 use crate::paths::asset;
 use crate::settings::{home, settings};
 use crate::theme::scheme;

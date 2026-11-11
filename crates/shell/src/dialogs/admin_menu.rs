@@ -7,7 +7,8 @@
 //! screen that has the keyboard: Up and Down pick an entry, Return starts it, Escape or a press
 //! outside closes it.
 
-use super::{admin_menu_close, power::run_power, run_open_on};
+use super::{admin_menu_close, run_open_on};
+use crate::power::run_power;
 use crate::programs::{program, run};
 use crate::theme::{Align, away_from_bar, bar_at_top, theme};
 use crate::ui::{MenuLine, popup_menu};

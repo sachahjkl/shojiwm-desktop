@@ -148,7 +148,9 @@ fn menu_layer(desk: Desk) -> Div {
     div().size_full().child(popup_menu(
         move || desk.menu.with(Option::is_some),
         move || desk.close_menu(),
-        MenuOptions::new().at(desk.menu_rect),
+        // Inside this layer, which takes every press around the menu: no grab, which the layer
+        // could not make anyway, never having had a press of its own.
+        MenuOptions::new().at(desk.menu_rect).kind(PopupKind::Bubble),
         move || desk.menu_lines(),
     ))
 }

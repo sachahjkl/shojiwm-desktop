@@ -1,6 +1,6 @@
-//! The account the lock screen and the log-on screen show: its login name, its full name, its
-//! picture, and the power actions their power button offers (Apps.qml's `loginName`,
-//! `userName`, `powerActions`; Settings.qml's `userPictureSource`).
+//! The account the shell shows: its login name, its full name and its picture (Apps.qml's
+//! `loginName`, `userName`; Settings.qml's `userPictureSource`). The Start menu, the Shut Down
+//! dialog, the lock and log-on screens, the desktop and the Control Panel read them here.
 
 use crate::paths::asset;
 use crate::settings::{home, settings};
@@ -82,42 +82,20 @@ pub fn user_picture() -> PathBuf {
     first_readable(places).unwrap_or_else(|| asset("user.svg"))
 }
 
-/// The ids of the power actions (Apps.qml's `powerActions`), in their order.
-const POWER_IDS: [&str; 6] = ["logoff", "lock", "restart", "sleep", "hibernate", "shutdown"];
-
-/// The command line of a power action, by id; `None` for "lock" (the shell's own lock screen)
-/// and for an unknown id.
-pub fn power_command(id: &str) -> Option<String> {
-    let command = match id {
-        "logoff" => match std::env::var("XDG_SESSION_ID") {
-            Ok(session) if !session.is_empty() => format!("loginctl terminate-session {session}"),
-            _ => format!("loginctl terminate-user {}", login_name()),
-        },
-        "restart" => "systemctl reboot".into(),
-        "sleep" => "systemctl suspend".into(),
-        "hibernate" => "systemctl hibernate".into(),
-        "shutdown" => "systemctl poweroff".into(),
-        _ => return None,
-    };
-    Some(command)
+thread_local! {
+    static USER_NAME: std::cell::Cell<Option<Signal<String>>> = const { std::cell::Cell::new(None) };
 }
 
-/// What the red power button of the lock and log-on screens runs: the Control Panel's choice
-/// for the power button, except "lock" (it is locked already, or there is no session to lock),
-/// which becomes "shutdown". Reading it tracks the settings.
-pub fn power_button_action() -> String {
-    let chosen = settings().with(|s| s.power_button_action.clone());
-    if POWER_IDS.contains(&chosen.as_str()) && chosen != "lock" {
-        chosen
-    } else {
-        "shutdown".into()
-    }
-}
-
-/// Runs a power action by id. The screen is locked already, or there is no session at all, so
-/// nothing locks first.
-pub fn run_power(id: &str) {
-    if let Some(command) = power_command(id) {
-        crate::programs::run(&command);
-    }
+/// The full name of the user that runs the shell, else the login name. Reading it tracks it:
+/// it is the login name until the password database answers.
+pub fn user_name() -> String {
+    USER_NAME.with(|cell| {
+        cell.get()
+            .unwrap_or_else(|| {
+                let (name, _) = create_root(|| full_name(&login_name()));
+                cell.set(Some(name));
+                name
+            })
+            .get()
+    })
 }
