@@ -2,7 +2,7 @@
  * A Windows 7 Aero desktop for ShojiWM.
  *
  * This file wires everything together: the environment, the programs the
- * keys start, the shell (taskbar and Start menu, drawn by Quickshell), the
+ * keys start, the shell (taskbar and Start menu, crates/shell), the
  * blur behind the glass, the window frame, and the window manager.
  *
  * Edit it and press Super+Shift+R to apply the change to the running session.
@@ -49,23 +49,10 @@ import {
  */
 const BROWSER = ["chromium", "--ozone-platform-hint=auto"];
 
-/** Where the Quickshell shell lives, as a shell word. */
-const SHELL_PATH = "~/.config/shojiwm/shell";
-
-// The shell: the Quickshell one (shell/), or with SHOJIWM_WIN7_SHELL=native the
-// one on AntiWebUI (crates/shell, `shojiwm-shell`), which replaces it. Both
-// take the same commands: `<target> <function> [args]`.
-const NATIVE_SHELL = COMPOSITOR.env.get("SHOJIWM_WIN7_SHELL") === "native";
-const SHELL_COMMAND = NATIVE_SHELL
-  ? "exec shojiwm-shell"
-  : `exec quickshell --path ${SHELL_PATH}`;
-
-/** The command line that sends the shell a command. */
+/** The command line that sends the shell (crates/shell) a command. */
 function shellCall(target: string, ...args: string[]): string {
   const quoted = args.map((arg) => `"${arg}"`).join(" ");
-  return NATIVE_SHELL
-    ? `shojiwm-shell msg ${target} ${quoted}`
-    : `quickshell -p ${SHELL_PATH} ipc call ${target} ${quoted}`;
+  return `shojiwm-shell msg ${target} ${quoted}`;
 }
 
 COMPOSITOR.env.apply({
@@ -76,16 +63,12 @@ COMPOSITOR.env.apply({
 });
 COMPOSITOR.env.publish();
 
-// The taskbar, the Start menu and the wallpaper.
+// The shell (crates/shell): the taskbar, the Start menu, the desktop and the
+// rest of what is not a window frame.
 COMPOSITOR.process.once("shell", {
-  command: SHELL_COMMAND,
+  command: "exec shojiwm-shell",
   runPolicy: "once-per-session",
   env: {
-    // Qt asks for a text-input protocol as soon as the search box of the
-    // Start menu takes the keyboard. Closing the menu then took the whole
-    // shell down with "fatal error: Invalid argument". The search box reads
-    // plain keys, so the protocol is left out.
-    QT_WAYLAND_TEXT_INPUT_PROTOCOL: "none",
     // Where the shell asks for Aero Peek and the show-desktop toggle.
     SHOJIWM_WIN7_SOCKET: SHELL_SOCKET,
   },

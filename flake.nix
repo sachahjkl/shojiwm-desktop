@@ -79,12 +79,6 @@
           runHook preInstall
           mkdir -p "$out"
           cp -R src assets shell package.json tsconfig.json "$out/"
-          # dconf for the light or dark preference, gdbus for logind's Lock,
-          # gio for the desktop's files.
-          substituteInPlace "$out/shell/tools.js" \
-            --replace-fail 'var dconf = "dconf";' 'var dconf = "${nixpkgs.lib.getExe' pkgs.dconf "dconf"}";' \
-            --replace-fail 'var gdbus = "gdbus";' 'var gdbus = "${nixpkgs.lib.getExe' pkgs.glib "gdbus"}";' \
-            --replace-fail 'var gio = "gio";' 'var gio = "${nixpkgs.lib.getExe' pkgs.glib "gio"}";'
           runHook postInstall
         '';
 
@@ -95,15 +89,6 @@
           platforms = nixpkgs.lib.platforms.linux;
         };
       };
-
-      # Quickshell with a fix the screenshots' session needs: it asked
-      # linux-dmabuf for version 4's default feedback whatever the version the
-      # compositor offers, and ShojiWM's nested backend on software rendering
-      # offers version 3 (no render node): a protocol error that ended the
-      # shell at the first window thumbnail.
-      quickshell = pkgs.quickshell.overrideAttrs (old: {
-        patches = (old.patches or []) ++ [./nix/quickshell-dmabuf-v3.patch];
-      });
 
       install = pkgs.writeShellApplication {
         name = "shojiwm-win7-install";
@@ -163,9 +148,10 @@
       };
 
       # The shell on AntiWebUI (crates/shell): taskbar, Start menu, panels,
-      # Control Panel, lock screen and log-on screen. It replaces the Quickshell
-      # shell (shell/) surface by surface. wgpu and AntiWebUI load Vulkan, EGL,
-      # Wayland and PipeWire at run time: they are on its library path.
+      # Control Panel, lock screen and log-on screen. Its pictures are in
+      # shell/assets. wgpu and AntiWebUI load Vulkan, EGL, Wayland and
+      # PipeWire at run time: they are on its library path. The programs it
+      # runs (dconf, gio, setsid, xdg-open) come after the system's.
       shell = pkgs.rustPlatform.buildRustPackage {
         pname = "shojiwm-shell";
         inherit version;
@@ -185,7 +171,8 @@
         buildInputs = shellLibraries pkgs;
         postFixup = ''
           wrapProgram "$out/bin/shojiwm-shell" \
-            --prefix LD_LIBRARY_PATH : ${nixpkgs.lib.makeLibraryPath (shellRuntime pkgs)}
+            --prefix LD_LIBRARY_PATH : ${nixpkgs.lib.makeLibraryPath (shellRuntime pkgs)} \
+            --suffix PATH : ${nixpkgs.lib.makeBinPath [pkgs.dconf pkgs.glib pkgs.util-linux pkgs.xdg-utils]}
         '';
         meta = {
           description = "The desktop shell of shojiwm-win7, on AntiWebUI";
@@ -256,7 +243,7 @@
         '';
     in {
       default = config;
-      inherit config icon-theme install portal quickshell shell;
+      inherit config icon-theme install portal shell;
     });
 
     apps = forAllSystems (system: {
@@ -350,83 +337,12 @@
           touch "$out"
         '';
 
-      # The log-on screen in a VM: greetd, Hyprland, greeter.qml, a password,
+      # The log-on screen in a VM: greetd, Hyprland, shojiwm-shell greeter, a password,
       # and the session it starts.
       greeter = import ./tests/greeter.nix {
         inherit pkgs;
         module = self.nixosModules.greeter;
       };
-
-      # Every theme of the shell defines the same names as Aero, each once: a
-      # name one theme lacks reads as undefined in the other, and a name
-      # defined twice takes its last value, both with no error.
-      theme-names = pkgs.runCommand "shojiwm-win7-theme-names" {} ''
-        names() { grep -oE '^var [A-Za-z]+' "$1" | sort; }
-        aero=${configSource}/shell/themes/aero.js
-        for theme in ${configSource}/shell/themes/*.js; do
-          twice=$(names "$theme" | uniq -d)
-          if [ -n "$twice" ]; then
-            echo "$theme defines more than once: $twice"
-            exit 1
-          fi
-          if ! diff <(names "$aero") <(names "$theme"); then
-            echo "$theme: not the names of themes/aero.js (< aero, > it)"
-            exit 1
-          fi
-        done
-        touch "$out"
-      '';
-
-      # The QML of the shell, checked against the Quickshell types. The
-      # qmldir is written here only: Quickshell generates its own at run time.
-      qmllint =
-        pkgs.runCommand "shojiwm-win7-qmllint" {
-          nativeBuildInputs = [pkgs.qt6.qtdeclarative];
-        } ''
-          cp -R ${configSource}/shell ./shell
-          chmod -R u+w ./shell
-          cat > ./shell/qmldir <<EOF
-          module shell
-          singleton Apps 1.0 Apps.qml
-          singleton StartMenuState 1.0 StartMenuState.qml
-          singleton StartMenuIpc 1.0 StartMenuIpc.qml
-          singleton CompositorIpc 1.0 CompositorIpc.qml
-          singleton Settings 1.0 Settings.qml
-          singleton Scheme 1.0 Scheme.qml
-          singleton LockState 1.0 LockState.qml
-          singleton ControlPanelState 1.0 ControlPanelState.qml
-          singleton ShutdownState 1.0 ShutdownState.qml
-          singleton DragState 1.0 DragState.qml
-          singleton Audio 1.0 Audio.qml
-          singleton Startup 1.0 Startup.qml
-          singleton DisplaySettings 1.0 DisplaySettings.qml
-          singleton LauncherEntries 1.0 LauncherEntries.qml
-          singleton Network 1.0 Network.qml
-          singleton NotificationHistory 1.0 NotificationHistory.qml
-          singleton WorldClocks 1.0 WorldClocks.qml
-          singleton SystemStats 1.0 SystemStats.qml
-          singleton Slideshow 1.0 Slideshow.qml
-          singleton StickyNotes 1.0 StickyNotes.qml
-          singleton DefaultApps 1.0 DefaultApps.qml
-          singleton Maintenance 1.0 Maintenance.qml
-          singleton Screens 1.0 Screens.qml
-          singleton Search 1.0 Search.qml
-          singleton GreeterState 1.0 GreeterState.qml
-          singleton RunState 1.0 RunState.qml
-          EOF
-          cd ./shell
-          qmllint \
-            -I ${pkgs.qt6.qtdeclarative}/lib/qt-6/qml \
-            -I ${pkgs.quickshell}/lib/qt-6/qml \
-            -I . -I components \
-            -W 0 \
-            --uncreatable-type info \
-            --unresolved-type info \
-            --unqualified info \
-            --missing-type info \
-            ./*.qml components/*.qml
-          touch "$out"
-        '';
     });
 
     formatter = forAllSystems (system: (pkgsFor system).alejandra);
@@ -439,8 +355,6 @@
           [
             pkgs.typescript
             pkgs.prettier
-            pkgs.quickshell
-            pkgs.qt6.qtdeclarative
             pkgs.cargo
             pkgs.rustc
             pkgs.clippy

@@ -13,11 +13,8 @@
 #   KEEP=1 tools/screenshots.sh     # keep the session running at the end
 #   THEME=kernel OUT=/tmp/k UNTIL=desktop tools/screenshots.sh
 #                                   # another theme, into another folder, up to one picture
-#   SHELL_IMPL=native tools/screenshots.sh
-#                                   # the shell on AntiWebUI (crates/shell) instead of Quickshell
 #
-# The Quickshell is this flake's (a fix of its dmabuf code: see flake.nix);
-# override it with QUICKSHELL_FLAKE, and the compositor
+# The shell is this flake's (crates/shell). The compositor can be overridden
 # with SHOJIWM_FLAKE (a local clone: SHOJIWM_FLAKE=path:/src/ShojiWM#default).
 # The default is the integration branch of the fork, which carries what this
 # configuration uses before upstream has it (labels' textShadow).
@@ -32,13 +29,12 @@ if [ "${1:-}" != "--inner" ]; then
     "nixpkgs#xorg-server" \
     "nixpkgs#xdotool" \
     "nixpkgs#imagemagick" \
-    "${QUICKSHELL_FLAKE:-path:$repo#quickshell}" \
     "nixpkgs#foot" \
     "nixpkgs#dbus" \
     "nixpkgs#copyq" \
     "nixpkgs#dconf" \
     "nixpkgs#glib" \
-    ${SHELL_IMPL:+"path:$repo#shell"} \
+    "path:$repo#shell" \
     -c env -u DBUS_SESSION_BUS_ADDRESS -u WAYLAND_DISPLAY -u DISPLAY \
     -u SHOJIWM_SOCKET -u SHOJIWM_WIN7_KEYS -u SHOJIWM_WIN7_SOCKET \
     bash "${BASH_SOURCE[0]}" --inner
@@ -211,10 +207,9 @@ sleep 2
 
 say "starting ShojiWM (nested backend, software rendering)"
 export LIBGL_ALWAYS_SOFTWARE=1
-if [ "${SHELL_IMPL:-}" = native ]; then
-  # The compositor starts shojiwm-shell; wgpu draws it with Vulkan in
-  # software (lavapipe).
-  export SHOJIWM_WIN7_SHELL=native
+# The compositor starts shojiwm-shell; wgpu draws it with Vulkan in software
+# (lavapipe).
+{
   # Its errors, and the backtrace of a panic, go to $work/shell.log.
   mkdir -p "$work/bin"
   printf '#!/bin/sh\nRUST_BACKTRACE=1 exec %s "$@" 2>>"%s"\n' \
@@ -223,7 +218,7 @@ if [ "${SHELL_IMPL:-}" = native ]; then
   export PATH="$work/bin:$PATH"
   mesa="$(nix build --no-link --print-out-paths nixpkgs#mesa | head -1)"
   export VK_ICD_FILENAMES="$(echo "$mesa"/share/vulkan/icd.d/lvp_icd.*.json)"
-fi
+}
 shoji_wm >"$work/shoji.log" 2>&1 &
 pids+=("$!")
 
@@ -248,19 +243,15 @@ window="$(xdotool search --onlyvisible --class . | tail -1)"
 xdotool windowfocus "$window"
 say "nested window $window ($(xdotool getwindowgeometry "$window" | tr '\n' ' '))"
 
-# A command to the shell, whichever it is.
+# A command to the shell.
 shell_call() {
-  if [ "${SHELL_IMPL:-}" = native ]; then
-    shojiwm-shell msg "$@" || true
-  else
-    quickshell -p "$XDG_CONFIG_HOME/shojiwm/shell" ipc call "$@" || true
-  fi
+  shojiwm-shell msg "$@" || true
 }
 
 # Whether the shell is still up. It is the first thing to check when a
 # picture comes out without a taskbar.
 alive() {
-  if pgrep -f "quickshell --path $XDG_CONFIG_HOME/" >/dev/null || pgrep -f 'bin/shojiwm-shell$' >/dev/null; then
+  if pgrep -f 'bin/shojiwm-shell$' >/dev/null; then
     say "shell: up ($1)"
   else
     say "shell: GONE ($1)"

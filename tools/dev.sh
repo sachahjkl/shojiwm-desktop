@@ -3,7 +3,7 @@
 # checkout.
 #
 # The configuration paths are fixed to ~/.config/shojiwm (src/index.tsx,
-# shell/Apps.qml). The script points src, assets and shell there at this
+# crates/shell/src/paths.rs). The script points src, assets and shell there at this
 # checkout, then starts the compositor nested. When the compositor stops, the
 # script restores the links that the NixOS module declares, with
 # systemd-tmpfiles.
@@ -11,7 +11,8 @@
 #   tools/dev.sh            # start the nested session
 #   shoji_wm -r             # reload src/ (from another terminal)
 #
-# Quickshell reloads the shell itself when a QML file changes.
+# The shell is the installed shojiwm-shell; after `cargo build` in crates/shell,
+# run crates/shell/target/debug/shojiwm-shell in the nested session instead.
 set -euo pipefail
 
 repo="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

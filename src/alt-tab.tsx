@@ -7,7 +7,7 @@
  * wheel and a click all pick a window without reaching the windows below.
  *
  * A composition draws no text: each window's title, under its thumbnail, is
- * the shell's (AltTabTitles.qml), on the overlay layer, which the panel's
+ * the shell's (crates/shell, dialogs/alt_tab.rs), on the overlay layer, which the panel's
  * composition draws over itself. The panel tells the shell where its cells
  * are and their titles (`announce`).
  */
