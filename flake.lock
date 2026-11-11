@@ -60,11 +60,11 @@
     "shojiwm-src": {
       "flake": false,
       "locked": {
-        "lastModified": 1794243673,
-        "narHash": "sha256-0j1pCxeWvirlpDrRqXAxPaXr9F9XjfpBLuVBaPNKeOU=",
+        "lastModified": 1794397580,
+        "narHash": "sha256-Q6niGlInYaBHvwCC8kEzRa3FoESagRiIkIZMSY/Ri78=",
         "owner": "sachahjkl",
         "repo": "ShojiWM",
-        "rev": "3b130e60f5a447207a881ad0d9647ba5621272e1",
+        "rev": "00fa090d9e05e670f6adc263b3ed2e06249275d7",
         "type": "github"
       },
       "original": {
