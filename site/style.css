@@ -269,10 +269,6 @@ li + li {
   background: linear-gradient(90deg, var(--accent-top), var(--accent-bottom));
 }
 
-:root[data-look="kernel"] .top::before {
-  background: linear-gradient(90deg, var(--accent-top), var(--accent-bottom) 70%, var(--signal) 70%);
-}
-
 .top .wrap {
   display: flex;
   align-items: center;
