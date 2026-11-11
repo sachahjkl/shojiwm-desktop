@@ -233,3 +233,10 @@ export class WindowGroups {
     this.drop.set(drop);
   }
 }
+
+/**
+ * The groups of the session: one model, read by the window manager and by the
+ * frame sizes (`frameExtra`), which a client-decorated window in a group
+ * needs (its tab strip).
+ */
+export const GROUPS = new WindowGroups();

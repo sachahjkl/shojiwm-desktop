@@ -36,6 +36,7 @@ import { CAPTION_BUTTON, COLOR, FONT, FRAME } from "./metrics";
 import { WIN_MAXIMIZED } from "../../window-manager";
 import { corner, squareCorners } from "./corners";
 import { glassColour } from "../../glass";
+import { highlightShadow } from "../../highlight";
 
 /** Which picture a caption button shows. */
 type ButtonState = "" | "-hover" | "-press" | "-inactive";
@@ -187,19 +188,35 @@ const CaptionTitle = ({ window }: { window: WaylandWindow }) => (
 );
 
 /** The tabs of a group: lighter glass behind the shown one, black titles on a glow. */
-const ATAB: TabStyle = {
+export const ATAB: TabStyle = {
   active: "#ffffff59",
+  activeAway: "#ffffff59",
+  idle: "#00000000",
+  idleAway: "#00000000",
   hover: "#ffffff33",
   separator: "#00000033",
+  edge: "#00000000",
+  accent: "#00000000",
+  accentAway: "#00000000",
+  accentHeight: 0,
+  light: "#00000000",
+  top: 0,
+  idleTop: 0,
+  idleBottom: 0,
   ghost: "#ffffff40",
   ghostLine: "#ffffffcc",
+  ghostDash: 0,
   text: COLOR.titleActive,
   textAway: COLOR.titleInactive,
+  textIdle: COLOR.titleInactive,
+  textIdleAway: COLOR.titleInactive,
+  iconIdle: 1,
   textGlow: COLOR.titleGlowActive,
   fontFamily: FONT,
   fontSize: FRAME.fontSize,
   radius: 4,
   closeIcon: "./assets/tab-close-dark.svg",
+  closeHover: "#ffffff33",
 };
 
 /** `#rrggbbaa` to the four numbers a shader uniform takes. */
@@ -351,6 +368,8 @@ export function aeroFrame(
             width: FRAME.iconSize,
             height: FRAME.iconSize,
             flexShrink: 0,
+            // Over the title's glow, which spreads past the label's box.
+            zIndex: 1,
           }}
         />,
         <CaptionTitle window={window} />,
@@ -428,7 +447,7 @@ export function aeroFrame(
         borderRadius: computed(() =>
           maximized() ? 0 : corner(FRAME.radiusTop),
         ),
-        boxShadow: shadow,
+        boxShadow: highlightShadow(window, shadow),
         background: "#00000000",
       }}
       interaction={{

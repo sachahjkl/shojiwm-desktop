@@ -13,8 +13,8 @@ export const KFRAME = {
   /** Left, right and bottom: the dark outer line and the tinted line inside it. */
   border: 2,
   borderMaximized: 0,
-  /** The top corners (the bottom ones are square, as a panel's). */
-  radius: 3,
+  /** Square corners, top and bottom: Kernel draws no rounded frame. */
+  radius: 0,
   /** A caption button: as tall as the plate under the frame's line, this wide. */
   buttonWidth: 40,
   closeWidth: 46,
@@ -63,6 +63,23 @@ export const KCOLOR = {
   /** A minimise or maximise button: clear until the pointer is on it. */
   buttonHover: "#ffffff1f",
   buttonPress: "#00000040",
+  /** A group's tabs: the shown one is a plate of the frame's tint, joined to the client, a bar of the accent on its top. */
+  tabActive: "#2c5d93ff",
+  tabActiveAway: "#29313aff",
+  tabAccent: "#6aa8f0ff",
+  tabAccentAway: "#5b6876ff",
+  tabLight: "#ffffff2e",
+  /** The other tabs: recessed plates, darker than the caption, outlined. */
+  tabIdle: "#14263aff",
+  tabIdleAway: "#13181eff",
+  tabHover: "#1f3a58ff",
+  tabEdge: "#060c14ff",
+  tabText: "#b9c6d4ff",
+  tabTextAway: "#aab5c1ff",
+  tabTextIdleAway: "#8d99a6ff",
+  /** The ghost tab while a window is dragged on a caption: a dashed box of the accent. */
+  tabGhost: "#3f7fcd33",
+  tabGhostLine: "#8cbcf2ff",
   tooltip: "#0f1620f2",
   tooltipLine: "#2c5d93ff",
   tooltipText: "#dbe6f2ff",

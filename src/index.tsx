@@ -22,7 +22,8 @@ import {
   type OutputInfo,
   type WaylandWindow,
 } from "shoji_wm";
-import { windowFrame } from "./themes/frames";
+import { clientFrame, tabStrip, windowFrame } from "./themes/frames";
+import { forgetHighlight, highlightZIndex } from "./highlight";
 import { createAltTab } from "./alt-tab";
 import { SHELL_SOCKET, createPeek } from "./peek";
 import { createZoom } from "./zoom";
@@ -65,9 +66,10 @@ COMPOSITOR.env.publish();
 
 // The shell (crates/shell): the taskbar, the Start menu, the desktop and the
 // rest of what is not a window frame.
-COMPOSITOR.process.once("shell", {
+// A service: if the shell stops (a crash), the compositor starts it again.
+COMPOSITOR.process.service("shell", {
   command: "exec shojiwm-shell",
-  runPolicy: "once-per-session",
+  restart: "on-exit",
   env: {
     // Where the shell asks for Aero Peek and the show-desktop toggle.
     SHOJIWM_DESKTOP_SOCKET: SHELL_SOCKET,
@@ -112,7 +114,10 @@ const FULLSCREEN_Z_INDEX = 2_000_000_000;
 COMPOSITOR.event.onOpen((window) => WINDOWS.onOpen(window));
 COMPOSITOR.event.onFirstCommit((window) => WINDOWS.onFirstCommit(window));
 COMPOSITOR.event.onStartClose((window) => WINDOWS.onStartClose(window));
-COMPOSITOR.event.onClose((window) => WINDOWS.onClose(window));
+COMPOSITOR.event.onClose((window) => {
+  forgetHighlight(window);
+  WINDOWS.onClose(window);
+});
 COMPOSITOR.event.onFocus((window, focused) => WINDOWS.onFocus(window, focused));
 COMPOSITOR.event.onPointerMove((event) => WINDOWS.onPointerMove(event));
 COMPOSITOR.event.onWindowMove((event) => WINDOWS.onWindowMove(event));
@@ -483,6 +488,9 @@ COMPOSITOR.window.composition = (window: WaylandWindow) => {
       : 1;
   });
 
+  // Over the other windows while the taskbar's thumbnails point at it.
+  const zIndex = highlightZIndex(window, WINDOWS.zIndex(window));
+
   // Fullscreen: nothing but the client surface, edge to edge. Drawing only
   // this is what lets the compositor hand the buffer straight to the display.
   if (window.state[WIN_FULLSCREEN]()) {
@@ -498,17 +506,38 @@ COMPOSITOR.window.composition = (window: WaylandWindow) => {
     );
   }
 
-  // A client that draws its own title bar gets no frame from us.
+  // A client that draws its own title bar gets no frame from us; in a group,
+  // a tab strip over its title bar (themes/frames.tsx).
   if (usesClientDecorationState(window.decoration())) {
+    if (WINDOWS.groups.members(window.id).length > 1) {
+      return (
+        <ManagedWindow
+          rect={rect}
+          zIndex={zIndex}
+          forceRectSize={forceRectSize}
+          idle={idle}
+          interactive={interactive}
+          visible={computed(() => !away())}
+          opacity={opacity}
+        >
+          {tabStrip(window, {
+            groups: WINDOWS.groups,
+            windowOf: (id) => WINDOWS.windowById(id),
+            onTabPress: (tab) => WINDOWS.pressTab(tab),
+          })}
+        </ManagedWindow>
+      );
+    }
     return (
       <ManagedWindow
         rect={rect}
-        zIndex={WINDOWS.zIndex(window)}
+        zIndex={zIndex}
         forceRectSize={forceRectSize}
         idle={idle}
         interactive={interactive}
+        opacity={opacity}
       >
-        <ClientWindow />
+        {clientFrame(window)}
       </ManagedWindow>
     );
   }
@@ -516,7 +545,7 @@ COMPOSITOR.window.composition = (window: WaylandWindow) => {
   return (
     <ManagedWindow
       rect={rect}
-      zIndex={WINDOWS.zIndex(window)}
+      zIndex={zIndex}
       forceRectSize={forceRectSize}
       idle={idle}
       interactive={interactive}

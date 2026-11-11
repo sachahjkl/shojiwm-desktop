@@ -14,6 +14,7 @@ import {
   Image,
   Label,
   computed,
+  paintShader,
   useState,
   type ReadonlySignal,
   type WaylandWindow,
@@ -25,23 +26,50 @@ import { frameMetrics } from "./choice";
 
 /** How a theme draws its tabs. Colours are `#rrggbbaa`. */
 export interface TabStyle {
-  /** The shown tab's plate, and a tab's under the pointer. */
+  /** The shown tab's plate: in the focused window, in another. */
   active: string;
+  activeAway: string;
+  /** Every other tab's plate: in the focused window, in another; and under the pointer. */
+  idle: string;
+  idleAway: string;
   hover: string;
-  /** The line between two tabs. */
+  /** The line on the right of a tab that is not shown, parting it from the next. */
   separator: string;
-  /** The ghost tab: its plate and its outline. */
+  /** The outline of a tab that is not shown, and the sides of the shown one. */
+  edge: string;
+  /** The bar along the shown tab's top (in the focused window, in another), this many px tall; 0 for none. */
+  accent: string;
+  accentAway: string;
+  accentHeight: number;
+  /** The line of light under that bar. */
+  light: string;
+  /**
+   * Where the plates start, in px from the strip's top: the shown tab's and
+   * the others'. The shown tab reaches the strip's bottom; the others stop
+   * `idleBottom` px above it.
+   */
+  top: number;
+  idleTop: number;
+  idleBottom: number;
+  /** The ghost tab: its plate, its outline, and that outline's dashes in px (0: a solid line). */
   ghost: string;
   ghostLine: string;
+  ghostDash: number;
+  /** The shown tab's title (focused window, other) and the others' titles (focused window, other). */
   text: string;
   textAway: string;
+  textIdle: string;
+  textIdleAway: string;
+  /** The opacity of the icon of a tab that is not shown. */
+  iconIdle: number;
   /** A soft glow under the text (Aero), or none. */
   textGlow: string | null;
   fontFamily: string | string[];
   fontSize: number;
   radius: number;
-  /** The close button's icon, an SVG path from the configuration's root. */
+  /** The close button's icon, an SVG path from the configuration's root, and its plate under the pointer. */
   closeIcon: string;
+  closeHover: string;
 }
 
 /** What a frame gives its tab strip. */
@@ -63,6 +91,46 @@ interface TabProps {
   options: TabOptions;
 }
 
+const CLEAR = "#00000000";
+
+/** `#rrggbbaa` to the four numbers a shader uniform takes. */
+function colour(hex: string): [number, number, number, number] {
+  const value = hex.replace("#", "");
+  const part = (at: number) => parseInt(value.slice(at, at + 2), 16) / 255;
+  return [part(0), part(2), part(4), value.length >= 8 ? part(6) : 1];
+}
+
+/** The ghost tab's plate with a dashed outline. */
+const DashedGhost = ({
+  width,
+  height,
+  style,
+}: {
+  width: ReadonlySignal<number>;
+  height: ReadonlySignal<number>;
+  style: TabStyle;
+}) => (
+  <Box
+    paint={paintShader("./assets/tab-ghost.frag", {
+      uniforms: {
+        fill: colour(style.ghost),
+        line: colour(style.ghostLine),
+        dash: style.ghostDash,
+      },
+    })}
+    style={{
+      position: "absolute",
+      left: 0,
+      top: style.idleTop,
+      width,
+      height: computed(() =>
+        Math.max(0, height() - style.idleTop - style.idleBottom),
+      ),
+      pointerEvents: "none",
+    }}
+  />
+);
+
 const Tab = ({
   window,
   width,
@@ -75,32 +143,132 @@ const Tab = ({
 }: TabProps) => {
   const [hover, setHover] = useState(false);
   const [closeHover, setCloseHover] = useState(false);
+  const top = shown ? style.top : style.idleTop;
+  const bottom = shown ? 0 : style.idleBottom;
+  const plateHeight = computed(() => Math.max(0, height() - top - bottom));
   const plate = computed(() =>
-    ghost
-      ? style.ghost
-      : shown
+    shown
+      ? focused()
         ? style.active
-        : hover()
-          ? style.hover
-          : "#00000000",
+        : style.activeAway
+      : hover()
+        ? style.hover
+        : focused()
+          ? style.idle
+          : style.idleAway,
   );
   const textColour = computed(() =>
-    shown && focused() ? style.text : style.textAway,
+    shown
+      ? focused()
+        ? style.text
+        : style.textAway
+      : focused()
+        ? style.textIdle
+        : style.textIdleAway,
   );
-  return (
-    <Box style={{ position: "relative", width, height, flexShrink: 0 }}>
+  const plates = ghost ? (
+    style.ghostDash > 0 ? (
+      <DashedGhost width={width} height={height} style={style} />
+    ) : (
       <Box
         style={{
           position: "absolute",
-          inset: 0,
+          left: 0,
+          top: style.idleTop,
           width,
-          height,
-          background: plate,
+          height: plateHeight,
+          background: style.ghost,
           borderRadius: style.radius,
-          border: ghost ? { px: 1, color: style.ghostLine } : undefined,
+          border: { px: 1, color: style.ghostLine },
           pointerEvents: "none",
         }}
       />
+    )
+  ) : (
+    <Box
+      style={{
+        position: "absolute",
+        inset: 0,
+        width,
+        height,
+        pointerEvents: "none",
+      }}
+    >
+      <Box
+        style={{
+          position: "absolute",
+          left: 0,
+          top,
+          width,
+          height: plateHeight,
+          background: plate,
+          borderRadius: style.radius,
+          pointerEvents: "none",
+        }}
+      />
+      {/* the outline of a tab that is not shown; the sides of the shown one */}
+      <Box
+        style={{
+          position: "absolute",
+          left: 0,
+          top,
+          width,
+          height: plateHeight,
+          border:
+            shown || style.edge === CLEAR
+              ? undefined
+              : { px: 1, color: style.edge },
+          borderLeft:
+            shown && style.edge !== CLEAR
+              ? { px: 1, color: style.edge }
+              : undefined,
+          borderRight:
+            shown && style.edge !== CLEAR
+              ? { px: 1, color: style.edge }
+              : undefined,
+          borderRadius: style.radius,
+          background: CLEAR,
+          pointerEvents: "none",
+        }}
+      />
+      {shown && style.accentHeight > 0 ? (
+        <Box
+          style={{
+            position: "absolute",
+            left: 0,
+            top,
+            width,
+            height: style.accentHeight,
+            background: focused((on: boolean) =>
+              on ? style.accent : style.accentAway,
+            ),
+            pointerEvents: "none",
+          }}
+        />
+      ) : null}
+      {shown && style.accentHeight > 0 ? (
+        <Box
+          style={{
+            position: "absolute",
+            left: 1,
+            top: top + style.accentHeight,
+            width: computed(() => Math.max(0, width() - 2)),
+            height: 1,
+            background: style.light,
+            pointerEvents: "none",
+          }}
+        />
+      ) : null}
+    </Box>
+  );
+  // the content sits in the middle of the plate
+  const contentTop = shown ? top + style.accentHeight : top;
+  const contentHeight = computed(() =>
+    Math.max(0, height() - contentTop - bottom),
+  );
+  return (
+    <Box style={{ position: "relative", width, height, flexShrink: 0 }}>
+      {plates}
       {/* the line on its right, parting it from the next */}
       <Box
         style={{
@@ -109,7 +277,7 @@ const Tab = ({
           top: 6,
           width: 1,
           height: computed(() => Math.max(0, height() - 12)),
-          background: shown || ghost ? "#00000000" : style.separator,
+          background: shown || ghost ? CLEAR : style.separator,
           pointerEvents: "none",
         }}
       />
@@ -117,9 +285,10 @@ const Tab = ({
         direction="row"
         style={{
           position: "absolute",
-          inset: 0,
+          left: 0,
+          top: contentTop,
           width,
-          height,
+          height: contentHeight,
           paddingLeft: 8,
           paddingRight: 24,
           gap: 6,
@@ -130,7 +299,14 @@ const Tab = ({
       >
         <AppIcon
           icon={window.icon}
-          style={{ width: 16, height: 16, flexShrink: 0 }}
+          style={{
+            width: 16,
+            height: 16,
+            flexShrink: 0,
+            opacity: shown || ghost ? 1 : style.iconIdle,
+            // Over the title's glow, which spreads past the label's box.
+            zIndex: 1,
+          }}
         />
         <Label
           text={window.title}
@@ -163,7 +339,7 @@ const Tab = ({
             inset: 0,
             width,
             height,
-            background: "#00000000",
+            background: CLEAR,
           }}
         />
       )}
@@ -173,9 +349,9 @@ const Tab = ({
           style={{
             position: "absolute",
             right: 4,
-            top: 0,
+            top: contentTop,
             width: 18,
-            height,
+            height: contentHeight,
             alignItems: "center",
             justifyContent: "center",
           }}
@@ -187,9 +363,9 @@ const Tab = ({
                 inset: 0,
                 width: 18,
                 height: 18,
-                borderRadius: 3,
+                borderRadius: Math.min(3, style.radius),
                 background: computed(() =>
-                  closeHover() ? style.hover : "#00000000",
+                  closeHover() ? style.closeHover : CLEAR,
                 ),
                 pointerEvents: "none",
               }}
@@ -217,7 +393,7 @@ const Tab = ({
                 inset: 0,
                 width: 18,
                 height: 18,
-                background: "#00000000",
+                background: CLEAR,
               }}
             />
           </Box>

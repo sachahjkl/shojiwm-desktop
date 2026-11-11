@@ -12,6 +12,10 @@
  *
  *   { "method": "peek", "params": { "on": true } }
  *   { "method": "show-desktop" }
+ *   { "method": "highlight", "params": { "window": "<identifier>" | null } }
+ *
+ * `highlight` singles out the window under the pointer in the taskbar's
+ * thumbnails (highlight.ts).
  *
  * The GlobalShortcuts portal service uses the same socket: see shortcuts.ts.
  */
@@ -43,6 +47,7 @@ import { setPrograms } from "./programs";
 import { setGlassColour, setGlassLevel } from "./glass";
 import { type DisplayChoice, screens, setDisplayChoices } from "./display";
 import { serveShortcuts } from "./shortcuts";
+import { setHighlight } from "./highlight";
 
 /** The colours of a window while it is peeked through. */
 const PEEK = {
@@ -141,6 +146,18 @@ export function createPeek(manager: FloatingWindowManager): Peek {
         : {},
     );
     return true;
+  });
+  // The window under the pointer in the taskbar's thumbnails, by its
+  // ext_foreign_toplevel_list identifier; null for none (highlight.ts).
+  server.handle("highlight", (params) => {
+    const window =
+      typeof params === "object" && params !== null
+        ? (params as { window?: unknown }).window
+        : null;
+    return setHighlight(
+      typeof window === "string" ? window : null,
+      manager.recentWindows(),
+    );
   });
   server.handle("show-desktop", () => {
     // The desktop is what the pointer was peeking at; show it for real.

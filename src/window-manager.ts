@@ -34,12 +34,7 @@ import type {
   WindowSizeConstraints,
 } from "shoji_wm/types";
 import { TIMING, motion } from "./motion";
-import {
-  TABBED_PROGRAMS,
-  WindowGroups,
-  tabLayout,
-  type DropTarget,
-} from "./groups";
+import { TABBED_PROGRAMS, GROUPS, tabLayout, type DropTarget } from "./groups";
 import { frameMetrics } from "./themes/choice";
 
 /** The frame rectangle of a window: the chrome, not the client surface. */
@@ -148,13 +143,25 @@ export function usesClientDecoration(window: WaylandWindow): boolean {
   return usesClientDecorationState(window.decoration.peek());
 }
 
+/**
+ * A client-decorated window gets a tab strip of ours over its own title bar
+ * while it is in a group: its tabs need a place, and its title bar has none.
+ */
+export function hasTabStrip(id: string): boolean {
+  return GROUPS.membersPeek(id).length > 1;
+}
+
 /** What the frame adds to the client surface, per axis. */
 export function frameExtra(window: WaylandWindow): {
   width: number;
   height: number;
 } {
   if (usesClientDecoration(window)) {
-    return { width: 0, height: 0 };
+    // Its own title bar; in a group, our tab strip over it (themes/frames.tsx).
+    return {
+      width: 0,
+      height: hasTabStrip(window.id) ? frameMetrics().caption : 0,
+    };
   }
   // The theme's frame: its border on both sides, its caption and its bottom
   // border.
@@ -253,7 +260,7 @@ export class FloatingWindowManager {
   public readonly snapPreview: Signal<SnapZone | null> =
     signal<SnapZone | null>(null);
   /** Windows shown as tabs of one frame (groups.ts). */
-  public readonly groups = new WindowGroups();
+  public readonly groups = GROUPS;
   /** The tab last pressed, until the move its press starts takes it. */
   private tabPress: string | null = null;
   /** The move of a frame that drags one of its tabs. */
@@ -637,9 +644,10 @@ export class FloatingWindowManager {
       return;
     }
 
+    const top = base.y + (event.currentRect.y - event.startRect.y);
     window.state[WIN_RECT].set({
       x: base.x + (event.currentRect.x - event.startRect.x),
-      y: base.y + (event.currentRect.y - event.startRect.y),
+      y: top,
       width: base.width,
       height: base.height,
     });
@@ -648,7 +656,7 @@ export class FloatingWindowManager {
     // ghost tab shows where); elsewhere, an edge of the screen snaps it.
     const drop = this.dropAt(event.currentPointer, window);
     this.groups.setDrop(drop);
-    this.setSnapPreview(drop ? null : this.snapZoneAt(event));
+    this.setSnapPreview(drop ? null : this.snapZoneAt(event, top));
 
     if (event.phase === "end") {
       const zone = this.snapPreview.peek();
@@ -707,10 +715,12 @@ export class FloatingWindowManager {
   }
 
   /**
-   * Aero Snap: the zone the pointer is in while dragging, or `null`. The top
-   * edge maximises, the left and right edges take half the work area.
+   * Aero Snap: the zone of a drag, or `null`. The window's top edge on the
+   * work area's top (the taskbar's edge when the bar is at the top, else the
+   * screen's) maximises; the pointer on the left or right screen edge takes
+   * half the work area. `top` is the dragged frame's top edge.
    */
-  private snapZoneAt(event: WindowMoveEvent): SnapZone | null {
+  private snapZoneAt(event: WindowMoveEvent, top: number): SnapZone | null {
     const outputName = event.outputName ?? this.outputName();
     const screen = this.outputRect(outputName);
     const area = this.workArea(outputName);
@@ -722,7 +732,7 @@ export class FloatingWindowManager {
     const y = event.currentPointer.y;
     const halfWidth = Math.round(area.width / 2);
 
-    if (y <= screen.y + SNAP_EDGE_PX) {
+    if (top <= area.y || y <= screen.y + SNAP_EDGE_PX) {
       return { kind: "maximize", outputName, rect: area };
     }
     if (x <= screen.x + SNAP_EDGE_PX) {
@@ -1295,9 +1305,6 @@ export class FloatingWindowManager {
     point: { x: number; y: number },
     dragged: WaylandWindow,
   ): DropTarget | null {
-    if (usesClientDecoration(dragged)) {
-      return null;
-    }
     const own = new Set(this.groups.membersPeek(dragged.id));
     const metrics = frameMetrics();
     const candidates = [...this.windowsById.values()]
@@ -1326,10 +1333,13 @@ export class FloatingWindowManager {
       ) {
         continue;
       }
-      const caption = window.state[WIN_MAXIMIZED]()
-        ? metrics.captionMaximized
-        : metrics.caption;
-      if (usesClientDecoration(window) || point.y >= y + caption) {
+      // A client-decorated window: our strip if it has one, else its own
+      // title bar, taken as as tall as our caption.
+      const caption =
+        window.state[WIN_MAXIMIZED]() && !usesClientDecoration(window)
+          ? metrics.captionMaximized
+          : metrics.caption;
+      if (point.y >= y + caption) {
         // The pointer is on this window, not on a caption with tabs.
         return null;
       }

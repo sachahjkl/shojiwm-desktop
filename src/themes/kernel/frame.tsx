@@ -29,21 +29,39 @@ import type { FrameOptions } from "../frames";
 import { WIN_MAXIMIZED } from "../../window-manager";
 import { KCOLOR, KFONT_TEXT, KFONT_TITLE, KFRAME } from "./metrics";
 import { captionTabs, type TabStyle } from "../tabs";
+import { highlightShadow } from "../../highlight";
 
 /** The tabs of a group, on the caption plate. */
-const KTAB: TabStyle = {
-  active: "#ffffff24",
-  hover: "#ffffff14",
-  separator: "#ffffff26",
-  ghost: "#3f7fcd40",
-  ghostLine: "#7fb2eaff",
+export const KTAB: TabStyle = {
+  active: KCOLOR.tabActive,
+  activeAway: KCOLOR.tabActiveAway,
+  idle: KCOLOR.tabIdle,
+  idleAway: KCOLOR.tabIdleAway,
+  hover: KCOLOR.tabHover,
+  separator: "#00000000",
+  edge: KCOLOR.tabEdge,
+  accent: KCOLOR.tabAccent,
+  accentAway: KCOLOR.tabAccentAway,
+  accentHeight: 2,
+  light: KCOLOR.tabLight,
+  // the shown tab stands 2 px above the others and covers the dark line under the caption
+  top: 3,
+  idleTop: 5,
+  idleBottom: 1,
+  ghost: KCOLOR.tabGhost,
+  ghostLine: KCOLOR.tabGhostLine,
+  ghostDash: 4,
   text: KCOLOR.title,
-  textAway: KCOLOR.titleInactive,
+  textAway: KCOLOR.tabTextAway,
+  textIdle: KCOLOR.tabText,
+  textIdleAway: KCOLOR.tabTextIdleAway,
+  iconIdle: 0.8,
   textGlow: null,
   fontFamily: KFONT_TITLE,
   fontSize: 12,
-  radius: 2,
+  radius: 0,
   closeIcon: "./assets/kernel/close.svg",
+  closeHover: KCOLOR.closeBottom,
 };
 
 /** `#rrggbbaa` to the four numbers a shader uniform takes. */
@@ -294,7 +312,8 @@ export function kernelFrame(
     >
       {captionTabs(
         window,
-        computed(() => buttonHeight() - 3),
+        // down to the client: the shown tab covers the dark line under the caption
+        computed(() => caption() - outer()),
         KTAB,
         options.tabs,
         KFRAME.iconGap,
@@ -371,7 +390,7 @@ export function kernelFrame(
     <WindowBorder
       style={{
         borderRadius: computed(() => (maximized() ? 0 : KFRAME.radius)),
-        boxShadow: shadow,
+        boxShadow: highlightShadow(window, shadow),
         background: "#00000000",
       }}
       interaction={{

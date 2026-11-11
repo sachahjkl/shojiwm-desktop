@@ -37,7 +37,7 @@ const METRICS: Record<ThemeName, FrameMetrics> = {
   kernel: KERNEL_METRICS,
 };
 
-const chosen = signal<ThemeName>("aero");
+const chosen = signal<ThemeName>("kernel");
 
 /** The theme now. Reading it makes the reader draw again on a change. */
 export function themeName(): ThemeName {
@@ -49,7 +49,7 @@ export function themeNamePeek(): ThemeName {
   return chosen.peek();
 }
 
-/** The shell's choice: `{ name }`, one of THEME_NAMES; anything else is Aero. */
+/** The shell's choice: `{ name }`, one of THEME_NAMES; anything else is Kernel. */
 export function setTheme(params: unknown): ThemeName {
   const name =
     typeof params === "object" && params !== null
@@ -57,7 +57,7 @@ export function setTheme(params: unknown): ThemeName {
       : undefined;
   const theme = THEME_NAMES.includes(name as ThemeName)
     ? (name as ThemeName)
-    : "aero";
+    : "kernel";
   chosen.set(theme);
   return theme;
 }
