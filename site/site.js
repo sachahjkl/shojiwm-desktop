@@ -4,6 +4,35 @@
 
 "use strict";
 
+/* ----- the menu on a narrow screen -------------------------------------------------------- */
+
+// The three bars open and close the menu; a choice in it, Escape or a press outside closes it.
+function setUpMenu() {
+  const top = document.querySelector(".top");
+  const button = top?.querySelector(".nav-toggle");
+  if (!top || !button) {
+    return;
+  }
+  const set = (open) => {
+    top.toggleAttribute("data-open", open);
+    button.setAttribute("aria-expanded", String(open));
+  };
+  button.hidden = false;
+  button.addEventListener("click", () => set(!top.hasAttribute("data-open")));
+  top.querySelectorAll(".nav a").forEach((a) => a.addEventListener("click", () => set(false)));
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && top.hasAttribute("data-open")) {
+      set(false);
+      button.focus();
+    }
+  });
+  document.addEventListener("click", (e) => {
+    if (!top.contains(e.target)) {
+      set(false);
+    }
+  });
+}
+
 /* ----- the look: Aero or Kernel ------------------------------------------------------------- */
 
 // The head sets data-look before the first paint (see the inline script of each page).
@@ -522,6 +551,7 @@ async function setUpChangelog() {
   }
 }
 
+setUpMenu();
 setUpLook();
 setUpGallery();
 setUpToc();

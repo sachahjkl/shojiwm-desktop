@@ -318,6 +318,65 @@ li + li {
   background: var(--code-bg);
 }
 
+/* The menu on a narrow screen: a button with three bars opens it under the header. Without the
+   script the button stays hidden and the entries wrap as on a wide screen. */
+.nav-toggle {
+  display: none;
+  margin-left: auto;
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0.6rem 0.5rem;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-small);
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.nav-toggle span {
+  display: block;
+  height: 2px;
+  background: currentColor;
+  border-radius: 1px;
+  transition: transform 0.18s ease, opacity 0.18s ease;
+}
+
+.top[data-open] .nav-toggle span:nth-child(1) {
+  transform: translateY(0.53rem) rotate(45deg);
+}
+
+.top[data-open] .nav-toggle span:nth-child(2) {
+  opacity: 0;
+}
+
+.top[data-open] .nav-toggle span:nth-child(3) {
+  transform: translateY(-0.53rem) rotate(-45deg);
+}
+
+@media (max-width: 700px) {
+  .nav-toggle:not([hidden]) {
+    display: flex;
+  }
+
+  .nav-toggle:not([hidden]) + .nav {
+    display: none;
+    flex-basis: 100%;
+    flex-direction: column;
+    margin-left: 0;
+    padding-bottom: 0.75rem;
+  }
+
+  .top[data-open] .nav-toggle + .nav {
+    display: flex;
+  }
+
+  .nav-toggle + .nav a {
+    padding: 0.6rem 0.65rem;
+  }
+}
+
 /* ----- the footer -------------------------------------------------------------------------- */
 
 .foot {
