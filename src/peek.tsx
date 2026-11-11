@@ -37,7 +37,8 @@ import {
   WIN_RECT,
 } from "./window-manager";
 import { setAnimationSpeed, setAnimations } from "./motion";
-import { setSquareCorners } from "./corners";
+import { setSquareCorners } from "./themes/aero/corners";
+import { setTheme } from "./themes/choice";
 import { setPrograms } from "./programs";
 import { setGlassColour, setGlassLevel } from "./glass";
 import { type DisplayChoice, screens, setDisplayChoices } from "./display";
@@ -115,6 +116,7 @@ export function createPeek(manager: FloatingWindowManager): Peek {
     }
     return true;
   });
+  server.handle("theme", (params) => setTheme(params));
   server.handle("corners", (params) => {
     setSquareCorners(
       typeof params === "object" &&

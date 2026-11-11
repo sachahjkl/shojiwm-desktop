@@ -26,6 +26,7 @@ Singleton {
     property alias taskbarCompact: adapter.taskbarCompact
     property alias glassBlur: adapter.glassBlur
     property alias squareCorners: adapter.squareCorners
+    property alias theme: adapter.theme
     property alias programs: adapter.programs
     property alias animationSpeed: adapter.animationSpeed
     property alias displayChoices: adapter.displayChoices
@@ -214,6 +215,11 @@ Singleton {
             /// fields have square corners. What is round by nature (the
             /// Start orb, radio buttons, the gadgets' dials) stays round.
             property bool squareCorners: false
+            /// The desktop's theme: "aero" (Windows 7's glass) or "kernel"
+            /// (deep blue-black, frames with a steel-blue caption plate). The
+            /// compositor draws the window frames with it (src/themes), the
+            /// shell its own surfaces (Scheme.qml).
+            property string theme: "aero"
             /// The programs the desktop starts, chosen in Default Programs:
             /// command lines by key (terminal, taskManager, systemMonitor,
             /// clipboard, screenshot). A key missing or empty: the

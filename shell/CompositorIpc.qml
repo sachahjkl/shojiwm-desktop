@@ -30,6 +30,7 @@ Singleton {
             root.sendAnimations();
             root.sendGlass();
             root.sendCorners();
+            root.sendTheme();
             root.sendPrograms();
             root.sendDisplay();
         }
@@ -113,6 +114,11 @@ Singleton {
         });
     }
 
+    /// The theme the window frames are drawn in (src/themes/choice.ts).
+    function sendTheme() {
+        return send("theme", { name: Settings.theme });
+    }
+
     function sendCorners() {
         return send("corners", { square: Settings.squareCorners });
     }
@@ -131,6 +137,7 @@ Singleton {
         function onAnimationSpeedChanged() { root.sendAnimations(); }
         function onGlassBlurChanged() { root.sendGlass(); }
         function onSquareCornersChanged() { root.sendCorners(); }
+        function onThemeChanged() { root.sendTheme(); }
         function onProgramsChanged() { root.sendPrograms(); }
         function onGlassColorChanged() { root.sendGlass(); }
         function onGlassColorStrengthChanged() { root.sendGlass(); }

@@ -1817,10 +1817,37 @@ FloatingWindow {
                     + "module of nixconfig sets it)."
             }
 
-            SubHeading { text: "Corners" }
+            SubHeading { text: "Theme" }
 
             Note {
                 width: parent.width
+                text: "How the window frames and this desktop's own surfaces are drawn. "
+                    + "Aero: Windows 7's glass. Kernel: a deep blue-black desk, frames "
+                    + "with a steel-blue caption plate and a dark outline."
+            }
+
+            Flow {
+                width: parent.width
+                spacing: 16
+
+                CpRadio {
+                    label: "Aero"
+                    checked: Settings.theme === "aero"
+                    onClicked: Settings.theme = "aero"
+                }
+
+                CpRadio {
+                    label: "Kernel"
+                    checked: Settings.theme === "kernel"
+                    onClicked: Settings.theme = "kernel"
+                }
+            }
+
+            SubHeading { text: "Corners"; visible: Settings.theme === "aero" }
+
+            Note {
+                width: parent.width
+                visible: Settings.theme === "aero"
                 text: "The shape of the windows, menus, buttons and fields. What is "
                     + "round by nature, as the Start button, stays round."
             }
@@ -1828,6 +1855,7 @@ FloatingWindow {
             Flow {
                 width: parent.width
                 spacing: 16
+                visible: Settings.theme === "aero"
 
                 CpRadio {
                     label: "Rounded"

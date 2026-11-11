@@ -43,11 +43,13 @@ export const FRAME = {
   titleHeight: 16,
 } as const;
 
-/** Width the frame adds to the client surface. */
-export const FRAME_WIDTH_EXTRA = 2 * FRAME.border;
-
-/** Height the frame adds to the client surface. */
-export const FRAME_HEIGHT_EXTRA = FRAME.caption + FRAME.border;
+/** The room the frame takes around the client (themes/choice.ts). */
+export const AERO_METRICS = {
+  caption: FRAME.caption,
+  captionMaximized: FRAME.captionMaximized,
+  border: FRAME.border,
+  borderMaximized: FRAME.borderMaximized,
+};
 
 /** Widths of the three caption buttons, dark separators included. */
 export const CAPTION_BUTTON = {
@@ -102,11 +104,3 @@ export const COLOR = {
  * nixpkgs.
  */
 export const FONT = ["Selawik", "Open Sans", "Noto Sans", "DejaVu Sans"];
-
-/** Animation lengths, in milliseconds. Short, as on Windows 7. */
-export const TIMING = {
-  open: 140,
-  close: 110,
-  minimize: 130,
-  management: 160,
-} as const;

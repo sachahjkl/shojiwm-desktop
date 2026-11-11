@@ -7,7 +7,7 @@
  * size by `tools/make-caption-svgs.py`. The title is crisp black text on a
  * soft white glow (a text shadow), not an outline.
  *
- * Every number comes from `src/theme.ts`, and every number there from
+ * Every number comes from `./metrics.ts`, and every number there from
  * `docs/aero-measurements.md`.
  */
 
@@ -24,17 +24,17 @@ import {
   computed,
   paintShader,
   useState,
-  type CompiledEffectHandle,
   type ReadonlySignal,
   type ShaderUniformVec4,
   type SSDStyle,
   type WaylandWindow,
 } from "shoji_wm";
 import type { CompositionRenderable } from "shoji_wm/types";
-import { CAPTION_BUTTON, COLOR, FONT, FRAME } from "./theme";
-import { WIN_MAXIMIZED } from "./window-manager";
+import type { FrameOptions } from "../frames";
+import { CAPTION_BUTTON, COLOR, FONT, FRAME } from "./metrics";
+import { WIN_MAXIMIZED } from "../../window-manager";
 import { corner, squareCorners } from "./corners";
-import { glassColour } from "./glass";
+import { glassColour } from "../../glass";
 
 /** Which picture a caption button shows. */
 type ButtonState = "" | "-hover" | "-press" | "-inactive";
@@ -184,15 +184,6 @@ const CaptionTitle = ({ window }: { window: WaylandWindow }) => (
     }}
   />
 );
-
-export interface FrameOptions {
-  /** The compiled blur that stands behind the glass; null for none. */
-  glass: CompiledEffectHandle | null;
-  /** `true` while the blur must be left out (the Alt+Tab panel is open). */
-  glassSuspended: boolean;
-  onMinimize: () => void;
-  onToggleMaximize: () => void;
-}
 
 /** `#rrggbbaa` to the four numbers a shader uniform takes. */
 function colour(hex: string): [number, number, number, number] {

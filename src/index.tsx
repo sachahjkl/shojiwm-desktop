@@ -22,7 +22,7 @@ import {
   type OutputInfo,
   type WaylandWindow,
 } from "shoji_wm";
-import { aeroFrame } from "./decoration";
+import { windowFrame } from "./themes/frames";
 import { createAltTab } from "./alt-tab";
 import { SHELL_SOCKET, createPeek } from "./peek";
 import { createZoom } from "./zoom";
@@ -506,7 +506,7 @@ COMPOSITOR.window.composition = (window: WaylandWindow) => {
       // Tell the client it is tiled, so it squares off its own corners.
       tiled={true}
     >
-      {aeroFrame(window, {
+      {windowFrame(window, {
         glass: windowGlassEffect(),
         glassSuspended: ALT_TAB.blurSuspended(),
         onMinimize: () => WINDOWS.setMinimized(window, true),

@@ -11,6 +11,8 @@
 #
 #   tools/screenshots.sh            # all of them
 #   KEEP=1 tools/screenshots.sh     # keep the session running at the end
+#   THEME=kernel OUT=/tmp/k UNTIL=desktop tools/screenshots.sh
+#                                   # another theme, into another folder, up to one picture
 #
 # The Quickshell is this flake's (a fix of its dmabuf code: see flake.nix);
 # override it with QUICKSHELL_FLAKE, and the compositor
@@ -20,7 +22,7 @@
 set -euo pipefail
 
 repo="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-out="$repo/assets/site"
+out="${OUT:-$repo/assets/site}"
 
 if [ "${1:-}" != "--inner" ]; then
   exec nix shell \
@@ -127,8 +129,9 @@ chmod -R u+w "$XDG_CONFIG_HOME/shojiwm"
 # windows open and one with none, and the Start menu has a pinned list. The
 # shell reads the rest of its settings from their defaults. taskbarCompact is
 # written out for the step that switches it with sed.
-cat >"$XDG_CONFIG_HOME/shojiwm/settings.json" <<'JSON'
+cat >"$XDG_CONFIG_HOME/shojiwm/settings.json" <<JSON
 {
+  "theme": "${THEME:-aero}",
   "startPinned": ["foot.desktop", "footclient.desktop"],
   "taskbarPinned": ["foot.desktop", "footclient.desktop"],
   "taskbarCompact": true,
@@ -244,7 +247,11 @@ shot() {
   import -window "$window" "$work/$name-full.png"
   cp "$work/$name-full.png" "$out/$name.png"
   magick "$out/$name.png" -strip -define png:compression-level=9 "$out/$name.png"
-  say "wrote assets/site/$name.png"
+  say "wrote $out/$name.png"
+  if [ "$name" = "${UNTIL:-}" ]; then
+    say "$UNTIL: the last picture asked for"
+    exit 0
+  fi
 }
 
 # A piece of a capture, blown up with no smoothing so every pixel shows.

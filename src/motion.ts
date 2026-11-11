@@ -21,3 +21,11 @@ export function setAnimationSpeed(value: number): void {
 export function motion(ms: number): number {
   return animations ? Math.round(ms / speed) : 0;
 }
+
+/** Animation lengths, in milliseconds. Short, as on Windows 7. */
+export const TIMING = {
+  open: 140,
+  close: 110,
+  minimize: 130,
+  management: 160,
+} as const;

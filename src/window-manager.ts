@@ -33,8 +33,8 @@ import type {
   WindowDecorationState,
   WindowSizeConstraints,
 } from "shoji_wm/types";
-import { motion } from "./motion";
-import { FRAME_HEIGHT_EXTRA, FRAME_WIDTH_EXTRA, TIMING } from "./theme";
+import { TIMING, motion } from "./motion";
+import { frameMetrics } from "./themes/choice";
 
 /** The frame rectangle of a window: the chrome, not the client surface. */
 export const WIN_RECT = createWindowState<ManagedWindowRect>("rect", {
@@ -146,7 +146,10 @@ export function frameExtra(window: WaylandWindow): {
   if (usesClientDecoration(window)) {
     return { width: 0, height: 0 };
   }
-  return { width: FRAME_WIDTH_EXTRA, height: FRAME_HEIGHT_EXTRA };
+  // The theme's frame: its border on both sides, its caption and its bottom
+  // border.
+  const m = frameMetrics();
+  return { width: 2 * m.border, height: m.caption + m.border };
 }
 
 /** The frame rectangle a window would have at the size the client chose. */
