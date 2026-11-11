@@ -1,3 +1,3 @@
-type: Changed
+type: Fixed
 
-**The clock fits the bar**: in Kernel, the time and the date are on one line, clear of the bar's edges and of the screen's edge.
+**The clock fits the bar**: the time over the date, with room above and below them, in both themes and with the bar at the top or the bottom; Kernel's text is a little smaller.

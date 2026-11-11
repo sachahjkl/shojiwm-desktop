@@ -2,6 +2,9 @@
   description = "A Windows 7 Aero desktop for the ShojiWM Wayland compositor";
 
   inputs = {
+    # gui_toolkit is a submodule (ext/gui_toolkit): tools/desktoptool builds from it
+    self.submodules = true;
+
     nixpkgs.url = "https://flakehub.com/f/NixOS/nixpkgs/0.2605";
 
     git-hooks = {
@@ -30,6 +33,45 @@
     pkgsFor = system: nixpkgs.legacyPackages.${system};
 
     version = "0.1.0";
+
+    # The Odin compiler of tools/desktoptool, the one gui_toolkit asks for (its odin.version). Odin publishes it
+    # statically linked for x86_64 Linux: nothing to patch. Its run links with clang.
+    odinVersion = "dev-2026-11";
+    odinFor = pkgs:
+      pkgs.stdenv.mkDerivation {
+        pname = "odin";
+        version = odinVersion;
+        src = pkgs.fetchurl {
+          url = "https://github.com/odin-lang/Odin/releases/download/${odinVersion}/odin-linux-amd64-${odinVersion}.tar.gz";
+          sha256 = "65c9f6e97d6f8a30930e151f270ce5aeaa98fe8b2ba49fe067394e2af04f7618";
+        };
+        nativeBuildInputs = [pkgs.makeWrapper];
+        dontBuild = true;
+        dontStrip = true;
+        dontPatchELF = true;
+        installPhase = ''
+          mkdir -p $out/lib/odin $out/bin
+          cp -r . $out/lib/odin
+          makeWrapper $out/lib/odin/odin $out/bin/odin --set ODIN_ROOT $out/lib/odin/ \
+            --prefix PATH : ${pkgs.lib.makeBinPath [pkgs.clang pkgs.lld]}
+        '';
+      };
+    hasOdin = system: system == "x86_64-linux";
+
+    # What tools/desktoptool reads for `changelog check`: itself, the toolkit, the changelog and the three files
+    # that keep the version.
+    changelogSource = nixpkgs.lib.fileset.toSource {
+      root = ./.;
+      fileset = nixpkgs.lib.fileset.unions [
+        ./tools/desktoptool
+        ./ext/gui_toolkit/src
+        ./CHANGELOG.md
+        ./changelog.d
+        ./crates/shell/Cargo.toml
+        ./crates/shell/Cargo.lock
+        ./flake.nix
+      ];
+    };
 
     # The libraries the shell on AntiWebUI links (fonts, keyboard, Wayland,
     # PAM, and xcb for its X11 backend) and the ones it loads at run time.
@@ -283,67 +325,84 @@
         };
       };
       inherit (self.packages.${system}) portal;
-    in {
-      pre-commit = preCommitCheck;
+    in
+      {
+        pre-commit = preCommitCheck;
 
-      # The portal builds and passes its tests.
-      inherit portal;
+        # The portal builds and passes its tests.
+        inherit portal;
 
-      # The shell on AntiWebUI builds.
-      inherit (self.packages.${system}) shell;
+        # The shell on AntiWebUI builds.
+        inherit (self.packages.${system}) shell;
 
-      # The shell's Rust: clippy without warnings, and rustfmt's layout.
-      shell-lint = self.packages.${system}.shell.overrideAttrs (old: {
-        pname = "shojiwm-shell-lint";
-        nativeBuildInputs = old.nativeBuildInputs ++ [pkgs.clippy pkgs.rustfmt];
-        buildPhase = ''
-          runHook preBuild
-          cargo fmt --check
-          cargo clippy --all-targets --offline -- -D warnings
-          runHook postBuild
-        '';
-        doCheck = false;
-        installPhase = "touch $out";
-        postInstall = "";
-        postFixup = "";
+        # The shell's Rust: clippy without warnings, and rustfmt's layout.
+        shell-lint = self.packages.${system}.shell.overrideAttrs (old: {
+          pname = "shojiwm-shell-lint";
+          nativeBuildInputs = old.nativeBuildInputs ++ [pkgs.clippy pkgs.rustfmt];
+          buildPhase = ''
+            runHook preBuild
+            cargo fmt --check
+            cargo clippy --all-targets --offline -- -D warnings
+            runHook postBuild
+          '';
+          doCheck = false;
+          installPhase = "touch $out";
+          postInstall = "";
+          postFixup = "";
+        });
+
+        # The portal's Rust: clippy without warnings, and rustfmt's layout.
+        portal-lint = portal.overrideAttrs (old: {
+          pname = "xdg-desktop-portal-shojiwm-desktop-lint";
+          nativeBuildInputs = old.nativeBuildInputs ++ [pkgs.clippy pkgs.rustfmt];
+          buildPhase = ''
+            runHook preBuild
+            cargo fmt --check
+            cargo clippy --all-targets --offline -- -D warnings
+            runHook postBuild
+          '';
+          doCheck = false;
+          installPhase = "touch $out";
+          postInstall = "";
+        });
+
+        # The TSX is type checked against the ShojiWM TypeScript package, the
+        # way the compositor's own `npm run typecheck` does it.
+        typecheck =
+          pkgs.runCommand "shojiwm-desktop-typecheck" {
+            nativeBuildInputs = [pkgs.typescript];
+          } ''
+            cp -R ${configSource}/src ./src
+            cp ${configSource}/tsconfig.json ./tsconfig.json
+            mkdir -p node_modules
+            ln -s ${shojiwm-src}/packages/shoji_wm node_modules/shoji_wm
+            tsc -p tsconfig.json
+            touch "$out"
+          '';
+
+        # The log-on screen in a VM: greetd, Hyprland, shojiwm-shell greeter, a password,
+        # and the session it starts.
+        greeter = import ./tests/greeter.nix {
+          inherit pkgs;
+          module = self.nixosModules.greeter;
+        };
+      }
+      // nixpkgs.lib.optionalAttrs (hasOdin system) {
+        # The tests of tools/desktoptool, then every fragment of changelog.d well formed, and the version of
+        # Cargo.toml, Cargo.lock and flake.nix the same, the last released one.
+        changelog =
+          pkgs.runCommand "shojiwm-desktop-changelog" {
+            nativeBuildInputs = [(odinFor pkgs)];
+          } ''
+            cp -R ${changelogSource}/. .
+            chmod -R u+w .
+            export HOME="$TMPDIR"
+            mkdir -p build
+            odin test tools/desktoptool -collection:gt=ext/gui_toolkit/src -out:build/desktoptool_test
+            odin run tools/desktoptool -collection:gt=ext/gui_toolkit/src -out:build/desktoptool -- changelog check
+            touch "$out"
+          '';
       });
-
-      # The portal's Rust: clippy without warnings, and rustfmt's layout.
-      portal-lint = portal.overrideAttrs (old: {
-        pname = "xdg-desktop-portal-shojiwm-desktop-lint";
-        nativeBuildInputs = old.nativeBuildInputs ++ [pkgs.clippy pkgs.rustfmt];
-        buildPhase = ''
-          runHook preBuild
-          cargo fmt --check
-          cargo clippy --all-targets --offline -- -D warnings
-          runHook postBuild
-        '';
-        doCheck = false;
-        installPhase = "touch $out";
-        postInstall = "";
-      });
-
-      # The TSX is type checked against the ShojiWM TypeScript package, the
-      # way the compositor's own `npm run typecheck` does it.
-      typecheck =
-        pkgs.runCommand "shojiwm-desktop-typecheck" {
-          nativeBuildInputs = [pkgs.typescript];
-        } ''
-          cp -R ${configSource}/src ./src
-          cp ${configSource}/tsconfig.json ./tsconfig.json
-          mkdir -p node_modules
-          ln -s ${shojiwm-src}/packages/shoji_wm node_modules/shoji_wm
-          tsc -p tsconfig.json
-          touch "$out"
-        '';
-
-      # The log-on screen in a VM: greetd, Hyprland, shojiwm-shell greeter, a password,
-      # and the session it starts.
-      greeter = import ./tests/greeter.nix {
-        inherit pkgs;
-        module = self.nixosModules.greeter;
-      };
-    });
 
     formatter = forAllSystems (system: (pkgsFor system).alejandra);
 
@@ -378,6 +437,7 @@
             pkgs.clippy
             pkgs.rustfmt
           ]
+          ++ pkgs.lib.optional (hasOdin system) (odinFor pkgs)
           ++ self.checks.${system}.pre-commit.enabledPackages;
 
         LD_LIBRARY_PATH = shellLibraryPath;

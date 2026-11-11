@@ -555,7 +555,7 @@ give Chromium the theme's frame, right click its tab strip and switch _on_
 
 ## Development
 
-`nix develop` gives Rust, TypeScript, prettier, the shell's libraries and the
+`nix develop` gives Rust, TypeScript, Odin, prettier, the shell's libraries and the
 pre-commit hooks. `tools/dev.sh` runs ShojiWM nested in a window of the
 current session, with `src`, `assets` and `shell` of `~/.config/shojiwm`
 linked to the checkout.
@@ -576,7 +576,7 @@ THEME=kernel OUT=assets/site/kernel tools/screenshots.sh
 nix flake check
 ```
 
-runs seven checks:
+runs eight checks:
 
 - `shell` — the shell builds.
 - `shell-lint` — `clippy` without warnings and `rustfmt` over `crates/shell`.
@@ -586,6 +586,12 @@ runs seven checks:
   pinned in `flake.lock`.
 - `greeter` — the log-on screen module in VMs.
 - `pre-commit` — `alejandra`, `deadnix`, `statix` and `prettier`.
+- `changelog` — the tests of `tools/desktoptool`, then its `changelog check`
+  (x86_64 only).
+
+`CHANGELOG.md` is made of fragments in `changelog.d/`, one per change:
+`tools/desktoptool` writes, checks and assembles them (see
+`changelog.d/README.md`).
 
 ## Real limits
 

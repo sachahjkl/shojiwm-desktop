@@ -17,3 +17,21 @@ type: Added
 - The text is one entry of the list, as it will read there. It may span lines; no blank line,
   no heading.
 - One change, one fragment. A change that a user cannot see has no fragment.
+
+The project's tool (`tools/desktoptool`) writes, checks and assembles the fragments. Run it
+from the checkout, with the gui_toolkit submodule (`git submodule update --init`):
+
+```sh
+# a fragment, named from the text's bold summary
+odin run tools/desktoptool -collection:gt=ext/gui_toolkit/src -- changelog new Added "**The thing**: what it does"
+# every fragment well formed, and the version the same in its three files
+odin run tools/desktoptool -collection:gt=ext/gui_toolkit/src -- changelog check
+# what the next version brings
+odin run tools/desktoptool -collection:gt=ext/gui_toolkit/src -- changelog preview
+# a release: the fragments into a "## [x.y.z] - date" section, the fragments deleted
+odin run tools/desktoptool -collection:gt=ext/gui_toolkit/src -- prepare 0.2.0
+```
+
+`prepare` also writes the version in `crates/shell/Cargo.toml`, `crates/shell/Cargo.lock` and
+`flake.nix`. Commit the result, then push the tag `v<version>`: the section's link points at
+its tree. `nix flake check` runs `changelog check` (the `changelog` check).
