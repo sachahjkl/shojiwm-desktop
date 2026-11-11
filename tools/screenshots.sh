@@ -327,6 +327,11 @@ else
   bar_y=$((HEIGHT - 20))
   bar_above=0
 fi
+# A height `d` above Aero's bottom bar (40 px), as it is under Kernel's top bar (32 px): the
+# popups of the bar open away from it.
+from_bar() {
+  if [ "$bar_above" -gt 0 ]; then echo $((32 + $1 - 40)); else echo $((HEIGHT - $1)); fi
+}
 
 # Move the front window clear of the one behind it, so both frames show and
 # its bottom edge stays above the taskbar.
@@ -352,13 +357,15 @@ alive "menu open"
 shot "start-menu"
 
 say "a place under the pointer, in the user's tile"
-xdotool mousemove --window "$window" 380 $((HEIGHT - 40 - 2 - 560 + 92))
+# The Start menu's glass, 560 px high, 2 px from the bar: under it in Aero, over it in Kernel.
+if [ "$bar_above" -gt 0 ]; then glass_top=$((32 + 2)); else glass_top=$((HEIGHT - 40 - 2 - 560)); fi
+xdotool mousemove --window "$window" 380 $((glass_top + 92))
 sleep 2
 shot "start-menu-place"
 
 # The menu stands on the taskbar at the left: 490 x 560, 2 px from both.
 menu_left=2
-menu_bottom=$((HEIGHT - 40 - 2))
+menu_bottom=$((glass_top + 560))
 
 say "All Programs, with one folder open"
 xdotool mousemove --window "$window" $((menu_left + 60)) $((menu_bottom - 55))
@@ -413,15 +420,15 @@ sleep 2
 
 say "the desktop's menu"
 # Pick an icon, then right click on the empty desktop and open View.
-xdotool mousemove --window "$window" 40 140
+xdotool mousemove --window "$window" 40 $((140 + bar_above))
 xdotool click 1
 sleep 1
-xdotool mousemove --window "$window" 1150 220
+xdotool mousemove --window "$window" 1150 $((220 + bar_above))
 xdotool click 3
 sleep 2
-xdotool mousemove --window "$window" 1070 236
+xdotool mousemove --window "$window" 1070 $((236 + bar_above))
 sleep 0.3
-xdotool mousemove --window "$window" 1080 238
+xdotool mousemove --window "$window" 1080 $((238 + bar_above))
 sleep 1
 xdotool click 1
 sleep 2
@@ -444,13 +451,13 @@ alive "tray-overflow"
 say "the notification area menu"
 # A right click on the icon in the popover; the pointer then rests on the
 # menu, as a hand would.
-xdotool mousemove --window "$window" $((WIDTH - 251)) $((HEIGHT - 73))
+xdotool mousemove --window "$window" $((WIDTH - 251)) "$(from_bar 73)"
 sleep 0.3
-xdotool mousemove --window "$window" $((WIDTH - 243)) $((HEIGHT - 81))
+xdotool mousemove --window "$window" $((WIDTH - 243)) "$(from_bar 81)"
 sleep 0.5
 xdotool click 3
 sleep 0.5
-xdotool mousemove --window "$window" $((WIDTH - 243)) $((HEIGHT - 110))
+xdotool mousemove --window "$window" $((WIDTH - 243)) "$(from_bar 110)"
 sleep 2
 shot "tray-menu"
 alive "tray-menu"
@@ -473,12 +480,15 @@ sleep 2
 say "the launcher, Super+Shift+D"
 xdotool windowfocus "$window"
 shell_call launcher toggle
-sleep 2
+sleep 4
 shot "launcher"
 alive "launcher"
 xdotool type --delay 80 "fi"
 sleep 2
 shot "launcher-search"
+# The first Escape empties the field, the second closes the launcher.
+xdotool key Escape
+sleep 0.5
 xdotool key Escape
 sleep 2
 
@@ -493,7 +503,7 @@ sleep 2
 say "Aero Snap, while dragging to an edge"
 # Press on the caption bar of the front window, where the move above put
 # it, and drag to the left edge.
-xdotool mousemove --window "$window" 575 118
+xdotool mousemove --window "$window" 575 $((118 + bar_above))
 xdotool mousedown 1
 xdotool mousemove --window "$window" 300 300
 sleep 1
