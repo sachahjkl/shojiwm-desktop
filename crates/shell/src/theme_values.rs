@@ -28,10 +28,10 @@ pub struct Theme {
     pub clock_width: f32,
     /// The room between the clock's text and the sides of its cell.
     pub clock_padding: f32,
-    /// The time and the date side by side (`true`) or the date under the time.
-    pub clock_one_line: bool,
-    /// The room between the time and the date.
-    pub clock_gap: f32,
+    /// The clock's text size, and the height of each of its two lines (the time over the date):
+    /// together they must leave room above and below in the bar.
+    pub clock_font_size: f32,
+    pub clock_line_height: f32,
     pub show_desktop_width: f32,
     pub peek_delay: f32,
     pub thumb_width: f32,
@@ -156,8 +156,8 @@ pub const AERO: Theme = Theme {
     tray_gap: 8.0,
     clock_width: 74.0,
     clock_padding: 4.0,
-    clock_one_line: false,
-    clock_gap: 0.0,
+    clock_font_size: 12.0,
+    clock_line_height: 15.0,
     show_desktop_width: 15.0,
     peek_delay: 500.0,
     thumb_width: 184.0,
@@ -279,9 +279,9 @@ pub const KERNEL: Theme = Theme {
     tray_icon_size: 16.0,
     tray_gap: 8.0,
     clock_width: 74.0,
-    clock_padding: 8.0,
-    clock_one_line: true,
-    clock_gap: 8.0,
+    clock_padding: 6.0,
+    clock_font_size: 11.0,
+    clock_line_height: 13.0,
     show_desktop_width: 15.0,
     peek_delay: 500.0,
     thumb_width: 184.0,

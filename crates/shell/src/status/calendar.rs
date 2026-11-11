@@ -146,7 +146,8 @@ pub fn clock_view(output_name: &str) -> Div {
             .dyn_style(|s| {
                 let t = theme();
                 s.font_family(clock_font())
-                    .text_size(t.font_size)
+                    .text_size(t.clock_font_size)
+                    .line_height(LineHeight::Px(t.clock_line_height))
                     .text_color(t.text_on_glass)
             })
             .child(text(move || f(&local_time(Every::Minute))))
@@ -154,16 +155,9 @@ pub fn clock_view(output_name: &str) -> Div {
     let column = div()
         .relative()
         .flex()
+        .flex_col()
         .items_center()
-        .dyn_style(|s| {
-            let t = theme();
-            let s = s.px(t.clock_padding).gap(t.clock_gap);
-            if t.clock_one_line {
-                s.flex_row()
-            } else {
-                s.flex_col()
-            }
-        })
+        .dyn_style(|s| s.px(theme().clock_padding))
         .child(line(short_time))
         .child(line(short_date).dyn_style(|s| {
             if settings().with(|s| s.show_date) {
