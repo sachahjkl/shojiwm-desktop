@@ -6,9 +6,13 @@ Text {
     id: link
 
     property bool large: false
+    /// Its colour at rest; lighter under the pointer. A Kernel category gives its own.
+    property color tint: Scheme.link2
     signal clicked
 
-    color: area.containsMouse ? (Scheme.dark ? "#a8d4ff" : "#3399ff") : Scheme.link2
+    color: !area.containsMouse ? link.tint
+        : Scheme.kernel ? Qt.lighter(link.tint, 1.35)
+        : Scheme.dark ? "#a8d4ff" : "#3399ff"
     font.family: Scheme.theme.fontFamily
     font.pixelSize: large ? Scheme.theme.fontSize + 3 : Scheme.theme.fontSize
     font.underline: area.containsMouse

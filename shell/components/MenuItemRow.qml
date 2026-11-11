@@ -97,9 +97,11 @@ Item {
             text: row.label
             color: row.heading ? Scheme.menuHeading : Scheme.text
             opacity: row.itemEnabled ? 1 : 0.45
-            font.family: Scheme.theme.fontFamily
+            font.family: row.heading ? Scheme.theme.headingFamily : Scheme.theme.fontFamily
             font.pixelSize: row.heading ? Scheme.theme.fontSizeSmall : Scheme.theme.fontSize
             font.bold: row.heading
+            font.capitalization: row.heading && Scheme.theme.headingCaps ? Font.AllUppercase : Font.MixedCase
+            font.letterSpacing: row.heading ? Scheme.theme.headingSpacing : 0
             elide: Text.ElideRight
         }
     }

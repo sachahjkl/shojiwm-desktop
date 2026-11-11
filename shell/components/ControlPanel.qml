@@ -353,10 +353,9 @@ FloatingWindow {
         wrapMode: Text.WordWrap
     }
 
-    component SubHeading: Text {
+    component SubHeading: SectionTitle {
         color: Scheme.pageHeading
-        font.family: Scheme.theme.fontFamily
-        font.pixelSize: Scheme.theme.fontSize + 2
+        pixelSize: Scheme.theme.fontSize + 2
         topPadding: 10
     }
 
@@ -375,8 +374,21 @@ FloatingWindow {
         property string name: ""
         property string target: ""
         property var links: []
+        /// Its place on the home page: it picks the category's colour
+        /// (theme.categoryColours), if the theme has them.
+        property int order: 0
+        readonly property var colours: Scheme.theme.categoryColours
+        readonly property color colour: colours.length > 0
+            ? colours[order % colours.length] : "transparent"
 
         spacing: 14
+
+        Rectangle {
+            visible: category.colours.length > 0
+            width: Scheme.theme.headingBar
+            height: category.height
+            color: category.colour
+        }
 
         Image {
             width: 48
@@ -390,6 +402,7 @@ FloatingWindow {
         // long one is never cut off.
         Column {
             width: category.width - 48 - category.spacing
+                - (category.colours.length > 0 ? Scheme.theme.headingBar + category.spacing : 0)
             spacing: 4
 
             CpLink {
@@ -397,6 +410,7 @@ FloatingWindow {
                 text: category.name
                 large: true
                 font.bold: true
+                tint: category.colours.length > 0 ? category.colour : Scheme.link2
                 wrapMode: Text.Wrap
                 onClicked: window.go(category.target)
             }
@@ -1646,6 +1660,8 @@ FloatingWindow {
                 rowSpacing: 26
 
                 Category {
+
+                    order: 0
                     width: categories.cell
                     icon: "pictures"
                     name: "Appearance and Personalization"
@@ -1659,6 +1675,8 @@ FloatingWindow {
                 }
 
                 Category {
+
+                    order: 1
                     width: categories.cell
                     icon: "control-panel"
                     name: "User Accounts"
@@ -1670,6 +1688,8 @@ FloatingWindow {
                 }
 
                 Category {
+
+                    order: 2
                     width: categories.cell
                     icon: "calendar"
                     name: "Clock and Region"
@@ -1680,6 +1700,8 @@ FloatingWindow {
                 }
 
                 Category {
+
+                    order: 3
                     width: categories.cell
                     icon: "run"
                     name: "Ease of Access"
@@ -1690,6 +1712,8 @@ FloatingWindow {
                 }
 
                 Category {
+
+                    order: 4
                     width: categories.cell
                     icon: "computer"
                     name: "System"

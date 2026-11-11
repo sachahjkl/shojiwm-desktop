@@ -141,6 +141,14 @@ var fontSize = 12;
 var fontSizeSmall = 11;
 // The clock's face: monospaced, as the window titles.
 var clockFamily = "JetBrainsMono NF";
+// Titles: a bar in the accent colour, then spaced monospaced capitals.
+var headingFamily = "JetBrainsMono NF";
+var headingCaps = true;
+var headingSpacing = 1.2;
+var headingBar = 3;
+// The Control Panel's categories, each its own colour: a bar along it, and
+// its name in that colour.
+var categoryColours = ["#3f7fcd", "#3fae7a", "#d8a03a", "#9a6fd8", "#d4565f", "#3aa8b8"];
 
 // ---------------------------------------------------------------------------
 // Timing, in milliseconds.

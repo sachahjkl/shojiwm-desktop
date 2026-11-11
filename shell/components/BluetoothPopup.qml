@@ -106,11 +106,7 @@ PopupWindow {
         border.color: Scheme.popupInnerLine
     }
 
-    component Heading: Text {
-        color: Scheme.menuHeading
-        font.family: Scheme.theme.fontFamily
-        font.pixelSize: Scheme.theme.fontSizeSmall
-    }
+    component Heading: SectionTitle {}
 
     Column {
         id: body

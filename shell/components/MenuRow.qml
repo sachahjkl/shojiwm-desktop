@@ -77,9 +77,11 @@ Rectangle {
             width: parent.width - (row.icon.length > 0 ? StartMenuState.iconSize + 8 : 0) - (row.hasArrow ? 14 : 0)
             text: row.label
             color: row.heading ? Scheme.menuHeading : row.labelColor
-            font.family: Scheme.theme.fontFamily
+            font.family: row.heading ? Scheme.theme.headingFamily : Scheme.theme.fontFamily
             font.pixelSize: row.heading ? Scheme.theme.fontSizeSmall : Scheme.theme.fontSize
             font.bold: row.bold || row.heading
+            font.capitalization: row.heading && Scheme.theme.headingCaps ? Font.AllUppercase : Font.MixedCase
+            font.letterSpacing: row.heading ? Scheme.theme.headingSpacing : 0
             elide: Text.ElideRight
         }
     }

@@ -181,6 +181,16 @@ var fontSize = 12;
 var fontSizeSmall = 11;
 // The clock's face.
 var clockFamily = fontFamily;
+// The titles of the parts of popups and pages (SectionTitle.qml): the face,
+// capitals or not, the spacing of the letters, the width of the bar before
+// them (0: none).
+var headingFamily = fontFamily;
+var headingCaps = false;
+var headingSpacing = 0;
+var headingBar = 0;
+// The colours of the Control Panel's categories, one each, in order (none:
+// Aero tells them apart by their icons).
+var categoryColours = [];
 
 // ---------------------------------------------------------------------------
 // Timing, in milliseconds. Short: the desktop this copies was quick.

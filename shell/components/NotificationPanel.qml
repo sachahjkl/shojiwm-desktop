@@ -87,12 +87,10 @@ PopupWindow {
         width: parent.width - 20
         height: 22
 
-        Text {
+        SectionTitle {
             anchors.verticalCenter: parent.verticalCenter
             text: "Notifications"
-            color: Scheme.menuHeading
-            font.family: Scheme.theme.fontFamily
-            font.pixelSize: Scheme.theme.fontSize
+            pixelSize: Scheme.theme.fontSize
         }
 
         Text {

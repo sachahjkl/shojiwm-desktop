@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid slice">
+  <!--
+    The Kernel theme's built-in desktop: a deep blue-black desk under a grid of
+    fine dots, a low glow of the captions' steel blue from the upper left, the
+    corners a little darker. Original artwork.
+  -->
+  <defs>
+    <linearGradient id="desk" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0c131b"/>
+      <stop offset="1" stop-color="#080d13"/>
+    </linearGradient>
+    <radialGradient id="glow" cx=".22" cy=".18" r=".75">
+      <stop offset="0" stop-color="#3f7fcd" stop-opacity=".16"/>
+      <stop offset=".55" stop-color="#1d3858" stop-opacity=".06"/>
+      <stop offset="1" stop-color="#1d3858" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="shade" cx=".5" cy=".5" r=".75">
+      <stop offset=".6" stop-color="#000" stop-opacity="0"/>
+      <stop offset="1" stop-color="#000" stop-opacity=".35"/>
+    </radialGradient>
+    <pattern id="dots" width="24" height="24" patternUnits="userSpaceOnUse">
+      <circle cx="12" cy="12" r="1" fill="#2a3a4c"/>
+    </pattern>
+    <pattern id="marks" width="192" height="192" patternUnits="userSpaceOnUse">
+      <circle cx="12" cy="12" r="1.4" fill="#3b5470"/>
+    </pattern>
+  </defs>
+  <rect width="1920" height="1080" fill="url(#desk)"/>
+  <rect width="1920" height="1080" fill="url(#glow)"/>
+  <rect width="1920" height="1080" fill="url(#dots)"/>
+  <rect width="1920" height="1080" fill="url(#marks)"/>
+  <rect width="1920" height="1080" fill="url(#shade)"/>
+</svg>

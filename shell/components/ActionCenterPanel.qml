@@ -62,12 +62,10 @@ PopupWindow {
         width: parent.width - 20
         spacing: 8
 
-        Text {
+        SectionTitle {
             text: Maintenance.issues.length === 0 ? "Action Center"
                 : Maintenance.issues.length + (Maintenance.issues.length === 1 ? " message" : " messages")
-            color: Scheme.menuHeading
-            font.family: Scheme.theme.fontFamily
-            font.pixelSize: Scheme.theme.fontSize
+            pixelSize: Scheme.theme.fontSize
         }
 
         Text {
