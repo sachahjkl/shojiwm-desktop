@@ -135,6 +135,7 @@ chmod -R u+w "$XDG_CONFIG_HOME/shojiwm"
 cat >"$XDG_CONFIG_HOME/shojiwm/settings.json" <<JSON
 {
   "theme": "${THEME:-aero}",
+  "lockAfterMinutes": 0,
   "startPinned": ["foot.desktop", "footclient.desktop"],
   "taskbarPinned": ["foot.desktop", "footclient.desktop"],
   "taskbarCompact": true,
