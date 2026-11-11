@@ -1,0 +1,39 @@
+[package]
+name = "shojiwm-shell"
+version = "0.1.0"
+edition = "2024"
+description = "The desktop shell of shojiwm-win7 (taskbar, Start menu, panels, Control Panel, lock screen), on AntiWebUI"
+license = "MIT"
+
+[[bin]]
+name = "shojiwm-shell"
+path = "src/main.rs"
+
+[dependencies]
+anti-webui = { git = "https://github.com/bea4dev/AntiWebUI.git", rev = "c54748e", features = [
+  "wayland-shell",
+  "shell-network",
+  "shell-battery",
+  "shell-bluetooth",
+  "shell-media",
+  "shell-notifications",
+  "shell-tray",
+  "shell-session",
+  "shell-audio",
+  "shell-apps",
+  "shell-process",
+  "shell-system",
+] }
+serde_json = "1"
+
+[profile.dev]
+opt-level = 1
+debug = "line-tables-only"
+
+[profile.dev.package."*"]
+opt-level = 3
+debug = false
+
+[profile.release]
+lto = "thin"
+strip = "debuginfo"
