@@ -34,7 +34,13 @@ import type {
   WindowSizeConstraints,
 } from "shoji_wm/types";
 import { TIMING, motion } from "./motion";
-import { TABBED_PROGRAMS, GROUPS, tabLayout, type DropTarget } from "./groups";
+import {
+  TABBED_PROGRAMS,
+  GROUPS,
+  stripLayout,
+  tabAt,
+  type DropTarget,
+} from "./groups";
 import { frameMetrics } from "./themes/choice";
 
 /** The frame rectangle of a window: the chrome, not the client surface. */
@@ -1347,13 +1353,18 @@ export class FloatingWindowManager {
         // The pointer is on this window, not on a caption with tabs.
         return null;
       }
-      const tabs = this.groups.membersPeek(window.id).length;
-      const layout = tabLayout(width, tabs + 1, metrics);
-      const index = clamp(
-        Math.floor((point.x - x - layout.left) / Math.max(1, layout.width)),
-        0,
-        tabs,
+      const members = this.groups.membersPeek(window.id);
+      const tabs = members.length;
+      const scroll = this.groups.scrollPeek(window.id);
+      const layout = stripLayout(
+        width,
+        tabs + 1,
+        metrics,
+        scroll.first,
+        members.indexOf(this.groups.activeOf(window.id)),
+        scroll.follow,
       );
+      const index = tabAt(point.x - x, layout, tabs + 1);
       return { dragged: dragged.id, target: window.id, index };
     }
     return null;
@@ -1524,13 +1535,18 @@ export class FloatingWindowManager {
     ) {
       return null;
     }
-    const others = this.groups.membersPeek(window.id).length - 1;
-    const layout = tabLayout(width, others + 1, metrics);
-    const index = clamp(
-      Math.floor((point.x - x - layout.left) / Math.max(1, layout.width)),
-      0,
-      others,
+    const members = this.groups.membersPeek(window.id);
+    const others = members.length - 1;
+    const scroll = this.groups.scrollPeek(window.id);
+    const layout = stripLayout(
+      width,
+      others + 1,
+      metrics,
+      scroll.first,
+      members.indexOf(shown.id),
+      scroll.follow,
     );
+    const index = tabAt(point.x - x, layout, others + 1);
     return { dragged: window.id, target: shown.id, index };
   }
 

@@ -54,6 +54,8 @@ export const AERO_METRICS = {
   tabsLeft: FRAME.iconLeft,
   tabsRight: FRAME.buttonRight + 103 + FRAME.iconGap,
   tabMaxWidth: 220,
+  tabMinWidth: 120,
+  arrowWidth: 22,
 };
 
 /** Widths of the three caption buttons, dark separators included. */

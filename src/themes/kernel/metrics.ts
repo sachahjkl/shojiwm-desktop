@@ -36,6 +36,8 @@ export const KERNEL_METRICS = {
   tabsLeft: KFRAME.iconLeft,
   tabsRight: 1 + 2 * KFRAME.buttonWidth + KFRAME.closeWidth + KFRAME.iconGap,
   tabMaxWidth: 220,
+  tabMinWidth: 120,
+  arrowWidth: 22,
 };
 
 /** Colours, `#rrggbbaa`. */

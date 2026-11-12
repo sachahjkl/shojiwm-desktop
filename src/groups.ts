@@ -34,19 +34,77 @@ export interface TabMetrics {
   tabsRight: number;
   /** The widest a tab gets. */
   tabMaxWidth: number;
+  /** The narrowest: past it the strip scrolls, between two arrows. */
+  tabMinWidth: number;
+  /** The width of each arrow of a strip that scrolls. */
+  arrowWidth: number;
 }
 
-/** The x of the first tab, relative to the window, and every tab's width. */
-export function tabLayout(
+/** Where a strip's tabs are: the drawing and the hit tests read the same. */
+export interface StripLayout {
+  /** The x of the first tab shown, relative to the window. */
+  left: number;
+  /** Every tab's width. */
+  width: number;
+  /** The first tab shown, and how many are shown from it. */
+  first: number;
+  visible: number;
+  /** The tabs do not all fit: the strip scrolls, between two arrows. */
+  overflow: boolean;
+}
+
+/**
+ * Where the `count` tabs of a window `windowWidth` wide are. They share the
+ * room up to `tabMaxWidth` each; under `tabMinWidth` the strip shows as many
+ * as fit from `first`, between two arrows. With `follow`, `shown` (an index)
+ * is kept in view.
+ */
+export function stripLayout(
   windowWidth: number,
   count: number,
   metrics: TabMetrics,
-): { left: number; width: number } {
+  first = 0,
+  shown = -1,
+  follow = true,
+): StripLayout {
   const room = Math.max(0, windowWidth - metrics.tabsLeft - metrics.tabsRight);
-  const width = Math.floor(
+  const natural = Math.floor(
     Math.min(metrics.tabMaxWidth, room / Math.max(1, count)),
   );
-  return { left: metrics.tabsLeft, width };
+  if (natural >= metrics.tabMinWidth || count <= 1) {
+    return {
+      left: metrics.tabsLeft,
+      width: natural,
+      first: 0,
+      visible: count,
+      overflow: false,
+    };
+  }
+  const inner = Math.max(0, room - 2 * metrics.arrowWidth);
+  const visible = Math.max(1, Math.floor(inner / metrics.tabMinWidth));
+  const width = Math.floor(Math.min(metrics.tabMaxWidth, inner / visible));
+  let from = Math.max(0, Math.min(first, count - visible));
+  if (follow && shown >= 0) {
+    if (shown < from) {
+      from = shown;
+    } else if (shown >= from + visible) {
+      from = shown - visible + 1;
+    }
+  }
+  return {
+    left: metrics.tabsLeft + metrics.arrowWidth,
+    width,
+    first: from,
+    visible,
+    overflow: true,
+  };
+}
+
+/** The tab under `x` (relative to the window) among `count`, by `layout`. */
+export function tabAt(x: number, layout: StripLayout, count: number): number {
+  const at =
+    layout.first + Math.floor((x - layout.left) / Math.max(1, layout.width));
+  return Math.max(0, Math.min(count - 1, at));
 }
 
 /**
@@ -60,6 +118,9 @@ export const TABBED_PROGRAMS: ReadonlySet<string> = new Set([
 interface Group {
   members: string[];
   active: string;
+  /** The first tab its strip shows when it scrolls, and whether it follows the shown tab. */
+  first: number;
+  follow: boolean;
 }
 
 export class WindowGroups {
@@ -126,7 +187,7 @@ export class WindowGroups {
     this.leave(dragged);
     let group = this.groupOf.get(target);
     if (!group) {
-      group = { members: [target], active: target };
+      group = { members: [target], active: target, first: 0, follow: true };
       this.groupOf.set(target, group);
       this.groups.set(target, group);
     }
@@ -161,8 +222,32 @@ export class WindowGroups {
     }
     const before = group.active;
     group.active = id;
+    group.follow = true;
     this.changed();
     return before;
+  }
+
+  /** Where the window's strip starts and whether it follows the shown tab. */
+  public scroll(id: string): { first: number; follow: boolean } {
+    const group = this.find(id, true);
+    return { first: group?.first ?? 0, follow: group?.follow ?? true };
+  }
+
+  /** `scroll`, not followed. */
+  public scrollPeek(id: string): { first: number; follow: boolean } {
+    const group = this.find(id, false);
+    return { first: group?.first ?? 0, follow: group?.follow ?? true };
+  }
+
+  /** The window's strip starts at tab `first` (an arrow was pressed). */
+  public scrollTo(id: string, first: number): void {
+    const group = this.groupOf.get(id);
+    if (!group) {
+      return;
+    }
+    group.first = Math.max(0, first);
+    group.follow = false;
+    this.changed();
   }
 
   /** The tab `step` places from the shown one, round the group. */

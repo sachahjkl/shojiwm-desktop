@@ -67,6 +67,7 @@ export const KTAB: TabStyle = {
   closeIcon: "./assets/kernel/close.svg",
   closeHover: KCOLOR.closeBottom,
   closePlate: (hover, pressed) => closePlate(hover, pressed),
+  tooltip: (text) => <Tooltip text={text} />,
 };
 
 /**
@@ -123,7 +124,7 @@ function pick(
   ) as unknown as ShaderUniformVec4;
 }
 
-const Tooltip = ({ text }: { text: string }) => (
+const Tooltip = ({ text }: { text: string | ReadonlySignal<string> }) => (
   <Popup
     trigger="hover"
     openDelay={600}

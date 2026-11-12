@@ -217,6 +217,7 @@ export const ATAB: TabStyle = {
   radius: 4,
   closeIcon: "./assets/tab-close-dark.svg",
   closeHover: "#ffffff33",
+  tooltip: (text) => <Tooltip text={text} />,
 };
 
 /** `#rrggbbaa` to the four numbers a shader uniform takes. */

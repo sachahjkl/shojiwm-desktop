@@ -21,7 +21,7 @@ import {
   type WaylandWindow,
 } from "shoji_wm";
 import type { CompositionRenderable } from "shoji_wm/types";
-import { tabLayout, type WindowGroups } from "../groups";
+import { stripLayout, type WindowGroups } from "../groups";
 import { WIN_RECT } from "../window-manager";
 import { frameMetrics } from "./choice";
 
@@ -76,6 +76,8 @@ export interface TabStyle {
    * button, from whether the pointer is on it and whether it is held; it
    * replaces `closeHover`. None: `closeHover`'s plain plate.
    */
+  /** The theme's tooltip, with a tab's title under the pointer. */
+  tooltip?: (text: ReadonlySignal<string>) => CompositionRenderable;
   closePlate?: (
     hover: ReadonlySignal<boolean>,
     pressed: ReadonlySignal<boolean>,
@@ -355,7 +357,10 @@ const Tab = ({
             height,
             background: CLEAR,
           }}
-        />
+        >
+          {/* its whole title, which a narrow tab cuts */}
+          {style.tooltip?.(window.title) ?? null}
+        </Box>
       )}
       {ghost ? null : (
         <Box
@@ -460,11 +465,43 @@ export function captionTabs(
   }
   const shown = groups.activeOf(window.id);
   // Every tab as wide as the window's width allows (the same layout the
-  // window manager hit-tests a drop with), following a resize.
+  // window manager hit-tests a drop with), following a resize. Past the
+  // narrowest a tab gets, the strip shows those that fit between two arrows.
   const metrics = frameMetrics();
   const rect = window.state[WIN_RECT];
-  const tabWidth = computed(
-    () => tabLayout(rect().width, entries.length, metrics).width,
+  const scroll = groups.scroll(window.id);
+  const shownIndex = entries.findIndex(
+    (entry) => entry.id === shown && !entry.ghost,
+  );
+  const layout = computed(() =>
+    stripLayout(
+      rect().width,
+      entries.length,
+      metrics,
+      scroll.first,
+      shownIndex,
+      scroll.follow,
+    ),
+  );
+  // Drawn again when the tabs in view change, not at each step of a resize:
+  // the widths follow by themselves.
+  const inView = computed(() => {
+    const now = layout();
+    return `${now.first}/${now.visible}/${now.overflow}`;
+  });
+  inView();
+  const now = layout.peek();
+  const tabWidth = computed(() => layout().width);
+  const shownEntries = entries.slice(now.first, now.first + now.visible);
+  const arrow = (back: boolean) => (
+    <StripArrow
+      back={back}
+      enabled={back ? now.first > 0 : now.first + now.visible < entries.length}
+      width={metrics.arrowWidth}
+      height={height}
+      style={style}
+      onPress={() => groups.scrollTo(window.id, now.first + (back ? -1 : 1))}
+    />
   );
   return (
     <Box
@@ -477,21 +514,86 @@ export function captionTabs(
         overflow: "hidden",
       }}
     >
-      {entries.map((entry) => {
-        const tab = options.windowOf(entry.id);
-        return tab ? (
-          <Tab
-            window={tab}
-            width={tabWidth}
-            height={height}
-            shown={entry.id === shown && !entry.ghost}
-            ghost={entry.ghost}
-            focused={window.isFocused}
-            style={style}
-            options={options}
-          />
-        ) : null;
-      })}
+      {[
+        now.overflow ? arrow(true) : null,
+        ...shownEntries.map((entry) => {
+          const tab = options.windowOf(entry.id);
+          return tab ? (
+            <Tab
+              window={tab}
+              width={tabWidth}
+              height={height}
+              shown={entry.id === shown && !entry.ghost}
+              ghost={entry.ghost}
+              focused={window.isFocused}
+              style={style}
+              options={options}
+            />
+          ) : null;
+        }),
+        now.overflow ? arrow(false) : null,
+      ]}
     </Box>
   );
 }
+
+/** An arrow at an end of a strip that scrolls: a step towards the tabs out of view on its side. */
+const StripArrow = ({
+  back,
+  enabled,
+  width,
+  height,
+  style,
+  onPress,
+}: {
+  back: boolean;
+  enabled: boolean;
+  width: number;
+  height: ReadonlySignal<number>;
+  style: TabStyle;
+  onPress: () => void;
+}) => {
+  const [hover, setHover] = useState(false);
+  return (
+    <Box style={{ position: "relative", width, height, flexShrink: 0 }}>
+      <Box
+        direction="row"
+        style={{
+          position: "absolute",
+          inset: 0,
+          width,
+          height,
+          alignItems: "center",
+          justifyContent: "center",
+          background: computed(() =>
+            enabled && hover() ? style.hover : CLEAR,
+          ),
+          pointerEvents: "none",
+        }}
+      >
+        <Label
+          text={back ? "\u2039" : "\u203a"}
+          style={{
+            color: enabled ? style.textIdle : style.textIdleAway,
+            fontFamily: style.fontFamily,
+            fontSize: style.fontSize + 6,
+            opacity: enabled ? 1 : 0.4,
+          }}
+        />
+      </Box>
+      {enabled ? (
+        <Button
+          onHoverChange={setHover}
+          onClick={onPress}
+          style={{
+            position: "absolute",
+            inset: 0,
+            width,
+            height,
+            background: CLEAR,
+          }}
+        />
+      ) : null}
+    </Box>
+  );
+};
