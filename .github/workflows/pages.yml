@@ -1,18 +1,14 @@
 # Publishes site/ to GitHub Pages, with CHANGELOG.md as changelog.md (read by changelog.html), the logo and the screenshots of assets/site beside it:
 # assets/site/*.png in shots/, the Kernel captures in shots/kernel/, the close-ups in shots/details/.
+# The pictures are the branch site-shots, checked out at assets/site.
 # Pages use the "GitHub Actions" source (set once: gh api -X POST repos/sachahjkl/shojiwm-desktop/pages -f build_type=workflow).
 name: Pages
 
 on:
   push:
     branches: [main]
-    paths:
-      - "site/**"
-      - "CHANGELOG.md"
-      - "assets/logo.svg"
-      - "assets/site/**"
-      - ".project/image.png"
-      - ".github/workflows/pages.yml"
+  # After a new set of pictures on site-shots (one commit, replaced each time): run on main, the
+  # only branch the github-pages environment deploys from.
   workflow_dispatch:
 
 permissions:
@@ -34,6 +30,12 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: main
+      - uses: actions/checkout@v7
+        with:
+          ref: site-shots
+          path: assets/site
       - uses: actions/configure-pages@v6
       - run: |
           mkdir -p _site/shots/kernel _site/shots/details

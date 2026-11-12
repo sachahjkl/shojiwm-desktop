@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Produce the screenshots in assets/site from a real ShojiWM session.
+# Produce the screenshots in assets/site from a real ShojiWM session. assets/site is the branch
+# site-shots, a worktree (README.md, "Screenshots"): the pictures stay out of main's history.
 #
 # The session runs on a machine with no display: an X server with no screen
 # (Xvfb) holds the window of ShojiWM's nested backend, Mesa renders in

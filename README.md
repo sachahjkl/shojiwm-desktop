@@ -87,108 +87,113 @@ are in `assets/site/`, the Kernel captures under the same names in
 `assets/site/kernel/`. The [gallery](https://desktop.froment.software/gallery.html)
 shows them all.
 
-![The desktop](assets/site/desktop.png)
+The pictures are not in the history of `main`: they are the branch `site-shots`, one commit
+replaced at each new set, checked out as a worktree (`git worktree add assets/site
+site-shots`). After a new set: commit it there with `--amend`, push it with `--force`, then
+run the Pages workflow on `main` (`gh workflow run pages.yml --ref main`).
+
+![The desktop](https://desktop.froment.software/shots/desktop.png)
 
 The wallpaper with its icons, two windows, the gadgets, and the taskbar: one
 combined button for the two `foot` windows, the pinned `footclient` as an
 icon alone since none of its windows is open, the notification area and the
 clock.
 
-![The desktop in the Kernel theme](assets/site/kernel/desktop.png)
+![The desktop in the Kernel theme](https://desktop.froment.software/shots/kernel/desktop.png)
 
 The same session in the Kernel theme: the bar at the top, the steel-blue
 caption plates, the dotted desk.
 
-![Two window frames](assets/site/frames.png)
+![Two window frames](https://desktop.froment.software/shots/frames.png)
 
 The frames: the focused window on top with a lighter outline, the other
 behind it.
 
-![Window groups: the ghost tab](assets/site/group-ghost.png)
+![Window groups: the ghost tab](https://desktop.froment.software/shots/group-ghost.png)
 
 A window dragged by its caption over the caption of another: it turns
 see-through, and a ghost tab shows where it will go.
 
-![Window groups: two tabs](assets/site/group-tabs.png)
+![Window groups: two tabs](https://desktop.froment.software/shots/group-tabs.png)
 
 After the drop: the two windows in one frame, as tabs.
 
-![The Start menu](assets/site/start-menu.png)
+![The Start menu](https://desktop.froment.software/shots/start-menu.png)
 
 The Start menu: the pinned programs on the left (`foot` and `footclient` here,
 pinned by the capture script), your folders on the right, the search box at
 the bottom and the power button with its arrow in the corner.
 
-![All Programs](assets/site/start-menu-all.png)
+![All Programs](https://desktop.froment.software/shots/start-menu-all.png)
 
 **All Programs**: every program in a folder named after its main category.
 One folder opens at a time.
 
-![The power menu](assets/site/start-menu-power.png)
+![The power menu](https://desktop.froment.software/shots/start-menu-power.png)
 
 The arrow beside the power button: log off, lock, restart, sleep, hibernate.
 
-![Running a command](assets/site/start-menu-run.png)
+![Running a command](https://desktop.froment.software/shots/start-menu-run.png)
 
 A search that finds no program offers to run the text as a command.
 
-![The launcher](assets/site/launcher-search.png)
+![The launcher](https://desktop.froment.software/shots/launcher-search.png)
 
 `Super`+`Shift`+`D`: the launcher, the Start menu's search on the focused
 screen, here while typing, with the matched letters highlighted.
 
-![The thumbnails of a taskbar button](assets/site/taskbar-thumbnail.png)
+![The thumbnails of a taskbar button](https://desktop.froment.software/shots/taskbar-thumbnail.png)
 
 Resting on a taskbar button lists the windows behind it, with their titles.
 See "Real limits" for why these cards show the program's icon.
 
-![A jump list](assets/site/jump-list.png)
+![A jump list](https://desktop.froment.software/shots/jump-list.png)
 
 A right click on the same button: the files the program opened last, then
 the program itself and "Close all windows". Nothing on the test machine
 opens files through GTK, so `tools/screenshots.sh` writes the
 `recently-used.xbel` the list is read from, naming `foot`.
 
-![A notification-area menu](assets/site/tray-menu.png)
+![A notification-area menu](https://desktop.froment.software/shots/tray-menu.png)
 
 The menu of a tray item, drawn in the same style.
 
-![Aero Snap](assets/site/snap.png)
+![Aero Snap](https://desktop.froment.software/shots/snap.png)
 
 Dragging a window against the left edge shows the rectangle it will take.
 
-![Aero Peek](assets/site/peek.png)
+![Aero Peek](https://desktop.froment.software/shots/peek.png)
 
 Aero Peek: the pointer rests on the show-desktop strip, and the two windows
 are left as glass outlines over the wallpaper.
 
-![The calendar](assets/site/calendar.png)
+![The calendar](https://desktop.froment.software/shots/calendar.png)
 
 The calendar over the clock.
 
-![Alt+Tab](assets/site/alt-tab.png)
+![Alt+Tab](https://desktop.froment.software/shots/alt-tab.png)
 
 Alt+Tab: a panel of live thumbnails, the selected window lit.
 
-![The Control Panel](assets/site/control-panel.png)
+![The Control Panel](https://desktop.froment.software/shots/control-panel.png)
 
 The Control Panel's home page.
 
-![The Control Panel in the Kernel theme](assets/site/kernel/control-panel.png)
+![The Control Panel in the Kernel theme](https://desktop.froment.software/shots/kernel/control-panel.png)
 
 The same page in Kernel: each category in its own colour.
 
-![The Control Panel in dark](assets/site/control-panel-dark.png)
+![The Control Panel in dark](https://desktop.froment.software/shots/control-panel-dark.png)
 
 Light or dark: the system's preference. The Control Panel, the menus and the
 Start menu follow it.
 
-![The lock screen](assets/site/lock-screen-wrong.png)
+![The lock screen](https://desktop.froment.software/shots/lock-screen-wrong.png)
 
 The lock screen, after a wrong password. The name is the test machine's;
 yours comes from your account.
 
-![The lock screen in dark](assets/site/lock-screen-dark.png)
+![The lock screen in dark](https://desktop.froment.software/shots/lock-screen-dark.png)
 
 In dark: the night wallpaper, the frame in smoked glass, a dark field and a
 darker bead. `shojiwm-shell msg appearance setDark true` (or `toggle`)
@@ -200,12 +205,12 @@ The Aero captures, cut up and blown up eight times with no smoothing, so
 every pixel of the finish can be checked. `assets/site/details/` holds the
 whole set; `tools/details.py` makes them.
 
-|                                                               |                                                             |
-| ------------------------------------------------------------- | ----------------------------------------------------------- |
-| ![Top right corner](assets/site/details/corner-top-right.png) | ![Top left corner](assets/site/details/corner-top-left.png) |
-| The caption buttons hanging from the frame's own outline.     | The rounded top corner: dark line, light line, glass.       |
-| ![The title](assets/site/details/caption-title.png)           | ![The start orb](assets/site/details/taskbar-orb.png)       |
-| Dark text on the glass.                                       | The orb in its seat on the taskbar.                         |
+|                                                                                          |                                                                                        |
+| ---------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| ![Top right corner](https://desktop.froment.software/shots/details/corner-top-right.png) | ![Top left corner](https://desktop.froment.software/shots/details/corner-top-left.png) |
+| The caption buttons hanging from the frame's own outline.                                | The rounded top corner: dark line, light line, glass.                                  |
+| ![The title](https://desktop.froment.software/shots/details/caption-title.png)           | ![The start orb](https://desktop.froment.software/shots/details/taskbar-orb.png)       |
+| Dark text on the glass.                                                                  | The orb in its seat on the taskbar.                                                    |
 
 ## Where the numbers come from
 
