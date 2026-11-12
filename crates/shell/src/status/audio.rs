@@ -3,8 +3,8 @@
 //! device at the top, a vertical slider, the mute button, and the link to the Sound window.
 
 use super::{
-    Panel, bar_cell, bar_picture, footer, icon_width, is_open, lit_row_style, one_line, panel_link,
-    panel_popup, small_text, toggle,
+    Panel, bar_cell, bar_picture, click_or_settings, footer, icon_width, is_open, lit_row_style,
+    one_line, panel_link, panel_popup, small_text,
 };
 use crate::paths::asset;
 use crate::theme::{Align, away_from_bar, scheme, theme};
@@ -119,9 +119,11 @@ pub fn icon(output_name: &str) -> Div {
             || asset(&format!("speaker-{}.svg", level())),
             2.0,
         ))
-        .on_click(move |_| {
+        .on_click(move |e| {
             set_devices_open(false);
-            toggle(&opener, Panel::Volume);
+            click_or_settings(e, &opener, Panel::Volume, || {
+                crate::sound::open_page(crate::sound::Page::Playback)
+            });
         })
         .on_aux_click(move |e| match e.button {
             Some(PointerButton::Middle) => toggle_mute(),

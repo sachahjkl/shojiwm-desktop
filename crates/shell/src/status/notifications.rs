@@ -9,8 +9,8 @@
 //! and a new session.
 
 use super::{
-    ERROR_RED, Panel, bar_cell, bar_picture, body_text, footer, icon_or, icon_width, is_open,
-    one_line, panel_link, panel_popup, small_text, toggle,
+    ERROR_RED, Panel, bar_cell, bar_picture, body_text, click_or_settings, footer, icon_or,
+    icon_width, is_open, one_line, panel_link, panel_popup, small_text,
 };
 use crate::paths::{asset, state_dir};
 use crate::theme::{Align, item_radius, scheme, theme};
@@ -341,7 +341,11 @@ pub fn icon(output_name: &str) -> Div {
             2.0,
         ))
         .child(count)
-        .on_click(move |_| toggle(&opener, Panel::Notifications))
+        .on_click(move |e| {
+            click_or_settings(e, &opener, Panel::Notifications, || {
+                crate::control_panel::open_page("notifications")
+            })
+        })
         .on_aux_click(move |e| match e.button {
             Some(PointerButton::Middle) => set_do_not_disturb(!untrack(do_not_disturb)),
             Some(PointerButton::Secondary) => menu.set(!menu.get_untracked()),

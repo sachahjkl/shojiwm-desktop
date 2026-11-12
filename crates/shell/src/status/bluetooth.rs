@@ -6,8 +6,8 @@
 //! link at the bottom opens the Bluetooth settings (blueman-manager, whose agent asks for PINs).
 
 use super::{
-    Panel, bar_cell, bar_picture, body_text, divider, footer, icon_or, icon_width, is_open,
-    lit_row_style, one_line, panel_link, panel_popup, small_text, toggle,
+    Panel, bar_cell, bar_picture, body_text, click_or_settings, divider, footer, icon_or,
+    icon_width, is_open, lit_row_style, one_line, panel_link, panel_popup, small_text,
 };
 use crate::paths::asset;
 use crate::theme::{Align, scheme};
@@ -59,7 +59,11 @@ pub fn icon(output_name: &str) -> Div {
             },
             0.0,
         ))
-        .on_click(move |_| toggle(&opener, Panel::Bluetooth))
+        .on_click(move |e| {
+            click_or_settings(e, &opener, Panel::Bluetooth, || {
+                crate::control_panel::open_page("devices")
+            })
+        })
         .on_aux_click(move |e| {
             if e.button == Some(PointerButton::Secondary) {
                 menu.set(!menu.get_untracked());

@@ -38,12 +38,14 @@ export const KTAB: TabStyle = {
   idle: KCOLOR.tabIdle,
   idleAway: KCOLOR.tabIdleAway,
   hover: KCOLOR.tabHover,
-  separator: "#00000000",
-  edge: KCOLOR.tabEdge,
+  // Flat plates, no outline: the accent line alone marks the shown tab, a
+  // thin line parts the others.
+  separator: "#ffffff1f",
+  edge: "#00000000",
   accent: KCOLOR.tabAccent,
   accentAway: KCOLOR.tabAccentAway,
   accentHeight: 2,
-  light: KCOLOR.tabLight,
+  light: "#00000000",
   // the shown tab stands 2 px above the others and covers the dark line under the caption
   top: 3,
   idleTop: 5,

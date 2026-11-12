@@ -68,12 +68,10 @@ export const KCOLOR = {
   tabActiveAway: "#29313aff",
   tabAccent: "#6aa8f0ff",
   tabAccentAway: "#5b6876ff",
-  tabLight: "#ffffff2e",
-  /** The other tabs: recessed plates, darker than the caption, outlined. */
+  /** The other tabs: recessed plates, darker than the caption. */
   tabIdle: "#14263aff",
   tabIdleAway: "#13181eff",
   tabHover: "#1f3a58ff",
-  tabEdge: "#060c14ff",
   tabText: "#b9c6d4ff",
   tabTextAway: "#aab5c1ff",
   tabTextIdleAway: "#8d99a6ff",

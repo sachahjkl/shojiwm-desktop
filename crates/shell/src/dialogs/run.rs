@@ -11,15 +11,21 @@
 //! a line does follows from its first word: an address opens, an executable file or a program
 //! of `PATH` runs (the whole line, through the shell), another path that exists opens. A
 //! command whose program cannot be found stays in the field, with a message under it.
+//!
+//! A drag on the caption moves the dialog, as a window, and it opens there again on that screen
+//! (`place`). The suggestions open over the field when their rows do not fit under it; the best
+//! one is then at the bottom, next to the field, and Up goes on to the next one.
 
 mod completion;
+mod place;
 
-use super::frame::{button_band, dialog_frame, dialog_page};
+use super::frame::{button_band, caption_grip, dialog_frame, dialog_page};
 use super::run_close;
 use crate::paths::{asset, state_dir};
 use crate::theme::{bar_at_top, item_radius, scheme, theme};
 use crate::ui::{cp_button, dark_look, font, ink_asset, marked_text, popup_frame, shell_icon};
 use anti_webui::prelude::*;
+use anti_webui::shell::prelude::*;
 use completion::{Entry, Kind, Suggestion};
 use serde_json::Value;
 use std::cell::Cell;
@@ -165,6 +171,12 @@ struct State {
     /// The names of the folder last read for a path, and the folder being read.
     listing: Signal<Option<(PathBuf, Rc<Vec<Entry>>)>>,
     listing_wanted: Signal<Option<PathBuf>>,
+    /// The field with its arrow, for where it is on the screen.
+    combo: NodeRef,
+    /// The size of the screen, in logical pixels: the layer covers all of it.
+    screen: (f32, f32),
+    /// The suggestions open under the field, else over it.
+    below: Signal<bool>,
 }
 
 impl State {
@@ -222,8 +234,38 @@ impl State {
             completion::rank(&query, self.candidates())
         };
         found.retain(|s| s.app.is_some() || s.text != query);
+        self.choose_side();
         self.chosen.set(None);
         self.suggestions.set(found);
+    }
+
+    /// Opens the suggestions under the field when the most rows they show fit there, else over
+    /// it. The most rows, not the rows now: the side stays the same while typing.
+    fn choose_side(&self) {
+        let Some(field) = self.combo.logical_rect() else {
+            return;
+        };
+        let t = untrack(theme);
+        let list = place::list_height(completion::SHOWN, t.popup_item_height);
+        self.below.set(place::list_below(
+            field.y,
+            field.y + field.height,
+            list,
+            self.screen.1,
+            t.taskbar_height,
+            untrack(bar_at_top),
+        ));
+    }
+
+    /// Moves the pick in the suggestions: `further` to the next one, else back to the field.
+    fn step(&self, further: bool) {
+        let chosen = self.chosen.get_untracked();
+        let shown = self.suggestions.with_untracked(Vec::len);
+        self.chosen.set(if further {
+            Some(chosen.map_or(0, |i| (i + 1).min(shown.saturating_sub(1))))
+        } else {
+            chosen.and_then(|i| i.checked_sub(1))
+        });
     }
 
     /// The history, the programs, then the commands of `PATH`, in that order for the ties.
@@ -296,7 +338,13 @@ impl State {
 }
 
 /// The dialog over its screen: a click outside of it closes it.
-pub fn view() -> Div {
+pub fn view(output: Output) -> Div {
+    let screen = untrack(|| {
+        output
+            .current()
+            .map_or(output.logical_size, |o| o.logical_size)
+    });
+    let screen = (screen.width as f32, screen.height as f32);
     let history = load_history();
     let first = history.first().cloned().unwrap_or_default();
     let state = State {
@@ -313,6 +361,9 @@ pub fn view() -> Div {
         commands: signal(Rc::new(Vec::new())),
         listing: signal(None),
         listing_wanted: signal(None),
+        combo: node_ref(),
+        screen,
+        below: signal(true),
     };
     task(|| completion::scan_commands(&completion::path_dirs())).then(move |names| {
         if state.query.is_alive() {
@@ -395,15 +446,55 @@ pub fn view() -> Div {
             ]),
         ));
 
+    // Where it is: the place kept for this screen, else above the Start button. A drag on the
+    // caption moves it and keeps the new place.
+    let name = output.name.clone();
+    let at: Signal<Option<(f32, f32)>> = signal(place::load(&name));
+    let frame_ref = node_ref();
+    let grab_offset: Rc<Cell<(f32, f32)>> = Rc::default();
+    let grabbed = move |e: &GrabEvent| {
+        let scale = window_scale().as_f32();
+        let pointer = (e.position.x / scale, e.position.y / scale);
+        let Some(rect) = frame_ref.logical_rect() else {
+            return;
+        };
+        match e.phase {
+            GrabPhase::Start => {
+                grab_offset.set((pointer.0 - rect.x, pointer.1 - rect.y));
+            }
+            GrabPhase::Move => {
+                let off = grab_offset.get();
+                at.set(Some(place::clamp(
+                    (pointer.0 - off.0, pointer.1 - off.1),
+                    (rect.width, rect.height),
+                    screen,
+                )));
+            }
+            GrabPhase::End | GrabPhase::Cancel => {
+                if let Some(now) = at.get_untracked() {
+                    place::save(&name, now);
+                }
+                // The field takes the keys back, once the press is over: typing goes on where
+                // it was.
+                let field = state.field;
+                request_frame(move |_| field.focus());
+            }
+        }
+    };
     let frame = dialog_frame("Run", WIDTH, page)
+        .child(caption_grip(grabbed))
+        .node_ref(frame_ref)
         .absolute()
-        .left(MARGIN)
-        .dyn_style(|s| {
-            let away = theme().taskbar_height + MARGIN;
-            if bar_at_top() {
-                s.top(away)
-            } else {
-                s.bottom(away)
+        .dyn_style(move |s| match at.get() {
+            Some((x, y)) => s.left(x).top(y),
+            None => {
+                let away = theme().taskbar_height + MARGIN;
+                let s = s.left(MARGIN);
+                if bar_at_top() {
+                    s.top(away)
+                } else {
+                    s.bottom(away)
+                }
             }
         })
         // A press in the window keeps it, and closes the lists.
@@ -492,7 +583,6 @@ fn open_row(state: State, last_length: Rc<Cell<usize>>, accept: Rc<dyn Fn()>) ->
             let count = state.history.with_untracked(Vec::len);
             let open = state.list_open.get_untracked();
             let suggesting = untrack(|| state.suggesting());
-            let shown = state.suggestions.with_untracked(Vec::len);
             let chosen = state.chosen.get_untracked();
             match e.key {
                 Key::Named(NamedKey::Enter) => {
@@ -517,7 +607,8 @@ fn open_row(state: State, last_length: Rc<Cell<usize>>, accept: Rc<dyn Fn()>) ->
                     if open {
                         state.pick.update(|p| *p = p.saturating_sub(1));
                     } else if suggesting {
-                        state.chosen.set(chosen.and_then(|i| i.checked_sub(1)));
+                        // Over the field the list is upside down: Up goes on to the next one.
+                        state.step(!state.below.get_untracked());
                     }
                 }
                 Key::Named(NamedKey::ArrowDown) => {
@@ -526,9 +617,7 @@ fn open_row(state: State, last_length: Rc<Cell<usize>>, accept: Rc<dyn Fn()>) ->
                             .pick
                             .update(|p| *p = (*p + 1).min(count.saturating_sub(1)));
                     } else if suggesting {
-                        state
-                            .chosen
-                            .set(Some(chosen.map_or(0, |i| (i + 1).min(shown - 1))));
+                        state.step(state.below.get_untracked());
                     } else {
                         state.pick.set(0);
                         state.list_open.set(count > 0);
@@ -580,6 +669,7 @@ fn open_row(state: State, last_length: Rc<Cell<usize>>, accept: Rc<dyn Fn()>) ->
         );
 
     let combo = div()
+        .node_ref(state.combo)
         .flex()
         .flex_row()
         .items_center()
@@ -634,7 +724,13 @@ fn suggestion_list(state: State, run: Rc<dyn Fn(usize)>) -> Show {
                 .absolute()
                 .left(0.0)
                 .right(0.0)
-                .top(FIELD_HEIGHT + 2.0)
+                .dyn_style(move |s| {
+                    if state.below.get() {
+                        s.top(FIELD_HEIGHT + place::LIST_GAP)
+                    } else {
+                        s.bottom(FIELD_HEIGHT + place::LIST_GAP)
+                    }
+                })
                 .z_index(10)
                 .px(1.0)
                 .py(2.0)
@@ -648,7 +744,14 @@ fn suggestion_list(state: State, run: Rc<dyn Fn(usize)>) -> Show {
                         .enumerate()
                         .map(|(i, s)| suggestion_row(state, i, s, run.clone()))
                         .collect();
-                    div().flex().flex_col().children(rows)
+                    // Over the field, the best one is at the bottom, next to it.
+                    let column = div().flex();
+                    if state.below.get() {
+                        column.flex_col()
+                    } else {
+                        column.flex_col_reverse()
+                    }
+                    .children(rows)
                 }))
         },
     )

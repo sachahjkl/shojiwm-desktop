@@ -6,8 +6,8 @@
 //! Panel.
 
 use super::{
-    ERROR_RED, Panel, badge, bar_cell, bar_picture, body_text, divider, footer, icon_width,
-    is_open, lit_row_style, one_line, panel_link, panel_popup, small_text, toggle,
+    ERROR_RED, Panel, badge, bar_cell, bar_picture, body_text, click_or_settings, divider, footer,
+    icon_width, is_open, lit_row_style, one_line, panel_link, panel_popup, small_text,
 };
 use crate::paths::asset;
 use crate::theme::{Align, away_from_bar, field_radius, scheme, theme};
@@ -131,7 +131,11 @@ pub fn icon(output_name: &str) -> Div {
     let cell = bar_cell(icon_width, 2.0, active)
         .node_ref(anchor)
         .child(picture)
-        .on_click(move |_| toggle(&opener, Panel::Network))
+        .on_click(move |e| {
+            click_or_settings(e, &opener, Panel::Network, || {
+                crate::control_panel::open_page("network")
+            })
+        })
         .on_aux_click(move |e| {
             if e.button == Some(PointerButton::Secondary) {
                 menu.set(!menu.get_untracked());

@@ -177,6 +177,17 @@ pub fn install() {
 
 // ----- the pieces the icons and panels share ---------------------------------------------------
 
+/// A click on an icon of the notification area opens or closes its panel; a double click opens
+/// its settings instead (the Control Panel's page, the Sound window), as Windows does.
+fn click_or_settings(e: &PointerEvent, output_name: &str, panel: Panel, settings: impl Fn()) {
+    if e.click_count >= 2 {
+        close(panel);
+        settings();
+    } else {
+        toggle(output_name, panel);
+    }
+}
+
 /// The white veil over an icon of the bar: stronger while its panel is open than under the
 /// pointer (QML: a white rectangle at these opacities).
 const VEIL_OPEN: f32 = 0.22;

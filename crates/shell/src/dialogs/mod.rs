@@ -164,7 +164,7 @@ pub fn install() {
             &output,
             move || slot(&RUN_ON).with(|o| *o == here),
             || dialog_layer("shojiwm-desktop-run"),
-            |_| run::view(),
+            run::view,
         );
 
         let here = name.clone();

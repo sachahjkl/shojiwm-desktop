@@ -66,6 +66,20 @@ pub fn dialog_frame(caption: &'static str, width: f32, page: Div) -> Div {
         .child(page.mx(7.0).mb(8.0))
 }
 
+/// A strip over the caption of a frame that moves it, as a window's title bar does: `grabbed`
+/// gets the drag. Add it as a child of a frame that is placed (`absolute`).
+pub fn caption_grip(grabbed: impl Fn(&GrabEvent) + 'static) -> Div {
+    div()
+        .absolute()
+        .left(0.0)
+        .right(0.0)
+        .top(0.0)
+        .h(CAPTION_HEIGHT - 1.0)
+        .cursor(CursorIcon::Default)
+        .grab_threshold(0.0)
+        .on_grab(grabbed)
+}
+
 /// The white page in the frame: a column, outlined.
 pub fn dialog_page() -> Div {
     div()

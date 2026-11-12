@@ -4,8 +4,8 @@
 //! its panel opens.
 
 use super::{
-    Panel, badge, bar_cell, bar_picture, body_text, collect, every, icon_width, is_open, one_line,
-    panel_popup, shell_quote, small_text, toggle,
+    Panel, badge, bar_cell, bar_picture, body_text, click_or_settings, collect, every, icon_width,
+    is_open, one_line, panel_popup, shell_quote, small_text,
 };
 use crate::paths::asset;
 use crate::theme::{Align, item_radius, scheme, theme};
@@ -184,7 +184,11 @@ pub fn icon(output_name: &str) -> Div {
     bar_cell(icon_width, 2.0, active)
         .node_ref(anchor)
         .child(picture)
-        .on_click(move |_| toggle(&opener, Panel::ActionCenter))
+        .on_click(move |e| {
+            click_or_settings(e, &opener, Panel::ActionCenter, || {
+                crate::control_panel::open_page("about")
+            })
+        })
         .on_aux_click(move |e| {
             if e.button == Some(PointerButton::Secondary) {
                 menu.set(!menu.get_untracked());
