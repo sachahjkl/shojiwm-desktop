@@ -19,7 +19,7 @@ mod parts;
 mod screen;
 
 pub(crate) use crate::account::{accounts_service_picture, full_name, login_name, user_picture};
-pub(crate) use parts::{MENU_TEXT, logon_menu, logon_menu_row};
+pub(crate) use parts::{logon_menu, logon_menu_row, logon_menu_text};
 pub(crate) use screen::{Account, Auth, CORNER_MARGIN, LOGON_BLUE, logon_screen};
 
 use crate::settings::settings;

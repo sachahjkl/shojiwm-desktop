@@ -19,8 +19,8 @@
 mod greetd;
 
 use crate::lock::{
-    Account, Auth, CORNER_MARGIN, LOGON_BLUE, MENU_TEXT, accounts_service_picture, full_name,
-    logon_menu, logon_menu_row, logon_screen,
+    Account, Auth, CORNER_MARGIN, LOGON_BLUE, accounts_service_picture, full_name, logon_menu,
+    logon_menu_row, logon_menu_text, logon_screen,
 };
 use crate::paths::{asset, state_dir};
 use crate::theme::{corner, theme};
@@ -340,9 +340,10 @@ fn session_picker(greeter: Greeter) -> Div {
                             .bottom(0.0)
                             .flex()
                             .items_center()
-                            .text_color(MENU_TEXT)
                             .dyn_style(move |st| {
-                                let st = st.text_size(theme().font_size - 3.0);
+                                let st = st
+                                    .text_size(theme().font_size - 3.0)
+                                    .text_color(logon_menu_text());
                                 if greeter.session().is_some_and(|s| s.id == chosen) {
                                     st
                                 } else {

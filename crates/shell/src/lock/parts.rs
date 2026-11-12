@@ -7,7 +7,7 @@
 //! scheme's. Their corners follow the theme (`corner`).
 
 use crate::paths::asset;
-use crate::theme::{corner, item_radius, popup_radius, theme};
+use crate::theme::{corner, item_radius, popup_radius, scheme, theme};
 use crate::ui::{dark_look, font, vertical_gradient};
 use anti_webui::prelude::*;
 use std::path::PathBuf;
@@ -321,14 +321,27 @@ pub fn power_split_button(on_power: impl Fn() + 'static, on_menu: impl Fn() + 's
 /// text, and a row under the pointer with its border.
 const MENU_FILL: Color = rgba(0xf4f9ffe6);
 const MENU_OUTLINE: Color = rgba(0x0000006e);
-pub const MENU_TEXT: Color = rgb(0x10283c);
+const MENU_TEXT: Color = rgb(0x10283c);
 const ROW_HOT: Color = rgba(0x9ad0f766);
 const ROW_HOT_BORDER: Color = rgba(0xcfe9ffb3);
 /// The height of a row.
 const ROW_HEIGHT: f32 = 26.0;
 
-/// The box of the menu: pale glass with a dark outline. A column; add the rows.
+/// The text of the menu: dark on Aero's pale glass, the theme's on Kernel's menus.
+pub fn logon_menu_text() -> Color {
+    if crate::theme::is_kernel() {
+        scheme().text
+    } else {
+        MENU_TEXT
+    }
+}
+
+/// The box of the menu: pale glass with a dark outline in Aero, as Windows 7's log-on screen
+/// draws it; the theme's menus' in Kernel. A column; add the rows.
 pub fn logon_menu() -> Div {
+    if untrack(crate::theme::is_kernel) {
+        return crate::ui::popup_frame().p(4.0);
+    }
     div()
         .flex()
         .flex_col()
@@ -363,19 +376,22 @@ pub fn logon_menu_row(
         .pl(indent - 1.0)
         .pr(16.0)
         .whitespace_nowrap()
-        .text_color(MENU_TEXT)
         .interaction(ui)
         .access(|a| a.role(Role::MenuItem))
         .on_click(move |_| on_click())
         .dyn_style(move |s| {
             let hot = ui.hovered();
+            // Kernel: the theme's menu rows; Aero: Windows 7's light blue.
+            let (fill, border) = if crate::theme::is_kernel() {
+                let c = scheme();
+                (c.hover, c.selection_border)
+            } else {
+                (ROW_HOT, ROW_HOT_BORDER)
+            };
             s.rounded(item_radius())
-                .bg(if hot { ROW_HOT } else { Color::TRANSPARENT })
-                .border_color(if hot {
-                    ROW_HOT_BORDER
-                } else {
-                    Color::TRANSPARENT
-                })
+                .text_color(logon_menu_text())
+                .bg(if hot { fill } else { Color::TRANSPARENT })
+                .border_color(if hot { border } else { Color::TRANSPARENT })
         })
         .child(text(label))
 }
