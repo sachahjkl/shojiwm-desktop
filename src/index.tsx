@@ -190,7 +190,7 @@ function openShutdownDialog(): void {
 function closeFromFrame(window: WaylandWindow): void {
   const members = WINDOWS.groups.membersPeek(window.id);
   const identifiers = members
-    .map((id) => WINDOWS.windowById(id)?.toplevelIdentifier())
+    .map((id) => WINDOWS.windowById(id)?.foreignToplevelId())
     .filter((id): id is string => typeof id === "string");
   if (members.length < 2 || identifiers.length !== members.length) {
     window.close();

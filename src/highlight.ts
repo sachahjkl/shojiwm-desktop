@@ -71,7 +71,7 @@ export function setHighlight(
   const window =
     identifier === null
       ? null
-      : (windows.find((w) => w.toplevelIdentifier() === identifier) ?? null);
+      : (windows.find((w) => w.foreignToplevelId() === identifier) ?? null);
   const shown = window && !window.state[WIN_MINIMIZED]() ? window : null;
   if (shown === current) {
     return shown !== null;
