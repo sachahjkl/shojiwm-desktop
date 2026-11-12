@@ -31,48 +31,23 @@ fn entries() -> Signal<HashMap<String, LauncherEntry>> {
         cell.get().unwrap_or_else(|| {
             let (entries, _) = create_root(|| {
                 let entries = signal(HashMap::new());
-                watch(ui_channel(move |line: String| update(entries, &line)));
+                crate::background::watch(
+                    "busctl",
+                    &[
+                        "--user",
+                        "monitor",
+                        "--json=short",
+                        "--match",
+                        "type='signal',interface='com.canonical.Unity.LauncherEntry'",
+                    ],
+                    move |line| update(entries, &line),
+                );
                 entries
             });
             cell.set(Some(entries));
             entries
         })
     })
-}
-
-/// Starts `busctl` on a thread of its own (starting a process is a system call, kept off the UI
-/// thread) and posts each line it prints. `busctl` ends with the shell: its next line finds the
-/// pipe closed.
-fn watch(to_ui: UiSender<String>) {
-    let _ = std::thread::Builder::new()
-        .name("launcher entries".into())
-        .spawn(move || {
-            use std::io::BufRead;
-            let child = std::process::Command::new("busctl")
-                .args([
-                    "--user",
-                    "monitor",
-                    "--json=short",
-                    "--match",
-                    "type='signal',interface='com.canonical.Unity.LauncherEntry'",
-                ])
-                .stdin(std::process::Stdio::null())
-                .stdout(std::process::Stdio::piped())
-                .stderr(std::process::Stdio::null())
-                .spawn();
-            let Ok(mut child) = child else {
-                return;
-            };
-            if let Some(out) = child.stdout.take() {
-                for line in std::io::BufReader::new(out).lines() {
-                    let Ok(line) = line else {
-                        break;
-                    };
-                    to_ui.send(line);
-                }
-            }
-            let _ = child.wait();
-        });
 }
 
 /// Starts watching, outside of any surface. Call once, from the root.

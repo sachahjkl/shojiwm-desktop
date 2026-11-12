@@ -325,30 +325,23 @@ fn set_do_not_disturb(on: bool) {
 /// as the shell runs.
 pub fn install() {
     let h = history();
-    // The processes live as long as the root they are made in: the whole shell.
-    let (_, _) = create_root(move || {
-        let monitor = Process::new("busctl")
-            .args([
-                "--user",
-                "monitor",
-                "--json=short",
-                "--match",
-                "type='method_call',interface='org.freedesktop.Notifications',member='Notify'",
-            ])
-            .keep(1)
-            .spawn();
-        monitor.on_line(add);
-        // Hokum prints its Do not disturb at start and at each change.
-        let dnd = Process::new("hokum")
-            .args(["dnd", "--watch", "--json"])
-            .keep(1)
-            .spawn();
-        dnd.on_line(move |line| {
-            if let Ok(v) = serde_json::from_str::<Value>(line) {
-                h.do_not_disturb
-                    .set(v.get("dnd") == Some(&Value::Bool(true)));
-            }
-        });
+    crate::background::watch(
+        "busctl",
+        &[
+            "--user",
+            "monitor",
+            "--json=short",
+            "--match",
+            "type='method_call',interface='org.freedesktop.Notifications',member='Notify'",
+        ],
+        |line| add(&line),
+    );
+    // Hokum prints its Do not disturb at start and at each change.
+    crate::background::watch("hokum", &["dnd", "--watch", "--json"], move |line| {
+        if let Ok(v) = serde_json::from_str::<Value>(&line) {
+            h.do_not_disturb
+                .set(v.get("dnd") == Some(&Value::Bool(true)));
+        }
     });
 }
 

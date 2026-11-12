@@ -249,16 +249,16 @@ fn watch(model: &'static Model) {
         || {
             let folder = read_folder();
             let _ = std::fs::create_dir_all(&folder);
+            let _ = std::fs::create_dir_all(trash_files());
             folder
         },
         move |folder| {
-            let changes = Process::new(GIO).arg("monitor").arg(&folder).spawn();
-            changes.on_line(move |_| rescan_later());
+            crate::background::watch_folder(&folder, rescan_later);
             model.folder.set(Some(folder));
             rescan_now();
             count_trash();
-            let trash = Process::new(GIO).args(["monitor", "trash:///"]).spawn();
-            trash.on_line(move |_| count_trash_later());
+            // The Recycle Bin's files: the folder the trash of the home's disk keeps them in.
+            crate::background::watch_folder(&trash_files(), count_trash_later);
             // A shortcut takes the icon of its program when the programs are read: read the
             // folder again once they are.
             let loaded = memo(|| apps().loaded());
@@ -276,6 +276,14 @@ fn watch(model: &'static Model) {
 /// Whether the Recycle Bin has anything in it, counted on a worker. `gio` counts what is in
 /// every trash folder (`~/.local/share/Trash`, and a `.Trash-<uid>` at the top of each other
 /// mount).
+/// The folder of the home's Recycle Bin, made if it is not there yet (so it can be watched).
+fn trash_files() -> std::path::PathBuf {
+    let data = std::env::var_os("XDG_DATA_HOME")
+        .map(std::path::PathBuf::from)
+        .unwrap_or_else(|| crate::apps::home_dir().join(".local/share"));
+    data.join("Trash/files")
+}
+
 fn count_trash() {
     let model = model();
     off_thread_in(

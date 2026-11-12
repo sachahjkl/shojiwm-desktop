@@ -2002,6 +2002,7 @@ name = "shojiwm-shell"
 version = "0.2.0"
 dependencies = [
  "anti-webui",
+ "libc",
  "nucleo-matcher",
  "serde_json",
 ]
