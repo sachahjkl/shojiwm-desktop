@@ -434,7 +434,9 @@ export class FloatingWindowManager {
     if (remembered) {
       return remembered;
     }
-    const area = this.workArea(this.outputOf(window));
+    // A new window opens on the screen the user is on (the pointer's), not on the one
+    // ShojiWM first mapped it on.
+    const area = this.workArea(this.outputName());
     if (!area) {
       return natural;
     }
@@ -738,7 +740,11 @@ export class FloatingWindowManager {
     }
     this.raise(window);
     this.mru = [window.id, ...this.mru.filter((id) => id !== window.id)];
-    this.currentOutput = this.outputOf(window);
+    // A window not placed yet is on whatever output ShojiWM mapped it on, not the user's:
+    // taken as the user's screen, it would send its own placement there.
+    if (window.state[WIN_PLACED].peek()) {
+      this.currentOutput = this.outputOf(window);
+    }
   }
 
   public onPointerMove(event: PointerMoveEvent): void {
