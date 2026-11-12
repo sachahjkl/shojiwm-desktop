@@ -62,6 +62,49 @@
             '';
           };
 
+          # The programs the desktop opens for its roles: by default the author's
+          # (inspecteur, classeur, papier, cliche). Each package is installed;
+          # null installs none and keeps only the command.
+          programs = let
+            role = description: package: command:
+              lib.mkOption {
+                inherit description;
+                default = {};
+                type = lib.types.submodule {
+                  options = {
+                    package = lib.mkOption {
+                      type = lib.types.nullOr lib.types.package;
+                      default = package;
+                      defaultText = lib.literalMD "the author's program, where it is built (x86_64-linux)";
+                      description = "The program's package, installed with the session; null for none.";
+                    };
+                    command = lib.mkOption {
+                      type = lib.types.str;
+                      default = command;
+                      description = "The command the desktop runs for this role.";
+                    };
+                  };
+                };
+              };
+            ours = name: inputs.${name}.packages.${pkgs.stdenv.hostPlatform.system}.default or null;
+          in {
+            taskManager = role "The task manager: Ctrl+Shift+Escape, the taskbar's and the clock's menus." (ours "inspecteur") "uwsm app -- inspecteur";
+            systemMonitor = role "What the CPU Meter gadget's button opens." null "uwsm app -- inspecteur --section performance";
+            fileManager = role "The file manager: the desktop's folders, Computer, the keys that open a folder." (ours "classeur") "uwsm app -- classeur";
+            clipboard = role "The clipboard history: Super+V." (ours "papier") "papier toggle";
+            screenCapture = role ''
+              The screen capture. An empty command: the program binds Print
+              Screen itself (through the GlobalShortcuts portal), as cliche
+              does, and the compositor leaves the key to it.
+            '' (ours "cliche") "";
+          };
+
+          fileManagerEntry = lib.mkOption {
+            type = lib.types.nullOr lib.types.str;
+            default = "classeur.desktop";
+            description = "The desktop entry that opens folders (inode/directory) in this session only; null leaves the system's choice.";
+          };
+
           environment = lib.mkOption {
             type = lib.types.attrsOf lib.types.str;
             default = {};
@@ -117,6 +160,15 @@
               XKB_DEFAULT_OPTIONS = config.services.xserver.xkb.options;
               # The dconf profile below: the Aero icon theme in this session.
               DCONF_PROFILE = "shojiwm";
+              SHOJIWM_DESKTOP_TASK_MANAGER = cfg.programs.taskManager.command;
+              SHOJIWM_DESKTOP_SYSTEM_MONITOR = cfg.programs.systemMonitor.command;
+              SHOJIWM_DESKTOP_FILE_MANAGER = cfg.programs.fileManager.command;
+              SHOJIWM_DESKTOP_CLIPBOARD = cfg.programs.clipboard.command;
+              # "none": the compositor binds no Print Screen key (src/index.tsx).
+              SHOJIWM_DESKTOP_SCREENSHOT =
+                if cfg.programs.screenCapture.command == ""
+                then "none"
+                else cfg.programs.screenCapture.command;
             };
 
             # One account: it is the one the log-on screen logs on.
@@ -154,6 +206,16 @@
                 # environment.sessionVariables does not reach it: the manager
                 # already has __NIXOS_SET_ENVIRONMENT_DONE, so the login
                 # profile skips /etc/set-environment.
+                # Folders open in the chosen file manager in this session only.
+                # GIO and xdg-mime read <desktop>-mimeapps.list
+                # (XDG_CURRENT_DESKTOP lowercased) before mimeapps.list; the
+                # other sessions keep theirs.
+                "xdg/shojiwm-mimeapps.list" = lib.mkIf (cfg.fileManagerEntry != null) {
+                  text = ''
+                    [Default Applications]
+                    inode/directory=${cfg.fileManagerEntry}
+                  '';
+                };
                 "xdg/uwsm/env-shojiwm".text = lib.concatStrings (lib.mapAttrsToList
                   (name: value: "export ${name}=${lib.escapeShellArg value}\n")
                   (lib.filterAttrs (_: value: value != "") cfg.environment));
@@ -171,17 +233,19 @@
               };
 
             # What the desktop itself needs at run time.
-            systemPackages = [
-              # The shell: taskbar, Start menu, desktop, panels, lock screen.
-              packages.shell
-              packages.icon-theme
-              # The Aero icon theme inherits Oxygen.
-              pkgs.kdePackages.oxygen-icons
-              # The text face of the configuration and the shell.
-              pkgs.inter
-              # Super+V and the shell's clipboard.
-              pkgs.wl-clipboard
-            ];
+            systemPackages =
+              [
+                # The shell: taskbar, Start menu, desktop, panels, lock screen.
+                packages.shell
+                packages.icon-theme
+                # The Aero icon theme inherits Oxygen.
+                pkgs.kdePackages.oxygen-icons
+                # The text face of the configuration and the shell.
+                pkgs.inter
+                # Super+V and the shell's clipboard.
+                pkgs.wl-clipboard
+              ]
+              ++ lib.filter (package: package != null) (map (role: role.package) (lib.attrValues cfg.programs));
           };
 
           # The GlobalShortcuts portal of shojiwm-desktop: programs such as

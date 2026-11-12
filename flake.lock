@@ -1,5 +1,55 @@
 {
   "nodes": {
+    "classeur": {
+      "inputs": {
+        "git-hooks": [
+          "git-hooks"
+        ],
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1794492222,
+        "narHash": "sha256-EeEPVhc8RpJnlTwiUpoEEWo27EUAsfhFu1jjE8alAHw=",
+        "ref": "refs/heads/master",
+        "rev": "8ffffd07949ed74db8d17263545f8baa8cfa2b1a",
+        "revCount": 195,
+        "submodules": true,
+        "type": "git",
+        "url": "https://github.com/sachahjkl/classeur"
+      },
+      "original": {
+        "submodules": true,
+        "type": "git",
+        "url": "https://github.com/sachahjkl/classeur"
+      }
+    },
+    "cliche": {
+      "inputs": {
+        "git-hooks": [
+          "git-hooks"
+        ],
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1794516773,
+        "narHash": "sha256-HSDGLPzRj3wWt0/QvSRa6ynBZz0qng2go/A0DkpqY94=",
+        "ref": "refs/heads/master",
+        "rev": "e76a5326479ee072a4834318c38eb002f82acc3f",
+        "revCount": 14,
+        "submodules": true,
+        "type": "git",
+        "url": "https://github.com/sachahjkl/cliche"
+      },
+      "original": {
+        "submodules": true,
+        "type": "git",
+        "url": "https://github.com/sachahjkl/cliche"
+      }
+    },
     "flake-compat": {
       "flake": false,
       "locked": {
@@ -72,6 +122,31 @@
         "type": "github"
       }
     },
+    "inspecteur": {
+      "inputs": {
+        "git-hooks": [
+          "git-hooks"
+        ],
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1794501391,
+        "narHash": "sha256-fX6L2rG++AGdQilXo5bGnAgDtBxHbOlGmYPIt9ehK7o=",
+        "ref": "refs/heads/master",
+        "rev": "76239e78d079cf4722b7a551baf98b36de177027",
+        "revCount": 100,
+        "submodules": true,
+        "type": "git",
+        "url": "https://github.com/sachahjkl/inspecteur"
+      },
+      "original": {
+        "submodules": true,
+        "type": "git",
+        "url": "https://github.com/sachahjkl/inspecteur"
+      }
+    },
     "nixpkgs": {
       "locked": {
         "lastModified": 1793865203,
@@ -86,12 +161,41 @@
         "url": "https://flakehub.com/f/NixOS/nixpkgs/0.2605"
       }
     },
+    "papier": {
+      "inputs": {
+        "git-hooks": [
+          "git-hooks"
+        ],
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1794512686,
+        "narHash": "sha256-Eh7vo/wIy1iJuHXpbNXCy5m3f1a4qFqU/IJEjz20Ov0=",
+        "ref": "refs/heads/master",
+        "rev": "b661829350989fa02398b983531630f77f249222",
+        "revCount": 115,
+        "submodules": true,
+        "type": "git",
+        "url": "https://github.com/sachahjkl/papier"
+      },
+      "original": {
+        "submodules": true,
+        "type": "git",
+        "url": "https://github.com/sachahjkl/papier"
+      }
+    },
     "root": {
       "inputs": {
+        "classeur": "classeur",
+        "cliche": "cliche",
         "flake-parts": "flake-parts",
         "git-hooks": "git-hooks",
         "gui-toolkit": "gui-toolkit",
+        "inspecteur": "inspecteur",
         "nixpkgs": "nixpkgs",
+        "papier": "papier",
         "shojiwm": "shojiwm"
       }
     },

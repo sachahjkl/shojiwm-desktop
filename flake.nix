@@ -23,6 +23,39 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    # The author's programs the desktop uses by default for its roles
+    # (services.shojiwm-desktop.programs): task manager, file manager,
+    # clipboard history, screen capture. git+https: a github: URL leaves their
+    # gui_toolkit submodule out.
+    inspecteur = {
+      url = "git+https://github.com/sachahjkl/inspecteur?submodules=1";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        git-hooks.follows = "git-hooks";
+      };
+    };
+    classeur = {
+      url = "git+https://github.com/sachahjkl/classeur?submodules=1";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        git-hooks.follows = "git-hooks";
+      };
+    };
+    papier = {
+      url = "git+https://github.com/sachahjkl/papier?submodules=1";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        git-hooks.follows = "git-hooks";
+      };
+    };
+    cliche = {
+      url = "git+https://github.com/sachahjkl/cliche?submodules=1";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        git-hooks.follows = "git-hooks";
+      };
+    };
+
     # The toolkit whose changelog package tools/desktoptool uses (-collection:gt=<it>/src). The
     # development shell gives its path in $GUI_TOOLKIT_SRC.
     gui-toolkit = {

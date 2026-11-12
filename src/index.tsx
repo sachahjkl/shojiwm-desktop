@@ -356,14 +356,18 @@ COMPOSITOR.key.bind("lock", "Super+L", () => {
   });
 });
 // Print Screen and Ctrl+Print Screen: the Control Panel's screenshot program,
-// by default the whole screen to the clipboard, as Windows 7 does.
-for (const [id, key] of [
-  ["screenshot", "Print"],
-  ["screenshot-ctrl", "Ctrl+Print"],
-] as const) {
-  COMPOSITOR.key.bind(id, key, () => {
-    COMPOSITOR.process.spawn({ command: program("screenshot") });
-  });
+// by default the whole screen to the clipboard, as Windows 7 does. "none": a
+// program binds these keys itself (cliche, through the GlobalShortcuts portal),
+// and two bindings of one key would fight.
+if (COMPOSITOR.env.get("SHOJIWM_DESKTOP_SCREENSHOT") !== "none") {
+  for (const [id, key] of [
+    ["screenshot", "Print"],
+    ["screenshot-ctrl", "Ctrl+Print"],
+  ] as const) {
+    COMPOSITOR.key.bind(id, key, () => {
+      COMPOSITOR.process.spawn({ command: program("screenshot") });
+    });
+  }
 }
 // Super+X: the Start orb's right-click menu on the focused screen, the
 // power user's menu Windows opens with Win+X.
