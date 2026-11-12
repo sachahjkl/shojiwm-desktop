@@ -235,11 +235,25 @@ function closeFromFrame(window: WaylandWindow): void {
     window.close();
     return;
   }
+  // The dialog is centred on the window, on its screen.
+  const screen = WINDOWS.screenOf(window);
+  const rect = window.state[WIN_RECT]();
+  const at = (value: number | ReadonlySignal<number>) =>
+    typeof value === "number" ? value : value();
+  const place = screen
+    ? [
+        at(rect.x) - screen.x,
+        at(rect.y) - screen.y,
+        at(rect.width),
+        at(rect.height),
+      ].map((value) => String(Math.round(value)))
+    : ["0", "0", "0", "0"];
   COMPOSITOR.process.spawn({
     command: shellCall(
       "closegroup",
       "ask",
-      WINDOWS.outputName() ?? "",
+      screen?.name ?? WINDOWS.outputName() ?? "",
+      ...place,
       ...identifiers,
     ),
   });

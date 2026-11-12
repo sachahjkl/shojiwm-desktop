@@ -30,10 +30,12 @@ static SHUTDOWN_ON: OnceLock<SharedSignal<String>> = OnceLock::new();
 static ADMIN_MENU_ON: OnceLock<SharedSignal<String>> = OnceLock::new();
 static SAVER_PREVIEW: OnceLock<SharedSignal<bool>> = OnceLock::new();
 /// "Close all tabs?": the screen it shows on ("" closed) and the windows of the group.
-static CLOSE_GROUP: OnceLock<SharedSignal<(String, Vec<String>)>> = OnceLock::new();
+static CLOSE_GROUP: OnceLock<SharedSignal<(String, close_group::Place, Vec<String>)>> =
+    OnceLock::new();
 
-fn close_group_slot() -> &'static SharedSignal<(String, Vec<String>)> {
-    CLOSE_GROUP.get_or_init(|| shared_signal((String::new(), Vec::new())))
+fn close_group_slot() -> &'static SharedSignal<(String, close_group::Place, Vec<String>)> {
+    CLOSE_GROUP
+        .get_or_init(|| shared_signal((String::new(), close_group::Place::default(), Vec::new())))
 }
 
 /// The screen showing a dialog, by connector name; "" when it is closed.
@@ -110,13 +112,13 @@ pub fn admin_menu_close() {
 
 /// Asks on a screen ("": the main screen) whether the windows named by `identifiers` (a group's
 /// tabs) should all close.
-pub fn close_group_ask(output_name: &str, identifiers: Vec<String>) {
+pub fn close_group_ask(output_name: &str, window: close_group::Place, identifiers: Vec<String>) {
     crate::start_menu::close();
-    close_group_slot().set((screen_or_primary(output_name), identifiers));
+    close_group_slot().set((screen_or_primary(output_name), window, identifiers));
 }
 
 pub fn close_group_close() {
-    close_group_slot().set((String::new(), Vec::new()));
+    close_group_slot().set((String::new(), close_group::Place::default(), Vec::new()));
 }
 
 // ----- the screen saver --------------------------------------------------------------------------
@@ -198,9 +200,12 @@ pub fn install() {
         let here = name.clone();
         layer_while(
             &output,
-            move || close_group_slot().with(|(on, _)| *on == here),
+            move || close_group_slot().with(|(on, _, _)| *on == here),
             || dialog_layer("shojiwm-desktop-closegroup"),
-            |_| close_group::view(close_group_slot().with_untracked(|(_, ids)| ids.clone())),
+            |_| {
+                let (_, window, ids) = close_group_slot().with_untracked(Clone::clone);
+                close_group::view(window, ids)
+            },
         );
 
         let here = name.clone();
@@ -275,8 +280,19 @@ fn install_ipc() {
     });
     ipc::handle("closegroup", |function, args| {
         match function {
-            // The screen, then the identifiers of the group's windows.
-            "ask" => close_group_ask(first(args), args.iter().skip(1).cloned().collect()),
+            // The screen, the window's place on it (x, y, width, height), then the
+            // identifiers of the group's windows.
+            "ask" => {
+                let number =
+                    |i: usize| -> f32 { args.get(i).and_then(|v| v.parse().ok()).unwrap_or(0.0) };
+                let window = close_group::Place {
+                    x: number(1),
+                    y: number(2),
+                    width: number(3),
+                    height: number(4),
+                };
+                close_group_ask(first(args), window, args.iter().skip(5).cloned().collect())
+            }
             "close" => close_group_close(),
             _ => return Err(format!("no function {function}")),
         }

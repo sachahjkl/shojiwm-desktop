@@ -7,15 +7,13 @@
 use super::close_group_close;
 use super::frame::{button_band, dialog_frame, dialog_page};
 use crate::paths::asset;
-use crate::theme::{bar_at_top, theme};
+use crate::theme::theme;
 use crate::ui::{cp_button, cp_default_button, font, shell_tooltip};
 use anti_webui::prelude::*;
 use anti_webui::shell::prelude::*;
 
 /// The width of the dialog.
 const WIDTH: f32 = 420.0;
-/// The room from the screen's edges.
-const MARGIN: f32 = 12.0;
 /// The titles listed in the dialog; the others are in the tooltip of the line after them.
 const LISTED: usize = 8;
 /// The band of buttons, on dark and on light colours.
@@ -47,8 +45,17 @@ fn close_all(identifiers: &[String]) {
     }
 }
 
-/// The dialog, over the screen; `identifiers` the windows of the group.
-pub fn view(identifiers: Vec<String>) -> Div {
+/// Where the group's window is on its screen, in logical pixels.
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub struct Place {
+    pub x: f32,
+    pub y: f32,
+    pub width: f32,
+    pub height: f32,
+}
+
+/// The dialog, over the screen, centred on `window`; `identifiers` the windows of the group.
+pub fn view(window: Place, identifiers: Vec<String>) -> Div {
     let listed = titles(&identifiers);
     let count = listed.len().max(identifiers.len());
     let shown: Vec<String> = listed.iter().take(LISTED).cloned().collect();
@@ -127,17 +134,20 @@ pub fn view(identifiers: Vec<String>) -> Div {
         ));
 
     let frame = dialog_frame("Close the window", WIDTH, page)
-        .absolute()
-        .left(MARGIN)
-        .dyn_style(|s| {
-            let away = theme().taskbar_height + MARGIN;
-            if bar_at_top() {
-                s.top(away)
-            } else {
-                s.bottom(away)
-            }
-        })
+        .flex_none()
         .on_pointer_down(|e| e.stop_propagation());
+    // A box the window's size at its place, the dialog in its middle (a window smaller than the
+    // dialog has it spill evenly on all sides).
+    let over_window = div()
+        .absolute()
+        .left(window.x)
+        .top(window.y)
+        .w(window.width)
+        .h(window.height)
+        .flex()
+        .items_center()
+        .justify_center()
+        .child(frame);
 
     let root = node_ref();
     request_frame(move |_| root.focus());
@@ -159,5 +169,5 @@ pub fn view(identifiers: Vec<String>) -> Div {
             _ => {}
         })
         .on_pointer_down(|_| close_group_close())
-        .child(frame)
+        .child(over_window)
 }
