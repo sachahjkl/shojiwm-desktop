@@ -11,7 +11,7 @@ path = "src/main.rs"
 
 [dependencies]
 libc = "0.2"
-anti-webui = { git = "https://github.com/sachahjkl/AntiWebUI.git", rev = "945fd57", features = [
+anti-webui = { git = "https://github.com/sachahjkl/AntiWebUI.git", rev = "a02fe0b", features = [
   "wayland-shell",
   "shell-network",
   "shell-battery",
