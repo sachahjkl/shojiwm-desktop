@@ -1,6 +1,7 @@
 //! The dialogs and the full-screen layers of the shell: the Run dialog (Super+R), "Shut Down
 //! Windows" (Alt+F4 on the desktop, Super+Shift+E), the Start orb's menu (a right click on the
-//! orb, Super+X), the titles of the compositor's Alt+Tab panel, and the Mystify screen saver.
+//! orb, Super+X), the titles of the compositor's Alt+Tab panel, the Mystify screen saver, and
+//! "Share your screen" (the screen-cast portal's picker).
 //!
 //! Which screen shows each dialog is kept here, by connector name, in shared signals: any UI
 //! thread can open or close one. The layers themselves live on the thread that called
@@ -12,6 +13,7 @@ mod close_group;
 mod frame;
 mod run;
 mod screen_saver;
+mod screen_share;
 mod shutdown;
 
 pub use alt_tab::alt_tab_event;
@@ -211,6 +213,14 @@ pub fn install() {
         let here = name.clone();
         layer_while(
             &output,
+            move || screen_share::shown_on(&here),
+            || dialog_layer("shojiwm-desktop-screenshare"),
+            screen_share::view,
+        );
+
+        let here = name.clone();
+        layer_while(
+            &output,
             move || slot(&ADMIN_MENU_ON).with(|o| *o == here),
             || dialog_layer("shojiwm-desktop-adminmenu"),
             |output| admin_menu::view(output.name),
@@ -297,6 +307,12 @@ fn install_ipc() {
             _ => return Err(format!("no function {function}")),
         }
         Ok(String::new())
+    });
+    // The screen-cast portal's picker (`shojiwm-shell pick-source`): the request as one line of
+    // JSON; the answer, once the user has chosen, is the chosen source's id.
+    ipc::handle_later("screenshare", |function, args, reply| match function {
+        "pick" => screen_share::ask(first(args), reply),
+        _ => reply.send(Err(format!("no function {function}"))),
     });
     ipc::handle("adminmenu", |function, args| {
         match function {

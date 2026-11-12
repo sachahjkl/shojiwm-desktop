@@ -241,6 +241,10 @@
                   lib.concatMapStringsSep " " (look: "${look}:${cfg.gtkTheme.${look}.lightName}:${cfg.gtkTheme.${look}.darkName}")
                   ["kernel" "aero"]
                 else "none";
+              # ShojiWM's ScreenCast portal asks the shell's own dialog what
+              # to share, instead of its built-in picker. A full path: the
+              # portal is a user service, with systemd's PATH.
+              SHOJIWM_PORTAL_PICKER = "${lib.getExe packages.shell} pick-source";
               QT_QPA_PLATFORMTHEME = lib.optionalString cfg.qt.enable "gtk3";
               QT_STYLE_OVERRIDE = lib.optionalString cfg.qt.enable "Fusion";
               # "none": the compositor binds no Print Screen key (src/index.tsx).

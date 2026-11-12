@@ -4,7 +4,7 @@
 //! Panel and the lock screen, in the theme chosen in the Control Panel (Aero or Kernel).
 //!
 //! `shojiwm-shell` runs the shell; `shojiwm-shell msg <target> <function> [args]` sends it a
-//! command (see `ipc.rs`).
+//! command (see `ipc.rs`); `shojiwm-shell pick-source` is the screen-cast portal's picker.
 
 #![recursion_limit = "256"]
 
@@ -44,6 +44,9 @@ fn main() {
             std::process::exit(1);
         }
         return;
+    }
+    if args.first().map(String::as_str) == Some("pick-source") {
+        std::process::exit(pick_source());
     }
     keep_crashes();
     if args.first().map(String::as_str) == Some("greeter") {
@@ -92,6 +95,45 @@ fn main() {
     if let Err(e) = result {
         eprintln!("shojiwm-shell: {e}");
         std::process::exit(1);
+    }
+}
+
+/// `shojiwm-shell pick-source`: the screen-cast portal's picker (`SHOJIWM_PORTAL_PICKER`). It
+/// reads the portal's request, one JSON object, on its input, asks the running shell to show
+/// its "Share your screen" dialog, and prints the chosen source's id. The exit code is 1 when the
+/// user cancels or the shell cannot ask; the portal then refuses the request.
+fn pick_source() -> i32 {
+    use std::io::Read;
+    let mut input = String::new();
+    if let Err(e) = std::io::stdin().read_to_string(&mut input) {
+        eprintln!("shojiwm-shell pick-source: {e}");
+        return 1;
+    }
+    let request: serde_json::Value = match serde_json::from_str(&input) {
+        Ok(v) => v,
+        Err(e) => {
+            eprintln!("shojiwm-shell pick-source: {e}");
+            return 1;
+        }
+    };
+    // Compact JSON is one line: the socket takes one argument per line.
+    let args = [
+        "screenshare".to_owned(),
+        "pick".to_owned(),
+        request.to_string(),
+    ];
+    match ipc::ask(&args) {
+        Ok(id) if !id.is_empty() => {
+            println!("{id}");
+            0
+        }
+        Ok(_) => 1,
+        Err(e) => {
+            if e.to_string() != "cancelled" {
+                eprintln!("shojiwm-shell pick-source: {e}");
+            }
+            1
+        }
     }
 }
 
