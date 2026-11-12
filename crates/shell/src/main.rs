@@ -27,6 +27,7 @@ mod spawn;
 mod start_menu;
 mod status;
 mod sun;
+mod tab_preview;
 mod taskbar;
 mod theme;
 mod theme_values;
@@ -57,6 +58,7 @@ fn main() {
             ipc::serve();
             compositor::share_settings();
             sun::install();
+            tab_preview::install();
             apps::install();
             status::install();
             taskbar::install();

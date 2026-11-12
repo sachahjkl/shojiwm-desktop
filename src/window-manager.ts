@@ -349,6 +349,15 @@ export class FloatingWindowManager {
     };
   }
 
+  /** The screen a window is on, and its top-left among the screens. */
+  public screenOf(
+    window: WaylandWindow,
+  ): { name: string; x: number; y: number } | null {
+    const name = this.outputOf(window);
+    const rect = this.outputRect(name);
+    return name && rect ? { name, x: rect.x, y: rect.y } : null;
+  }
+
   private outputOf(window: WaylandWindow): string | undefined {
     return window.output.peek() ?? this.outputName();
   }

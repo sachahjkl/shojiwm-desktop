@@ -20,9 +20,11 @@ import {
   computed,
   type CompositionRenderable,
   type OutputInfo,
+  type ReadonlySignal,
   type WaylandWindow,
 } from "shoji_wm";
 import { clientFrame, tabStrip, windowFrame } from "./themes/frames";
+import { frameMetrics } from "./themes/choice";
 import { forgetHighlight, highlightZIndex } from "./highlight";
 import { createAltTab } from "./alt-tab";
 import { SHELL_SOCKET, createPeek } from "./peek";
@@ -178,6 +180,43 @@ function openShutdownDialog(): void {
   const monitor = WINDOWS.outputName() ?? "";
   COMPOSITOR.process.spawn({
     command: shellCall("shutdown", "openOn", monitor),
+  });
+}
+
+/**
+ * The pointer on a tab not shown: the shell previews its window beside the
+ * tab (crates/shell/src/tab_preview.rs), told the tab's place on its screen.
+ */
+function previewTab(
+  tab: WaylandWindow,
+  host: WaylandWindow,
+  on: boolean,
+  left: number,
+  width: number,
+): void {
+  const identifier = tab.foreignToplevelId();
+  const screen = WINDOWS.screenOf(host);
+  if (!on || !identifier || !screen) {
+    COMPOSITOR.process.spawn({ command: shellCall("tabpreview", "hide") });
+    return;
+  }
+  const rect = host.state[WIN_RECT]();
+  const at = (value: number | ReadonlySignal<number>) =>
+    typeof value === "number" ? value : value();
+  const x = Math.round(at(rect.x) - screen.x + left);
+  const y = Math.round(at(rect.y) - screen.y);
+  const height = frameMetrics().caption;
+  COMPOSITOR.process.spawn({
+    command: shellCall(
+      "tabpreview",
+      "show",
+      screen.name,
+      identifier,
+      String(x),
+      String(y),
+      String(Math.round(width)),
+      String(height),
+    ),
   });
 }
 
@@ -589,6 +628,7 @@ COMPOSITOR.window.composition = (window: WaylandWindow) => {
           groups: WINDOWS.groups,
           windowOf: (id) => WINDOWS.windowById(id),
           onTabPress: (tab) => WINDOWS.pressTab(tab),
+          onTabHover: previewTab,
         },
       })}
     </ManagedWindow>

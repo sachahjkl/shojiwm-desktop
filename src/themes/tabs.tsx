@@ -90,10 +90,24 @@ export interface TabOptions {
   windowOf: (id: string) => WaylandWindow | undefined;
   /** A press on a tab: the move it starts is the tab's (a click or a drag). */
   onTabPress: (window: WaylandWindow) => void;
+  /**
+   * The pointer comes onto a tab not shown (`on`), or leaves it: `host` is
+   * the frame's window, `left` and `width` the tab's place in it.
+   */
+  onTabHover?: (
+    tab: WaylandWindow,
+    host: WaylandWindow,
+    on: boolean,
+    left: number,
+    width: number,
+  ) => void;
 }
 
 interface TabProps {
   window: WaylandWindow;
+  /** The frame's window, and the tab's x in it. */
+  host: WaylandWindow;
+  left: ReadonlySignal<number>;
   width: ReadonlySignal<number>;
   height: ReadonlySignal<number>;
   shown: boolean;
@@ -145,6 +159,8 @@ const DashedGhost = ({
 
 const Tab = ({
   window,
+  host,
+  left,
   width,
   height,
   shown,
@@ -342,9 +358,16 @@ const Tab = ({
           and makes the move the tab's: a click or a drag. */}
       {ghost ? null : (
         <Box
-          onHoverChange={setHover}
+          onHoverChange={(on: boolean) => {
+            setHover(on);
+            // The window behind a tab not shown, previewed by the shell.
+            if (!shown) {
+              options.onTabHover?.(window, host, on, left(), width());
+            }
+          }}
           onActiveChange={(on: boolean) => {
             if (on) {
+              options.onTabHover?.(window, host, false, left(), width());
               options.onTabPress(window);
             }
           }}
@@ -516,11 +539,13 @@ export function captionTabs(
     >
       {[
         now.overflow ? arrow(true) : null,
-        ...shownEntries.map((entry) => {
+        ...shownEntries.map((entry, at) => {
           const tab = options.windowOf(entry.id);
           return tab ? (
             <Tab
               window={tab}
+              host={window}
+              left={computed(() => layout().left + at * layout().width)}
               width={tabWidth}
               height={height}
               shown={entry.id === shown && !entry.ghost}
