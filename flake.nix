@@ -101,9 +101,7 @@
       root = ./.;
       fileset = nixpkgs.lib.fileset.unions [
         ./src
-        # The screenshots of the README live under assets; they are not part
-        # of the configuration.
-        (nixpkgs.lib.fileset.difference ./assets ./assets/site)
+        ./assets
         ./shell
         ./package.json
         ./tsconfig.json
