@@ -17,7 +17,7 @@ use crate::apps::{
     launch, move_button, pin_dropped_at, title_of,
 };
 use crate::settings::{motion, settings};
-use crate::theme::{Align, away_from_bar, corner, item_radius, theme};
+use crate::theme::{Align, away_from_bar, bar_at_top, corner, item_radius, theme};
 use crate::ui::{font, shell_icon, shell_tooltip, vertical_gradient};
 use anti_webui::prelude::*;
 use std::cell::Cell;
@@ -48,6 +48,12 @@ const BADGE_TEXT: f32 = 10.0;
 /// How many edges of the other windows show behind a combined button.
 const STACK_EDGES: usize = 2;
 const STACK_LINE_INSET: f32 = 6.0;
+/// The mark of a flat button with a window open: its height, its width bounds, and how far the
+/// front program's mark stays from the button's sides.
+const MARK_HEIGHT: f32 = 3.0;
+const MARK_OPEN_MIN: f32 = 10.0;
+const MARK_OPEN_MAX: f32 = 22.0;
+const MARK_INSET: f32 = 3.0;
 
 /// Where a button is in the row, as laid out before anything moves.
 #[derive(Clone, Debug, PartialEq)]
@@ -404,11 +410,11 @@ fn task_button(bar: Bar, row: Row, key: String) -> Div {
     });
     // Flat: a thin line right of the button for each other window, each shorter than the last.
     let stack_lines = (0..STACK_EDGES).map(move |i| {
-        div().absolute().w(1.0).dyn_style(move |s| {
+        div().absolute().w(2.0).dyn_style(move |s| {
             let t = theme();
             let inset = STACK_LINE_INSET + i as f32 * 2.0;
             let s = s
-                .left(body_w() + 1.0 + i as f32 * 2.0)
+                .left(body_w() + 1.0 + i as f32 * 3.0)
                 .bottom(inset)
                 .h((t.task_button_height - inset * 2.0).max(0.0))
                 .bg(t.task_stack)
@@ -456,7 +462,35 @@ fn task_button(bar: Bar, row: Row, key: String) -> Div {
         })
         .child(flat_layer(|| theme().task_active, move || current.get()))
         .child(flat_layer(|| theme().task_hover, hovered))
-        .child(flat_layer(|| theme().task_pressed, move || ui.pressed()));
+        .child(flat_layer(|| theme().task_pressed, move || ui.pressed()))
+        // Along the bar's outer edge: short and soft for a program with a window open, across
+        // the button and bright for the one in front. A pinned program with none has no mark.
+        .child(div().absolute().dyn_style(move |s| {
+            let t = theme();
+            let front = current.get();
+            let width = if front {
+                (body_w() - 2.0 * MARK_INSET).max(0.0)
+            } else {
+                (body_w() * 0.4).clamp(MARK_OPEN_MIN, MARK_OPEN_MAX)
+            };
+            let s = s
+                .left((body_w() - width) / 2.0)
+                .w(width)
+                .h(MARK_HEIGHT)
+                .rounded(MARK_HEIGHT / 2.0)
+                .bg(if front {
+                    t.task_front_mark
+                } else {
+                    t.task_open_mark
+                })
+                .transition(Transition::ms(motion(t.fade)));
+            let s = if bar_at_top() {
+                s.top(0.0)
+            } else {
+                s.bottom(0.0)
+            };
+            if count.get() == 0 { s.hidden() } else { s }
+        }));
     let progress = div()
         .absolute()
         .left(2.0)
