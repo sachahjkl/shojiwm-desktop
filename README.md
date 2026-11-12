@@ -582,6 +582,12 @@ The Control Panel's pages are `appearance`, `background`, `display`,
   `~/.config/hokum/config.kdl` with
   `theme "~/.config/shojiwm/assets/hokum/aero.kdl"`, and put the cards over
   the notification area with `behaviour { position "bottom-right" }`.
+- **GTK theme:** the themes Kernel, Kernel-dark, Aero and Aero-dark
+  (`packages.gtk-theme`, from `gtk-theme/`) match the looks. The light or
+  dark switch moves a GTK theme of the desktop to the one of the current
+  look. `SHOJIWM_DESKTOP_GTK_THEMES` gives the names as `look:light:dark`
+  words, for example `kernel:Kernel:Kernel-dark aero:Aero:Aero-dark`;
+  `none` turns this off. On NixOS, set `services.shojiwm-desktop.gtkTheme`.
 - **Frame colours and sizes:** `src/themes/<theme>/metrics.ts`.
 - **Shell colours and sizes:** `crates/shell/src/theme_values.rs`.
 - **Wallpaper, lock screen picture, account picture:** the Control Panel. With

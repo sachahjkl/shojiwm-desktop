@@ -1,0 +1,80 @@
+// The Aero look: Windows 7. Pale glass-blue bars, buttons with a soft two-tone vertical
+// gradient and 3px corners, property-sheet tabs.
+//
+// Imported before Adwaita's _colors.scss and _common.scss, whose top-level variables the build
+// makes !default: what is set here wins, and every colour Adwaita derives follows from it.
+//
+// The values are the shell's Aero ones (crates/shell/src/theme_values.rs: AERO, AERO_LIGHT,
+// AERO_DARK), except the window colour and the selection, which are Windows 7's own.
+
+$look: 'aero';
+
+@import 'scroll-bar-colours';
+
+// A Windows 7 button face: the upper half lighter, a soft split in the middle.
+@function aero-face($top, $bottom) {
+  @return linear-gradient(to bottom, $top, mix($top, $bottom, 70%) 50%, mix($top, $bottom, 40%) 50%, $bottom);
+}
+
+// Adwaita's base colours.
+$accent_color: if($variant == 'light', #3399ff, #4b8fd0);
+$bg_color: if($variant == 'light', #f0f0f0, #1e262e);
+$fg_color: if($variant == 'light', #10283c, #e8f1f9);
+$base_color: if($variant == 'light', #ffffff, #1a232c);
+$text_color: if($variant == 'light', #10283c, #e8f1f9);
+$selected_bg_color: $accent_color;
+$selected_fg_color: #ffffff;
+$borders_color: if($variant == 'light', #8fa9bf, #5d7489);
+$link_color: if($variant == 'light', #0066cc, #7fbfff);
+$menu_color: if($variant == 'light', #ffffff, #273340);
+$headerbar_color: if($variant == 'light', #c9def0, #182836);
+$headerbar_bg_color: $headerbar_color;
+
+$button_radius: 3px;
+$menu_radius: 3px;
+$window_radius: 6px;
+$popover_radius: 4px;
+
+// A plate: a button at rest, under the pointer, and pressed or checked.
+$plate_image: if($variant == 'light', aero-face(#eef6ff, #c3d7e8), aero-face(#3b4a58, #2a3642));
+$plate_hot_image: if($variant == 'light', aero-face(#ffffff, #d4e6f5), aero-face(#4c5f71, #364554));
+$plate_on_image: if($variant == 'light', aero-face(#c6dcef, #9fc0dc), aero-face(#2a3642, #22303c));
+$plate_border: if($variant == 'light', rgba(0, 0, 0, 0.45), #5d7489);
+$plate_hot_border: $scroll_hot_border;
+$plate_on_border: if($variant == 'light', darken($scroll_hot_border, 10%), $scroll_hot_border);
+$plate_light: if($variant == 'light', rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.2));
+$plate_hot_light: $plate_light;
+$plate_on_light: transparent;
+$plate_on_text: $fg_color;
+
+// The bar of a window: glass, top to bottom, a line of light along its top.
+$caption_image: if($variant == 'light',
+  linear-gradient(to bottom, #eaf3fb, #c9def0),
+  linear-gradient(to bottom, #1c2f3c, #182836 50%, #223a4b));
+$caption_backdrop_image: if($variant == 'light',
+  linear-gradient(to bottom, #f4f9ff, #dbe8f4),
+  linear-gradient(to bottom, #24313d, #1a242d));
+$caption_color: $headerbar_color;
+$caption_backdrop_color: if($variant == 'light', #dbe8f4, #1a242d);
+$caption_light: if($variant == 'light', rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.4));
+$caption_backdrop_light: if($variant == 'light', rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.2));
+$caption_line: if($variant == 'light', #8fa9bf, rgba(0, 0, 0, 0.65));
+$caption_text: $fg_color;
+$caption_backdrop_text: if($variant == 'light', #4d6578, #9fb3c4);
+
+// Property-sheet tabs: each a small plate, the shown one taller, of the page's colour, open
+// towards the page.
+$tab_image: $plate_image;
+$tab_border: $borders_color;
+$tab_hover_color: transparent;
+$tab_hover_image: $plate_hot_image;
+$tab_text: $fg_color;
+$tab_shown_text: $text_color;
+$tab_shown_color: $base_color;
+$tab_outline: $borders_color;
+$tab_radius: 3px;
+// Tabs that are not shown stand this much lower than the shown one.
+$tab_lowered: 2px;
+
+$scroll_radius: 3px;
+$scroll_arrow_radius: 2px;

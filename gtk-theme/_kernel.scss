@@ -1,0 +1,98 @@
+// The Kernel look: flat dark plates, the blue accent, square corners.
+//
+// Imported before Adwaita's _colors.scss and _common.scss, whose top-level variables the build
+// makes !default: what is set here wins, and every colour Adwaita derives (insensitive,
+// backdrop, borders of coloured buttons...) follows from it.
+//
+// The dark values are the shell's (crates/shell/src/theme_values.rs, KERNEL and KERNEL_SCHEME)
+// and the frame's (src/themes/kernel/metrics.ts, KCOLOR). The shell has no light Kernel: the
+// light values keep its accent and its hue on pale plates.
+
+$look: 'kernel';
+
+@import 'scroll-bar-colours';
+
+// Adwaita's base colours.
+$accent_color: #3f7fcd;
+$bg_color: if($variant == 'light', #e8edf2, #18212b);
+$fg_color: if($variant == 'light', #1b2632, #dbe6f2);
+// The shown tab joins the page: both are the view's colour.
+$base_color: if($variant == 'light', #ffffff, #121a24);
+$text_color: if($variant == 'light', #0d131a, #eef5fd);
+$selected_bg_color: $accent_color;
+$selected_fg_color: #eef5fd;
+$borders_color: if($variant == 'light', #b8c2cc, #2b3744);
+$alt_borders_color: if($variant == 'light', #9aa7b5, #03060a);
+$link_color: if($variant == 'light', #2b5d98, #7fb2ea);
+$menu_color: if($variant == 'light', #ffffff, #18212b);
+$headerbar_color: #1d3858;
+$headerbar_bg_color: $headerbar_color;
+$osd_bg_color: rgba(15, 22, 32, 0.95);
+
+// Square, as Kernel's frames; 2px keeps Adwaita's focus outline (radius - 2) at zero, not
+// negative.
+$button_radius: 2px;
+$menu_radius: 0px;
+$window_radius: 0px;
+$popover_radius: 0px;
+
+// A plate: a button at rest, under the pointer, and pressed or checked (the accent). Kernel is
+// flat: each face is one colour (an image of one colour, as the plate mixin lays an image).
+@function flat($c) {
+  @return linear-gradient($c, $c);
+}
+$plate_image: flat(if($variant == 'light', #eef1f5, #26313d));
+$plate_hot_image: flat(if($variant == 'light', #e2eaf3, #303d4b));
+$plate_on_image: flat(#3571b8);
+$plate_border: if($variant == 'light', #9aa7b5, rgba(3, 6, 10, 0.8));
+$plate_hot_border: if($variant == 'light', $accent_color, rgba(3, 6, 10, 0.8));
+$plate_on_border: if($variant == 'light', #254f82, rgba(3, 6, 10, 0.8));
+// No line of light: a flat plate.
+$plate_light: transparent;
+$plate_hot_light: transparent;
+$plate_on_light: transparent;
+$plate_on_text: #eef5fd;
+
+// The caption plate: flat, the frame's dark caption colour, the dark outline under it.
+$caption_image: flat(#1d3858);
+$caption_backdrop_image: flat(#1a2028);
+$caption_color: #1d3858;
+$caption_backdrop_color: #1a2028;
+$caption_light: transparent;
+$caption_backdrop_light: transparent;
+$caption_line: #03060a;
+$caption_text: #eef5fd;
+$caption_backdrop_text: #7d8a98;
+
+// Flat tabs: no plate at rest, a light wash under the pointer, the shown one a plate of the
+// page's colour outlined on its top and sides.
+$tab_image: none;
+$tab_border: transparent;
+$tab_hover_color: if($variant == 'light', rgba(0, 0, 0, 0.06), rgba(255, 255, 255, 0.08));
+$tab_hover_image: none;
+$tab_text: if($variant == 'light', #4a5868, #b9c6d4);
+$tab_shown_text: $text_color;
+$tab_shown_color: $base_color;
+$tab_outline: if($variant == 'light', $borders_color, #03060a);
+$tab_radius: 0px;
+// Tabs that are not shown stand as tall as the shown one.
+$tab_lowered: 0px;
+
+// The shell's bar, flat: each part one colour (its middle stop), with its border and grip.
+@function flat-stops($stops) {
+  $c: nth($stops, 2);
+  $flat: ();
+  @each $stop in $stops { $flat: append($flat, $c, comma); }
+  @return $flat;
+}
+$scroll_trough: flat-stops($scroll_trough);
+$scroll_arrow_lit: flat-stops($scroll_arrow_lit);
+$scroll_arrow_hot: flat-stops($scroll_arrow_hot);
+$scroll_arrow_pressed: flat-stops($scroll_arrow_pressed);
+$scroll_thumb_rest: flat-stops($scroll_thumb_rest);
+$scroll_thumb_hot: flat-stops($scroll_thumb_hot);
+$scroll_thumb_pressed: flat-stops($scroll_thumb_pressed);
+$scroll_thumb_line: transparent;
+
+$scroll_radius: 0px;
+$scroll_arrow_radius: 0px;

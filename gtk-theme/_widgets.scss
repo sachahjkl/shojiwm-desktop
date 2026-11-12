@@ -1,0 +1,283 @@
+// The widgets that carry the desktop's look, in both looks and both GTK versions. Imported
+// after Adwaita's _common.scss: each rule has at least the specificity of the Adwaita rule it
+// replaces, so the later one wins. Everything not here stays Adwaita's.
+//
+// $gtk (3 or 4), $variant and the palette ($look and the plate, caption, tab and scroll
+// tokens) come from the entry file and _kernel.scss or _aero.scss.
+
+// ----- scroll bars ---------------------------------------------------------------------------
+//
+// The shell's bar (crates/shell/src/ui/scroll.rs): a trough with a gradient across it and a 1px
+// border, a thumb with four stops across it, a 1px border and a fine inner line, three short
+// grip lines in its middle that turn blue under the pointer, a pressed state, and (GTK 3, which
+// has them) arrow steppers at both ends. Always a real bar: the session turns overlay
+// scrolling off (overlay-scrolling in dconf).
+
+// The thumb's width inside its border: with the border, 13px, and 14px with the trough's.
+$_scroll_thumb_width: 11px;
+
+$_slider: if($gtk == 3, 'slider', '> range > trough > slider');
+
+@function scroll-thumb($stops, $across) {
+  @return linear-gradient($across, nth($stops, 1), nth($stops, 2) 45%, nth($stops, 3) 55%, nth($stops, 4));
+}
+
+// Three lines of 1px with 1px between them, drawn across the thumb: a 7px by 5px image (for a
+// vertical bar), placed in the thumb's middle.
+@function scroll-grip($c, $along) {
+  @return linear-gradient($along, $c 0px, $c 1px, transparent 1px, transparent 2px, $c 2px, $c 3px,
+                          transparent 3px, transparent 4px, $c 4px, $c 5px);
+}
+
+@mixin scroll-thumb-face($stops, $grip, $border, $across, $along) {
+  border-color: $border;
+  background-color: nth($stops, 4);
+  background-image: scroll-grip($grip, $along), scroll-thumb($stops, $across);
+}
+
+// $across: the direction of the gradients across the bar; $along: the one along it.
+@mixin scroll-bar($orientation, $across, $along, $grip_size) {
+  scrollbar.#{$orientation} {
+    background-color: nth($scroll_trough, 2);
+    background-image: linear-gradient($across, nth($scroll_trough, 1), nth($scroll_trough, 2), nth($scroll_trough, 3));
+
+    #{$_slider} {
+      @if $orientation == vertical { min-width: $_scroll_thumb_width; }
+      @else { min-height: $_scroll_thumb_width; }
+      margin: 0;
+      border: 1px solid $scroll_thumb_border;
+      border-radius: $scroll_radius;
+      background-clip: padding-box;
+      background-size: $grip_size, auto;
+      background-position: center, center;
+      background-repeat: no-repeat, no-repeat;
+      box-shadow: inset 0 0 0 1px $scroll_thumb_line;
+      @include scroll-thumb-face($scroll_thumb_rest, $scroll_grip, $scroll_thumb_border, $across, $along);
+
+      &:hover { @include scroll-thumb-face($scroll_thumb_hot, $scroll_grip_lit, $scroll_hot_border, $across, $along); }
+
+      &:active,
+      &:hover:active { @include scroll-thumb-face($scroll_thumb_pressed, $scroll_grip_lit, $scroll_hot_border, $across, $along); }
+
+      &:disabled {
+        border-color: transparent;
+        background-color: transparent;
+        background-image: none;
+        box-shadow: none;
+      }
+    }
+
+    // The whole bar lights up under the pointer, as the shell's does.
+    &:hover #{$_slider}:not(:active):not(:disabled) {
+      @include scroll-thumb-face($scroll_thumb_hot, $scroll_grip_lit, $scroll_hot_border, $across, $along);
+    }
+
+    @if $gtk == 3 {
+      button {
+        min-width: $_scroll_thumb_width;
+        min-height: $_scroll_thumb_width;
+        border: 1px solid transparent;
+        border-radius: $scroll_arrow_radius;
+        background-image: none;
+        box-shadow: none;
+        color: $scroll_glyph;
+      }
+
+      &:hover button {
+        border-color: $scroll_lit_border;
+        background-image: linear-gradient($across, nth($scroll_arrow_lit, 1), nth($scroll_arrow_lit, 2));
+      }
+
+      button:hover {
+        color: $scroll_glyph_hot;
+        border-color: $scroll_hot_border;
+        background-image: linear-gradient($across, nth($scroll_arrow_hot, 1), nth($scroll_arrow_hot, 2));
+      }
+
+      button:active {
+        color: $scroll_glyph_hot;
+        border-color: $scroll_hot_border;
+        background-image: linear-gradient($across, nth($scroll_arrow_pressed, 1), nth($scroll_arrow_pressed, 2));
+      }
+
+      button:disabled {
+        color: transparentize($scroll_glyph, 0.6);
+        border-color: transparent;
+        background-image: none;
+      }
+    }
+  }
+
+  // Shift-drag: Adwaita draws a thinner thumb; this one keeps its size.
+  @if $gtk == 3 {
+    scrollbar.fine-tune.#{$orientation} slider { border-width: 1px; }
+  }
+  @else {
+    scrollbar > range.fine-tune.#{$orientation} > trough > slider { border-width: 1px; }
+  }
+}
+
+@include scroll-bar(vertical, to right, to bottom, 7px 5px);
+@include scroll-bar(horizontal, to bottom, to right, 5px 7px);
+
+scrollbar {
+  &.top { border-bottom-color: $scroll_trough_border; }
+  &.bottom { border-top-color: $scroll_trough_border; }
+  &.left { border-right-color: $scroll_trough_border; }
+  &.right { border-left-color: $scroll_trough_border; }
+
+  // An overlay bar a program forces anyway keeps Adwaita's thin indicator until the pointer
+  // is on it; then it is the full bar.
+  &.overlay-indicator:not(.dragging):not(.hovering) {
+    background-image: none;
+
+    #{$_slider} {
+      background-image: none;
+      box-shadow: none;
+    }
+  }
+}
+
+@if $gtk == 3 {
+  // Adwaita turns the steppers off; the shell's bar has them.
+  * {
+    -GtkScrollbar-has-backward-stepper: true;
+    -GtkScrollbar-has-forward-stepper: true;
+  }
+}
+
+// ----- header bars ---------------------------------------------------------------------------
+//
+// The caption plate of the look's window frame (Kernel: assets/kernel/frame.frag).
+
+headerbar,
+.titlebar:not(headerbar) {
+  border-color: $caption_line;
+  background-color: $caption_color;
+  background-image: $caption_image;
+  box-shadow: inset 0 1px $caption_light;
+  color: $caption_text;
+
+  &:backdrop {
+    border-color: $caption_line;
+    background-color: $caption_backdrop_color;
+    background-image: $caption_backdrop_image;
+    box-shadow: inset 0 1px $caption_backdrop_light;
+    color: $caption_backdrop_text;
+  }
+
+  // Adwaita darkens the checked toggles of a bar; here they are checked plates as anywhere.
+  stackswitcher button:checked,
+  button.toggle:checked { @include plate(active); }
+
+  // A flat button takes the caption's text colour until it shows a plate (Adwaita's :hover,
+  // :active and :checked rules, more specific, give it the plate's).
+  button.flat { color: $caption_text; }
+  &:backdrop button.flat { color: $caption_backdrop_text; }
+
+  @if $gtk == 3 {
+    button.titlebutton { color: $caption_text; }
+    &:backdrop button.titlebutton { color: $caption_backdrop_text; }
+  }
+}
+
+@if $gtk == 3 {
+  // A message dialog's title bar is part of its body, as in Adwaita: no caption plate.
+  messagedialog .titlebar {
+    &,
+    &:backdrop {
+      background-color: $bg_color;
+      background-image: none;
+      box-shadow: none;
+      color: $fg_color;
+    }
+  }
+
+  // Adwaita writes the top corners of these as 7px; they follow the look's window corners.
+  // Its rules for tiled and maximised windows, more specific, still square them.
+  messagedialog .titlebar,
+  window headerbar:first-child,
+  window separator:first-child + headerbar {
+    &,
+    &:backdrop { border-top-left-radius: $window_radius; }
+  }
+
+  messagedialog .titlebar,
+  window headerbar:last-child {
+    &,
+    &:backdrop { border-top-right-radius: $window_radius; }
+  }
+
+  window stack headerbar {
+    &:first-child,
+    &:last-child {
+      &,
+      &:backdrop {
+        border-top-left-radius: $window_radius;
+        border-top-right-radius: $window_radius;
+      }
+    }
+  }
+}
+
+@if $gtk == 4 {
+  window.dialog.message .titlebar {
+    border-top-left-radius: $window_radius;
+    border-top-right-radius: $window_radius;
+  }
+
+  // The backdrop caption already has its own dim text colour.
+  headerbar:backdrop .title { filter: none; }
+
+  windowcontrols > button { color: $caption_text; }
+  headerbar:backdrop windowcontrols > button { color: $caption_backdrop_text; }
+}
+
+// ----- notebook tabs -------------------------------------------------------------------------
+//
+// Kernel: flat tabs, the shown one a plate of the page's colour outlined on its top and sides
+// (src/themes/tabs.tsx, KCOLOR.tabShown). Aero: Windows 7 property-sheet tabs. Both open
+// towards the page, so the shown tab joins it.
+
+@function tab-corners($side, $r) {
+  @if $side == top { @return $r $r 0px 0px; }
+  @if $side == bottom { @return 0px 0px $r $r; }
+  @if $side == left { @return $r 0px 0px $r; }
+  @return 0px $r $r 0px;
+}
+
+@each $side, $page_side in (top: bottom, bottom: top, left: right, right: left) {
+  notebook > header.#{$side} > tabs > tab {
+    &,
+    &.reorderable-page {
+      margin-#{$side}: $tab_lowered;
+      border-style: solid;
+      border-width: 1px;
+      border-color: $tab_border;
+      border-#{$page_side}-color: transparent;
+      border-radius: tab-corners($side, $tab_radius);
+      background-color: transparent;
+      background-image: $tab_image;
+      box-shadow: none;
+      color: $tab_text;
+
+      &:hover {
+        background-color: $tab_hover_color;
+        background-image: $tab_hover_image;
+        box-shadow: none;
+        color: $tab_text;
+      }
+
+      &:checked,
+      &:checked:hover {
+        margin-#{$side}: 0px;
+        border-color: $tab_outline;
+        border-#{$page_side}-color: $tab_shown_color;
+        background-color: $tab_shown_color;
+        background-image: none;
+        box-shadow: none;
+        color: $tab_shown_text;
+      }
+    }
+  }
+}

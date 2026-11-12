@@ -199,6 +199,7 @@ pub fn share_settings() {
         let square = settings().with(|s| s.square_corners);
         json!({ "square": square })
     });
+    crate::settings::follow_look();
     share("theme", || {
         let name = settings().with(|s| s.theme.clone());
         json!({ "name": name })

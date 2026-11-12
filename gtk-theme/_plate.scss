@@ -1,0 +1,29 @@
+// The look's plate, laid over what Adwaita's button mixin draws for a plain button. Adwaita
+// keeps its colours, sizes and transitions; the plate changes the face, the outline and the
+// line of light. The states Adwaita draws flat (backdrop, insensitive, undecorated, osd) stay
+// Adwaita's.
+@mixin plate($t) {
+  @if $t == normal {
+    border-color: $plate_border;
+    background-image: $plate_image;
+    box-shadow: inset 0 1px $plate_light;
+    text-shadow: none;
+    -gtk-icon-shadow: none;
+  }
+  @else if $t == hover {
+    border-color: $plate_hot_border;
+    background-image: $plate_hot_image;
+    box-shadow: inset 0 1px $plate_hot_light;
+    text-shadow: none;
+    -gtk-icon-shadow: none;
+  }
+  // GTK 3 draws :active and :checked with "active"; GTK 4 has the two checked kinds too.
+  @else if $t == active or $t == checked-hover or $t == checked-active {
+    color: $plate_on_text;
+    border-color: $plate_on_border;
+    background-image: $plate_on_image;
+    box-shadow: inset 0 1px $plate_on_light;
+    text-shadow: none;
+    -gtk-icon-shadow: none;
+  }
+}

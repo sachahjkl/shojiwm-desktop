@@ -1,0 +1,21 @@
+// The colours of the shell's scroll bar (crates/shell/src/ui/scroll.rs, LIGHT and DARK), which
+// both looks share: the GTK bar must read as the same control as the shell's.
+
+$scroll_trough: if($variant == 'light', (#e3e3e3, #f1f1f1, #e3e3e3), (#26303a, #2c3743, #26303a));
+$scroll_trough_border: if($variant == 'light', #d7d7d7, #1b232b);
+// The border of a stepper while the bar is under the pointer.
+$scroll_lit_border: if($variant == 'light', #9da8b2, #56687a);
+$scroll_thumb_border: if($variant == 'light', #9b9b9b, #56687a);
+// The border of the part under the pointer.
+$scroll_hot_border: if($variant == 'light', #3c7fb1, #4b8fd0);
+$scroll_arrow_lit: if($variant == 'light', (#f3f3f3, #dcdcdc), (#3a4855, #313e4a));
+$scroll_arrow_hot: if($variant == 'light', (#e3f4fc, #c6e8fa), (#2a4660, #223c53));
+$scroll_arrow_pressed: if($variant == 'light', (#c2e4f6, #a9d9f2), (#2d5578, #244a6b));
+$scroll_glyph: if($variant == 'light', #606060, #a7b4c0);
+$scroll_glyph_hot: if($variant == 'light', #1c5180, #cfe6fa);
+$scroll_thumb_rest: if($variant == 'light', (#f3f3f3, #e8e8e8, #d9d9d9, #cdcdcd), (#4a5967, #43515e, #3c4955, #36424d));
+$scroll_thumb_hot: if($variant == 'light', (#e3f4fc, #d0ecfa, #bde4f8, #a9dcf6), (#365b7d, #305273, #2a4968, #25415d));
+$scroll_thumb_pressed: if($variant == 'light', (#cde9f8, #b4def4, #9fd4f0, #8ccaec), (#3c6890, #355f85, #2e5579, #284d6f));
+$scroll_thumb_line: if($variant == 'light', rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.12));
+$scroll_grip: if($variant == 'light', #8e8e8e, #22303c);
+$scroll_grip_lit: if($variant == 'light', #3c7fb1, #9cc8ee);

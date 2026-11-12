@@ -1,0 +1,10 @@
+// GTK 3: the build renames Adwaita's `button` mixin to `adwaita-button`. This one has its
+// signature: it draws Adwaita's button, then the plate on a plain one (the window's colour), so
+// every place where Adwaita decorates a button gets the plate and coloured buttons (suggested,
+// destructive, selection mode) keep their colour.
+@import 'plate';
+
+@mixin button($t, $c: $bg_color, $tc: $fg_color, $edge: none, $backimage: null) {
+  @include adwaita-button($t, $c, $tc, $edge, $backimage);
+  @if $c == $bg_color { @include plate($t); }
+}

@@ -1,0 +1,9 @@
+// GTK 4: the build renames the Default theme's `button` mixin to `adwaita-button`. This one has
+// its signature: it draws the Default button, then the plate on a plain one, so every place
+// where the theme decorates a button gets the plate and coloured buttons keep their colour.
+@import 'plate';
+
+@mixin button($t, $c: $_default_button_c, $tc: $fg_color) {
+  @include adwaita-button($t, $c, $tc);
+  @if $c == $_default_button_c { @include plate($t); }
+}

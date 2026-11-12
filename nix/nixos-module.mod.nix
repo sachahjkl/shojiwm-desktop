@@ -1,7 +1,7 @@
 # nixosModules.default: the whole desktop session on NixOS. ShojiWM (its own
 # module, programs.shojiwm), the configuration in each user's
 # ~/.config/shojiwm, the shell, the GlobalShortcuts portal, the Aero icon
-# theme, and a "ShojiWM (UWSM)" session. The log-on screen is
+# theme, the GTK themes of the two looks, and a "ShojiWM (UWSM)" session. The log-on screen is
 # services.shojiwm-desktop-greeter (nix/greeter.nix), imported here.
 {
   inputs,
@@ -99,6 +99,63 @@
             '' (ours "cliche") "";
           };
 
+          # The GTK theme of the session. The shell's light or dark switch
+          # (shell/gtk-switch.sh) moves it to the light or dark name of the
+          # desktop's look, so the names of each look are options too.
+          gtkTheme = let
+            # gtk-switch.sh reads the names as "look:light:dark" words.
+            themeName = lib.types.strMatching "[^[:space:]:]+";
+            look = title: lightName: darkName:
+              lib.mkOption {
+                description = "The GTK themes of the ${title} look.";
+                default = {};
+                type = lib.types.submodule {
+                  options = {
+                    lightName = lib.mkOption {
+                      type = themeName;
+                      default = lightName;
+                      description = "The GTK theme of the ${title} look in light.";
+                    };
+                    darkName = lib.mkOption {
+                      type = themeName;
+                      default = darkName;
+                      description = "The GTK theme of the ${title} look in dark.";
+                    };
+                  };
+                };
+              };
+          in {
+            enable = lib.mkEnableOption "the desktop's GTK themes: installed, chosen by the session's dconf profile and switched with the look and with light or dark" // {default = true;};
+
+            package = lib.mkOption {
+              type = lib.types.nullOr lib.types.package;
+              default = packages.gtk-theme;
+              defaultText = lib.literalMD "shojiwm-desktop's `packages.gtk-theme` (Kernel, Kernel-dark, Aero, Aero-dark)";
+              description = "The package of the GTK themes, installed with the session; null for none, for themes installed otherwise.";
+            };
+
+            name = lib.mkOption {
+              type = themeName;
+              default = cfg.gtkTheme.kernel.darkName;
+              defaultText = lib.literalExpression "config.services.shojiwm-desktop.gtkTheme.kernel.darkName";
+              description = ''
+                The GTK theme the session's dconf profile chooses (the
+                desktop starts in the Kernel look). A value in the user's
+                dconf database comes first; the shell writes one there when
+                the look or light and dark change.
+              '';
+            };
+
+            kernel = look "Kernel" "Kernel" "Kernel-dark";
+            aero = look "Aero" "Aero" "Aero-dark";
+          };
+
+          # Qt in this session only: its palette, fonts and dialogs from the
+          # GTK theme (Qt's own gtk3 platform theme, so the look and light or
+          # dark follow the GTK theme), drawn with Qt's Fusion style. The
+          # other sessions keep their Qt settings.
+          qt.enable = lib.mkEnableOption "Qt programs that follow the desktop's GTK theme (gtk3 platform theme, Fusion style) in this session" // {default = true;};
+
           fileManagerEntry = lib.mkOption {
             type = lib.types.nullOr lib.types.str;
             default = "classeur.desktop";
@@ -139,14 +196,26 @@
             # The session's dconf profile: the same user database as the other
             # sessions', so the settings stay shared, and before the system
             # ones a database that chooses the Aero icon theme, the desktop's
-            # icons, for Thunar and the other GTK programs. A value written to
-            # the user database would still come first, in every session.
+            # icons, and the desktop's GTK theme, for Thunar and the other GTK
+            # programs. A value written to the user database would still come
+            # first, in every session.
             dconf = {
               enable = true;
               profiles.shojiwm = {
                 enableUserDb = true;
                 databases =
-                  [{settings."org/gnome/desktop/interface".icon-theme = "Aero";}]
+                  [
+                    {
+                      settings."org/gnome/desktop/interface" =
+                        {icon-theme = "Aero";}
+                        // lib.optionalAttrs cfg.gtkTheme.enable {
+                          gtk-theme = cfg.gtkTheme.name;
+                          # The themes draw the shell's scroll bar: always
+                          # there, not an indicator that hides.
+                          overlay-scrolling = false;
+                        };
+                    }
+                  ]
                   ++ config.programs.dconf.profiles.user.databases or [];
               };
             };
@@ -164,6 +233,16 @@
               SHOJIWM_DESKTOP_SYSTEM_MONITOR = cfg.programs.systemMonitor.command;
               SHOJIWM_DESKTOP_FILE_MANAGER = cfg.programs.fileManager.command;
               SHOJIWM_DESKTOP_CLIPBOARD = cfg.programs.clipboard.command;
+              # The GTK themes of each look, for shell/gtk-switch.sh; "none":
+              # it moves any theme to its own light or dark variant only.
+              SHOJIWM_DESKTOP_GTK_THEMES =
+                if cfg.gtkTheme.enable
+                then
+                  lib.concatMapStringsSep " " (look: "${look}:${cfg.gtkTheme.${look}.lightName}:${cfg.gtkTheme.${look}.darkName}")
+                  ["kernel" "aero"]
+                else "none";
+              QT_QPA_PLATFORMTHEME = lib.optionalString cfg.qt.enable "gtk3";
+              QT_STYLE_OVERRIDE = lib.optionalString cfg.qt.enable "Fusion";
               # "none": the compositor binds no Print Screen key (src/index.tsx).
               SHOJIWM_DESKTOP_SCREENSHOT =
                 if cfg.programs.screenCapture.command == ""
@@ -245,6 +324,7 @@
                 # Super+V and the shell's clipboard.
                 pkgs.wl-clipboard
               ]
+              ++ lib.optional (cfg.gtkTheme.enable && cfg.gtkTheme.package != null) cfg.gtkTheme.package
               ++ lib.filter (package: package != null) (map (role: role.package) (lib.attrValues cfg.programs));
           };
 

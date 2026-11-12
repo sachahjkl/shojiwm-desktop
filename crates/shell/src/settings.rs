@@ -760,17 +760,33 @@ pub fn set_dark(on: bool) {
     dark_signal().set(on);
     let value = if on { "'prefer-dark'" } else { "'default'" };
     crate::spawn::spawn_detached("dconf", dconf_write(SCHEME_KEY, value));
+    switch_gtk_theme(on, settings().get_untracked().theme.clone());
+}
+
+/// Moves the GTK theme to the light or dark one of `look` (`gtk-switch.sh`), for a change of
+/// light or dark, or of look. The look is passed on: settings.json may not have it yet.
+fn switch_gtk_theme(dark: bool, look: String) {
     // The script is looked for on the spawner too: that is a look at the disk.
     crate::spawn::on_spawner(move || {
         let script = crate::paths::shell_file("gtk-switch.sh")?;
         Command::new("sh")
             .arg(script)
-            .args(["dconf", GTK_THEME_KEY, if on { "dark" } else { "light" }])
+            .args(["dconf", GTK_THEME_KEY, if dark { "dark" } else { "light" }])
+            .arg(look)
             .stdin(Stdio::null())
             .stdout(Stdio::null())
             .stderr(Stdio::null())
             .spawn()
             .ok()
+    });
+}
+
+/// Keeps the GTK theme on the desktop's look: at start, and each time the look changes.
+pub fn follow_look() {
+    let look = memo(|| settings().with(|s| s.theme.clone()));
+    effect(move || {
+        let look = look.get();
+        switch_gtk_theme(untrack(|| dark_signal().get()), look);
     });
 }
 
