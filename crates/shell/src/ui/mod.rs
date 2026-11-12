@@ -19,7 +19,7 @@ pub use controls::{
     cp_radio,
 };
 pub use frame::{popup_frame, shell_tooltip};
-pub use gradient::vertical_gradient;
+pub use gradient::{horizontal_gradient, vertical_gradient};
 pub use icon::shell_icon;
 // For the modules that still call `anti_webui::shell::icon_path` on the UI thread.
 #[allow(unused_imports)]

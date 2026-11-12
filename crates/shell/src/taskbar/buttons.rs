@@ -18,7 +18,7 @@ use crate::apps::{
 };
 use crate::settings::{motion, settings};
 use crate::theme::{Align, away_from_bar, bar_at_top, corner, item_radius, theme};
-use crate::ui::{font, shell_icon, shell_tooltip, vertical_gradient};
+use crate::ui::{font, horizontal_gradient, shell_icon, shell_tooltip, vertical_gradient};
 use anti_webui::prelude::*;
 use std::cell::Cell;
 use std::collections::HashMap;
@@ -54,6 +54,19 @@ const MARK_HEIGHT: f32 = 3.0;
 const MARK_OPEN_MIN: f32 = 10.0;
 const MARK_OPEN_MAX: f32 = 22.0;
 const MARK_INSET: f32 = 3.0;
+/// How much lighter a mark is in its middle, and how much of its colour is left at its ends.
+const MARK_LIGHT: f32 = 0.45;
+const MARK_EDGE_ALPHA: f32 = 0.55;
+
+/// `c` mixed with white by `amount` (0: itself, 1: white), its alpha kept.
+fn lighter(c: Color, amount: f32) -> Color {
+    Color {
+        r: c.r + (1.0 - c.r) * amount,
+        g: c.g + (1.0 - c.g) * amount,
+        b: c.b + (1.0 - c.b) * amount,
+        a: c.a,
+    }
+}
 
 /// Where a button is in the row, as laid out before anything moves.
 #[derive(Clone, Debug, PartialEq)]
@@ -465,32 +478,51 @@ fn task_button(bar: Bar, row: Row, key: String) -> Div {
         .child(flat_layer(|| theme().task_pressed, move || ui.pressed()))
         // Along the bar's outer edge: short and soft for a program with a window open, across
         // the button and bright for the one in front. A pinned program with none has no mark.
-        .child(div().absolute().dyn_style(move |s| {
-            let t = theme();
-            let front = current.get();
-            let width = if front {
-                (body_w() - 2.0 * MARK_INSET).max(0.0)
-            } else {
-                (body_w() * 0.4).clamp(MARK_OPEN_MIN, MARK_OPEN_MAX)
-            };
-            let s = s
-                .left((body_w() - width) / 2.0)
-                .w(width)
-                .h(MARK_HEIGHT)
-                .rounded(MARK_HEIGHT / 2.0)
-                .bg(if front {
-                    t.task_front_mark
-                } else {
-                    t.task_open_mark
+        // Square, as Kernel's plates are, lit in its middle and glowing into the button.
+        .child(
+            div()
+                .absolute()
+                .fill(move || {
+                    let t = theme();
+                    let base = if current.get() {
+                        t.task_front_mark
+                    } else {
+                        t.task_open_mark
+                    };
+                    let light = lighter(base, MARK_LIGHT);
+                    let edge = base.with_alpha(base.a * MARK_EDGE_ALPHA);
+                    horizontal_gradient(&[(0.0, edge), (0.5, light), (1.0, edge)])
                 })
-                .transition(Transition::ms(motion(t.fade)));
-            let s = if bar_at_top() {
-                s.top(0.0)
-            } else {
-                s.bottom(0.0)
-            };
-            if count.get() == 0 { s.hidden() } else { s }
-        }));
+                .dyn_style(move |s| {
+                    let t = theme();
+                    let front = current.get();
+                    let width = if front {
+                        (body_w() - 2.0 * MARK_INSET).max(0.0)
+                    } else {
+                        (body_w() * 0.4).clamp(MARK_OPEN_MIN, MARK_OPEN_MAX)
+                    };
+                    let base = if front {
+                        t.task_front_mark
+                    } else {
+                        t.task_open_mark
+                    };
+                    let at_top = bar_at_top();
+                    let s = s
+                        .left((body_w() - width) / 2.0)
+                        .w(width)
+                        .h(MARK_HEIGHT)
+                        .shadow(BoxShadow {
+                            // Into the button, away from the screen's edge.
+                            offset_y: if at_top { 1.0 } else { -1.0 },
+                            blur: if front { 6.0 } else { 4.0 },
+                            color: base.with_alpha(base.a * if front { 0.7 } else { 0.4 }),
+                            ..Default::default()
+                        })
+                        .transition(Transition::ms(motion(t.fade)));
+                    let s = if at_top { s.top(0.0) } else { s.bottom(0.0) };
+                    if count.get() == 0 { s.hidden() } else { s }
+                }),
+        );
     let progress = div()
         .absolute()
         .left(2.0)
