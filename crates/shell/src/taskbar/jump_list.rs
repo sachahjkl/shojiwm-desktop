@@ -109,7 +109,8 @@ fn lines(group: &WindowGroup) -> Vec<MenuLine> {
         };
         let entry = entry.clone();
         lines.push(MenuLine::item(label, move || {
-            set_taskbar_pinned(&entry, !pinned)
+            let entry = entry.clone();
+            after_the_menu(move || set_taskbar_pinned(&entry, !pinned));
         }));
     }
     if !group.windows.is_empty() {
@@ -127,4 +128,18 @@ fn lines(group: &WindowGroup) -> Vec<MenuLine> {
         }));
     }
     lines
+}
+
+/// Runs `f` once the menu's click is over. A change of the pinned programs builds the buttons again
+/// at once, and the button this menu belongs to with them: changed during the click, the menu went
+/// on with a button that was gone, and the shell stopped. The timer is under a root of its own, so
+/// the menu closing does not cancel it.
+fn after_the_menu(f: impl FnOnce() + 'static) {
+    let (_, root) = create_root(|| {});
+    root.with(|| {
+        set_timeout(std::time::Duration::ZERO, move || {
+            f();
+            root.dispose();
+        });
+    });
 }
