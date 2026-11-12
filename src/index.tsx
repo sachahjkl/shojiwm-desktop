@@ -544,13 +544,9 @@ COMPOSITOR.window.composition = (window: WaylandWindow) => {
   const interactive = computed(() => !minimized() && !away());
   // See-through while dragged over another group's caption it would join,
   // so the ghost tab under it shows (not while it moves along its own).
-  const opacity = computed(() => {
-    const drop = WINDOWS.groups.drop();
-    return drop?.dragged === window.id &&
-      !WINDOWS.groups.members(window.id).includes(drop.target)
-      ? 0.55
-      : 1;
-  });
+  const opacity = computed(() =>
+    WINDOWS.groups.dragsOut(window.id) ? 0.55 : 1,
+  );
 
   // Over the other windows while the taskbar's thumbnails point at it.
   const zIndex = highlightZIndex(window, WINDOWS.zIndex(window));

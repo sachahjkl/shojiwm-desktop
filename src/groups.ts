@@ -7,14 +7,14 @@
  * window draws a tab per window of its group.
  *
  * A window joins a group when another window is dropped on its caption, or a
- * tab on its tab strip. While such a drag is over a caption, `drop` says
+ * tab on its tab strip. While such a drag is over a caption, `dropOn` says
  * where the window would go, and that caption shows a ghost tab there.
  *
  * This module keeps the model and the tab layout only. The window manager
  * moves windows, gives the keyboard and applies the states: it calls
  * `join`, `activate`, `remove` and reads the rest.
  */
-import { signal } from "shoji_wm";
+import { signal, type Signal } from "shoji_wm";
 
 /** Where a dragged window would land if dropped now. */
 export interface DropTarget {
@@ -127,20 +127,109 @@ export class WindowGroups {
   private readonly groups = new Map<string, Group>();
   /** Each grouped window's group, by window id. */
   private readonly groupOf = new Map<string, Group>();
-  /** Bumped on every change, so whatever reads a group follows it. */
-  private readonly version = signal(0);
-  /** The drop a drag would make now, for the ghost tab. */
-  public readonly drop = signal<DropTarget | null>(null);
+  /**
+   * Per window, bumped when its group changes, so whatever reads a window's
+   * group follows that group only. Made when first read.
+   */
+  private readonly versions = new Map<string, Signal<number>>();
+  /** The drop a drag would make now. */
+  private drop: DropTarget | null = null;
+  /** Per window, the drop whose target is in its group (`dropOn`). */
+  private readonly drops = new Map<string, Signal<DropTarget | null>>();
+  /** Per window, whether it is dragged over another group (`dragsOut`). */
+  private readonly dragging = new Map<string, Signal<boolean>>();
 
-  private changed(): void {
-    this.version.set(this.version.peek() + 1);
+  /** The windows of `id`'s group, itself alone if none, not followed. */
+  private around(id: string): readonly string[] {
+    return this.groupOf.get(id)?.members ?? [id];
+  }
+
+  /** Whether the two windows are one, or tabs of one group. Not followed. */
+  public sameGroup(a: string, b: string): boolean {
+    if (a === b) {
+      return true;
+    }
+    const group = this.groupOf.get(a);
+    return group !== undefined && group === this.groupOf.get(b);
+  }
+
+  /** Bump the windows `ids` and update their drop signals. */
+  private changed(ids: Iterable<string>): void {
+    for (const id of ids) {
+      const version = this.versions.get(id);
+      if (version) {
+        version.set(version.peek() + 1);
+      }
+    }
+    this.refreshDrop(ids);
+  }
+
+  private refreshDrop(ids: Iterable<string>): void {
+    const drop = this.drop;
+    for (const id of ids) {
+      const on = drop !== null && this.sameGroup(id, drop.target) ? drop : null;
+      this.drops.get(id)?.set(on);
+      this.dragging
+        .get(id)
+        ?.set(
+          drop !== null &&
+            drop.dragged === id &&
+            !this.sameGroup(id, drop.target),
+        );
+    }
   }
 
   private find(id: string, follow: boolean): Group | undefined {
     if (follow) {
-      this.version();
+      let version = this.versions.get(id);
+      if (!version) {
+        version = signal(0);
+        this.versions.set(id, version);
+      }
+      version();
     }
     return this.groupOf.get(id);
+  }
+
+  /**
+   * The drop shown on the window's strip: the one whose target is in its
+   * group, else null. Followed for this window only.
+   */
+  public dropOn(id: string): DropTarget | null {
+    let value = this.drops.get(id);
+    if (!value) {
+      const drop = this.drop;
+      value = signal<DropTarget | null>(
+        drop !== null && this.sameGroup(id, drop.target) ? drop : null,
+      );
+      this.drops.set(id, value);
+    }
+    return value();
+  }
+
+  /**
+   * Whether the window is dragged over the caption of a group it would
+   * join (not along its own strip). Followed for this window only.
+   */
+  public dragsOut(id: string): boolean {
+    let value = this.dragging.get(id);
+    if (!value) {
+      const drop = this.drop;
+      value = signal(
+        drop !== null &&
+          drop.dragged === id &&
+          !this.sameGroup(id, drop.target),
+      );
+      this.dragging.set(id, value);
+    }
+    return value();
+  }
+
+  /** The window has closed: drop what was kept for it. */
+  public forget(id: string): void {
+    this.versions.delete(id);
+    this.drops.delete(id);
+    this.dragging.delete(id);
   }
 
   /** The windows of the window's group, in tab order; itself alone if none. */
@@ -184,6 +273,7 @@ export class WindowGroups {
     if (dragged === target) {
       return shown;
     }
+    const before = [...this.around(dragged), ...this.around(target)];
     this.leave(dragged);
     let group = this.groupOf.get(target);
     if (!group) {
@@ -195,7 +285,7 @@ export class WindowGroups {
     group.members.splice(at, 0, dragged);
     group.active = dragged;
     this.groupOf.set(dragged, group);
-    this.changed();
+    this.changed([...before, ...group.members]);
     return shown;
   }
 
@@ -211,7 +301,7 @@ export class WindowGroups {
       0,
       id,
     );
-    this.changed();
+    this.changed(group.members);
   }
 
   /** Show `id`'s tab. Returns the window shown before (itself if no change). */
@@ -223,7 +313,7 @@ export class WindowGroups {
     const before = group.active;
     group.active = id;
     group.follow = true;
-    this.changed();
+    this.changed(group.members);
     return before;
   }
 
@@ -247,7 +337,7 @@ export class WindowGroups {
     }
     group.first = Math.max(0, first);
     group.follow = false;
-    this.changed();
+    this.changed(group.members);
   }
 
   /** The tab `step` places from the shown one, round the group. */
@@ -267,9 +357,10 @@ export class WindowGroups {
    * one, else null. A group left with one window ends.
    */
   public remove(id: string): string | null {
+    const before = [...this.around(id)];
     const result = this.leave(id);
     if (result.changed) {
-      this.changed();
+      this.changed(before);
     }
     return result.next;
   }
@@ -304,7 +395,7 @@ export class WindowGroups {
 
   /** Set or clear the drop shown; unchanged values are not set again. */
   public setDrop(drop: DropTarget | null): void {
-    const current = this.drop.peek();
+    const current = this.drop;
     if (
       current === drop ||
       (current &&
@@ -315,7 +406,19 @@ export class WindowGroups {
     ) {
       return;
     }
-    this.drop.set(drop);
+    this.drop = drop;
+    // Only the windows of the groups the drop leaves and reaches, and the
+    // windows dragged.
+    const ids = new Set<string>();
+    for (const value of [current, drop]) {
+      if (value) {
+        ids.add(value.dragged);
+        for (const id of this.around(value.target)) {
+          ids.add(id);
+        }
+      }
+    }
+    this.refreshDrop(ids);
   }
 }
 

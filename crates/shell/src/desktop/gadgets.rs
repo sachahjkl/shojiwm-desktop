@@ -100,6 +100,8 @@ fn frame(
         right: 0.0,
         top: 0.0,
     }));
+    // The place during a drag: the settings get it once, when the drag ends.
+    let dragged: Signal<Option<Place>> = signal(None);
     let has_tools = !actions.is_empty();
     let tools = div()
         .absolute()
@@ -127,7 +129,7 @@ fn frame(
         .select_none()
         .interaction(ui)
         .dyn_style(move |s| {
-            let place = gadget.place();
+            let place = dragged.get().unwrap_or_else(|| gadget.place());
             let (aw, _) = area.get();
             let s = s.left(aw - w - place.right).top(bar_above() + place.top);
             s.cursor(if ui.pressed() {
@@ -142,13 +144,20 @@ fn frame(
                 let start = from.get();
                 let (aw, ah) = area.get_untracked();
                 let room = untrack(|| ah - bar_above() - bar_below());
-                gadget.set_place(Place {
+                dragged.set_if_changed(Some(Place {
                     right: (start.right - g.total.x).min(aw - w).max(0.0).round(),
                     top: (start.top + g.total.y).min(room - h).max(0.0).round(),
-                });
+                }));
             }
-            GrabPhase::End => {}
-            GrabPhase::Cancel => gadget.set_place(from.get()),
+            GrabPhase::End => {
+                if let Some(place) = dragged.get_untracked() {
+                    batch(|| {
+                        gadget.set_place(place);
+                        dragged.set(None);
+                    });
+                }
+            }
+            GrabPhase::Cancel => dragged.set(None),
         })
         .child(content)
         .child(tools)

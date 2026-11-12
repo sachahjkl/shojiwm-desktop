@@ -44,6 +44,13 @@ fn cover_file(player: &Player) -> Option<std::path::PathBuf> {
 /// The player now and what its controls do.
 pub fn media_controls() -> Div {
     let now = memo(player);
+    // The cover's file, else the player's program: the cover is made again only when it changes.
+    let picture = memo(move || {
+        now.with(|p| {
+            let p = p.as_ref()?;
+            Some(cover_file(p).ok_or_else(|| player_program(p)))
+        })
+    });
     let cover = div()
         .flex_none()
         .size(40.0)
@@ -63,20 +70,15 @@ pub fn media_controls() -> Div {
                 })
         })
         .child(dyn_view(move || {
-            let p = now.get()?;
-            Some(match cover_file(&p) {
-                Some(file) => img(file)
+            Some(match picture.get()? {
+                Ok(file) => img(file)
                     .size(38.0)
                     .object_fit(ObjectFit::Cover)
                     .into_view(),
-                None => {
-                    let program = player_program(&p);
-                    let icon = if anti_webui::shell::icon_path(&program, 24).is_some() {
-                        program
-                    } else {
-                        "audio-x-generic".to_owned()
-                    };
-                    shell_icon(icon, 24.0).into_view()
+                // The program's icon, else a note: a worker asks the icon theme.
+                Err(program) => {
+                    let icon = crate::status::icon_or_signal(&program, "audio-x-generic");
+                    shell_icon(move || icon.get(), 24.0).into_view()
                 }
             })
         }));

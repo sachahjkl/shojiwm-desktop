@@ -7,10 +7,15 @@
 //! `color-scheme`), which the programs read as well ([`dark`], [`set_dark`]).
 
 use anti_webui::prelude::*;
-use anti_webui::shell::prelude::*;
 use serde_json::{Map, Value, json};
 use std::cell::Cell;
-use std::path::PathBuf;
+use std::io::{BufRead, BufReader};
+use std::path::{Path, PathBuf};
+use std::process::{Command, Stdio};
+use std::rc::Rc;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::mpsc::{Receiver, RecvTimeoutError, Sender, SyncSender, channel, sync_channel};
+use std::sync::{Mutex, OnceLock};
 use std::time::{Duration, SystemTime};
 
 /// A place on the desktop, from the right and top edges of the screen less the bar.
@@ -449,18 +454,23 @@ pub fn home() -> Option<PathBuf> {
     std::env::var_os("HOME").map(PathBuf::from)
 }
 
-fn modified() -> Option<SystemTime> {
-    std::fs::metadata(path()).and_then(|m| m.modified()).ok()
+// ----- the file, kept by a worker ---------------------------------------------------------------
+//
+// One thread, the keeper, owns the file: it reads it, writes it and watches it. The UI thread
+// never touches the disk: it sends each new value to the keeper ([`Request::Save`]), and the
+// keeper sends back what the file says when another program changes it ([`Request::Listen`]).
+
+fn modified(path: &Path) -> Option<SystemTime> {
+    std::fs::metadata(path).and_then(|m| m.modified()).ok()
 }
 
-fn load() -> Option<Settings> {
-    let text = std::fs::read_to_string(path()).ok()?;
+fn load(path: &Path) -> Option<Settings> {
+    let text = std::fs::read_to_string(path).ok()?;
     let value = serde_json::from_str::<Value>(&text).ok()?;
     Some(Settings::from_json(&value))
 }
 
-fn save(settings: &Settings) {
-    let path = path();
+fn save(path: &Path, settings: &Settings) {
     if let Some(dir) = path.parent() {
         let _ = std::fs::create_dir_all(dir);
     }
@@ -468,88 +478,193 @@ fn save(settings: &Settings) {
     // Written next to it and moved over it, so that a crash never leaves half a file.
     let partial = path.with_extension("json.partial");
     if std::fs::write(&partial, text + "\n").is_ok() {
-        let _ = std::fs::rename(&partial, &path);
+        let _ = std::fs::rename(&partial, path);
     }
+}
+
+/// Whether changes are written. Off for the greeter and for pictures of the shell.
+static SAVING: AtomicBool = AtomicBool::new(true);
+
+/// Keeps changes from being written, for pictures of the shell (`preview`) and the greeter. Call
+/// it before the first [`settings`] or [`preload`].
+pub fn never_save() {
+    SAVING.store(false, Ordering::Relaxed);
+}
+
+fn saving() -> bool {
+    SAVING.load(Ordering::Relaxed)
+}
+
+/// How often the keeper looks at the file for changes made by hand or by another program.
+const WATCH: Duration = Duration::from_millis(700);
+
+/// How long the settings must stay still before the keeper writes them: not on each step of a
+/// slider.
+const SETTLE: Duration = Duration::from_millis(300);
+
+/// What the UI thread asks of the keeper.
+enum Request {
+    /// The settings now: the keeper writes the last of them once they settle.
+    Save(Box<Settings>),
+    /// Where the keeper sends what the file says after another program changed it.
+    Listen(UiSender<Settings>),
+}
+
+struct Keeper {
+    requests: Sender<Request>,
+    /// The keeper's first read of the file, until a UI thread takes it.
+    first: Mutex<Receiver<Option<Settings>>>,
+    /// That first read, once taken.
+    loaded: OnceLock<Option<Settings>>,
+}
+
+fn keeper() -> &'static Keeper {
+    static KEEPER: OnceLock<Keeper> = OnceLock::new();
+    KEEPER.get_or_init(|| {
+        let (requests, inbox) = channel();
+        let (first_sender, first) = sync_channel(1);
+        std::thread::Builder::new()
+            .name("settings".into())
+            .spawn(move || keep_file(inbox, first_sender))
+            .expect("the settings thread starts");
+        Keeper {
+            requests,
+            first: Mutex::new(first),
+            loaded: OnceLock::new(),
+        }
+    })
+}
+
+/// Starts reading the file on the keeper's thread. Call it at the start of `main`, before the
+/// shell connects to the compositor: the read is then done by the time [`settings`] needs it.
+pub fn preload() {
+    keeper();
+}
+
+/// The keeper's thread: the first read, then the writes and the watch.
+fn keep_file(inbox: Receiver<Request>, first: SyncSender<Option<Settings>>) {
+    let path = path();
+    let loaded = load(&path);
+    // The first run: write the defaults out, so there is a file to edit.
+    if loaded.is_none() && saving() {
+        save(&path, &Settings::default());
+    }
+    let mut seen = modified(&path);
+    let _ = first.send(loaded);
+    drop(first);
+    let mut listeners: Vec<UiSender<Settings>> = Vec::new();
+    loop {
+        match inbox.recv_timeout(WATCH) {
+            Ok(Request::Listen(listener)) => listeners.push(listener),
+            Ok(Request::Save(next)) => {
+                let next = *next;
+                let (latest, more) = settle(next, &inbox, SETTLE);
+                listeners.extend(more);
+                if saving() {
+                    save(&path, &latest);
+                    // Its own write: not read back.
+                    seen = modified(&path);
+                }
+            }
+            Err(RecvTimeoutError::Timeout) => {
+                if listeners.is_empty() {
+                    continue;
+                }
+                let now = modified(&path);
+                if now.is_some() && now != seen {
+                    seen = now;
+                    if let Some(read) = load(&path) {
+                        for listener in &listeners {
+                            listener.send(read.clone());
+                        }
+                    }
+                }
+            }
+            Err(RecvTimeoutError::Disconnected) => return,
+        }
+    }
+}
+
+/// The last of the saves that come until none comes for `quiet`: the one to write. The listeners
+/// that come meanwhile are given back.
+fn settle(
+    mut latest: Settings,
+    inbox: &Receiver<Request>,
+    quiet: Duration,
+) -> (Settings, Vec<UiSender<Settings>>) {
+    let mut listeners = Vec::new();
+    loop {
+        match inbox.recv_timeout(quiet) {
+            Ok(Request::Save(next)) => latest = *next,
+            Ok(Request::Listen(listener)) => listeners.push(listener),
+            Err(_) => return (latest, listeners),
+        }
+    }
+}
+
+/// What the file said at the start, else `None` (no file, or not JSON).
+///
+/// This is the one wait of the UI thread on the disk, and only if the keeper has not read the file
+/// yet: [`preload`] starts the read before the shell connects to the compositor, so it is done by
+/// then. The wait is kept because what the shell does first depends on the real values: it
+/// sends the screens' modes (`display_choices`) and the theme to the compositor, places the bars
+/// on their side, picks light or dark, and follows the sun or not (`sun.rs` writes dconf). With
+/// the defaults first, the screens would change mode and back, the desktop would flash, and a
+/// change made before the read came would write the defaults over the user's file. No frame is
+/// drawn before it.
+fn first_read() -> Option<Settings> {
+    let keeper = keeper();
+    keeper
+        .loaded
+        .get_or_init(|| {
+            keeper
+                .first
+                .lock()
+                .ok()
+                .and_then(|first| first.recv().ok())
+                .flatten()
+        })
+        .clone()
 }
 
 thread_local! {
     static SETTINGS: Cell<Option<Signal<Settings>>> = const { Cell::new(None) };
-    static SAVING: Cell<bool> = const { Cell::new(true) };
 }
-
-/// Keeps changes from being written, for pictures of the shell (`preview`).
-pub fn never_save() {
-    SAVING.with(|s| s.set(false));
-}
-
-/// How often the file is looked at for changes made by hand or by another program.
-const WATCH: Duration = Duration::from_millis(700);
 
 /// The settings. Reading them tracks them; writing them (`settings().update(..)`) saves them a
-/// moment later. A change to the file from elsewhere is read back.
+/// moment later, on the keeper's thread. A change to the file from elsewhere is read back.
 pub fn settings() -> Signal<Settings> {
     SETTINGS.with(|cell| {
         cell.get().unwrap_or_else(|| {
+            let first = first_read();
             let (s, _) = create_root(|| {
-                let first = load();
-                let missing = first.is_none();
                 let s = signal(first.unwrap_or_default());
-                // The first run: write the defaults out, so there is a file to edit.
-                if missing && SAVING.with(Cell::get) {
-                    save(&s.get_untracked());
-                }
-                let seen: std::rc::Rc<Cell<Option<SystemTime>>> =
-                    std::rc::Rc::new(Cell::new(modified()));
-                // Saved once things have settled, not on every step of a slider.
-                let pending: Cell<Option<Timeout>> = Cell::new(None);
-                let skip = std::rc::Rc::new(Cell::new(true));
+                let skip = Rc::new(Cell::new(true));
                 {
-                    let seen = seen.clone();
                     let skip = skip.clone();
+                    let requests = keeper().requests.clone();
                     effect(move || {
                         let now = s.get();
-                        if skip.replace(false) || !SAVING.with(Cell::get) {
+                        if skip.replace(false) || !saving() {
                             return;
                         }
-                        if let Some(t) = pending.take() {
-                            t.cancel();
-                        }
-                        let seen = seen.clone();
-                        pending.set(Some(set_timeout(Duration::from_millis(300), move || {
-                            save(&now);
-                            seen.set(modified());
-                        })));
+                        let _ = requests.send(Request::Save(Box::new(now)));
                     });
                 }
-                watch(s, seen, skip);
+                let read_back = ui_channel(move |read: Settings| {
+                    if read != s.get_untracked() {
+                        // Not written back: it is what the file says already.
+                        skip.set(true);
+                        s.set(read);
+                    }
+                });
+                let _ = keeper().requests.send(Request::Listen(read_back));
                 s
             });
             cell.set(Some(s));
             s
         })
     })
-}
-
-/// Reads the file again whenever its time changes and it is not this shell's own write.
-fn watch(
-    s: Signal<Settings>,
-    seen: std::rc::Rc<Cell<Option<SystemTime>>>,
-    skip: std::rc::Rc<Cell<bool>>,
-) {
-    set_timeout(WATCH, move || {
-        let now = modified();
-        if now.is_some() && now != seen.get() {
-            seen.set(now);
-            if let Some(read) = load()
-                && read != s.get_untracked()
-            {
-                // Not written back: it is what the file says already.
-                skip.set(true);
-                s.set(read);
-            }
-        }
-        watch(s, seen, skip);
-    });
 }
 
 /// `settings().update(f)`, for short.
@@ -575,17 +690,41 @@ fn parse_scheme(line: &str) -> Option<String> {
     Some(line[start..end].to_owned())
 }
 
-/// A dconf key, followed: `on_value` gets each line of `dconf read`, then of `dconf watch`.
-fn follow_dconf(key: &'static str, on_value: impl Fn(&str) + Clone + 'static) {
-    let read = Process::new("dconf").args(["read", key]).spawn();
-    {
-        let on_value = on_value.clone();
-        read.on_line(move |line| on_value(line));
-    }
-    let watch = Process::new("dconf").args(["watch", key]).spawn();
-    watch.on_line(move |line| on_value(line));
-    // The processes live as long as the root they were made in: the whole shell.
-    let _ = (read, watch);
+/// A dconf key, followed: `on_value` gets each line of `dconf read`, then of `dconf watch`, on
+/// the UI thread. The two run on a thread of their own, which waits on `dconf watch` for the
+/// whole life of the shell.
+fn follow_dconf(key: &'static str, on_value: impl Fn(&str) + 'static) {
+    let lines = ui_channel(move |line: String| on_value(&line));
+    let _ = std::thread::Builder::new()
+        .name("dconf".into())
+        .spawn(move || {
+            if let Ok(out) = Command::new("dconf")
+                .args(["read", key])
+                .stdin(Stdio::null())
+                .stderr(Stdio::null())
+                .output()
+            {
+                for line in String::from_utf8_lossy(&out.stdout).lines() {
+                    lines.send(line.to_owned());
+                }
+            }
+            let Ok(mut watch) = Command::new("dconf")
+                .args(["watch", key])
+                .stdin(Stdio::null())
+                .stdout(Stdio::piped())
+                .stderr(Stdio::null())
+                .spawn()
+            else {
+                return;
+            };
+            if let Some(out) = watch.stdout.take() {
+                for line in BufReader::new(out).lines() {
+                    let Ok(line) = line else { break };
+                    lines.send(line);
+                }
+            }
+            let _ = watch.wait();
+        });
 }
 
 /// The system prefers dark. It starts as the last one seen, kept in the settings, so the shell
@@ -620,15 +759,24 @@ fn dark_signal() -> Signal<bool> {
 pub fn set_dark(on: bool) {
     dark_signal().set(on);
     let value = if on { "'prefer-dark'" } else { "'default'" };
-    let _ = std::process::Command::new("dconf")
-        .args(["write", SCHEME_KEY, value])
-        .spawn();
-    if let Some(script) = crate::paths::shell_file("gtk-switch.sh") {
-        let _ = std::process::Command::new("sh")
+    crate::spawn::spawn_detached("dconf", dconf_write(SCHEME_KEY, value));
+    // The script is looked for on the spawner too: that is a look at the disk.
+    crate::spawn::on_spawner(move || {
+        let script = crate::paths::shell_file("gtk-switch.sh")?;
+        Command::new("sh")
             .arg(script)
             .args(["dconf", GTK_THEME_KEY, if on { "dark" } else { "light" }])
-            .spawn();
-    }
+            .stdin(Stdio::null())
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .spawn()
+            .ok()
+    });
+}
+
+/// The arguments of `dconf write key value`.
+fn dconf_write(key: &str, value: &str) -> Vec<String> {
+    vec!["write".into(), key.into(), value.into()]
 }
 
 /// The user's own choice of light or dark: it ends the following of the sun (`sun.rs`).
@@ -659,9 +807,10 @@ pub fn animations() -> bool {
 }
 
 pub fn set_animations(on: bool) {
-    let _ = std::process::Command::new("dconf")
-        .args(["write", ANIMATIONS_KEY, if on { "true" } else { "false" }])
-        .spawn();
+    crate::spawn::spawn_detached(
+        "dconf",
+        dconf_write(ANIMATIONS_KEY, if on { "true" } else { "false" }),
+    );
 }
 
 /// The length of an animation: `ms` at the chosen speed, or 0 when the system asks for none.
@@ -672,4 +821,51 @@ pub fn motion(ms: f32) -> u64 {
     let speed = settings().get().animation_speed;
     let speed = if speed > 0.0 { speed } else { 1.0 };
     (ms as f64 / speed).round() as u64
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn with_wallpaper(name: &str) -> Settings {
+        Settings {
+            wallpaper: name.into(),
+            ..Settings::default()
+        }
+    }
+
+    #[test]
+    fn the_keeper_writes_the_last_of_the_saves_that_came_together() {
+        let (requests, inbox) = channel();
+        for name in ["b", "c", "d"] {
+            requests
+                .send(Request::Save(Box::new(with_wallpaper(name))))
+                .unwrap();
+        }
+        let (latest, listeners) = settle(with_wallpaper("a"), &inbox, Duration::from_millis(1));
+        assert_eq!(latest.wallpaper, "d");
+        assert!(listeners.is_empty());
+    }
+
+    #[test]
+    fn a_save_alone_is_written_as_it_is() {
+        let (_requests, inbox) = channel();
+        let (latest, _) = settle(with_wallpaper("a"), &inbox, Duration::from_millis(1));
+        assert_eq!(latest.wallpaper, "a");
+    }
+
+    #[test]
+    fn the_file_reads_back_what_was_written() {
+        let s = with_wallpaper("/tmp/a.png");
+        assert_eq!(Settings::from_json(&s.to_json()), s);
+    }
+
+    #[test]
+    fn reads_the_scheme_as_dconf_prints_it() {
+        assert_eq!(
+            parse_scheme("'prefer-dark'").as_deref(),
+            Some("prefer-dark")
+        );
+        assert_eq!(parse_scheme(""), None);
+    }
 }

@@ -17,6 +17,7 @@
 
 use super::search::{self, Search, app_icon, program_lines};
 use super::{close, places, user_tile};
+use crate::apps::Folder;
 use crate::paths::asset;
 use crate::settings::{motion, settings};
 use crate::theme::{
@@ -93,8 +94,9 @@ impl Menu {
     }
 }
 
+/// The jump lists are found when the recent files change (`apps`): this is a lookup.
 fn has_jump_list(app: &Application) -> bool {
-    !crate::apps::recent_for(app).is_empty() || !crate::apps::pinned_files_for(app).is_empty()
+    untrack(|| crate::apps::has_jump_list(app))
 }
 
 /// The Start menu of a screen, as it is when it opens.
@@ -331,16 +333,27 @@ fn program_row(menu: &Menu, app: Application, bold: bool) -> Div {
     with_context_menu(row, move || program_lines(&app, close))
 }
 
-/// The pinned programs, a line, then the ones used most.
-fn home_list(menu: Menu) -> View {
-    dyn_view(move || {
-        let pinned = crate::apps::pinned();
-        let frequent = if settings().with(|s| s.show_frequent) {
-            crate::apps::frequent()
+/// What a program row is built from, for a keyed list.
+fn program_key(app: &Application) -> (String, String, Option<String>) {
+    (app.id.clone(), app.name.clone(), app.icon.clone())
+}
+
+/// The pinned programs, a line, then the ones used most. Each list is a memo of its own
+/// settings: another setting changes nothing here.
+fn home_list(menu: Menu) -> Div {
+    let pins = memo(|| settings().with(|s| s.start_pinned.clone()));
+    let show_frequent = memo(|| settings().with(|s| s.show_frequent));
+    let pinned = memo(move || crate::apps::entries_of(&pins.get()));
+    let frequent = memo(move || {
+        if show_frequent.get() {
+            crate::apps::frequent_except(&pins.get())
         } else {
             Vec::new()
-        };
-        let divider = (!pinned.is_empty() && !frequent.is_empty()).then(|| {
+        }
+    });
+    let divider = show(
+        move || pinned.with(|p| !p.is_empty()) && frequent.with(|f| !f.is_empty()),
+        || {
             div()
                 .flex_none()
                 .h(DIVIDER_ROOM)
@@ -352,80 +365,87 @@ fn home_list(menu: Menu) -> View {
                         .h(1.0)
                         .dyn_style(|s| s.bg(scheme().menu_divider)),
                 )
-        });
-        let pinned_rows: Vec<Div> = pinned
-            .into_iter()
-            .map(|app| program_row(&menu, app, true))
-            .collect();
-        let frequent_rows: Vec<Div> = frequent
-            .into_iter()
-            .map(|app| program_row(&menu, app, false))
-            .collect();
-        div()
-            .flex()
-            .flex_col()
-            .gap(1.0)
-            .children(pinned_rows)
-            .children(divider)
-            .children(frequent_rows)
-    })
+        },
+    );
+    let pinned_menu = menu.clone();
+    div()
+        .flex()
+        .flex_col()
+        .gap(1.0)
+        .child(div().flex().flex_col().gap(1.0).child(for_each(
+            move || pinned.get(),
+            program_key,
+            move |app| program_row(&pinned_menu, app, true),
+        )))
+        .child(divider)
+        .child(div().flex().flex_col().gap(1.0).child(for_each(
+            move || frequent.get(),
+            program_key,
+            move |app| program_row(&menu, app, false),
+        )))
 }
 
 /// Every program, in folders; a click on a folder opens it in place, and closes the one open.
-fn folder_list(open_folder: Signal<String>) -> View {
-    dyn_view(move || {
-        let folders = crate::apps::folders();
-        div().flex().flex_col().gap(1.0).children(
-            folders
-                .into_iter()
-                .map(|folder| {
-                    let name = folder.name.clone();
-                    let expanded = {
-                        let name = name.clone();
-                        move || open_folder.with(|o| *o == name)
-                    };
-                    let expanded_icon = expanded.clone();
-                    let expanded_row = expanded.clone();
-                    let header = menu_row(
-                        move || {
-                            let file = if expanded_icon() {
-                                "icons/folder-open.png"
-                            } else {
-                                "icons/folder.png"
-                            };
-                            asset(file).to_string_lossy().into_owned()
-                        },
-                        name.clone(),
-                        RowLook::default(),
-                        expanded_row,
-                    )
-                    .on_click({
-                        let name = name.clone();
-                        move |_| {
-                            open_folder.update(|o| {
-                                *o = if *o == name {
-                                    String::new()
-                                } else {
-                                    name.clone()
-                                }
-                            })
-                        }
-                    });
-                    let entries = folder.entries;
-                    let inside = show(expanded, move || {
-                        div().flex().flex_col().children(
-                            entries
-                                .iter()
-                                .cloned()
-                                .map(folder_entry)
-                                .collect::<Vec<_>>(),
-                        )
-                    });
-                    div().flex().flex_col().child(header).child(inside)
-                })
+/// The folders are made with the programs' index; a folder is built again only when its
+/// programs change.
+fn folder_list(open_folder: Signal<String>) -> Div {
+    let folders = memo(crate::apps::folders);
+    div().flex().flex_col().gap(1.0).child(for_each(
+        move || folders.get(),
+        |folder: &Folder| {
+            let programs: Vec<(String, String, Option<String>)> =
+                folder.entries.iter().map(program_key).collect();
+            (folder.name.clone(), programs)
+        },
+        move |folder| folder_view(folder, open_folder),
+    ))
+}
+
+/// A folder of All Programs: its row, and its programs under it while it is open.
+fn folder_view(folder: Folder, open_folder: Signal<String>) -> Div {
+    let name = folder.name.clone();
+    let expanded = {
+        let name = name.clone();
+        move || open_folder.with(|o| *o == name)
+    };
+    let expanded_icon = expanded.clone();
+    let expanded_row = expanded.clone();
+    let header = menu_row(
+        move || {
+            let file = if expanded_icon() {
+                "icons/folder-open.png"
+            } else {
+                "icons/folder.png"
+            };
+            asset(file).to_string_lossy().into_owned()
+        },
+        name.clone(),
+        RowLook::default(),
+        expanded_row,
+    )
+    .on_click({
+        let name = name.clone();
+        move |_| {
+            open_folder.update(|o| {
+                *o = if *o == name {
+                    String::new()
+                } else {
+                    name.clone()
+                }
+            })
+        }
+    });
+    let entries = folder.entries;
+    let inside = show(expanded, move || {
+        div().flex().flex_col().children(
+            entries
+                .iter()
+                .cloned()
+                .map(folder_entry)
                 .collect::<Vec<_>>(),
         )
-    })
+    });
+    div().flex().flex_col().child(header).child(inside)
 }
 
 /// A program inside a folder of All Programs.

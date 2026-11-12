@@ -49,9 +49,14 @@ struct Printer {
     state: String,
 }
 
+/// What the page shows, read by a worker: the icons are looked up in the theme there too.
 #[derive(Clone, Debug, Default, PartialEq)]
 struct Devices {
-    usb: Vec<String>,
+    /// The name of each USB device, and its icon.
+    usb: Vec<(String, String)>,
+    /// The icons of a screen and of a printer.
+    display_icon: String,
+    printer_icon: String,
     printers: Vec<Printer>,
     default_printer: String,
 }
@@ -74,7 +79,11 @@ fn read_devices() -> Devices {
             continue;
         }
         match section {
-            "usb" => devices.usb.push(line.trim().to_owned()),
+            "usb" => {
+                let name = line.trim().to_owned();
+                let icon = icon_for(&name);
+                devices.usb.push((name, icon));
+            }
             "printers" => {
                 let (name, state) = line.split_once('\t').unwrap_or((line, ""));
                 devices.printers.push(Printer {
@@ -86,10 +95,13 @@ fn read_devices() -> Devices {
             _ => {}
         }
     }
+    devices.display_icon = icon_or("video-display", "computer");
+    devices.printer_icon = icon_or("printer", "document-print");
     devices
 }
 
-/// An icon of the theme that fits a device's name.
+/// An icon of the theme that fits a device's name. It looks in the theme: call it on a worker
+/// thread only.
 fn icon_for(name: &str) -> String {
     let lower = name.to_lowercase();
     let icon = KINDS
@@ -127,12 +139,11 @@ pub fn page() -> Div {
                 tiles.push(tile(
                     label,
                     detail,
-                    icon_or("video-display", "computer"),
+                    devices.with(|d| d.display_icon.clone()),
                     false,
                 ));
             }
-            for name in devices.with(|d| d.usb.clone()) {
-                let icon = icon_for(&name);
+            for (name, icon) in devices.with(|d| d.usb.clone()) {
                 tiles.push(tile(name, "USB".into(), icon, false));
             }
             flow(tiles)
@@ -142,9 +153,13 @@ pub fn page() -> Div {
             sub_heading(format!("Printers ({count})"))
         }))
         .child(dyn_view(move || {
-            let (printers, default) =
-                devices.with(|d| (d.printers.clone(), d.default_printer.clone()));
-            let icon = icon_or("printer", "document-print");
+            let (printers, default, icon) = devices.with(|d| {
+                (
+                    d.printers.clone(),
+                    d.default_printer.clone(),
+                    d.printer_icon.clone(),
+                )
+            });
             flow(
                 printers
                     .into_iter()

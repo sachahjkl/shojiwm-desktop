@@ -13,7 +13,6 @@ use std::cell::Cell;
 use std::f64::consts::PI;
 use std::path::PathBuf;
 use std::rc::Rc;
-use std::sync::OnceLock;
 use std::time::Duration;
 
 /// How often the choice is looked at.
@@ -154,21 +153,61 @@ fn zone_name() -> Option<String> {
     (!name.is_empty()).then_some(name)
 }
 
-/// The place of the time zone; `None` when the zone or tzdata's tables are not found.
-pub fn location() -> Option<Location> {
-    static LOCATION: OnceLock<Option<Location>> = OnceLock::new();
-    *LOCATION.get_or_init(|| {
-        let zone = zone_name()?;
-        zone_folders().iter().find_map(|folder| {
-            ["zone1970.tab", "zone.tab"].iter().find_map(|table| {
-                let text = std::fs::read_to_string(folder.join(table)).ok()?;
-                find_zone(&text, &zone)
-            })
+/// The place of the time zone; `None` when the zone or tzdata's tables are not found. It reads
+/// files and runs `timedatectl`: call it on a worker thread only.
+fn read_location() -> Option<Location> {
+    let zone = zone_name()?;
+    zone_folders().iter().find_map(|folder| {
+        ["zone1970.tab", "zone.tab"].iter().find_map(|table| {
+            let text = std::fs::read_to_string(folder.join(table)).ok()?;
+            find_zone(&text, &zone)
         })
     })
 }
 
-/// Today's sun at the time zone's place; `None` when the place is not known.
+/// The place of the time zone, as looked up.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum Place {
+    /// A worker is still looking it up.
+    Looking,
+    /// Found, or `None` when the zone or tzdata's tables are not found.
+    Known(Option<Location>),
+}
+
+thread_local! {
+    static PLACE: Cell<Option<Signal<Place>>> = const { Cell::new(None) };
+}
+
+/// The place of the time zone. A worker looks it up once, the first time it is asked for.
+/// Reading it tracks it.
+pub fn place() -> Place {
+    PLACE
+        .with(|cell| {
+            cell.get().unwrap_or_else(|| {
+                let (s, _) = untrack(|| {
+                    create_root(|| {
+                        let s = signal(Place::Looking);
+                        task(read_location).then(move |found| s.set(Place::Known(found)));
+                        s
+                    })
+                });
+                cell.set(Some(s));
+                s
+            })
+        })
+        .get()
+}
+
+/// The place of the time zone; `None` when it is not known (yet). Reading it tracks it.
+pub fn location() -> Option<Location> {
+    match place() {
+        Place::Known(found) => found,
+        Place::Looking => None,
+    }
+}
+
+/// Today's sun at the time zone's place; `None` when the place is not known (yet). Reading it
+/// tracks the place.
 pub fn today() -> Option<SunDay> {
     let now = LocalTime::now();
     Some(sun_day(
@@ -221,8 +260,10 @@ pub fn install() {
     let started = Cell::new(false);
     {
         let check = check.clone();
+        // The place found by its worker counts as a change too.
         effect(move || {
             mode.with(|_| ());
+            place();
             applied.set(None);
             if started.replace(true) {
                 untrack(|| check());

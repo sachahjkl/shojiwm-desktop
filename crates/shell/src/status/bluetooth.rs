@@ -325,8 +325,14 @@ fn device_row(state: PanelState, paired_count: Memo<usize>, address: String) -> 
     let connected = flag(|d| d.connected);
     let pairing = memo(move || working.get() == Some("Pairing\u{2026}"));
     let shown = move |on: Memo<bool>| move |s: Style| if on.get() { s } else { s.hidden() };
-    let device_icon = memo(move || {
-        found.with(|d| icon_or(d.as_ref().map_or("", |d| d.icon.as_str()), "bluetooth"))
+    let wanted_icon =
+        memo(move || found.with(|d| d.as_ref().map_or(String::new(), |d| d.icon.clone())));
+    let device_icon = signal(String::new());
+    // A worker asks the icon theme; a new name drops the answer for the one before.
+    effect(move || {
+        icon_or(&wanted_icon.get(), "bluetooth", move |icon| {
+            device_icon.set(icon);
+        });
     });
     let card_head = div()
         .flex()
@@ -336,7 +342,12 @@ fn device_row(state: PanelState, paired_count: Memo<usize>, address: String) -> 
         .h(38.0)
         .pl(6.0)
         .pr(8.0)
-        .child(shell_icon(move || device_icon.get(), 28.0))
+        .child(
+            div()
+                .flex_none()
+                .size(28.0)
+                .child(shell_icon(move || device_icon.get(), 28.0)),
+        )
         .child(
             div()
                 .flex_1()

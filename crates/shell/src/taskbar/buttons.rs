@@ -21,6 +21,7 @@ use crate::theme::{Align, away_from_bar, corner, item_radius, theme};
 use crate::ui::{font, shell_icon, shell_tooltip, vertical_gradient};
 use anti_webui::prelude::*;
 use std::cell::Cell;
+use std::collections::HashMap;
 use std::rc::Rc;
 use std::time::Duration;
 
@@ -61,6 +62,9 @@ struct Slot {
 struct Row {
     groups: Memo<Vec<WindowGroup>>,
     slots: Memo<Vec<Slot>>,
+    /// The index of each group in `groups` and `slots`, by key: a button finds its own without
+    /// a pass over the row.
+    positions: Memo<HashMap<String, usize>>,
     /// The index of the button being dragged.
     drag_from: Signal<Option<usize>>,
     /// The button the drop goes before (the count of buttons for the end).
@@ -153,9 +157,18 @@ pub(super) fn buttons(bar: Bar) -> Div {
                 .collect()
         })
     });
+    let positions = memo(move || {
+        groups.with(|list| {
+            list.iter()
+                .enumerate()
+                .map(|(i, g)| (g.key.clone(), i))
+                .collect::<HashMap<_, _>>()
+        })
+    });
     let row = Row {
         groups,
         slots,
+        positions,
         drag_from: signal(None),
         drop_before: signal(None),
     };
@@ -313,16 +326,22 @@ fn plate(kind: Plate, shown: impl Fn() -> bool + 'static) -> Div {
 }
 
 fn task_button(bar: Bar, row: Row, key: String) -> Div {
+    let index = {
+        let key = key.clone();
+        memo(move || row.positions.with(|p| p.get(&key).copied()))
+    };
     let group = {
         let key = key.clone();
         memo(move || {
-            row.groups
-                .with(|g| g.iter().find(|g| g.key == key).cloned())
+            let i = index.get()?;
+            row.groups.with(|g| {
+                g.get(i)
+                    .filter(|g| g.key == key)
+                    // An index not yet updated: a pass over the row finds it.
+                    .or_else(|| g.iter().find(|g| g.key == key))
+                    .cloned()
+            })
         })
-    };
-    let index = {
-        let key = key.clone();
-        memo(move || row.slots.with(|s| s.iter().position(|s| s.key == key)))
     };
     let slot = memo(move || {
         index

@@ -151,17 +151,32 @@ fn parse_session(id: String, text: &str) -> Option<Session> {
 }
 
 impl Greeter {
+    /// The state, with no session until a worker has read the sessions and the last one used.
     fn new() -> Self {
-        let chosen = std::fs::read_to_string(last_session_file())
-            .map(|text| text.trim().to_owned())
-            .unwrap_or_else(|_| {
-                std::env::var("SHOJIWM_GREETER_DEFAULT_SESSION").unwrap_or_default()
-            });
-        Self {
+        let greeter = Self {
             auth: Auth::new(authenticate),
-            sessions: signal(read_sessions()),
-            session_id: signal(chosen),
-        }
+            sessions: signal(Vec::new()),
+            session_id: signal(String::new()),
+        };
+        let file = last_session_file();
+        task(move || {
+            let chosen = std::fs::read_to_string(file)
+                .map(|text| text.trim().to_owned())
+                .unwrap_or_else(|_| {
+                    std::env::var("SHOJIWM_GREETER_DEFAULT_SESSION").unwrap_or_default()
+                });
+            (read_sessions(), chosen)
+        })
+        .then(move |(sessions, chosen)| {
+            batch(|| {
+                // A session picked before the list came stays picked.
+                if greeter.session_id.with_untracked(String::is_empty) {
+                    greeter.session_id.set(chosen);
+                }
+                greeter.sessions.set(sessions);
+            });
+        });
+        greeter
     }
 
     /// The session chosen, else the first. Reading it tracks it.
@@ -283,11 +298,22 @@ fn launch(greeter: Greeter) {
         fail(greeter.auth, "Cannot log on: no session.");
         return;
     };
+    // The file is written before the session starts: the greeter leaves once it has.
     let file = last_session_file();
-    if let Some(dir) = file.parent() {
-        let _ = std::fs::create_dir_all(dir);
-    }
-    let _ = std::fs::write(&file, format!("{}\n", session.id));
+    let id = session.id.clone();
+    crate::background::off_thread(
+        move || {
+            if let Some(dir) = file.parent() {
+                let _ = std::fs::create_dir_all(dir);
+            }
+            let _ = std::fs::write(&file, format!("{id}\n"));
+        },
+        move |()| start_session(&session),
+    );
+}
+
+/// Asks greetd to start `session`.
+fn start_session(session: &Session) {
     let desktops = if session.desktop_names.is_empty() {
         session.id.clone()
     } else {
@@ -450,10 +476,10 @@ pub fn run() -> Result<(), String> {
             }
             let login = user();
             let name = full_name(&login);
-            let picture = accounts_service_picture(&login).unwrap_or_else(|| asset("user.svg"));
+            let picture = accounts_service_picture(&login);
             let account = Account {
                 name: Rc::new(move || name.get()),
-                picture: Rc::new(move || picture.clone()),
+                picture: Rc::new(move || picture.get().unwrap_or_else(|| asset("user.svg"))),
             };
             for_each_output(move |output| {
                 let output_name = output.name.clone();

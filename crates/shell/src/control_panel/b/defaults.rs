@@ -204,8 +204,7 @@ fn set_default(handlers: Signal<HashMap<String, Handlers>>, kind: &Kind, id: Str
 /// What to show for a `.desktop` file name: its program's name, else the name without the
 /// extension.
 fn name_of(id: &str) -> String {
-    apps()
-        .get(id)
+    crate::apps::entry_by_id(id)
         .map(|a| a.name)
         .unwrap_or_else(|| id.trim_end_matches(".desktop").to_owned())
 }
@@ -218,7 +217,7 @@ struct Choice {
 }
 
 /// The words of a `.desktop` file's `Exec=`, without the field codes (`%f`, `%U`, ...), as
-/// Quickshell's `DesktopEntry.command` gives them.
+/// Quickshell's `DesktopEntry.command` gives them. It reads the disk: call it in a task.
 fn exec_words(id: &str) -> Option<Vec<String>> {
     let text = std::fs::read_to_string(desktop_file(id)?).ok()?;
     let exec = desktop_entry_keys(&text)
@@ -276,7 +275,7 @@ fn exec_words(id: &str) -> Option<Vec<String>> {
 }
 
 /// The command line that starts an installed program, as a shell reads it: its `.desktop`
-/// file's command, in the terminal when it says so.
+/// file's command, in the terminal when it says so. It reads the disk: call it in a task.
 fn command_of(app: &Application) -> Option<String> {
     let words = exec_words(&app.id)?;
     if words.is_empty() {
@@ -305,14 +304,22 @@ fn command_of(app: &Application) -> Option<String> {
     })
 }
 
+/// The installed programs each program kind offers, by name, by the kind's key. It reads the
+/// `.desktop` files: call it in a task.
+fn read_program_choices(all: &[Application]) -> HashMap<&'static str, Vec<Choice>> {
+    PROGRAM_KINDS
+        .iter()
+        .map(|kind| (kind.key, program_choices(kind, all)))
+        .collect()
+}
+
 /// The installed programs a program kind offers, by name.
-fn program_choices(kind: &ProgramKind) -> Vec<Choice> {
+fn program_choices(kind: &ProgramKind, all: &[Application]) -> Vec<Choice> {
     if kind.categories.is_empty() {
         return Vec::new();
     }
-    let mut out: Vec<Choice> = apps()
-        .all()
-        .into_iter()
+    let mut out: Vec<Choice> = all
+        .iter()
         .filter(|a| {
             a.categories
                 .iter()
@@ -320,8 +327,8 @@ fn program_choices(kind: &ProgramKind) -> Vec<Choice> {
         })
         .filter_map(|a| {
             Some(Choice {
-                command: command_of(&a)?,
-                name: a.name,
+                command: command_of(a)?,
+                name: a.name.clone(),
             })
         })
         .collect();
@@ -344,6 +351,18 @@ fn set_program(key: &str, command: &str) {
 pub fn page() -> Div {
     let handlers = signal(HashMap::<String, Handlers>::new());
     task(read_handlers).then(move |read| handlers.set(read));
+    // The programs each kind offers, read again in a task when the programs change.
+    let choices = signal(HashMap::<&'static str, Vec<Choice>>::new());
+    let latest = crate::apps::Latest::new();
+    effect(move || {
+        let all = apps().all();
+        let ticket = latest.next();
+        task(move || read_program_choices(&all)).then(move |read| {
+            if latest.is_current(ticket) {
+                choices.set(read);
+            }
+        });
+    });
     page_column(12.0)
         .child(heading(
             "Choose the programs that open your files and links",
@@ -363,7 +382,12 @@ pub fn page() -> Div {
             "The terminal, the task manager and the others the keys and the taskbar start. \
              \"As the session sets it\" keeps the one your system's configuration names.",
         ))
-        .children(PROGRAM_KINDS.iter().map(program_row).collect::<Vec<_>>())
+        .children(
+            PROGRAM_KINDS
+                .iter()
+                .map(|kind| program_row(kind, choices))
+                .collect::<Vec<_>>(),
+        )
 }
 
 /// A kind of file: its name, the icon of its program, the programs to choose from, and "Not
@@ -375,8 +399,7 @@ fn kind_row(handlers: Signal<HashMap<String, Handlers>>, kind: &'static Kind) ->
             if i.current.is_empty() {
                 return String::new();
             }
-            apps()
-                .get(&i.current)
+            crate::apps::entry_by_id(&i.current)
                 .and_then(|a| a.icon)
                 .unwrap_or_else(|| "application-x-executable".into())
         })
@@ -417,7 +440,10 @@ fn kind_row(handlers: Signal<HashMap<String, Handlers>>, kind: &'static Kind) ->
 
 /// A program the desktop starts: its name, the choice (the session's, an installed program, or
 /// another command), and under it the command that runs, or the field to type one in.
-fn program_row(kind: &'static ProgramKind) -> Div {
+fn program_row(
+    kind: &'static ProgramKind,
+    all_choices: Signal<HashMap<&'static str, Vec<Choice>>>,
+) -> Div {
     let chosen = memo(move || {
         settings().with(|s| {
             s.programs
@@ -427,7 +453,8 @@ fn program_row(kind: &'static ProgramKind) -> Div {
                 .to_owned()
         })
     });
-    let choices = memo(move || program_choices(kind));
+    let choices =
+        memo(move || all_choices.with(|all| all.get(kind.key).cloned().unwrap_or_default()));
     // The choice shown: 0 the session's, 1.. an installed program, the last another command.
     let shown = memo(move || {
         let command = chosen.get();

@@ -126,19 +126,27 @@ pub struct Greetd {
 }
 
 impl Greetd {
-    /// Connects to `$GREETD_SOCK`. Call it from a root: the responses come there.
+    /// Connects to `$GREETD_SOCK`, on the thread of the line. Call it from a root: the
+    /// responses come there. If the socket cannot be reached, each request is answered with
+    /// an error that says so.
     pub fn connect(on_response: impl Fn(Response) + 'static) -> Result<Greetd, String> {
         let path = std::env::var_os("GREETD_SOCK").ok_or("no $GREETD_SOCK: not run by greetd")?;
-        let mut stream =
-            UnixStream::connect(&path).map_err(|e| format!("cannot reach greetd: {e}"))?;
         let to_ui = ui_channel(on_response);
         let (requests, received) = channel::<Request>();
         std::thread::Builder::new()
             .name("shojiwm-shell greetd".into())
             .spawn(move || {
+                let mut stream =
+                    UnixStream::connect(&path).map_err(|e| format!("cannot reach greetd: {e}"));
+                if let Err(e) = &stream {
+                    eprintln!("shojiwm-shell greeter: {e}");
+                }
                 for request in received {
-                    let response =
-                        exchange(&mut stream, &request).unwrap_or_else(|e| Response::Error {
+                    let response = stream
+                        .as_mut()
+                        .map_err(|e| e.clone())
+                        .and_then(|s| exchange(s, &request))
+                        .unwrap_or_else(|e| Response::Error {
                             auth: false,
                             description: e,
                         });

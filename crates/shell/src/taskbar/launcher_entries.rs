@@ -4,10 +4,9 @@
 //! Programs announce them with the `com.canonical.Unity.LauncherEntry` `Update` signal on the
 //! session bus (Chromium, Firefox, KDE and GTK programs do), naming their `.desktop` file.
 //! AntiWebUI keeps its D-Bus connection to itself, so `busctl` watches that signal and prints
-//! each one as a line of JSON, as the QML shell did.
+//! each one as a line of JSON, as the QML shell did; a thread starts it and reads it.
 
 use anti_webui::prelude::*;
-use anti_webui::shell::prelude::*;
 use serde_json::Value;
 use std::cell::Cell;
 use std::collections::HashMap;
@@ -32,23 +31,48 @@ fn entries() -> Signal<HashMap<String, LauncherEntry>> {
         cell.get().unwrap_or_else(|| {
             let (entries, _) = create_root(|| {
                 let entries = signal(HashMap::new());
-                let watch = Process::new("busctl")
-                    .args([
-                        "--user",
-                        "monitor",
-                        "--json=short",
-                        "--match",
-                        "type='signal',interface='com.canonical.Unity.LauncherEntry'",
-                    ])
-                    .keep(1)
-                    .spawn();
-                watch.on_line(move |line| update(entries, line));
+                watch(ui_channel(move |line: String| update(entries, &line)));
                 entries
             });
             cell.set(Some(entries));
             entries
         })
     })
+}
+
+/// Starts `busctl` on a thread of its own (starting a process is a system call, kept off the UI
+/// thread) and posts each line it prints. `busctl` ends with the shell: its next line finds the
+/// pipe closed.
+fn watch(to_ui: UiSender<String>) {
+    let _ = std::thread::Builder::new()
+        .name("launcher entries".into())
+        .spawn(move || {
+            use std::io::BufRead;
+            let child = std::process::Command::new("busctl")
+                .args([
+                    "--user",
+                    "monitor",
+                    "--json=short",
+                    "--match",
+                    "type='signal',interface='com.canonical.Unity.LauncherEntry'",
+                ])
+                .stdin(std::process::Stdio::null())
+                .stdout(std::process::Stdio::piped())
+                .stderr(std::process::Stdio::null())
+                .spawn();
+            let Ok(mut child) = child else {
+                return;
+            };
+            if let Some(out) = child.stdout.take() {
+                for line in std::io::BufReader::new(out).lines() {
+                    let Ok(line) = line else {
+                        break;
+                    };
+                    to_ui.send(line);
+                }
+            }
+            let _ = child.wait();
+        });
 }
 
 /// Starts watching, outside of any surface. Call once, from the root.

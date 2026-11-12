@@ -8,7 +8,6 @@ use crate::settings::{dark, home};
 use crate::theme::{field_radius, is_kernel, item_radius, scheme, theme};
 use crate::ui::{cp_button, font};
 use anti_webui::prelude::*;
-use anti_webui::shell::prelude::Process;
 use std::cell::OnceCell;
 use std::path::PathBuf;
 use std::rc::Rc;
@@ -73,17 +72,20 @@ pub fn picture_chooser(
          -o -iname '*.png' -o -iname '*.webp' -o -iname '*.svg' \\) \
          2>/dev/null | sort | head -n {MOST_PICTURES}"
     );
-    let finder = Process::new("sh")
-        .args(["-c".to_owned(), script, "find".to_owned()])
-        .args(folders())
-        .spawn();
-    let pictures = memo(move || {
-        finder
-            .lines()
+    // `find` runs on a worker: the UI thread starts no process.
+    let pictures = signal(Vec::<String>::new());
+    let args: Vec<std::ffi::OsString> = ["-c".to_owned(), script, "find".to_owned()]
+        .into_iter()
+        .chain(folders())
+        .map(Into::into)
+        .collect();
+    task(move || {
+        crate::status::output_lines("sh", &args)
             .into_iter()
             .filter(|line| !line.is_empty())
             .collect::<Vec<_>>()
-    });
+    })
+    .then(move |found| pictures.set(found));
     let cells = {
         let selected = selected.clone();
         let built_in = built_in.clone();

@@ -238,13 +238,22 @@ fn system_scheme_available() -> bool {
     SCHEME_REACHABLE.with(|cell| {
         cell.get()
             .unwrap_or_else(|| {
-                let (reachable, _) = create_root(|| {
-                    let reachable = signal(true);
-                    let read = anti_webui::shell::prelude::Process::new("dconf")
-                        .args(["read", DCONF_SCHEME_KEY])
-                        .spawn();
-                    read.on_exit(move |status| reachable.set(status == Some(0)));
-                    reachable
+                let (reachable, _) = untrack(|| {
+                    create_root(|| {
+                        let reachable = signal(true);
+                        // `dconf` runs on a worker: the UI thread starts no process.
+                        task(|| {
+                            std::process::Command::new("dconf")
+                                .args(["read", DCONF_SCHEME_KEY])
+                                .stdin(std::process::Stdio::null())
+                                .stdout(std::process::Stdio::null())
+                                .stderr(std::process::Stdio::null())
+                                .status()
+                                .is_ok_and(|status| status.success())
+                        })
+                        .then(move |ok| reachable.set(ok));
+                        reachable
+                    })
                 });
                 cell.set(Some(reachable));
                 reachable
@@ -370,6 +379,9 @@ pub fn appearance_page() -> Div {
 /// The note under the choices while the sun chooses: today's sunrise and sunset.
 fn sun_note() -> String {
     let time = |unix| crate::status::short_time(&LocalTime::at(unix));
+    if crate::sun::place() == crate::sun::Place::Looking {
+        return "Looking for the place of your time zone\u{2026}".to_owned();
+    }
     match crate::sun::today() {
         None => "The place of your time zone could not be found, so the scheme stays as it \
                  is. Set the time zone on the Date and Time page."

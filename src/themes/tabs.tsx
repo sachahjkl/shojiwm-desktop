@@ -462,9 +462,8 @@ export function captionTabs(
   alone: CompositionRenderable[],
 ): CompositionRenderable {
   const groups = options.groups;
-  const drop = groups.drop();
   const members = groups.members(window.id);
-  const dropHere = drop !== null && members.includes(drop.target) ? drop : null;
+  const dropHere = groups.dropOn(window.id);
   const tabs = members.filter((id) => id !== dropHere?.dragged);
   if (tabs.length < 2 && dropHere === null) {
     return (

@@ -53,15 +53,54 @@ fn primary_name(p: &Primary) -> String {
     }
 }
 
-/// Whether the computer has a wireless device at all, on or off: a network interface with
-/// a `wireless` directory in sysfs. NetworkManager's service does not tell it.
-fn has_wifi() -> bool {
+/// Whether a network interface has a `wireless` directory in sysfs. It reads the disk: call
+/// it on a worker thread only.
+fn read_has_wifi() -> bool {
     std::fs::read_dir("/sys/class/net")
         .map(|dir| {
             dir.flatten()
                 .any(|entry| entry.path().join("wireless").exists())
         })
         .unwrap_or(false)
+}
+
+thread_local! {
+    static HAS_WIFI: std::cell::Cell<Option<Signal<bool>>> = const { std::cell::Cell::new(None) };
+}
+
+/// Whether the computer has a wireless device at all, on or off. NetworkManager's service
+/// does not tell it: a worker reads sysfs at first, then each time NetworkManager's devices
+/// change. It is false until the first answer. Reading it tracks it.
+fn has_wifi() -> bool {
+    HAS_WIFI
+        .with(|cell| {
+            cell.get().unwrap_or_else(|| {
+                let (s, _) = untrack(|| {
+                    create_root(|| {
+                        let s = signal(false);
+                        let interfaces = memo(|| {
+                            network()
+                                .devices()
+                                .into_iter()
+                                .map(|d| d.interface)
+                                .collect::<Vec<_>>()
+                        });
+                        effect(move || {
+                            interfaces.with(|_| ());
+                            task(read_has_wifi).then(move |found| {
+                                if found != s.get_untracked() {
+                                    s.set(found);
+                                }
+                            });
+                        });
+                        s
+                    })
+                });
+                cell.set(Some(s));
+                s
+            })
+        })
+        .get()
 }
 
 /// 0 to 4 bars for a signal.
@@ -116,7 +155,6 @@ pub fn icon(output_name: &str) -> Div {
     let name = output_name.to_owned();
     let anchor = node_ref();
     let menu = signal(false);
-    let wifi_device = has_wifi();
     let active = {
         let name = name.clone();
         move || is_open(&name, Panel::Network)
@@ -124,7 +162,7 @@ pub fn icon(output_name: &str) -> Div {
     let opener = name.clone();
     let lines_name = name.clone();
     let picture =
-        bar_picture(move || asset(&format!("{}.svg", glyph(wifi_device))), 2.0).child(badge(
+        bar_picture(move || asset(&format!("{}.svg", glyph(has_wifi()))), 2.0).child(badge(
             || asset(&format!("network-badge-{}.svg", badge_name())),
             || !badge_name().is_empty(),
         ));
@@ -233,7 +271,6 @@ fn panel() -> Div {
         busy: signal(false),
         error: signal(String::new()),
     };
-    let wifi_device = has_wifi();
     if untrack(|| network().wifi_enabled()) {
         let _ = network().scan();
     }
@@ -324,7 +361,7 @@ fn panel() -> Div {
                 .pb(14.0)
                 .child(section_title("Currently connected to:"))
                 .child(current)
-                .children(wifi_device.then_some(wireless)),
+                .child(wireless.dyn_style(|s| if has_wifi() { s } else { s.hidden() })),
         )
         .child(footer(
             28.0,

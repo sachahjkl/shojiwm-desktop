@@ -93,10 +93,19 @@ fn saved() -> Vec<SavedConnection> {
     list
 }
 
-fn hostname() -> String {
+/// The computer's name. It reads a file: call it on a worker thread only.
+fn read_hostname() -> String {
     std::fs::read_to_string("/proc/sys/kernel/hostname")
         .map(|h| h.trim().to_owned())
         .unwrap_or_else(|_| "This computer".into())
+}
+
+/// The computer's name, empty until a worker has read it. Call it under the owner of what
+/// shows it.
+fn hostname() -> Signal<String> {
+    let name = signal(String::new());
+    task(read_hostname).then(move |found| name.set(found));
+    name
 }
 
 /// The picture of a device or a connection kind.
@@ -241,7 +250,10 @@ fn map() -> Div {
         .pb(4.0)
         .child(column(
             picture(asset("icons/computer.png"), MAP_ICON).into_view(),
-            plain(hostname()),
+            plain({
+                let host = hostname();
+                move || host.get()
+            }),
             Some(muted_small("(This computer)")),
         ))
         .child(map_line(on_network))

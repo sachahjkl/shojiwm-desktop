@@ -11,7 +11,8 @@ pub fn shell_dir() -> PathBuf {
         .unwrap_or_else(|| crate::settings::config_home().join("shojiwm").join("shell"))
 }
 
-/// A file of the shell, if it is there.
+/// A file of the shell, if it is there. It looks at the disk: call it on a worker thread (the
+/// spawner of `crate::spawn`, a `task`), never on the UI thread.
 pub fn shell_file(name: &str) -> Option<PathBuf> {
     let path = shell_dir().join(name);
     path.exists().then_some(path)

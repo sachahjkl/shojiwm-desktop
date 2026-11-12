@@ -402,7 +402,8 @@ fn overflow(bar: Bar, hidden: Memo<Vec<TrayItem>>) -> Show {
     )
 }
 
-/// The file of an icon named `name`, in the program's own folder or in the icon theme.
+/// The file of an icon named `name`, in the program's own folder or in the icon theme. It
+/// looks at the disk: call it on a worker thread only.
 fn named_icon(name: &str, theme_path: Option<&str>, pixels: u32) -> Option<PathBuf> {
     if let Some(dir) = theme_path.filter(|d| !d.is_empty()) {
         for extension in ["svg", "png"] {
@@ -418,19 +419,37 @@ fn named_icon(name: &str, theme_path: Option<&str>, pixels: u32) -> Option<PathB
 /// An item's picture, `size` logical pixels square: its attention icon while it asks to be
 /// looked at, a name of the icon theme, or the pictures it sends.
 fn picture(item: impl Fn() -> Option<TrayItem> + 'static, size: f32) -> Div {
-    div().flex_none().size(size).child(dyn_view(move || {
+    let pixels = memo(move || (size * window_scale().as_f32()).ceil().max(1.0) as u32);
+    // The icon shown: a new item that shows the same icon draws nothing again.
+    let shown = memo(move || {
         let item = item()?;
-        let icon = match (&item.status, &item.attention_icon) {
+        Some(match (&item.status, &item.attention_icon) {
             (TrayStatus::NeedsAttention, Some(attention)) => attention.clone(),
             _ => item.icon.clone(),
+        })
+    });
+    // The file of its name, looked up by a worker; `None` until it answers and when there is
+    // none. A new name drops the answer for the one before.
+    let wanted = memo(move || {
+        shown.with(|icon| {
+            let icon = icon.as_ref()?;
+            let name = icon.name.clone().filter(|n| !n.is_empty())?;
+            Some((name, icon.theme_path.clone(), pixels.get()))
+        })
+    });
+    let named = signal(None::<PathBuf>);
+    effect(move || {
+        named.set(None);
+        let Some((name, theme_path, pixels)) = wanted.get() else {
+            return;
         };
-        let pixels = (size * window_scale().as_f32()).ceil().max(1.0) as u32;
-        let named = icon
-            .name
-            .as_deref()
-            .filter(|n| !n.is_empty())
-            .and_then(|n| named_icon(n, icon.theme_path.as_deref(), pixels));
-        Some(match (named, icon.best(pixels)) {
+        task(move || named_icon(&name, theme_path.as_deref(), pixels))
+            .then(move |file| named.set(file));
+    });
+    div().flex_none().size(size).child(dyn_view(move || {
+        let icon = shown.get()?;
+        let pixels = pixels.get();
+        Some(match (named.get(), icon.best(pixels)) {
             (Some(file), _) => img(file)
                 .size(size)
                 .object_fit(ObjectFit::Contain)

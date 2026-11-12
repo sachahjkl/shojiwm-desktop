@@ -21,6 +21,9 @@ pub use controls::{
 pub use frame::{popup_frame, shell_tooltip};
 pub use gradient::vertical_gradient;
 pub use icon::shell_icon;
+// For the modules that still call `anti_webui::shell::icon_path` on the UI thread.
+#[allow(unused_imports)]
+pub use icon::resolved_icon;
 pub use menu::{
     MenuLine, RowLook, bar_menu_options, marked_text, menu_row, popup_menu, with_context_menu,
 };

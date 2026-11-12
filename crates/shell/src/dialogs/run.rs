@@ -21,6 +21,7 @@ mod place;
 
 use super::frame::{button_band, caption_grip, dialog_frame, dialog_page};
 use super::run_close;
+use crate::apps::{Latest, run_in_order};
 use crate::paths::{asset, state_dir};
 use crate::theme::{bar_at_top, item_radius, scheme, theme};
 use crate::ui::{cp_button, dark_look, font, ink_asset, marked_text, popup_frame, shell_icon};
@@ -31,6 +32,7 @@ use serde_json::Value;
 use std::cell::Cell;
 use std::path::PathBuf;
 use std::rc::Rc;
+use std::sync::Arc;
 
 /// How many commands the history keeps, as Windows' RunMRU.
 const HISTORY_KEPT: usize = 26;
@@ -64,7 +66,7 @@ fn history_path() -> PathBuf {
     state_dir().join("run-history.json")
 }
 
-/// The commands run from the dialog, last first.
+/// The commands run from the dialog, last first. It reads the disk: call it on a worker thread.
 fn load_history() -> Vec<String> {
     let Ok(text) = std::fs::read_to_string(history_path()) else {
         return Vec::new();
@@ -81,17 +83,20 @@ fn load_history() -> Vec<String> {
     }
 }
 
-/// Puts `command` first in the history, once, and writes it out.
+/// Puts `command` first in the history, once, and writes it out, on the writer thread.
 fn remember(command: &str) {
-    let mut list = load_history();
-    list.retain(|entry| entry != command);
-    list.insert(0, command.to_owned());
-    list.truncate(HISTORY_KEPT);
-    let path = history_path();
-    if let Some(dir) = path.parent() {
-        let _ = std::fs::create_dir_all(dir);
-    }
-    let _ = std::fs::write(path, Value::from(list).to_string());
+    let command = command.to_owned();
+    run_in_order(move || {
+        let mut list = load_history();
+        list.retain(|entry| *entry != command);
+        list.insert(0, command);
+        list.truncate(HISTORY_KEPT);
+        let path = history_path();
+        if let Some(dir) = path.parent() {
+            let _ = std::fs::create_dir_all(dir);
+        }
+        let _ = std::fs::write(path, Value::from(list).to_string());
+    });
 }
 
 // ----- running -----------------------------------------------------------------------------------
@@ -166,10 +171,14 @@ struct State {
     chosen: Signal<Option<usize>>,
     /// Escape closed the suggestions: the next edit opens them again.
     hushed: Signal<bool>,
-    /// The commands of `PATH`, read once in a task when the dialog opens.
-    commands: Signal<Rc<Vec<String>>>,
+    /// The applications and the commands of `PATH`, made once in a task when the dialog opens.
+    sources: Signal<Arc<Vec<Suggestion>>>,
+    /// The suggestions are found in a task per query: only the last answer counts.
+    ranking: Latest,
+    /// The query of the last edit, when it made the text longer: its answer completes the field.
+    inline_wanted: Signal<Option<String>>,
     /// The names of the folder last read for a path, and the folder being read.
-    listing: Signal<Option<(PathBuf, Rc<Vec<Entry>>)>>,
+    listing: Signal<Option<(PathBuf, Arc<Vec<Entry>>)>>,
     listing_wanted: Signal<Option<PathBuf>>,
     /// The field with its arrow, for where it is on the screen.
     combo: NodeRef,
@@ -209,34 +218,73 @@ impl State {
         !self.list_open.get() && !self.hushed.get() && self.suggestions.with(|s| !s.is_empty())
     }
 
-    /// Finds the suggestions of the query again, none picked.
+    /// Finds the suggestions of the query again, in a task; they come with none picked.
     fn refresh(&self) {
         if !self.query.is_alive() {
             return;
         }
         let query = self.query.get_untracked();
-        let mut found = if query.trim().is_empty() {
-            Vec::new()
+        let ticket = self.ranking.next();
+        let work: Box<dyn FnOnce() -> Vec<Suggestion> + Send> = if query.trim().is_empty() {
+            self.show_found(ticket, &query, Vec::new());
+            return;
         } else if let Some((dir, start)) = completion::split_path(&query) {
             let folder = completion::resolve_dir(dir, &home());
             let entries = self.listing.with_untracked(|l| match l {
                 Some((read, entries)) if *read == folder => Some(entries.clone()),
                 _ => None,
             });
-            match entries {
-                Some(entries) => completion::path_suggestions(dir, start, &entries),
-                None => {
-                    self.read_folder(folder);
-                    Vec::new()
-                }
-            }
+            let Some(entries) = entries else {
+                self.read_folder(folder);
+                self.show_found(ticket, &query, Vec::new());
+                return;
+            };
+            let (dir, start) = (dir.to_owned(), start.to_owned());
+            Box::new(move || completion::path_suggestions(&dir, &start, &entries))
         } else {
-            completion::rank(&query, self.candidates())
+            let history = self.history.get_untracked();
+            let sources = self.sources.get_untracked();
+            let query = query.clone();
+            Box::new(move || {
+                let recent = completion::history_suggestions(&history);
+                completion::rank(&query, recent.iter().chain(sources.iter()))
+            })
         };
+        let state = *self;
+        task(work).then(move |found| state.show_found(ticket, &query, found));
+    }
+
+    /// Shows the suggestions found for `query`, unless another query was asked for since. When
+    /// the edit that asked made the text longer, the first one that continues it completes the
+    /// field inline, the rest selected: typing on replaces it.
+    fn show_found(&self, ticket: u64, query: &str, mut found: Vec<Suggestion>) {
+        if !self.ranking.is_current(ticket) {
+            return;
+        }
         found.retain(|s| s.app.is_some() || s.text != query);
         self.choose_side();
         self.chosen.set(None);
         self.suggestions.set(found);
+        if self.inline_wanted.get_untracked().as_deref() != Some(query) {
+            return;
+        }
+        self.inline_wanted.set(None);
+        if self.typed.with_untracked(|t| t != query) {
+            return;
+        }
+        let Some(full) = self
+            .suggestions
+            .with_untracked(|s| completion::inline(query, s))
+        else {
+            return;
+        };
+        let length = query.chars().count();
+        let cut = full
+            .char_indices()
+            .nth(length)
+            .map_or(full.len(), |(at, _)| at);
+        self.field.set_text(&full, (cut, full.len()));
+        self.typed.set(full);
     }
 
     /// Opens the suggestions under the field when the most rows they show fit there, else over
@@ -268,36 +316,6 @@ impl State {
         });
     }
 
-    /// The history, the programs, then the commands of `PATH`, in that order for the ties.
-    fn candidates(&self) -> Vec<Suggestion> {
-        let commands = self.commands.get_untracked();
-        let on_path = |name: &str| commands.binary_search_by(|c| c.as_str().cmp(name)).is_ok();
-        let mut out: Vec<Suggestion> = self
-            .history
-            .get_untracked()
-            .into_iter()
-            .map(|entry| Suggestion::plain(Kind::Recent, entry))
-            .collect();
-        for app in untrack(crate::apps::applications) {
-            let Some(exec) = crate::apps::exec_line(&app) else {
-                continue;
-            };
-            out.push(Suggestion {
-                kind: Kind::Application,
-                label: app.name.clone(),
-                text: completion::app_command(&exec, on_path),
-                marks: Vec::new(),
-                app: Some(app),
-            });
-        }
-        out.extend(
-            commands
-                .iter()
-                .map(|name| Suggestion::plain(Kind::Command, name.clone())),
-        );
-        out
-    }
-
     /// Reads the names of `folder` in a task, then finds the suggestions again, unless another
     /// folder is wanted by then.
     fn read_folder(&self, folder: PathBuf) {
@@ -314,7 +332,7 @@ impl State {
                 return;
             }
             state.listing_wanted.set(None);
-            state.listing.set(Some((folder, Rc::new(entries))));
+            state.listing.set(Some((folder, Arc::new(entries))));
             state.refresh();
         });
     }
@@ -331,6 +349,7 @@ impl State {
         self.field.set_text(&text, (text.len(), text.len()));
         self.typed.set(text.clone());
         last_length.set(text.chars().count());
+        self.inline_wanted.set(None);
         self.query.set(text);
         self.hushed.set(false);
         self.refresh();
@@ -345,11 +364,9 @@ pub fn view(output: Output) -> Div {
             .map_or(output.logical_size, |o| o.logical_size)
     });
     let screen = (screen.width as f32, screen.height as f32);
-    let history = load_history();
-    let first = history.first().cloned().unwrap_or_default();
     let state = State {
-        history: signal(history),
-        typed: signal(first.clone()),
+        history: signal(Vec::new()),
+        typed: signal(String::new()),
         list_open: signal(false),
         pick: signal(0usize),
         not_found: signal(String::new()),
@@ -358,26 +375,57 @@ pub fn view(output: Output) -> Div {
         suggestions: signal(Vec::new()),
         chosen: signal(None),
         hushed: signal(false),
-        commands: signal(Rc::new(Vec::new())),
+        sources: signal(Arc::new(Vec::new())),
+        ranking: Latest::new(),
+        inline_wanted: signal(None),
         listing: signal(None),
         listing_wanted: signal(None),
         combo: node_ref(),
         screen,
         below: signal(true),
     };
-    task(|| completion::scan_commands(&completion::path_dirs())).then(move |names| {
+    // The applications and the commands of `PATH`: the commands are read from the disk, the
+    // programs' `Exec` lines come from the index.
+    let index = untrack(crate::apps::program_index);
+    task(move || {
+        let commands = completion::scan_commands(&completion::path_dirs());
+        let programs = index
+            .programs
+            .iter()
+            .filter_map(|p| Some((&p.entry, p.exec.as_deref()?)));
+        completion::sources(programs, &commands)
+    })
+    .then(move |sources| {
         if state.query.is_alive() {
-            state.commands.set(Rc::new(names));
+            state.sources.set(Arc::new(sources));
             if !state.hushed.get_untracked() && !state.query.with_untracked(String::is_empty) {
                 state.refresh();
             }
         }
     });
     // The length before the last edit: completion follows typing, not deleting.
-    let last_length = Rc::new(Cell::new(first.chars().count()));
+    let last_length = Rc::new(Cell::new(0));
+    // The history and the place kept for this screen, read in a task. The dialog shows once
+    // its place is known; the field then starts with the last command, unless something was
+    // typed by then.
+    let name = output.name.clone();
+    let at: Signal<Option<(f32, f32)>> = signal(None);
+    let placed = signal(false);
     {
         let last_length = last_length.clone();
-        request_frame(move |_| state.fill(&first, &last_length));
+        let name = name.clone();
+        request_frame(move |_| state.field.focus());
+        task(move || (load_history(), place::load(&name))).then(move |(history, kept)| {
+            at.set(kept);
+            placed.set(true);
+            let first = history.first().cloned().unwrap_or_default();
+            state.history.set(history);
+            if state.typed.with_untracked(String::is_empty)
+                && state.query.with_untracked(String::is_empty)
+            {
+                request_frame(move |_| state.fill(&first, &last_length));
+            }
+        });
     }
     // A second Run while the first is checked waits for it.
     let checking = Rc::new(Cell::new(false));
@@ -448,8 +496,6 @@ pub fn view(output: Output) -> Div {
 
     // Where it is: the place kept for this screen, else above the Start button. A drag on the
     // caption moves it and keeps the new place.
-    let name = output.name.clone();
-    let at: Signal<Option<(f32, f32)>> = signal(place::load(&name));
     let frame_ref = node_ref();
     let grab_offset: Rc<Cell<(f32, f32)>> = Rc::default();
     let grabbed = move |e: &GrabEvent| {
@@ -472,7 +518,8 @@ pub fn view(output: Output) -> Div {
             }
             GrabPhase::End | GrabPhase::Cancel => {
                 if let Some(now) = at.get_untracked() {
-                    place::save(&name, now);
+                    let name = name.clone();
+                    run_in_order(move || place::save(&name, now));
                 }
                 // The field takes the keys back, once the press is over: typing goes on where
                 // it was.
@@ -485,17 +532,20 @@ pub fn view(output: Output) -> Div {
         .child(caption_grip(grabbed))
         .node_ref(frame_ref)
         .absolute()
-        .dyn_style(move |s| match at.get() {
-            Some((x, y)) => s.left(x).top(y),
-            None => {
-                let away = theme().taskbar_height + MARGIN;
-                let s = s.left(MARGIN);
-                if bar_at_top() {
-                    s.top(away)
-                } else {
-                    s.bottom(away)
+        .dyn_style(move |s| {
+            let s = match at.get() {
+                Some((x, y)) => s.left(x).top(y),
+                None => {
+                    let away = theme().taskbar_height + MARGIN;
+                    let s = s.left(MARGIN);
+                    if bar_at_top() {
+                        s.top(away)
+                    } else {
+                        s.bottom(away)
+                    }
                 }
-            }
+            };
+            if placed.get() { s } else { s.hidden() }
         })
         // A press in the window keeps it, and closes the lists.
         .on_pointer_down(move |e| {
@@ -559,25 +609,10 @@ fn open_row(state: State, last_length: Rc<Cell<usize>>, accept: Rc<dyn Fn()>) ->
             last_length.set(length);
             state.list_open.set(false);
             state.hushed.set(false);
+            // Completion follows typing, not deleting: the answer completes the field.
+            state.inline_wanted.set(grew.then(|| typed.to_owned()));
             state.query.set(typed.to_owned());
             state.refresh();
-            // Completion follows typing, not deleting.
-            if !grew {
-                return;
-            }
-            let Some(found) = state
-                .suggestions
-                .with_untracked(|s| completion::inline(typed, s))
-            else {
-                return;
-            };
-            // The rest of the command, selected: typing on replaces it.
-            let cut = found
-                .char_indices()
-                .nth(length)
-                .map_or(found.len(), |(at, _)| at);
-            state.field.set_text(&found, (cut, found.len()));
-            state.typed.set(found);
         })
         .on_key_down(move |e| {
             let count = state.history.with_untracked(Vec::len);

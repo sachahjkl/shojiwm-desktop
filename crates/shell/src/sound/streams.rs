@@ -159,35 +159,41 @@ fn stream_control(id: u32) -> VolumeControl {
     )
 }
 
-/// What a card shows of its program: the name to show and the icon, as the program's
-/// `.desktop` file gives them when one is found.
+/// What a card shows of its program: the name to show and the icons it can have, as the
+/// program's `.desktop` file gives them when one is found.
 #[derive(Clone, PartialEq)]
 struct Program {
     name: String,
-    icon: String,
+    /// The icon the stream names, then its `.desktop` file's: the first the theme has is shown.
+    icons: [String; 2],
 }
 
-/// The program of a stream: the icon it names, else its `.desktop` file's (found by its
-/// executable or its name), else the generic one.
+/// The program of a stream: its name, and the icon it names, then its `.desktop` file's (found
+/// by its executable or its name).
 fn program_of(icon_name: &str, binary: &str, app_name: &str, fallback_name: String) -> Program {
     let entry = [clean(binary), clean(app_name)]
         .iter()
         .filter(|n| !n.is_empty())
         .find_map(|n| crate::apps::entry_for(n));
-    let found = |name: &str| !name.is_empty() && anti_webui::shell::icon_path(name, 32).is_some();
-    // An icon the theme does not have draws nothing: the generic one stands in.
-    let icon = [
+    let icons = [
         icon_name.to_owned(),
         crate::apps::entry_icon(entry.as_ref()),
-    ]
-    .into_iter()
-    .find(|name| found(name))
-    .unwrap_or_else(|| crate::apps::FALLBACK_ICON.to_owned());
+    ];
     let name = entry
         .map(|e| e.name)
         .filter(|n| !n.is_empty())
         .unwrap_or(fallback_name);
-    Program { name, icon }
+    Program { name, icons }
+}
+
+/// The first of `icons` the theme has, else the generic one: an icon the theme does not have
+/// draws nothing. It looks in the theme: call it on a worker thread only.
+fn first_found(icons: &[String]) -> String {
+    icons
+        .iter()
+        .find(|name| !name.is_empty() && anti_webui::shell::icon_path(name, 32).is_some())
+        .cloned()
+        .unwrap_or_else(|| crate::apps::FALLBACK_ICON.to_owned())
 }
 
 /// A list of the devices to send streams to (or take them from when `input`): `current` gives
@@ -262,16 +268,31 @@ fn program_card(input: bool, key: String) -> Div {
         if system {
             return Program {
                 name: SYSTEM_SOUNDS.to_owned(),
-                icon: String::new(),
+                icons: Default::default(),
             };
         }
         said.get()
             .map(|(icon, binary, app, name)| program_of(&icon, &binary, &app, name))
             .unwrap_or(Program {
                 name: String::new(),
-                icon: String::new(),
+                icons: Default::default(),
             })
     });
+    // The icon shown, looked up by a worker each time the program's icons change; a change
+    // drops the answer for the ones before.
+    let wanted_icons = memo(move || program.with(|p| p.icons.clone()));
+    let program_icon = signal(String::new());
+    if !system {
+        effect(move || {
+            let icons = wanted_icons.get();
+            // No stream yet: no icon.
+            if icons.iter().all(String::is_empty) {
+                program_icon.set(String::new());
+                return;
+            }
+            task(move || first_found(&icons)).then(move |icon| program_icon.set(icon));
+        });
+    }
     let ids = {
         let key = key.clone();
         memo(move || {
@@ -295,7 +316,7 @@ fn program_card(input: bool, key: String) -> Div {
     let icon = if system {
         picture("sound", ICON_SIZE).into_view()
     } else {
-        shell_icon(move || program.get().icon, ICON_SIZE).into_view()
+        shell_icon(move || program_icon.get(), ICON_SIZE).into_view()
     };
     let (target_key, move_key) = (key.clone(), key.clone());
     let header = row(10.0)
@@ -309,7 +330,7 @@ fn program_card(input: bool, key: String) -> Div {
                 .flex_col()
                 .overflow_clip()
                 .child(
-                    line_text(move || program.get().name)
+                    line_text(move || program.with(|p| p.name.clone()))
                         .dyn_style(|s| s.font_weight(FontWeight::BOLD)),
                 )
                 .child(small_text(move || detail.get())),

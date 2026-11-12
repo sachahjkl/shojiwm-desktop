@@ -29,6 +29,8 @@ struct Entry {
     id: String,
     name: String,
     exec: String,
+    /// Its `Icon`, else [`FALLBACK_ICON`] when the theme lacks it. Looked up by the worker that
+    /// reads the entries.
     icon: String,
     enabled: bool,
     /// `OnlyShowIn` and `NotShowIn` let it start in this desktop.
@@ -107,7 +109,7 @@ fn shows_here(keys: &HashMap<String, String>) -> bool {
     !listed(&names("NotShowIn"))
 }
 
-/// Every entry, by name.
+/// Every entry, by name. It reads the disk: call it on a worker thread only.
 fn read_entries() -> Vec<Entry> {
     // By file name: the system's file and yours; yours replaces the system's as a whole.
     let mut found: Vec<(String, String, String, HashMap<String, String>)> = Vec::new();
@@ -151,7 +153,7 @@ fn read_entries() -> Vec<Entry> {
                     .cloned()
                     .unwrap_or_else(|| id.trim_end_matches(".desktop").to_owned()),
                 exec: get("Exec"),
-                icon: get("Icon"),
+                icon: icon_or(&get("Icon"), FALLBACK_ICON),
                 enabled: get("Hidden") != "true" && get("X-GNOME-Autostart-enabled") != "false",
                 here: shows_here(&keys),
                 id,
@@ -317,7 +319,7 @@ fn entry_row(startup: Startup, entry: Entry) -> Div {
     let mut row = control_row(12.0)
         .opacity(if entry.here { 1.0 } else { 0.55 })
         .child(cp_check("", checked))
-        .child(shell_icon(icon_or(&entry.icon, FALLBACK_ICON), 24.0))
+        .child(shell_icon(entry.icon.clone(), 24.0))
         .child(words)
         .child(whose);
     // An entry you added goes; a system entry you changed goes back to the system's.
@@ -375,7 +377,7 @@ fn add_list(startup: Startup) -> Div {
 fn candidate_row(startup: Startup, app: Application) -> Div {
     let ui = Interaction::new();
     let id = app.id.clone();
-    let icon = icon_or(app.icon.as_deref().unwrap_or(""), FALLBACK_ICON);
+    let icon = crate::status::icon_or_signal(app.icon.as_deref().unwrap_or(""), FALLBACK_ICON);
     div()
         .flex()
         .flex_row()
@@ -400,6 +402,12 @@ fn candidate_row(startup: Startup, app: Application) -> Div {
                 s.bg(Color::TRANSPARENT).border_color(Color::TRANSPARENT)
             }
         })
-        .child(shell_icon(icon, 20.0))
+        // Its room is kept while the icon theme is asked.
+        .child(
+            div()
+                .flex_none()
+                .size(20.0)
+                .child(shell_icon(move || icon.get(), 20.0)),
+        )
         .child(tinted_text(app.name, || scheme().text))
 }

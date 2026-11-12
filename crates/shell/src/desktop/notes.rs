@@ -6,6 +6,7 @@
 //! size it. The band's + adds another note beside it and its × removes this one. The text is
 //! kept a moment after the last key.
 
+use crate::background::off_thread_in;
 use crate::paths::state_dir;
 use crate::theme::corner;
 use crate::ui::{font, vertical_gradient};
@@ -13,6 +14,7 @@ use anti_webui::prelude::*;
 use serde_json::{Value, json};
 use std::cell::Cell;
 use std::rc::Rc;
+use std::sync::Mutex;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 /// The size of a new note.
@@ -82,7 +84,15 @@ impl Note {
 }
 
 struct Store {
+    /// The root the store lives in, and the results of its reading and writing.
+    owner: Owner,
     notes: Signal<Vec<Note>>,
+    /// The file has been read: until then, nothing is written, so as not to lose it.
+    loaded: Cell<bool>,
+    /// A note changed before the file was read: it is written once it is.
+    changed_early: Cell<bool>,
+    /// The number of the last writing asked for (see [`WRITTEN`]).
+    saves: Cell<u64>,
     /// The id of the note added last, which takes the keyboard when it shows.
     last_added: Signal<String>,
     /// The id of the note being typed in, or "". The desktop layer holds the keyboard
@@ -99,12 +109,26 @@ fn store() -> &'static Store {
         cell.get().unwrap_or_else(|| {
             let (store, _) = create_root(|| -> &'static Store {
                 Box::leak(Box::new(Store {
-                    notes: signal(load()),
+                    owner: Owner::current().expect("a root"),
+                    notes: signal(Vec::new()),
+                    loaded: Cell::new(false),
+                    changed_early: Cell::new(false),
+                    saves: Cell::new(0),
                     last_added: signal(String::new()),
                     editing: signal(String::new()),
                 }))
             });
             cell.set(Some(store));
+            off_thread_in(Some(store.owner), load, move |read| {
+                // Notes made meanwhile stay, after those of the file.
+                store
+                    .notes
+                    .update(|notes| *notes = merge(read, std::mem::take(notes)));
+                store.loaded.set(true);
+                if store.changed_early.take() {
+                    save();
+                }
+            });
             store
         })
     })
@@ -119,6 +143,18 @@ fn path() -> std::path::PathBuf {
     state_dir().join("notes.json")
 }
 
+/// The notes of the file, then those made before it was read that it does not have.
+fn merge(read: Vec<Note>, made: Vec<Note>) -> Vec<Note> {
+    let mut list = read;
+    for note in made {
+        if !list.iter().any(|n| n.id == note.id) {
+            list.push(note);
+        }
+    }
+    list
+}
+
+/// Reads the file. On a worker only.
 fn load() -> Vec<Note> {
     std::fs::read_to_string(path())
         .ok()
@@ -130,16 +166,44 @@ fn load() -> Vec<Note> {
         .unwrap_or_default()
 }
 
+/// The number of the last writing that reached the file: a writing that comes after a newer one
+/// is dropped, so the file always ends with the notes as they were last.
+static WRITTEN: Mutex<u64> = Mutex::new(0);
+
+/// Whether writing `number` is still worth it, after `written`.
+fn newer(number: u64, written: u64) -> bool {
+    number > written
+}
+
+/// Writes the notes, on a worker: the text is made here, the file there.
 fn save() {
-    let list: Vec<Value> = store()
+    let s = store();
+    if !s.loaded.get() {
+        s.changed_early.set(true);
+        return;
+    }
+    let list: Vec<Value> = s
         .notes
         .with_untracked(|n| n.iter().map(Note::to_json).collect());
+    let text = serde_json::to_string(&Value::Array(list)).unwrap_or_default() + "\n";
+    let number = s.saves.get() + 1;
+    s.saves.set(number);
+    off_thread_in(Some(s.owner), move || write(number, &text), |()| {});
+}
+
+/// Writes the file whole (a partial file, then renamed over it), unless a newer writing did. On a
+/// worker only.
+fn write(number: u64, text: &str) {
+    let mut written = WRITTEN.lock().unwrap_or_else(|e| e.into_inner());
+    if !newer(number, *written) {
+        return;
+    }
     let _ = std::fs::create_dir_all(state_dir());
-    let text = serde_json::to_string(&Value::Array(list)).unwrap_or_default();
     let partial = path().with_extension("json.partial");
-    if std::fs::write(&partial, text + "\n").is_ok() {
+    if std::fs::write(&partial, text).is_ok() {
         let _ = std::fs::rename(&partial, path());
     }
+    *written = number;
 }
 
 /// A new empty note at a point of a screen, which takes the keyboard.
@@ -402,4 +466,44 @@ fn band_button(label: &'static str, rest: Color, hot: Color, run: impl Fn() + 's
             run();
         })
         .child(label)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn note(id: &str, text: &str) -> Note {
+        Note {
+            id: id.to_owned(),
+            screen: "DP-1".to_owned(),
+            x: 1.0,
+            y: 2.0,
+            width: NEW_WIDTH,
+            height: NEW_HEIGHT,
+            text: text.to_owned(),
+        }
+    }
+
+    #[test]
+    fn notes_made_before_the_file_is_read_come_after_its_own() {
+        let read = vec![note("a", "file"), note("b", "file")];
+        let made = vec![note("c", "new"), note("a", "made")];
+        let merged = merge(read, made);
+        let ids: Vec<&str> = merged.iter().map(|n| n.id.as_str()).collect();
+        assert_eq!(ids, ["a", "b", "c"]);
+        assert_eq!(merged[0].text, "file");
+    }
+
+    #[test]
+    fn an_older_writing_is_dropped() {
+        assert!(newer(2, 1));
+        assert!(!newer(1, 2));
+        assert!(!newer(2, 2));
+    }
+
+    #[test]
+    fn a_note_is_written_and_read_back() {
+        let n = note("a", "hello");
+        assert_eq!(Note::from_json(&n.to_json()), Some(n));
+    }
 }

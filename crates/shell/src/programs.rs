@@ -70,15 +70,13 @@ pub fn run(command: &str) {
 }
 
 /// Runs a short helper of the shell from a command line (`systemctl`, `loginctl`, `hokum`, ...),
-/// detached from this process, in the shell's own unit.
+/// detached from this process, in the shell's own unit. The spawner starts it (`crate::spawn`).
 pub fn run_helper(command: &str) {
     if command.trim().is_empty() {
         return;
     }
-    let _ = std::process::Command::new("setsid")
-        .args(["-f", "sh", "-c", command])
-        .stdin(std::process::Stdio::null())
-        .stdout(std::process::Stdio::null())
-        .stderr(std::process::Stdio::null())
-        .spawn();
+    crate::spawn::spawn_detached(
+        "setsid",
+        vec!["-f".into(), "sh".into(), "-c".into(), command.to_owned()],
+    );
 }

@@ -16,6 +16,7 @@ use anti_webui::prelude::*;
 use anti_webui::shell::prelude::*;
 use serde_json::json;
 use std::cell::RefCell;
+use std::collections::HashMap;
 use std::rc::Rc;
 use std::time::Duration;
 
@@ -200,10 +201,38 @@ fn view(bar: Bar) -> Div {
         ))
 }
 
+thread_local! {
+    static WINDOWS_BY_ID: std::cell::Cell<Option<Memo<HashMap<u64, Toplevel>>>> =
+        const { std::cell::Cell::new(None) };
+}
+
+/// Every window by its id, made once for all the cards: a card finds its own without a pass
+/// over the list. Reading it tracks it.
+fn windows_by_id() -> Memo<HashMap<u64, Toplevel>> {
+    WINDOWS_BY_ID.with(|cell| {
+        cell.get().unwrap_or_else(|| {
+            let (m, _) = untrack(|| {
+                create_root(|| {
+                    memo(|| {
+                        toplevels()
+                            .all()
+                            .into_iter()
+                            .map(|t| (t.id(), t))
+                            .collect::<HashMap<_, _>>()
+                    })
+                })
+            });
+            cell.set(Some(m));
+            m
+        })
+    })
+}
+
 /// One window: its title and close button, and its picture, which shows it on a click.
 fn card(bar: Bar, window: Toplevel) -> Div {
     let id = window.id();
-    let now = memo(move || toplevels().all().into_iter().find(|t| t.id() == id));
+    let by_id = windows_by_id();
+    let now = memo(move || by_id.with(|all| all.get(&id).cloned()));
     let card_ui = Interaction::new();
     let frame_ui = Interaction::new();
     let close_ui = Interaction::new();

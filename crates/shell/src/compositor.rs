@@ -182,35 +182,36 @@ fn send_kept(method: &str, params: Value) {
 }
 
 /// Sends the settings the frames are drawn with whenever they change, for as long as the shell
-/// runs. Call once, from the root.
+/// runs. Call once, from the root. Each message is a memo of the settings: a change of another
+/// setting sends nothing.
 pub fn share_settings() {
-    effect(|| {
+    share("animations", || {
         let on = animations();
         let speed = settings().with(|s| s.animation_speed);
-        send_kept("animations", json!({ "on": on, "speed": speed }));
+        json!({ "on": on, "speed": speed })
     });
-    effect(|| {
+    share("glass", || {
         let (level, colour, strength) =
             settings().with(|s| (s.glass_blur, s.glass_color.clone(), s.glass_color_strength));
-        send_kept(
-            "glass",
-            json!({ "level": level, "colour": colour, "strength": strength }),
-        );
+        json!({ "level": level, "colour": colour, "strength": strength })
     });
-    effect(|| {
+    share("corners", || {
         let square = settings().with(|s| s.square_corners);
-        send_kept("corners", json!({ "square": square }));
+        json!({ "square": square })
     });
-    effect(|| {
+    share("theme", || {
         let name = settings().with(|s| s.theme.clone());
-        send_kept("theme", json!({ "name": name }));
+        json!({ "name": name })
     });
-    effect(|| {
-        let programs = crate::programs::compositor_programs();
-        send_kept("programs", programs);
-    });
-    effect(|| {
+    share("programs", crate::programs::compositor_programs);
+    share("display", || {
         let choices = settings().with(|s| s.display_choices.clone());
-        send_kept("display", json!({ "choices": choices }));
+        json!({ "choices": choices })
     });
+}
+
+/// Sends `method` with what `params` makes, at once and each time it changes.
+fn share(method: &'static str, params: impl Fn() -> Value + 'static) {
+    let params = memo(params);
+    effect(move || send_kept(method, params.get()));
 }

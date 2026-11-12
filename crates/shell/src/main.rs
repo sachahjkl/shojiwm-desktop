@@ -10,6 +10,7 @@
 
 mod account;
 mod apps;
+mod background;
 mod compositor;
 mod control_panel;
 mod desktop;
@@ -51,6 +52,8 @@ fn main() {
         }
         return;
     }
+    // Read on the settings thread while the shell connects to the compositor.
+    settings::preload();
     let result = Shell::new()
         .namespace("shojiwm-shell")
         .app_id("shojiwm-shell")

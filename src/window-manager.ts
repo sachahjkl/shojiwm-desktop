@@ -211,6 +211,11 @@ interface TabDrag {
 
 export class FloatingWindowManager {
   private readonly stack = createWindowStack();
+  /**
+   * The stack's windows, front first: made again when the stack changes,
+   * read by each step of a drag (dropAt).
+   */
+  private frontToBack: WaylandWindow[] = [];
   private readonly windowsById = new Map<string, WaylandWindow>();
   /** Window ids, most recently focused first. Drives Alt+Tab. */
   private mru: string[] = [];
@@ -273,6 +278,19 @@ export class FloatingWindowManager {
   private tabDrag: TabDrag | null = null;
 
   // ----- queries ----------------------------------------------------------
+
+  /** Put the window in front, and keep `frontToBack`. */
+  private raise(window: WaylandWindow): void {
+    if (this.stack.front() === window) {
+      return;
+    }
+    this.stack.raise(window);
+    this.restack();
+  }
+
+  private restack(): void {
+    this.frontToBack = [...this.stack.windows()].reverse();
+  }
 
   /** Stacking order of one window; higher is in front. */
   public zIndex(window: WaylandWindow): ReadonlySignal<number> {
@@ -460,6 +478,7 @@ export class FloatingWindowManager {
   public onOpen(window: WaylandWindow): void {
     this.windowsById.set(window.id, window);
     this.stack.add(window);
+    this.restack();
     this.mru = [window.id, ...this.mru.filter((id) => id !== window.id)];
     // A new window takes the keyboard, as on Windows. ShojiWM gives it only
     // when the configuration asks for it here, while the window opens: the
@@ -552,6 +571,8 @@ export class FloatingWindowManager {
     this.appIds.delete(window.id);
     this.closing.delete(window.id);
     this.stack.remove(window);
+    this.restack();
+    this.groups.forget(window.id);
     this.windowsById.delete(window.id);
     this.mru = this.mru.filter((id) => id !== window.id);
     // The window chosen when the close started, even if the keyboard went
@@ -575,7 +596,7 @@ export class FloatingWindowManager {
     if (this.groups.isAwayPeek(window.id)) {
       this.showTab(window);
     }
-    this.stack.raise(window);
+    this.raise(window);
     this.mru = [window.id, ...this.mru.filter((id) => id !== window.id)];
     this.currentOutput = this.outputOf(window);
   }
@@ -1259,7 +1280,7 @@ export class FloatingWindowManager {
       this.setMinimized(window, false);
       return;
     }
-    this.stack.raise(window);
+    this.raise(window);
     window.focus();
   }
 
@@ -1287,7 +1308,7 @@ export class FloatingWindowManager {
     }
     if (!wasAway) {
       this.takePlace(next, window);
-      this.stack.raise(next);
+      this.raise(next);
     }
     return next;
   }
@@ -1309,7 +1330,7 @@ export class FloatingWindowManager {
     });
     window.state[WIN_SNAPPED].set(null);
     if (next) {
-      this.stack.raise(window);
+      this.raise(window);
     }
     window.focus();
   }
@@ -1324,21 +1345,18 @@ export class FloatingWindowManager {
     point: { x: number; y: number },
     dragged: WaylandWindow,
   ): DropTarget | null {
-    const own = new Set(this.groups.membersPeek(dragged.id));
     const metrics = frameMetrics();
-    const candidates = [...this.windowsById.values()]
-      .filter(
-        (window) =>
-          !own.has(window.id) &&
-          !this.closing.has(window.id) &&
-          !this.groups.isAwayPeek(window.id) &&
-          !window.state[WIN_MINIMIZED]() &&
-          !window.state[WIN_FULLSCREEN](),
-      )
-      .sort(
-        (a, b) => this.stack.zIndex(b).peek() - this.stack.zIndex(a).peek(),
-      );
-    for (const window of candidates) {
+    // Front to back: the first window under the pointer is the one seen.
+    for (const window of this.frontToBack) {
+      if (
+        this.groups.sameGroup(window.id, dragged.id) ||
+        this.closing.has(window.id) ||
+        this.groups.isAwayPeek(window.id) ||
+        window.state[WIN_MINIMIZED]() ||
+        window.state[WIN_FULLSCREEN]()
+      ) {
+        continue;
+      }
       const rect = window.state[WIN_RECT]();
       const x = read(rect.x);
       const y = read(rect.y);
@@ -1396,7 +1414,7 @@ export class FloatingWindowManager {
     if (before) {
       this.takePlace(shown, before);
     }
-    this.stack.raise(shown);
+    this.raise(shown);
     shown.focus();
   }
 
@@ -1499,7 +1517,7 @@ export class FloatingWindowManager {
       }
       tab.state[WIN_SNAPPED].set(null);
       drag.detached = true;
-      this.stack.raise(tab);
+      this.raise(tab);
       tab.focus();
     }
     const rect = snapshotRect(tab.state[WIN_RECT]());

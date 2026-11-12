@@ -4,11 +4,69 @@
 //! Each program runs in a systemd scope of its own, in uwsm's slice for graphical applications,
 //! at a lower priority than the desktop. The shell's own helpers (dconf, busctl, gio monitor,
 //! systemctl, ...) do not come here: `crate::programs::run_helper` starts those.
+//!
+//! A fork is a system call: no program is started on the UI thread. Each start goes to one
+//! worker thread, the spawner ([`on_spawner`]), which runs the starts in the order they came.
 
-use std::path::Path;
-use std::process::{Command, Stdio};
+use std::path::{Path, PathBuf};
+use std::process::{Child, Command, Stdio};
+use std::sync::OnceLock;
 use std::sync::atomic::{AtomicU32, Ordering};
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::sync::mpsc::{Receiver, RecvTimeoutError, Sender, channel};
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
+
+/// A start for the spawner to do. It gives the child it started, for the spawner to reap.
+type Job = Box<dyn FnOnce() -> Option<Child> + Send>;
+
+/// Runs `job` on the spawner thread, after the jobs sent before it. Nothing waits for it. Use it
+/// for each `Command::spawn` and each look at the disk that comes before one. The job gives the
+/// child it started: the spawner collects its exit, so that no zombie stays.
+pub fn on_spawner(job: impl FnOnce() -> Option<Child> + Send + 'static) {
+    static SPAWNER: OnceLock<Sender<Job>> = OnceLock::new();
+    let sender = SPAWNER.get_or_init(|| {
+        let (sender, jobs) = channel::<Job>();
+        std::thread::Builder::new()
+            .name("spawner".into())
+            .spawn(move || spawner(jobs))
+            .expect("the spawner thread starts");
+        sender
+    });
+    let _ = sender.send(Box::new(job));
+}
+
+/// How often the spawner looks for children that ended, while some still run.
+const REAP: Duration = Duration::from_secs(2);
+
+fn spawner(jobs: Receiver<Job>) {
+    let mut children: Vec<Child> = Vec::new();
+    loop {
+        let job = if children.is_empty() {
+            jobs.recv().map_err(|_| RecvTimeoutError::Disconnected)
+        } else {
+            jobs.recv_timeout(REAP)
+        };
+        match job {
+            Ok(job) => children.extend(job()),
+            Err(RecvTimeoutError::Timeout) => {}
+            Err(RecvTimeoutError::Disconnected) => return,
+        }
+        children.retain_mut(|child| matches!(child.try_wait(), Ok(None)));
+    }
+}
+
+/// Starts `program` on the spawner, with no input and its output dropped. Nothing waits for it.
+pub fn spawn_detached(program: &str, args: Vec<String>) {
+    let program = program.to_owned();
+    on_spawner(move || {
+        Command::new(program)
+            .args(args)
+            .stdin(Stdio::null())
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .spawn()
+            .ok()
+    });
+}
 
 /// The nice value of a program started from the desktop. The compositor and the shell stay at
 /// nice 0, so they get the CPU first: a build in a terminal no longer makes the taskbar, the
@@ -23,23 +81,27 @@ const APP_SLICE: &str = "app-graphical.slice";
 const NAME_LIMIT: usize = 64;
 
 /// Starts `argv` in a scope of its own, apart from the shell: in a new session, with the shell's
-/// environment, in `cwd` (else the shell's folder). Nothing waits for it.
+/// environment, in `cwd` (else the shell's folder). Nothing waits for it: the spawner starts it.
 pub fn start_program(argv: &[String], cwd: Option<&Path>) {
     let Some(first) = argv.first() else {
         return;
     };
-    let mut command = Command::new("setsid");
-    command
-        .arg("-f")
-        .args(scope_prefix(&program_name(argv, first)))
-        .args(argv)
-        .stdin(Stdio::null())
-        .stdout(Stdio::null())
-        .stderr(Stdio::null());
-    if let Some(dir) = cwd {
-        command.current_dir(dir);
-    }
-    let _ = command.spawn();
+    let mut line = vec!["-f".to_owned()];
+    line.extend(scope_prefix(&program_name(argv, first)));
+    line.extend(argv.iter().cloned());
+    let cwd: Option<PathBuf> = cwd.map(Path::to_path_buf);
+    on_spawner(move || {
+        let mut command = Command::new("setsid");
+        command
+            .args(line)
+            .stdin(Stdio::null())
+            .stdout(Stdio::null())
+            .stderr(Stdio::null());
+        if let Some(dir) = cwd {
+            command.current_dir(dir);
+        }
+        command.spawn().ok()
+    });
 }
 
 /// What runs a program named `name` in a scope of its own, at the programs' priority: the

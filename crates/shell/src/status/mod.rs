@@ -21,6 +21,7 @@ use crate::ui::{dark_look, font};
 use anti_webui::prelude::*;
 use anti_webui::shell::prelude::*;
 use std::cell::{Cell, RefCell};
+use std::collections::HashMap;
 use std::time::Duration;
 
 /// The panels of the notification area and of the clock.
@@ -451,41 +452,79 @@ fn lit_row_style(s: Style, chosen: bool, ui: Interaction) -> Style {
     }
 }
 
-/// An icon of the icon theme or a file, or `fallback` when the theme has no `name`
-/// (Quickshell's `iconPath(name, fallback)`).
-fn icon_or(name: &str, fallback: &str) -> String {
+/// The answer of [`icon_or`] when it needs no look in the icon theme: `fallback` for no name,
+/// the name itself for a path. `None` when the theme must be asked.
+fn icon_or_at_once(name: &str, fallback: &str) -> Option<String> {
     let name = name.trim();
     if name.is_empty() {
-        return fallback.to_owned();
+        return Some(fallback.to_owned());
     }
     if name.starts_with('/') || name.starts_with("file://") || name.starts_with("image://") {
-        return name.to_owned();
+        return Some(name.to_owned());
     }
-    if anti_webui::shell::icon_path(name, 48).is_some() {
-        name.to_owned()
-    } else {
-        fallback.to_owned()
-    }
+    None
 }
 
-/// Runs a command to its end and gives `then` the lines it printed. The command's signals
-/// live in a root of their own, which goes once it has ended, so that a command run every
-/// minute keeps nothing behind.
+thread_local! {
+    /// What the icon theme answered for (name, fallback), so that a row made again starts no
+    /// worker.
+    static ICONS_FOUND: RefCell<HashMap<(String, String), String>> = RefCell::new(HashMap::new());
+}
+
+/// An icon of the icon theme or a file, or `fallback` when the theme has no `name`
+/// (Quickshell's `iconPath(name, fallback)`). `then` gets it at once when the answer is known,
+/// else on the UI thread once a worker has looked in the theme. The worker belongs to the
+/// current owner: if it goes first, `then` is not called.
+pub(crate) fn icon_or(name: &str, fallback: &str, then: impl FnOnce(String) + 'static) {
+    if let Some(icon) = icon_or_at_once(name, fallback) {
+        return then(icon);
+    }
+    let key = (name.trim().to_owned(), fallback.to_owned());
+    if let Some(icon) = ICONS_FOUND.with(|f| f.borrow().get(&key).cloned()) {
+        return then(icon);
+    }
+    let wanted = key.0.clone();
+    task(move || anti_webui::shell::icon_path(&wanted, 48).is_some()).then(move |found| {
+        let icon = if found { key.0.clone() } else { key.1.clone() };
+        ICONS_FOUND.with(|f| f.borrow_mut().insert(key, icon.clone()));
+        then(icon);
+    });
+}
+
+/// [`icon_or`] as a signal: empty until the answer comes.
+pub(crate) fn icon_or_signal(name: &str, fallback: &str) -> Signal<String> {
+    let icon = signal(String::new());
+    icon_or(name, fallback, move |found| icon.set(found));
+    icon
+}
+
+/// Runs a command to its end on a worker thread and gives `then`, on the UI thread, the lines
+/// it printed on its standard output.
 fn collect<I, S>(program: &str, args: I, then: impl FnOnce(Vec<String>) + 'static)
 where
     I: IntoIterator<Item = S>,
     S: Into<std::ffi::OsString>,
 {
-    let process = Process::new(program).args(args);
-    let (running, owner) = create_root(move || process.spawn());
-    let then = RefCell::new(Some(then));
-    running.on_exit(move |_| {
-        let lines = untrack(|| running.lines());
-        if let Some(then) = then.borrow_mut().take() {
-            then(lines);
-        }
-        owner.dispose();
-    });
+    let program = program.to_owned();
+    let args: Vec<std::ffi::OsString> = args.into_iter().map(Into::into).collect();
+    crate::background::off_thread(move || output_lines(&program, &args), then);
+}
+
+/// The lines that `program` with `args` printed on its standard output, or none if it did not
+/// start. Blocks until it ends: call it on a worker thread only.
+pub(crate) fn output_lines(program: &str, args: &[std::ffi::OsString]) -> Vec<String> {
+    std::process::Command::new(program)
+        .args(args)
+        .stdin(std::process::Stdio::null())
+        .stderr(std::process::Stdio::null())
+        .output()
+        .map(|o| {
+            String::from_utf8_lossy(&o.stdout)
+                .lines()
+                .map(String::from)
+                .collect()
+        })
+        .unwrap_or_default()
 }
 
 /// Runs `f` every `every`, from now on, for as long as the shell runs.
@@ -502,4 +541,34 @@ fn every(every: Duration, f: impl Fn() + 'static) {
 /// A string as one word of `sh`.
 fn shell_quote(word: &str) -> String {
     format!("'{}'", word.replace('\'', "'\\''"))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn an_icon_needs_the_theme_only_for_a_name() {
+        assert_eq!(icon_or_at_once("", "fallback").as_deref(), Some("fallback"));
+        assert_eq!(
+            icon_or_at_once("  ", "fallback").as_deref(),
+            Some("fallback")
+        );
+        assert_eq!(
+            icon_or_at_once("/usr/share/a.png", "fallback").as_deref(),
+            Some("/usr/share/a.png")
+        );
+        assert_eq!(
+            icon_or_at_once("file:///a.png", "fallback").as_deref(),
+            Some("file:///a.png")
+        );
+        assert_eq!(icon_or_at_once("firefox", "fallback"), None);
+    }
+
+    #[test]
+    fn output_lines_gives_what_a_command_printed() {
+        let args: Vec<std::ffi::OsString> = vec!["-c".into(), "echo a; echo b".into()];
+        assert_eq!(output_lines("sh", &args), vec!["a", "b"]);
+        assert!(output_lines("/no/such/program", &[]).is_empty());
+    }
 }

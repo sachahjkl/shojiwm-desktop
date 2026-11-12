@@ -1,8 +1,8 @@
 //! The suggestions under the Run dialog's field, as the text is typed: the history, the
 //! installed programs, the commands of `PATH`, and the files and folders of a path.
 //!
-//! Everything here is plain data and functions: the dialog reads the sources (in a task for
-//! what touches the disk), then [`rank`] or [`path_suggestions`] give the rows.
+//! Everything here is plain data and functions: the dialog reads the sources in a task when it
+//! opens ([`sources`]), then [`rank`] or [`path_suggestions`] give the rows, in a task per query.
 
 use crate::fuzzy;
 use anti_webui::shell::prelude::*;
@@ -72,11 +72,14 @@ fn starts_with_ignoring_case(text: &str, start: &str) -> bool {
 /// The candidates that match `query`, best first, at most [`SHOWN`], each text once. The
 /// candidates come in the order history, applications, commands: a tie keeps that order.
 /// Labels that start with the query come first, then the fuzzy matches; the history gets a
-/// bonus, more for the most recent command.
-pub fn rank(query: &str, candidates: Vec<Suggestion>) -> Vec<Suggestion> {
+/// bonus, more for the most recent command. It goes over every candidate: run it in a task.
+pub fn rank<'a>(
+    query: &str,
+    candidates: impl IntoIterator<Item = &'a Suggestion>,
+) -> Vec<Suggestion> {
     let query = query.trim();
     let mut recent_seen = 0u32;
-    let with_bonus: Vec<(Suggestion, u32)> = candidates
+    let with_bonus: Vec<(&Suggestion, u32)> = candidates
         .into_iter()
         .map(|s| {
             let bonus = if s.kind == Kind::Recent {
@@ -91,24 +94,58 @@ pub fn rank(query: &str, candidates: Vec<Suggestion>) -> Vec<Suggestion> {
         .collect();
     let mut found = fuzzy::rank(query, with_bonus, |(s, _)| s.label.clone());
     found.sort_by_key(|m| {
-        let (s, bonus) = &m.item;
+        let (s, bonus) = m.item;
         let prefix =
             starts_with_ignoring_case(&s.label, query) || starts_with_ignoring_case(&s.text, query);
         (!prefix, Reverse(m.score + bonus), s.label.chars().count())
     });
-    let mut seen = HashSet::new();
+    let mut seen: HashSet<&str> = HashSet::new();
     let mut out = Vec::new();
     for m in found {
-        let (mut s, _) = m.item;
-        if !seen.insert(s.text.clone()) {
+        let (s, _) = m.item;
+        if !seen.insert(s.text.as_str()) {
             continue;
         }
+        let mut s = s.clone();
         s.marks = m.marks;
         out.push(s);
         if out.len() == SHOWN {
             break;
         }
     }
+    out
+}
+
+/// The commands of the history, last first, as suggestions.
+pub fn history_suggestions(history: &[String]) -> Vec<Suggestion> {
+    history
+        .iter()
+        .map(|entry| Suggestion::plain(Kind::Recent, entry.clone()))
+        .collect()
+}
+
+/// What the dialog suggests besides its history: the applications, each with the command its
+/// `Exec` line runs, then the commands of `PATH` (`commands`, sorted). Build it in a task.
+pub fn sources<'a>(
+    programs: impl IntoIterator<Item = (&'a Application, &'a str)>,
+    commands: &[String],
+) -> Vec<Suggestion> {
+    let on_path = |name: &str| commands.binary_search_by(|c| c.as_str().cmp(name)).is_ok();
+    let mut out: Vec<Suggestion> = programs
+        .into_iter()
+        .map(|(app, exec)| Suggestion {
+            kind: Kind::Application,
+            label: app.name.clone(),
+            text: app_command(exec, on_path),
+            marks: Vec::new(),
+            app: Some(app.clone()),
+        })
+        .collect();
+    out.extend(
+        commands
+            .iter()
+            .map(|name| Suggestion::plain(Kind::Command, name.clone())),
+    );
     out
 }
 
@@ -382,7 +419,7 @@ mod tests {
             Suggestion::plain(Kind::Command, "gh"),
             Suggestion::plain(Kind::Command, "vim"),
         ];
-        let found = rank("gh", candidates);
+        let found = rank("gh", &candidates);
         assert_eq!(
             texts(&found),
             ["ghostty --title work", "gh", "ghostty", "light-ghost"]
@@ -395,10 +432,21 @@ mod tests {
         let mut candidates = vec![Suggestion::plain(Kind::Recent, "ghostty")];
         candidates.push(Suggestion::plain(Kind::Command, "ghostty"));
         candidates.extend((0..20).map(|i| Suggestion::plain(Kind::Command, format!("g{i}"))));
-        let found = rank("g", candidates);
+        let found = rank("g", &candidates);
         assert_eq!(found.len(), SHOWN);
         assert_eq!(found[0].kind, Kind::Recent);
         assert_eq!(found.iter().filter(|s| s.text == "ghostty").count(), 1);
+    }
+
+    #[test]
+    fn the_history_comes_first_and_ranks_higher() {
+        let history = history_suggestions(&["vim notes".to_owned()]);
+        let others = sources(std::iter::empty(), &["vi".to_owned(), "vim".to_owned()]);
+        assert_eq!(texts(&others), ["vi", "vim"]);
+        assert_eq!(others[0].kind, Kind::Command);
+        let found = rank("vi", history.iter().chain(&others));
+        assert_eq!(found[0].kind, Kind::Recent);
+        assert_eq!(texts(&found), ["vim notes", "vi", "vim"]);
     }
 
     #[test]

@@ -5,6 +5,7 @@
 //! `builtInWallpaper`): Aero's, lighter or darker with the system, or Kernel's dark desk under a
 //! grid of dots. It is placed as the "Picture position" says: fill, fit, stretch, tile or center.
 
+use crate::background::off_thread_in;
 use crate::paths::asset;
 use crate::settings::{change, dark, settings};
 use crate::theme::is_kernel;
@@ -67,7 +68,8 @@ pub fn view() -> View {
 // ----- the slide show --------------------------------------------------------------------------
 
 thread_local! {
-    static SLIDESHOW: Cell<bool> = const { Cell::new(false) };
+    /// The root of the slide show, once it is started: the readings of its folder end there.
+    static SLIDESHOW: Cell<Option<Owner>> = const { Cell::new(None) };
 }
 
 /// Starts the slide show: while a folder is chosen, its pictures become the wallpaper in turn,
@@ -75,10 +77,11 @@ thread_local! {
 /// pictures added to it join the show. Starting a show, or changing its folder, shows a picture
 /// of it at once. Call it once, from the shell's root.
 pub fn install_slideshow() {
-    if SLIDESHOW.with(|s| s.replace(true)) {
+    if SLIDESHOW.with(|s| s.get()).is_some() {
         return;
     }
     create_root(|| {
+        SLIDESHOW.with(|s| s.set(Owner::current()));
         let folder = memo(|| settings().with(|s| s.slideshow_folder.clone()));
         let minutes = memo(|| settings().with(|s| s.slideshow_minutes.max(1)));
         // A new folder or a new interval starts the turns again; a new folder shows at once.
@@ -113,8 +116,11 @@ fn schedule(turn: std::rc::Rc<Cell<Option<Timeout>>>, every: Duration) {
     })));
 }
 
-/// Shows the next picture of the show now.
+/// Shows the next picture of the show soon: the folder is read on a worker.
 pub fn next() {
+    let Some(root) = SLIDESHOW.with(|s| s.get()) else {
+        return;
+    };
     let (folder, shuffle, current) = untrack(|| {
         settings().with(|s| {
             (
@@ -127,7 +133,26 @@ pub fn next() {
     if folder.is_empty() {
         return;
     }
-    let mut pictures: Vec<String> = std::fs::read_dir(&folder)
+    let seed = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map_or(0, |d| d.subsec_nanos() as usize ^ d.as_secs() as usize);
+    let read = folder.clone();
+    off_thread_in(
+        Some(root),
+        move || choose(pictures(&read), &current, shuffle, seed),
+        move |chosen| {
+            // The folder changed meanwhile: its own reading shows its picture.
+            let still = untrack(|| settings().with(|s| s.slideshow_folder == folder));
+            if let Some(chosen) = chosen.filter(|_| still) {
+                change(|s| s.wallpaper = chosen);
+            }
+        },
+    );
+}
+
+/// The pictures of a folder, in name order. On a worker only.
+fn pictures(folder: &str) -> Vec<String> {
+    let mut pictures: Vec<String> = std::fs::read_dir(folder)
         .map(|dir| {
             dir.flatten()
                 .map(|e| e.path())
@@ -141,16 +166,19 @@ pub fn next() {
                 .collect()
         })
         .unwrap_or_default();
-    if pictures.is_empty() {
-        return;
-    }
     pictures.sort();
-    let at = pictures.iter().position(|p| *p == current);
+    pictures
+}
+
+/// The picture after `current` in `pictures` (name order), or, shuffled, any other one: `seed`
+/// picks it.
+fn choose(mut pictures: Vec<String>, current: &str, shuffle: bool, seed: usize) -> Option<String> {
+    if pictures.is_empty() {
+        return None;
+    }
+    let at = pictures.iter().position(|p| p == current);
     let index = if shuffle && pictures.len() > 1 {
         // Any other picture than the one showing.
-        let seed = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .map_or(0, |d| d.subsec_nanos() as usize ^ d.as_secs() as usize);
         let pick = seed % (pictures.len() - 1);
         match at {
             Some(i) if pick >= i => pick + 1,
@@ -159,6 +187,34 @@ pub fn next() {
     } else {
         at.map_or(0, |i| (i + 1) % pictures.len())
     };
-    let chosen = pictures.swap_remove(index);
-    change(|s| s.wallpaper = chosen);
+    Some(pictures.swap_remove(index))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn list() -> Vec<String> {
+        ["a.jpg", "b.jpg", "c.jpg"].map(String::from).to_vec()
+    }
+
+    #[test]
+    fn in_order_the_next_one_comes_and_turns_round() {
+        assert_eq!(choose(list(), "a.jpg", false, 0).as_deref(), Some("b.jpg"));
+        assert_eq!(choose(list(), "c.jpg", false, 0).as_deref(), Some("a.jpg"));
+        assert_eq!(choose(list(), "x.jpg", false, 0).as_deref(), Some("a.jpg"));
+        assert_eq!(choose(Vec::new(), "a.jpg", false, 0), None);
+    }
+
+    #[test]
+    fn shuffled_the_one_showing_never_comes_again() {
+        for seed in 0..10 {
+            assert_ne!(
+                choose(list(), "b.jpg", true, seed).as_deref(),
+                Some("b.jpg")
+            );
+        }
+        let one = vec!["a.jpg".to_owned()];
+        assert_eq!(choose(one, "a.jpg", true, 3).as_deref(), Some("a.jpg"));
+    }
 }

@@ -157,7 +157,8 @@ pub fn desktop_entry_keys(text: &str) -> Vec<(String, String)> {
 }
 
 /// An icon of the theme by `name`, else `fallback` when the theme lacks it (Quickshell's
-/// `iconPath(name, fallback)`). A path stays as it is.
+/// `iconPath(name, fallback)`). A path stays as it is. It looks in the theme on the disk: call
+/// it on a worker thread only.
 pub fn icon_or(name: &str, fallback: &str) -> String {
     if name.is_empty() {
         return fallback.to_owned();

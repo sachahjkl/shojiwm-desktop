@@ -9,7 +9,7 @@
 //! and a new session.
 
 use super::{
-    ERROR_RED, Panel, bar_cell, bar_picture, body_text, click_or_settings, footer, icon_or,
+    ERROR_RED, Panel, bar_cell, bar_picture, body_text, click_or_settings, footer, icon_or_signal,
     icon_width, is_open, one_line, panel_link, panel_popup, small_text,
 };
 use crate::paths::{asset, state_dir};
@@ -21,8 +21,9 @@ use crate::ui::{
 use anti_webui::prelude::*;
 use anti_webui::shell::prelude::*;
 use serde_json::{Value, json};
-use std::cell::Cell;
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::cell::{Cell, RefCell};
+use std::sync::mpsc::{SendError, Sender};
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 /// How many notifications the list keeps.
 const KEEP: usize = 100;
@@ -78,23 +79,46 @@ struct History {
     do_not_disturb: Signal<bool>,
 }
 
+/// How long the list stays unchanged before it is written: a burst of notifications makes one
+/// write.
+const SAVE_DELAY: Duration = Duration::from_millis(300);
+
 thread_local! {
     static HISTORY: Cell<Option<History>> = const { Cell::new(None) };
+    /// The file has been read: until then, nothing is written over it.
+    static LOADED: Cell<bool> = const { Cell::new(false) };
+    /// Before the file has been read: (Clear all was chosen, the panel was opened).
+    static EARLY: Cell<(bool, bool)> = const { Cell::new((false, false)) };
+    /// The write waiting for the list to stay unchanged.
+    static PENDING_SAVE: RefCell<Option<Timeout>> = const { RefCell::new(None) };
+    /// The line to the thread that writes the file, made at the first write.
+    static WRITER: RefCell<Option<Sender<Saved>>> = const { RefCell::new(None) };
 }
 
 fn file() -> std::path::PathBuf {
     state_dir().join("notifications.json")
 }
 
-/// The history, read from its file the first time.
+/// The history, made empty the first time; a worker reads the file and adds what it held.
 fn history() -> History {
     HISTORY.with(|cell| {
         cell.get().unwrap_or_else(|| {
-            let (entries, unread) = load();
-            let (h, _) = create_root(|| History {
-                entries: signal(entries),
-                unread: signal(unread),
-                do_not_disturb: signal(false),
+            let (h, _) = untrack(|| {
+                create_root(|| {
+                    let h = History {
+                        entries: signal(Vec::new()),
+                        unread: signal(0),
+                        do_not_disturb: signal(false),
+                    };
+                    let path = file();
+                    task(move || {
+                        std::fs::read_to_string(path)
+                            .map(|text| parse_saved(&text))
+                            .unwrap_or_default()
+                    })
+                    .then(move |saved| loaded(h, saved));
+                    h
+                })
             });
             cell.set(Some(h));
             h
@@ -102,11 +126,31 @@ fn history() -> History {
     })
 }
 
-fn load() -> (Vec<Entry>, u32) {
-    let Some(saved) = std::fs::read_to_string(file())
-        .ok()
-        .and_then(|t| serde_json::from_str::<Value>(&t).ok())
-    else {
+/// The file's list comes after the notifications that came while it was read. A Clear all
+/// before drops it; an open panel before drops its unseen count.
+fn loaded(h: History, (saved, unread): (Vec<Entry>, u32)) {
+    LOADED.with(|l| l.set(true));
+    let (cleared, seen) = EARLY.with(Cell::take);
+    let saved = if cleared { Vec::new() } else { saved };
+    let unread = if cleared || seen { 0 } else { unread };
+    let changed_before = cleared || seen || h.entries.with_untracked(|e| !e.is_empty());
+    if !saved.is_empty() || unread != 0 {
+        batch(|| {
+            h.entries.update(|e| {
+                e.extend(saved);
+                e.truncate(KEEP);
+            });
+            h.unread.update(|n| *n += unread);
+        });
+    }
+    if changed_before {
+        save();
+    }
+}
+
+/// The list and the unseen count of the file's text.
+fn parse_saved(text: &str) -> (Vec<Entry>, u32) {
+    let Ok(saved) = serde_json::from_str::<Value>(text) else {
         return (Vec::new(), 0);
     };
     let entries = saved
@@ -123,18 +167,58 @@ fn load() -> (Vec<Entry>, u32) {
     (entries, unread)
 }
 
-/// Writes the list and the unseen count to the file.
+/// The text of the file for a list and an unseen count.
+fn saved_text(entries: &[Entry], unread: u32) -> String {
+    let entries: Vec<Value> = entries.iter().map(Entry::to_json).collect();
+    json!({ "unread": unread, "entries": entries }).to_string() + "\n"
+}
+
+/// What the writer thread writes: the list and the unseen count.
+type Saved = (Vec<Entry>, u32);
+
+/// Writes the list and the unseen count to the file once they stay unchanged for
+/// [`SAVE_DELAY`], on the writer thread. Nothing is written before the file has been read.
 fn save() {
-    let h = history();
-    let entries: Vec<Value> = h
-        .entries
-        .with_untracked(|e| e.iter().map(Entry::to_json).collect());
-    let text = json!({ "unread": h.unread.get_untracked(), "entries": entries }).to_string();
-    let path = file();
-    if let Some(dir) = path.parent() {
-        let _ = std::fs::create_dir_all(dir);
+    if !LOADED.with(Cell::get) {
+        return;
     }
-    let _ = std::fs::write(path, text + "\n");
+    let timer = set_timeout(SAVE_DELAY, || {
+        PENDING_SAVE.with(|p| p.borrow_mut().take());
+        let h = history();
+        let saved = (h.entries.get_untracked(), h.unread.get_untracked());
+        WRITER.with(|w| {
+            let mut w = w.borrow_mut();
+            let sender = w.get_or_insert_with(start_writer);
+            if let Err(SendError(saved)) = sender.send(saved) {
+                // The writer has gone: a new one takes the list.
+                let _ = w.insert(start_writer()).send(saved);
+            }
+        });
+    });
+    if let Some(old) = PENDING_SAVE.with(|p| p.borrow_mut().replace(timer)) {
+        old.cancel();
+    }
+}
+
+/// The thread that writes the file, in the order the lists come; it writes only the last of
+/// the lists that wait.
+fn start_writer() -> Sender<Saved> {
+    let (sender, received) = std::sync::mpsc::channel::<Saved>();
+    let _ = std::thread::Builder::new()
+        .name("shojiwm-shell notifications".into())
+        .spawn(move || {
+            while let Ok(mut saved) = received.recv() {
+                while let Ok(newer) = received.try_recv() {
+                    saved = newer;
+                }
+                let path = file();
+                if let Some(dir) = path.parent() {
+                    let _ = std::fs::create_dir_all(dir);
+                }
+                let _ = std::fs::write(path, saved_text(&saved.0, saved.1));
+            }
+        });
+    sender
 }
 
 fn now_ms() -> i64 {
@@ -210,6 +294,9 @@ fn remove(index: usize) {
 
 fn clear() {
     let h = history();
+    if !LOADED.with(Cell::get) {
+        EARLY.with(|e| e.set((true, e.get().1)));
+    }
     h.entries.set(Vec::new());
     h.unread.set(0);
     save();
@@ -217,6 +304,9 @@ fn clear() {
 
 fn mark_read() {
     let h = history();
+    if !LOADED.with(Cell::get) {
+        EARLY.with(|e| e.set((e.get().0, true)));
+    }
     if h.unread.get_untracked() != 0 {
         h.unread.set(0);
         save();
@@ -473,7 +563,7 @@ fn card(index: usize, entry: Entry) -> Div {
     } else {
         entry.icon.clone()
     };
-    let icon = icon_or(&wanted, "dialog-information");
+    let icon = icon_or_signal(&wanted, "dialog-information");
     let title = if entry.summary.is_empty() {
         entry.app.clone()
     } else {
@@ -540,7 +630,14 @@ fn card(index: usize, entry: Entry) -> Div {
                 s.bg(Color::TRANSPARENT).border_color(Color::TRANSPARENT)
             }
         })
-        .child(div().pt(1.0).child(shell_icon(icon, 24.0)))
+        // Its room is kept while the icon theme is asked.
+        .child(
+            div()
+                .flex_none()
+                .w(24.0)
+                .pt(1.0)
+                .child(shell_icon(move || icon.get(), 24.0)),
+        )
         .child(words)
         .child(
             div()
@@ -567,4 +664,39 @@ fn card(index: usize, entry: Entry) -> Div {
                 })
                 .child("\u{00D7}"),
         )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn entry(summary: &str, time: i64) -> Entry {
+        Entry {
+            app: "mail".into(),
+            icon: String::new(),
+            summary: summary.into(),
+            body: "text".into(),
+            time,
+        }
+    }
+
+    #[test]
+    fn the_saved_text_reads_back_the_same() {
+        let list = vec![entry("one", 2_000), entry("two", 1_000)];
+        let text = saved_text(&list, 3);
+        assert_eq!(parse_saved(&text), (list, 3));
+    }
+
+    #[test]
+    fn a_broken_file_gives_an_empty_list() {
+        assert_eq!(parse_saved("not json"), (Vec::new(), 0));
+        assert_eq!(parse_saved("{}"), (Vec::new(), 0));
+    }
+
+    #[test]
+    fn the_file_keeps_at_most_the_limit() {
+        let list: Vec<Entry> = (0..KEEP as i64 + 5).map(|i| entry("n", i)).collect();
+        let (read, _) = parse_saved(&saved_text(&list, 0));
+        assert_eq!(read.len(), KEEP);
+    }
 }

@@ -6,6 +6,8 @@
 //!
 //! The model is one for every screen: each desktop shows the part of it that is placed on it.
 
+use crate::account::user_name;
+use crate::background::off_thread_in;
 use crate::paths::asset;
 use crate::programs::{program, run, run_helper};
 use crate::settings::{change, home, settings};
@@ -68,6 +70,8 @@ pub struct Item {
     pub path: String,
     /// The file's name, with its extension.
     pub name: String,
+    /// The name in lower case, what the icons are sorted by.
+    pub sort_name: String,
     /// The extension in lower case, "" for a folder.
     pub suffix: String,
     pub size: u64,
@@ -91,6 +95,7 @@ impl Item {
             kind,
             path: path.to_owned(),
             name: name.to_owned(),
+            sort_name: name.to_lowercase(),
             suffix: String::new(),
             size: 0,
             modified: None,
@@ -175,11 +180,21 @@ fn file_icon(suffix: &str) -> String {
 // ----- the shared state ------------------------------------------------------------------------
 
 struct Model {
-    /// The files of the folder, unsorted.
+    /// The root the model lives in, and the results of its tasks.
+    owner: Owner,
+    /// The desktop folder, once read from `user-dirs.dirs` (on a worker).
+    folder: Signal<Option<PathBuf>>,
+    /// The files of the folder, folders first, then by name (see [`scan`]).
     files: Signal<Vec<Item>>,
+    /// Every icon in sort order: the system icons, then the files. One for every screen.
+    items: Memo<Vec<Item>>,
     trash_full: Signal<bool>,
     /// A reading of the folder is waiting for it to settle.
     pending: Cell<Option<Timeout>>,
+    /// A count of the Recycle Bin is waiting for it to settle.
+    trash_pending: Cell<Option<Timeout>>,
+    /// The last reading of the folder asked for: an older one that ends later is dropped.
+    generation: Cell<u64>,
 }
 
 thread_local! {
@@ -190,10 +205,25 @@ fn model() -> &'static Model {
     MODEL.with(|cell| {
         cell.get().unwrap_or_else(|| {
             let (model, _) = create_root(|| {
+                let files = signal(Vec::new());
+                let sort = memo(|| settings().with(|s| s.desktop_sort.clone()));
+                let system = memo(|| settings().with(|s| s.desktop_system_icons.clone()));
+                let items = memo(move || {
+                    let mut list = system_items(&system.get());
+                    let start = list.len();
+                    files.with(|f: &Vec<Item>| list.extend(f.iter().cloned()));
+                    sort_files(&mut list[start..], &sort.get());
+                    list
+                });
                 let model: &'static Model = Box::leak(Box::new(Model {
-                    files: signal(scan(&folder())),
+                    owner: Owner::current().expect("a root"),
+                    folder: signal(None),
+                    files,
+                    items,
                     trash_full: signal(false),
                     pending: Cell::new(None),
+                    trash_pending: Cell::new(None),
+                    generation: Cell::new(0),
                 }));
                 model
             });
@@ -210,33 +240,85 @@ pub fn install() {
     model();
 }
 
-/// The watchers, in a root of their own: they outlive the screen that started them.
+/// Finds the folder and makes it if it is not there (on a worker), then reads it and watches it
+/// and the Recycle Bin. The watchers live in the model's root: they outlive the screen that
+/// started them.
 fn watch(model: &'static Model) {
-    create_root(|| {
-        let folder = folder();
-        let _ = std::fs::create_dir_all(&folder);
-        let changes = Process::new(GIO).arg("monitor").arg(&folder).spawn();
-        changes.on_line(move |_| rescan_later());
-        count_trash(model);
-        let trash = Process::new(GIO).args(["monitor", "trash:///"]).spawn();
-        trash.on_line(move |_| count_trash(model));
-    });
+    off_thread_in(
+        Some(model.owner),
+        || {
+            let folder = read_folder();
+            let _ = std::fs::create_dir_all(&folder);
+            folder
+        },
+        move |folder| {
+            let changes = Process::new(GIO).arg("monitor").arg(&folder).spawn();
+            changes.on_line(move |_| rescan_later());
+            model.folder.set(Some(folder));
+            rescan_now();
+            count_trash();
+            let trash = Process::new(GIO).args(["monitor", "trash:///"]).spawn();
+            trash.on_line(move |_| count_trash_later());
+            // A shortcut takes the icon of its program when the programs are read: read the
+            // folder again once they are.
+            let loaded = memo(|| apps().loaded());
+            let first = Cell::new(true);
+            effect(move || {
+                let now = loaded.get();
+                if !first.replace(false) && now {
+                    rescan_later();
+                }
+            });
+        },
+    );
 }
 
-/// Whether the Recycle Bin has anything in it. `gio` counts what is in every trash folder
-/// (`~/.local/share/Trash`, and a `.Trash-<uid>` at the top of each other mount).
-fn count_trash(model: &'static Model) {
-    let count = Process::new(GIO)
-        .args(["info", "-a", "trash::item-count", "trash:///"])
-        .spawn();
-    count.on_exit(move |_| {
-        let full = count.lines().iter().any(|line| {
-            line.split_once("trash::item-count:")
-                .and_then(|(_, n)| n.trim().parse::<u64>().ok())
-                .is_some_and(|n| n > 0)
-        });
-        model.trash_full.set_if_changed(full);
+/// Whether the Recycle Bin has anything in it, counted on a worker. `gio` counts what is in
+/// every trash folder (`~/.local/share/Trash`, and a `.Trash-<uid>` at the top of each other
+/// mount).
+fn count_trash() {
+    let model = model();
+    off_thread_in(
+        Some(model.owner),
+        || {
+            std::process::Command::new(GIO)
+                .args(["info", "-a", "trash::item-count", "trash:///"])
+                .stdin(std::process::Stdio::null())
+                .stderr(std::process::Stdio::null())
+                .output()
+                .map(|out| trash_has_items(&String::from_utf8_lossy(&out.stdout)))
+                .ok()
+        },
+        move |full| {
+            if let Some(full) = full {
+                model.trash_full.set_if_changed(full);
+            }
+        },
+    );
+}
+
+/// The Recycle Bin changed: count it once it has settled (a trashing of many files is one count).
+fn count_trash_later() {
+    let model = model();
+    if let Some(t) = model.trash_pending.take() {
+        t.cancel();
+    }
+    let timer = model.owner.with(|| {
+        set_timeout(SETTLE, move || {
+            model.trash_pending.set(None);
+            count_trash();
+        })
     });
+    model.trash_pending.set(Some(timer));
+}
+
+/// Whether `gio info -a trash::item-count` says there is something in the Recycle Bin.
+fn trash_has_items(output: &str) -> bool {
+    output.lines().any(|line| {
+        line.split_once("trash::item-count:")
+            .and_then(|(_, n)| n.trim().parse::<u64>().ok())
+            .is_some_and(|n| n > 0)
+    })
 }
 
 fn rescan_later() {
@@ -244,15 +326,37 @@ fn rescan_later() {
     if let Some(t) = model.pending.take() {
         t.cancel();
     }
-    model.pending.set(Some(set_timeout(SETTLE, move || {
-        model.pending.set(None);
-        model.files.set_if_changed(scan(&folder()));
-    })));
+    let timer = model.owner.with(|| {
+        set_timeout(SETTLE, move || {
+            model.pending.set(None);
+            rescan_now();
+        })
+    });
+    model.pending.set(Some(timer));
+}
+
+/// Reads the folder on a worker. A reading asked for later wins over this one.
+fn rescan_now() {
+    let model = model();
+    let Some(folder) = model.folder.get_untracked() else {
+        return;
+    };
+    let generation = model.generation.get() + 1;
+    model.generation.set(generation);
+    off_thread_in(
+        Some(model.owner),
+        move || scan(&folder),
+        move |files| {
+            if model.generation.get() == generation {
+                model.files.set_if_changed(files);
+            }
+        },
+    );
 }
 
 /// Reads the folder again now (the menu's Refresh).
 pub fn refresh() {
-    model().files.set(scan(&folder()));
+    rescan_now();
 }
 
 pub fn trash_full() -> bool {
@@ -260,48 +364,46 @@ pub fn trash_full() -> bool {
 }
 
 /// The icons of every screen, in sort order: the Recycle Bin, the system icons asked for, then
-/// the folders and the files. Reading it tracks the folder and the settings.
+/// the folders and the files. Reading it tracks the folder and the settings that order it.
 pub fn items() -> Vec<Item> {
-    let mut files = model().files.get();
-    let (sort, system) =
-        settings().with(|s| (s.desktop_sort.clone(), s.desktop_system_icons.clone()));
-    files.sort_by(|a, b| {
-        use std::cmp::Ordering;
-        let by_kind = b.is_dir().cmp(&a.is_dir());
-        if by_kind != Ordering::Equal {
-            return by_kind;
-        }
-        let by_sort = match sort.as_str() {
-            "size" => b.size.cmp(&a.size),
-            "type" => a.suffix.cmp(&b.suffix),
-            "date" => match (a.modified, b.modified) {
-                (Some(x), Some(y)) => y.cmp(&x),
-                _ => Ordering::Equal,
-            },
-            _ => Ordering::Equal,
-        };
-        by_sort.then_with(|| a.name.to_lowercase().cmp(&b.name.to_lowercase()))
-    });
+    model().items.get()
+}
+
+/// The Recycle Bin and the system icons asked for, as Windows 7's Desktop Icon Settings lists
+/// them, the Recycle Bin on top.
+fn system_items(system: &[String]) -> Vec<Item> {
     let home = home()
         .map(|h| h.to_string_lossy().into_owned())
         .unwrap_or_default();
-    // The system icons as Windows 7's Desktop Icon Settings lists them, the Recycle Bin on top.
     let mut list = vec![Item::system(Kind::Trash, "Recycle Bin", "trash:///")];
-    for (kind, name, path) in [
-        (Kind::Computer, "Computer".to_owned(), "/".to_owned()),
-        (Kind::UserFiles, user_name(), home),
-        (
-            Kind::ControlPanel,
-            "Control Panel".to_owned(),
-            String::new(),
-        ),
-    ] {
-        if system.iter().any(|s| s == kind.setting()) {
-            list.push(Item::system(kind, &name, &path));
+    for kind in [Kind::Computer, Kind::UserFiles, Kind::ControlPanel] {
+        if !system.iter().any(|s| s == kind.setting()) {
+            continue;
         }
+        let (name, path) = match kind {
+            Kind::Computer => ("Computer".to_owned(), "/".to_owned()),
+            Kind::UserFiles => (user_name(), home.clone()),
+            _ => ("Control Panel".to_owned(), String::new()),
+        };
+        list.push(Item::system(kind, &name, &path));
     }
-    list.extend(files);
     list
+}
+
+/// Puts files that [`scan`] gave (folders first, then by name) in the order of the "Sort by"
+/// setting. The sort is stable: what is equal stays in name order.
+fn sort_files(files: &mut [Item], sort: &str) {
+    use std::cmp::Ordering;
+    let by: fn(&Item, &Item) -> Ordering = match sort {
+        "size" => |a, b| b.size.cmp(&a.size),
+        "type" => |a, b| a.suffix.cmp(&b.suffix),
+        "date" => |a, b| match (a.modified, b.modified) {
+            (Some(x), Some(y)) => y.cmp(&x),
+            _ => Ordering::Equal,
+        },
+        _ => return,
+    };
+    files.sort_by(|a, b| b.is_dir().cmp(&a.is_dir()).then_with(|| by(a, b)));
 }
 
 /// Removes a system icon from the desktop (its menu's "Remove from the desktop").
@@ -311,14 +413,29 @@ pub fn remove_system_icon(kind: Kind) {
 
 // ----- the folder ------------------------------------------------------------------------------
 
-/// The desktop folder: `XDG_DESKTOP_DIR` of `user-dirs.dirs`, else `~/Desktop`.
-pub fn folder() -> PathBuf {
+/// The desktop folder, once it is known (soon after the shell starts).
+pub fn folder() -> Option<PathBuf> {
+    model().folder.get_untracked()
+}
+
+pub fn folder_string() -> Option<String> {
+    folder().map(|f| f.to_string_lossy().into_owned())
+}
+
+/// Reads the desktop folder: `XDG_DESKTOP_DIR` of `user-dirs.dirs`, else `~/Desktop`. On a
+/// worker only.
+fn read_folder() -> PathBuf {
     let home = home().unwrap_or_else(|| PathBuf::from("/"));
     let config = std::env::var_os("XDG_CONFIG_HOME")
         .map(PathBuf::from)
         .unwrap_or_else(|| home.join(".config"));
-    std::fs::read_to_string(config.join("user-dirs.dirs"))
-        .ok()
+    let text = std::fs::read_to_string(config.join("user-dirs.dirs")).ok();
+    desktop_dir(text.as_deref(), &home)
+}
+
+/// The desktop folder that a `user-dirs.dirs` says, else `~/Desktop`.
+fn desktop_dir(user_dirs: Option<&str>, home: &Path) -> PathBuf {
+    user_dirs
         .and_then(|text| {
             text.lines().find_map(|line| {
                 let value = line.trim().strip_prefix("XDG_DESKTOP_DIR")?.trim_start();
@@ -333,16 +450,23 @@ pub fn folder() -> PathBuf {
         .unwrap_or_else(|| home.join("Desktop"))
 }
 
-pub fn folder_string() -> String {
-    folder().to_string_lossy().into_owned()
+/// What a shortcut's program is found by, from the programs as they are when the folder is read.
+struct Program {
+    /// The id without `.desktop`, in lower case.
+    id: String,
+    name: String,
+    icon: Option<String>,
 }
 
-/// The files of the folder, hidden ones left out.
+/// The files of the folder, hidden ones left out: folders first, then by name. On a worker
+/// only: it reads the disk and the icon theme.
 fn scan(folder: &Path) -> Vec<Item> {
     let Ok(entries) = std::fs::read_dir(folder) else {
         return Vec::new();
     };
-    entries
+    // The programs, read once for every shortcut, and only if there is one.
+    let mut programs: Option<Vec<Program>> = None;
+    let mut files: Vec<Item> = entries
         .flatten()
         .filter_map(|entry| {
             let name = entry.file_name().to_string_lossy().into_owned();
@@ -366,7 +490,8 @@ fn scan(folder: &Path) -> Vec<Item> {
             };
             let path_text = path.to_string_lossy().into_owned();
             let (shortcut_name, shortcut_icon) = if kind == Kind::Shortcut {
-                read_shortcut(&path)
+                let programs = programs.get_or_insert_with(read_programs);
+                read_shortcut(&path, programs)
             } else {
                 (String::new(), String::new())
             };
@@ -374,6 +499,7 @@ fn scan(folder: &Path) -> Vec<Item> {
                 key: path_text.clone(),
                 kind,
                 path: path_text,
+                sort_name: name.to_lowercase(),
                 name,
                 suffix,
                 size: meta.as_ref().map_or(0, |m| m.len()),
@@ -382,12 +508,35 @@ fn scan(folder: &Path) -> Vec<Item> {
                 shortcut_icon,
             })
         })
+        .collect();
+    sort_by_name(&mut files);
+    files
+}
+
+/// Folders first, then by name without regard to case.
+fn sort_by_name(files: &mut [Item]) {
+    files.sort_by(|a, b| {
+        b.is_dir()
+            .cmp(&a.is_dir())
+            .then_with(|| a.sort_name.cmp(&b.sort_name))
+    });
+}
+
+fn read_programs() -> Vec<Program> {
+    apps()
+        .all()
+        .into_iter()
+        .map(|app| Program {
+            id: app.id.trim_end_matches(".desktop").to_lowercase(),
+            name: app.name.to_lowercase(),
+            icon: app.icon,
+        })
         .collect()
 }
 
 /// The `Name` of a shortcut and its icon: its own if the theme has it, else that of the
 /// program it starts, else a generic one.
-fn read_shortcut(path: &Path) -> (String, String) {
+fn read_shortcut(path: &Path, programs: &[Program]) -> (String, String) {
     let text = std::fs::read_to_string(path).unwrap_or_default();
     let mut section = "";
     let (mut name, mut icon, mut exec) = (String::new(), String::new(), String::new());
@@ -411,10 +560,10 @@ fn read_shortcut(path: &Path) -> (String, String) {
             _ => {}
         }
     }
-    (name, shortcut_icon(&icon, &exec))
+    (name, shortcut_icon(&icon, &exec, programs))
 }
 
-fn shortcut_icon(icon: &str, exec: &str) -> String {
+fn shortcut_icon(icon: &str, exec: &str, programs: &[Program]) -> String {
     const PIXELS: u32 = 48;
     if icon.starts_with('/')
         || (!icon.is_empty() && anti_webui::shell::icon_path(icon, PIXELS).is_some())
@@ -428,20 +577,15 @@ fn shortcut_icon(icon: &str, exec: &str) -> String {
         .trim_matches(|c| c == '"' || c == '\'');
     let command = command.rsplit('/').next().unwrap_or("").to_lowercase();
     if !command.is_empty() {
-        let found = apps().all().into_iter().find(|app| {
-            app.id
-                .trim_end_matches(".desktop")
-                .eq_ignore_ascii_case(&command)
-                || app.name.eq_ignore_ascii_case(&command)
-        });
-        if let Some(name) = found.and_then(|app| app.icon) {
+        let found = programs
+            .iter()
+            .find(|p| p.id == command || p.name == command);
+        if let Some(name) = found.and_then(|p| p.icon.clone()) {
             return name;
         }
     }
     asset("icons/run.png").to_string_lossy().into_owned()
 }
-
-use crate::account::user_name;
 
 // ----- doing things ----------------------------------------------------------------------------
 
@@ -521,17 +665,26 @@ pub fn parent_of(path: &str) -> String {
     }
 }
 
-/// Renames a file. A name that is empty, the same, or has a slash in it changes nothing.
-/// Returns the new path, for the icon to keep its place under its new name.
-pub fn rename(item: &Item, name: &str) -> Option<String> {
+/// Renames a file, on a worker. A name that is empty, the same, or has a slash in it changes
+/// nothing. Once it is renamed, `done` gets the new path, for the icon to keep its place under
+/// its new name.
+pub fn rename(item: &Item, name: &str, done: impl FnOnce(String) + 'static) {
     let name = name.trim();
     if name.is_empty() || name == item.name || name.contains('/') || item.kind.is_system() {
-        return None;
+        return;
     }
-    let path = format!("{}/{name}", parent_of(&item.path));
-    std::fs::rename(&item.path, &path).ok()?;
-    rescan_later();
-    Some(path)
+    let from = item.path.clone();
+    let to = format!("{}/{name}", parent_of(&item.path));
+    off_thread_in(
+        Some(model().owner),
+        move || std::fs::rename(&from, &to).ok().map(|()| to),
+        move |renamed| {
+            if let Some(path) = renamed {
+                done(path);
+                rescan_later();
+            }
+        },
+    );
 }
 
 /// The first "New folder", "New folder (2)" and so on that is free.
@@ -550,21 +703,114 @@ fn free_name(base: &str, extension: &str) -> String {
     name
 }
 
+/// Does `make` with a path free in the folder, named after `base`, on a worker, then reads the
+/// folder again.
+fn make_in_folder(base: &str, extension: &str, make: impl FnOnce(&Path) + Send + 'static) {
+    let Some(folder) = folder() else { return };
+    let path = folder.join(free_name(base, extension));
+    off_thread_in(
+        Some(model().owner),
+        move || make(&path),
+        |()| rescan_later(),
+    );
+}
+
 pub fn new_folder() {
-    let _ = std::fs::create_dir(folder().join(free_name("New folder", "")));
-    rescan_later();
+    make_in_folder("New folder", "", |path| {
+        let _ = std::fs::create_dir(path);
+    });
 }
 
 pub fn new_text_document() {
-    let path = folder().join(free_name("New Text Document", ".txt"));
-    let _ = std::fs::OpenOptions::new()
-        .create(true)
-        .append(true)
-        .open(path);
-    rescan_later();
+    make_in_folder("New Text Document", ".txt", |path| {
+        let _ = std::fs::OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(path);
+    });
 }
 
 /// The terminal, in the desktop folder.
 pub fn open_terminal() {
-    crate::spawn::start_command_line(&program("terminal"), Some(Path::new(&folder_string())));
+    crate::spawn::start_command_line(&program("terminal"), folder().as_deref());
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn file(name: &str, dir: bool, size: u64) -> Item {
+        let mut item = Item::system(Kind::Trash, name, "");
+        item.kind = if dir { Kind::Folder } else { Kind::File };
+        item.key = name.to_owned();
+        item.sort_name = name.to_lowercase();
+        item.suffix = if dir {
+            String::new()
+        } else {
+            name.rsplit_once('.').map_or("", |(_, s)| s).to_lowercase()
+        };
+        item.size = size;
+        item
+    }
+
+    fn names(files: &[Item]) -> Vec<&str> {
+        files.iter().map(|f| f.name.as_str()).collect()
+    }
+
+    #[test]
+    fn folders_come_first_then_names_without_case() {
+        let mut files = vec![
+            file("b.txt", false, 1),
+            file("Zed", true, 0),
+            file("A.txt", false, 2),
+            file("alpha", true, 0),
+        ];
+        sort_by_name(&mut files);
+        assert_eq!(names(&files), ["alpha", "Zed", "A.txt", "b.txt"]);
+    }
+
+    #[test]
+    fn a_sort_keeps_name_order_among_equals() {
+        let mut files = vec![
+            file("dir", true, 0),
+            file("a.png", false, 5),
+            file("B.txt", false, 9),
+            file("c.png", false, 5),
+        ];
+        sort_by_name(&mut files);
+        sort_files(&mut files, "size");
+        assert_eq!(names(&files), ["dir", "B.txt", "a.png", "c.png"]);
+        sort_by_name(&mut files);
+        sort_files(&mut files, "type");
+        assert_eq!(names(&files), ["dir", "a.png", "c.png", "B.txt"]);
+        sort_by_name(&mut files);
+        sort_files(&mut files, "name");
+        assert_eq!(names(&files), ["dir", "a.png", "B.txt", "c.png"]);
+    }
+
+    #[test]
+    fn the_desktop_folder_is_read_from_user_dirs() {
+        let home = Path::new("/home/u");
+        let text =
+            "# comment\nXDG_DOWNLOAD_DIR=\"$HOME/Downloads\"\nXDG_DESKTOP_DIR=\"$HOME/Bureau\"\n";
+        assert_eq!(desktop_dir(Some(text), home), Path::new("/home/u/Bureau"));
+        assert_eq!(
+            desktop_dir(Some("XDG_DESKTOP_DIR=\"/data/desk\""), home),
+            Path::new("/data/desk")
+        );
+        assert_eq!(desktop_dir(None, home), Path::new("/home/u/Desktop"));
+        assert_eq!(
+            desktop_dir(Some("XDG_DESKTOP_DIR=\"\""), home),
+            Path::new("/home/u/Desktop")
+        );
+    }
+
+    #[test]
+    fn the_trash_count_is_read_from_gio() {
+        assert!(trash_has_items(
+            "uri: trash:///\nattributes:\n  trash::item-count: 3\n"
+        ));
+        assert!(!trash_has_items("attributes:\n  trash::item-count: 0\n"));
+        assert!(!trash_has_items(""));
+    }
 }

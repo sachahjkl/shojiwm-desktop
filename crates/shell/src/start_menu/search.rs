@@ -5,7 +5,11 @@
 //! Panel says, then every program by name: the launcher shows them, the Start menu shows its
 //! own lists instead. While typing: the programs that match (AntiWebUI's ranking, best first),
 //! the Control Panel's tasks, then the files of the home folder whose names hold what is typed.
+//!
+//! The ranking runs in a task for each query; an answer to an older query is dropped, and the
+//! rows of the last answer stay until the next one comes.
 
+use crate::apps::{Latest, ProgramIndex};
 use crate::control_panel::state::find_tasks;
 use crate::fuzzy;
 use crate::paths::asset;
@@ -16,6 +20,8 @@ use crate::ui::{MenuLine, RowLook, menu_row, with_context_menu};
 use anti_webui::prelude::*;
 use anti_webui::shell::prelude::*;
 use std::cell::Cell;
+use std::collections::HashSet;
+use std::hash::Hash;
 use std::rc::Rc;
 use std::time::Duration;
 
@@ -79,98 +85,89 @@ pub(super) fn open_file(path: &str) {
     crate::programs::run(&format!("xdg-open {}", quoted(path)));
 }
 
+/// What a query found, ranked in a task: the programs and the Control Panel's tasks, each with
+/// the letters matched.
+#[derive(Clone, Default, PartialEq)]
+struct Ranked {
+    /// The query, trimmed.
+    query: String,
+    programs: Vec<(Found, Vec<usize>)>,
+    tasks: Vec<(Found, Vec<usize>)>,
+}
+
+/// The files `fd` found for a query, ranked.
+#[derive(Clone, Default, PartialEq)]
+struct Files {
+    /// The query, trimmed.
+    query: String,
+    found: Vec<(Found, Vec<usize>)>,
+}
+
+/// The rows of groups: a heading over each group that has rows, the rows numbered for the pick.
+#[derive(Default)]
+struct Rows {
+    out: Vec<Row>,
+    pick: usize,
+}
+
+impl Rows {
+    fn group(&mut self, title: &'static str, list: impl IntoIterator<Item = (Found, Vec<usize>)>) {
+        let mut list = list.into_iter().peekable();
+        if list.peek().is_none() {
+            return;
+        }
+        self.out.push(Row {
+            found: Found::Heading(title),
+            pick: None,
+            marks: Vec::new(),
+        });
+        for (found, marks) in list {
+            self.out.push(Row {
+                found,
+                pick: Some(self.pick),
+                marks,
+            });
+            self.pick += 1;
+        }
+    }
+}
+
 impl Search {
     pub fn new() -> Self {
         let query = signal(String::new());
-        let files = signal(Vec::<String>::new());
-        find_files(query, files);
+        let typed = memo(move || query.with(|q| q.trim().to_owned()));
+        let files = signal(Files::default());
+        let ranked = signal(Ranked::default());
+        find_files(typed, files);
+        rank_queries(typed, ranked);
+        let recent_count = memo(|| settings().with(|s| s.launcher_recent_count).max(0) as usize);
         let rows = memo(move || {
-            let typed = query.with(|q| q.trim().to_owned());
-            let needle = typed.to_lowercase();
-            let mut out = Vec::new();
-            let mut pick = 0;
-            let mut group = |title: &'static str, list: Vec<(Found, Vec<usize>)>| {
-                if list.is_empty() {
-                    return;
-                }
-                out.push(Row {
-                    found: Found::Heading(title),
-                    pick: None,
-                    marks: Vec::new(),
-                });
-                for (found, marks) in list {
-                    out.push(Row {
-                        found,
-                        pick: Some(pick),
-                        marks,
-                    });
-                    pick += 1;
-                }
-            };
-            let plain = |found: Found| (found, Vec::new());
-            if needle.is_empty() {
-                let count = settings().with(|s| s.launcher_recent_count).max(0) as usize;
-                group(
+            let typed = typed.get();
+            let mut rows = Rows::default();
+            let plain = |a: Application| (Found::Program(a), Vec::new());
+            if typed.is_empty() {
+                let recent = crate::apps::recent_programs();
+                rows.group(
                     "Recent",
-                    crate::apps::recent_programs()
-                        .into_iter()
-                        .take(count)
-                        .map(|a| plain(Found::Program(a)))
-                        .collect(),
+                    recent.into_iter().take(recent_count.get()).map(plain),
                 );
-                group(
+                let index = crate::apps::program_index();
+                rows.group(
                     "All Programs",
-                    apps()
-                        .all()
-                        .into_iter()
-                        .map(|a| plain(Found::Program(a)))
-                        .collect(),
+                    index.programs.iter().map(|p| plain(p.entry.clone())),
                 );
             } else {
-                // Fuzzy on the names, best first; then what only the programs' other words
-                // (generic name, keywords) find, as the desktop's own search ranks them.
-                let mut programs: Vec<(Application, Vec<usize>)> =
-                    fuzzy::rank(&typed, apps().all(), |a| a.name.clone())
-                        .into_iter()
-                        .map(|m| (m.item, m.marks))
-                        .collect();
-                for app in apps().search(&needle) {
-                    if !programs.iter().any(|(p, _)| p.id == app.id) {
-                        programs.push((app, Vec::new()));
+                ranked.with(|r| {
+                    rows.group("Programs", r.programs.iter().cloned());
+                    rows.group("Control Panel", r.tasks.iter().cloned());
+                });
+                files.with(|f| {
+                    if f.query == typed {
+                        rows.group("Files", f.found.iter().cloned());
                     }
-                }
-                group(
-                    "Programs",
-                    programs
-                        .into_iter()
-                        .take(PROGRAM_LIMIT)
-                        .map(|(a, marks)| (Found::Program(a), marks))
-                        .collect(),
-                );
-                let tasks: Vec<(Found, Vec<usize>)> = find_tasks(&typed)
-                    .into_iter()
-                    .map(|f| {
-                        let found = Found::Task {
-                            text: f.task.text.to_string(),
-                            page: f.task.page.to_string(),
-                        };
-                        (found, f.marks)
-                    })
-                    .collect();
-                group(
-                    "Control Panel",
-                    tasks.into_iter().take(TASK_LIMIT).collect(),
-                );
-                let files = files.get();
-                group(
-                    "Files",
-                    fuzzy::rank(&typed, files, |p| file_name(p))
-                        .into_iter()
-                        .map(|m| (Found::File(m.item), m.marks))
-                        .collect(),
-                );
+                });
             }
-            out
+            rows.out
         });
         let pick_count = memo(move || rows.with(|r| r.iter().filter(|r| r.pick.is_some()).count()));
         Self {
@@ -220,14 +217,86 @@ pub(super) fn choose(row: &Row) {
     }
 }
 
+/// Ranks the programs and the Control Panel's tasks in a task each time the query (or the
+/// programs) change. An answer to an older query is dropped.
+fn rank_queries(typed: Memo<String>, ranked: Signal<Ranked>) {
+    let latest = Latest::new();
+    effect(move || {
+        let query = typed.get();
+        let index = crate::apps::program_index();
+        let ticket = latest.next();
+        if query.is_empty() {
+            ranked.set_if_changed(Ranked::default());
+            return;
+        }
+        task(move || rank(&query, &index)).then(move |found| {
+            if latest.is_current(ticket) {
+                ranked.set_if_changed(found);
+            }
+        });
+    });
+}
+
+/// What `typed` (trimmed, not empty) finds. It goes over every program: run it in a task.
+fn rank(typed: &str, index: &ProgramIndex) -> Ranked {
+    // Fuzzy on the names, best first; then what only the programs' other words (generic name,
+    // keywords) find, as the desktop's own search ranks them.
+    let by_name: Vec<(Application, Vec<usize>)> =
+        fuzzy::rank(typed, index.programs.iter(), |p| p.entry.name.clone())
+            .into_iter()
+            .map(|m| (m.item.entry.clone(), m.marks))
+            .collect();
+    let others = apps().search(&typed.to_lowercase());
+    let programs = merge_found(by_name, others, |a| a.id.clone(), PROGRAM_LIMIT)
+        .into_iter()
+        .map(|(a, marks)| (Found::Program(a), marks))
+        .collect();
+    let tasks = find_tasks(typed)
+        .into_iter()
+        .take(TASK_LIMIT)
+        .map(|f| {
+            let found = Found::Task {
+                text: f.task.text.to_string(),
+                page: f.task.page.to_string(),
+            };
+            (found, f.marks)
+        })
+        .collect();
+    Ranked {
+        query: typed.to_owned(),
+        programs,
+        tasks,
+    }
+}
+
+/// The ranked items, then those of `more` not among them (no letters matched), at most `limit`.
+fn merge_found<T, K: Hash + Eq>(
+    ranked: Vec<(T, Vec<usize>)>,
+    more: Vec<T>,
+    key: impl Fn(&T) -> K,
+    limit: usize,
+) -> Vec<(T, Vec<usize>)> {
+    let mut seen: HashSet<K> = ranked.iter().map(|(t, _)| key(t)).collect();
+    let mut out = ranked;
+    for item in more {
+        if out.len() >= limit {
+            break;
+        }
+        if seen.insert(key(&item)) {
+            out.push((item, Vec::new()));
+        }
+    }
+    out.truncate(limit);
+    out
+}
+
 /// Looks for the files with `fd` in the home folder, a moment after the last key, for names that
-/// hold what is typed. Hidden folders stay out (fd's default). An answer to an older query is
-/// dropped.
-fn find_files(query: Signal<String>, files: Signal<Vec<String>>) {
+/// hold what is typed, and ranks them in the same task. Hidden folders stay out (fd's default).
+/// An answer to an older query is dropped.
+fn find_files(typed: Memo<String>, files: Signal<Files>) {
     let pending: Rc<Cell<Option<Timeout>>> = Rc::default();
     effect(move || {
-        let wanted = query.with(|q| q.trim().to_owned());
-        files.set(Vec::new());
+        let wanted = typed.get();
         if let Some(t) = pending.take() {
             t.cancel();
         }
@@ -247,18 +316,26 @@ fn find_files(query: Signal<String>, files: Signal<Vec<String>>) {
                     .arg(fuzzy::file_pattern(&pattern))
                     .arg(&home)
                     .output();
-                let Ok(out) = out else {
-                    return Vec::new();
+                let paths: Vec<String> = match out {
+                    Ok(out) => String::from_utf8_lossy(&out.stdout)
+                        .lines()
+                        .filter(|l| !l.is_empty())
+                        .map(|l| l.trim_end_matches('/').to_owned())
+                        .collect(),
+                    Err(_) => Vec::new(),
                 };
-                String::from_utf8_lossy(&out.stdout)
-                    .lines()
-                    .filter(|l| !l.is_empty())
-                    .map(|l| l.trim_end_matches('/').to_owned())
-                    .collect::<Vec<_>>()
+                let found = fuzzy::rank(&pattern, paths, |p| file_name(p))
+                    .into_iter()
+                    .map(|m| (Found::File(m.item), m.marks))
+                    .collect();
+                Files {
+                    query: pattern,
+                    found,
+                }
             })
             .then(move |found| {
-                if query.is_alive() && query.with_untracked(|q| q.trim() == wanted) {
-                    files.set(found);
+                if files.is_alive() && untrack(|| typed.with(|t| *t == found.query)) {
+                    files.set_if_changed(found);
                 }
             });
         })));
@@ -300,14 +377,12 @@ pub(super) fn program_lines(app: &Application, done: fn()) -> Vec<MenuLine> {
 /// nothing found while typing, "Run “…”", which Return runs. Choosing a row runs `done`.
 /// `program_menus`: a program row has its menu on a right click (the Start menu's).
 pub(super) fn results(search: Search, pick: Signal<usize>, done: fn(), program_menus: bool) -> Div {
-    let list = dyn_view(move || {
-        let rows = search.rows.get();
-        div().flex().flex_col().children(
-            rows.into_iter()
-                .map(|row| result_row(row, pick, done, program_menus))
-                .collect::<Vec<_>>(),
-        )
-    });
+    // Keyed: a row whose key stays keeps its node, so that only new rows are built.
+    let list = div().flex().flex_col().child(for_each(
+        move || search.rows.get(),
+        row_key,
+        move |row| result_row(row, pick, done, program_menus),
+    ));
     let run = show(
         move || search.active() && search.pick_count.get() == 0,
         move || {
@@ -330,6 +405,19 @@ pub(super) fn results(search: Search, pick: Signal<usize>, done: fn(), program_m
         },
     );
     div().flex().flex_col().child(list).child(run)
+}
+
+/// What a row is built from: its kind, what it stands for, its pick and its marks.
+type RowKey = (u8, String, Option<usize>, Vec<usize>);
+
+fn row_key(row: &Row) -> RowKey {
+    let (kind, what) = match &row.found {
+        Found::Heading(title) => (0, (*title).to_owned()),
+        Found::Program(app) => (1, format!("{}\n{}", app.id, app.name)),
+        Found::Task { page, text } => (2, format!("{page}:{text}")),
+        Found::File(path) => (3, path.clone()),
+    };
+    (kind, what, row.pick, row.marks.clone())
 }
 
 fn result_row(row: Row, pick: Signal<usize>, done: fn(), program_menus: bool) -> Div {
@@ -409,4 +497,43 @@ pub(super) fn placeholder(
             }
         })
         .child(words)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn merges_the_other_matches_after_the_ranked_ones_once() {
+        let ranked = vec![("firefox", vec![0, 1]), ("fish", vec![0])];
+        let more = vec!["fish", "files", "thunderbird", "fonts"];
+        let merged = merge_found(ranked, more, |s| *s, 4);
+        assert_eq!(
+            merged,
+            [
+                ("firefox", vec![0, 1]),
+                ("fish", vec![0]),
+                ("files", vec![]),
+                ("thunderbird", vec![]),
+            ]
+        );
+    }
+
+    #[test]
+    fn merging_keeps_at_most_the_limit() {
+        let ranked = vec![("a", vec![]), ("b", vec![]), ("c", vec![])];
+        assert_eq!(merge_found(ranked, vec!["d"], |s| *s, 2).len(), 2);
+    }
+
+    #[test]
+    fn groups_have_a_heading_and_numbered_rows() {
+        let mut rows = Rows::default();
+        let file = |p: &str| (Found::File(p.to_owned()), Vec::new());
+        rows.group("Empty", Vec::new());
+        rows.group("Files", vec![file("/a"), file("/b")]);
+        rows.group("More", vec![file("/c")]);
+        let picks: Vec<Option<usize>> = rows.out.iter().map(|r| r.pick).collect();
+        assert_eq!(picks, [None, Some(0), Some(1), None, Some(2)]);
+        assert!(rows.out[0].found == Found::Heading("Files"));
+    }
 }

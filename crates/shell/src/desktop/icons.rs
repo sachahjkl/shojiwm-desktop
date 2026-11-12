@@ -150,6 +150,23 @@ fn place_value(screen: &str, (x, y): (f32, f32)) -> Value {
     json!({ "screen": screen, "x": x.round(), "y": y.round() })
 }
 
+thread_local! {
+    static PLACES: Cell<Option<Memo<Map<String, Value>>>> = const { Cell::new(None) };
+}
+
+/// The places of the icons (`desktop_places`), one for every screen: what reads it is told only
+/// when the places change, not at each change of the settings.
+fn places() -> Memo<Map<String, Value>> {
+    PLACES.with(|cell| {
+        cell.get().unwrap_or_else(|| {
+            let (places, _) =
+                create_root(|| memo(|| settings().with(|s| s.desktop_places.clone())));
+            cell.set(Some(places));
+            places
+        })
+    })
+}
+
 /// Places to change, by key: a new place, or none to forget it.
 type Changes = HashMap<String, Option<Value>>;
 
@@ -198,6 +215,20 @@ thread_local! {
 
 pub fn dragged_icons() -> Option<IconDrag> {
     DRAG.with(|d| d.borrow().clone())
+}
+
+/// Whether the drag going on carries the icon `key`.
+fn dragging(key: &str) -> bool {
+    DRAG.with(|d| {
+        d.borrow()
+            .as_ref()
+            .is_some_and(|d| d.keys.iter().any(|k| k == key))
+    })
+}
+
+/// Where the pointer took the icon of the drag going on, if it is the shell's own.
+fn dragged_grab() -> Option<(f32, f32)> {
+    DRAG.with(|d| d.borrow().as_ref().map(|d| d.grab))
 }
 
 /// The drag is over. Its icon says so too, but not when it went to another screen with it.
@@ -251,37 +282,43 @@ impl Desk {
         let screen = signal(screen);
         let area = signal((0.0f32, 0.0f32));
         let grid = memo(move || Grid::now(area));
+        let places = places();
+        let primary = memo(super::primary_output_name);
+        let connected = memo(|| {
+            outputs()
+                .into_iter()
+                .map(|o| o.name)
+                .collect::<Vec<String>>()
+        });
         let shown = memo(move || {
             let me = screen.get();
-            let primary = super::primary_output_name();
-            let connected: Vec<String> = outputs().into_iter().map(|o| o.name).collect();
-            let places = settings().with(|s| s.desktop_places.clone());
-            files::items()
-                .into_iter()
-                .filter(|item| {
-                    let on = match place_of(&places, &item.key) {
-                        Some((s, _, _)) if connected.contains(&s) => s,
-                        _ => primary.clone(),
-                    };
-                    on == me
+            let primary = primary.get();
+            connected.with(|connected| {
+                places.with(|places| {
+                    files::items()
+                        .into_iter()
+                        .filter(|item| {
+                            let on = match place_of(places, &item.key) {
+                                Some((s, _, _)) if connected.contains(&s) => s,
+                                _ => primary.clone(),
+                            };
+                            on == me
+                        })
+                        .collect::<Vec<_>>()
                 })
-                .collect::<Vec<_>>()
+            })
         });
+        let arrangement =
+            memo(|| settings().with(|s| (s.desktop_auto_arrange, s.desktop_align_to_grid)));
         let positions = memo(move || {
             let grid = grid.get();
             let me = screen.get();
-            let (places, auto, align) = settings().with(|s| {
-                (
-                    s.desktop_places.clone(),
-                    s.desktop_auto_arrange,
-                    s.desktop_align_to_grid,
-                )
-            });
+            let (auto, align) = arrangement.get();
             let mut result = HashMap::new();
             let mut taken = HashSet::new();
             let mut waiting = Vec::new();
             for item in shown.get() {
-                match place_of(&places, &item.key) {
+                match places.with(|places| place_of(places, &item.key)) {
                     Some((s, x, y)) if !auto && s == me => {
                         let mut point = grid.on_screen(x, y);
                         let cell = grid.cell_at(point.0, point.1);
@@ -377,7 +414,7 @@ impl Desk {
     /// the ones without a place fill the cell it left.
     fn keep_places(&self, changes: &mut Changes) {
         let me = self.me();
-        let places = untrack(|| settings().with(|s| s.desktop_places.clone()));
+        let places = untrack(|| places().get());
         let positions = untrack(|| self.positions.get());
         for item in untrack(|| self.shown.get()) {
             let here = place_of(&places, &item.key).is_some_and(|(s, _, _)| s == me);
@@ -466,39 +503,46 @@ impl Desk {
         set_places(changes);
     }
 
-    /// The icon under a point, or none.
-    fn item_at(&self, x: f32, y: f32) -> Option<Item> {
+    /// Calls `f` with the icon under a point, or none. Nothing is copied: it runs at each move of
+    /// a drag.
+    fn with_item_at<R>(&self, x: f32, y: f32, f: impl FnOnce(Option<&Item>) -> R) -> R {
         let grid = untrack(|| self.grid.get());
-        let positions = untrack(|| self.positions.get());
-        untrack(|| self.shown.get()).into_iter().find(|item| {
-            positions.get(&item.key).is_some_and(|&at| {
-                let (px, py, w, h) = grid.plate(at);
-                x >= px && x < px + w && y >= py && y < py + h
+        untrack(|| {
+            self.positions.with(|positions| {
+                self.shown.with(|shown| {
+                    f(shown.iter().find(|item| {
+                        positions.get(&item.key).is_some_and(|&at| {
+                            let (px, py, w, h) = grid.plate(at);
+                            x >= px && x < px + w && y >= py && y < py + h
+                        })
+                    }))
+                })
             })
         })
+    }
+
+    /// The icon under a point, or none.
+    fn item_at(&self, x: f32, y: f32) -> Option<Item> {
+        self.with_item_at(x, y, |item| item.cloned())
     }
 
     /// The key of the Recycle Bin or folder under (x, y) that a drag can drop into, or "": not
     /// one of the icons being dragged.
     fn drop_target_at(&self, x: f32, y: f32) -> String {
-        let Some(target) = self.item_at(x, y) else {
-            return String::new();
-        };
-        if !matches!(target.kind, Kind::Trash | Kind::Folder) {
-            return String::new();
-        }
-        if dragged_icons().is_some_and(|d| d.keys.contains(&target.key)) {
-            return String::new();
-        }
-        target.key
+        self.with_item_at(x, y, |target| match target {
+            Some(t) if matches!(t.kind, Kind::Trash | Kind::Folder) && !dragging(&t.key) => {
+                t.key.clone()
+            }
+            _ => String::new(),
+        })
     }
 
     /// The top left a drop at (x, y) gives the first icon: the shell's own icons keep where they
     /// were taken, files come centred under the pointer.
     fn landing_at(&self, x: f32, y: f32) -> (f32, f32) {
         let grid = untrack(|| self.grid.get());
-        let point = match dragged_icons() {
-            Some(d) => grid.on_screen(x - d.grab.0, y - d.grab.1),
+        let point = match dragged_grab() {
+            Some(grab) => grid.on_screen(x - grab.0, y - grab.1),
             None => grid.on_screen(x - grid.width / 2.0, y - grid.height / 3.0),
         };
         if untrack(|| settings().with(|s| s.desktop_align_to_grid)) {
@@ -551,7 +595,9 @@ impl Desk {
             files::trash_paths(&paths.iter().map(String::as_str).collect::<Vec<_>>());
             return;
         }
-        let desktop = files::folder_string();
+        let Some(desktop) = files::folder_string() else {
+            return;
+        };
         let folder = match &target {
             Some(t) if t.kind == Kind::Folder => t.path.clone(),
             _ => desktop.clone(),
@@ -605,13 +651,13 @@ impl Desk {
         self.background.focus();
         let Some(item) = self.item(&key) else { return };
         let name = self.rename_text.get_untracked();
-        let kept = untrack(|| settings().with(|s| s.desktop_places.get(&key).cloned()));
-        if let Some(path) = files::rename(&item, &name) {
+        let kept = untrack(|| places().with(|p| p.get(&key).cloned()));
+        files::rename(&item, &name, move |path| {
             let mut changes = Changes::new();
             changes.insert(path, kept);
             changes.insert(key, None);
             set_places(changes);
-        }
+        });
     }
 
     fn cancel_rename(&self) {
@@ -768,11 +814,10 @@ impl Desk {
                 let list = Rc::new(self.picked_items());
                 let opened = list.clone();
                 let one = list.len() == 1;
+                let location = files::parent_of(&item.path);
                 vec![
                     MenuLine::item("Open", move || opened.iter().for_each(files::open)),
-                    MenuLine::item("Open file location", || {
-                        files::open_path(&files::folder_string())
-                    }),
+                    MenuLine::item("Open file location", move || files::open_path(&location)),
                     MenuLine::separator(),
                     MenuLine::item("Delete", move || {
                         files::trash(&list);
@@ -869,18 +914,37 @@ fn background(desk: Desk) -> Div {
                 let rect = (x0.min(x1), y0.min(y1), (x1 - x0).abs(), (y1 - y0).abs());
                 desk.band.set(Some(rect));
                 let grid = untrack(|| desk.grid.get());
-                let positions = untrack(|| desk.positions.get());
                 let (bx, by, bw, bh) = rect;
-                let mut inside: Vec<String> = positions
-                    .iter()
-                    .filter(|(_, at)| {
-                        let (x, y, w, h) = grid.plate(**at);
-                        x < bx + bw && x + w > bx && y < by + bh && y + h > by
+                let hit = |at: (f32, f32)| {
+                    let (x, y, w, h) = grid.plate(at);
+                    x < bx + bw && x + w > bx && y < by + bh && y + h > by
+                };
+                // The pick changes only when the box takes or leaves an icon: nothing is copied
+                // while it stays the same.
+                let inside = untrack(|| {
+                    desk.positions.with(|positions| {
+                        let same = desk.picked.with_untracked(|picked| {
+                            picked.is_sorted()
+                                && positions.iter().filter(|(_, at)| hit(**at)).count()
+                                    == picked.len()
+                                && picked
+                                    .iter()
+                                    .all(|k| positions.get(k).is_some_and(|at| hit(*at)))
+                        });
+                        (!same).then(|| {
+                            let mut inside: Vec<String> = positions
+                                .iter()
+                                .filter(|(_, at)| hit(**at))
+                                .map(|(key, _)| key.clone())
+                                .collect();
+                            inside.sort();
+                            inside
+                        })
                     })
-                    .map(|(key, _)| key.clone())
-                    .collect();
-                inside.sort();
-                desk.picked.set_if_changed(inside);
+                });
+                if let Some(inside) = inside {
+                    desk.picked.set(inside);
+                }
             }
             GrabPhase::End | GrabPhase::Cancel => desk.band.set(None),
         })

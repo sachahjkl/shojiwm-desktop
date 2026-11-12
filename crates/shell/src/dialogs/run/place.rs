@@ -25,7 +25,7 @@ fn read_places() -> Map<String, Value> {
         .unwrap_or_default()
 }
 
-/// The place kept for the screen `output`, if any.
+/// The place kept for the screen `output`, if any. It reads the disk: call it in a task.
 pub fn load(output: &str) -> Option<(f32, f32)> {
     let places = read_places();
     let at = places.get(output)?;
@@ -34,7 +34,8 @@ pub fn load(output: &str) -> Option<(f32, f32)> {
     Some((x as f32, y as f32))
 }
 
-/// Keeps `at` as the place of the dialog on the screen `output`.
+/// Keeps `at` as the place of the dialog on the screen `output`. It reads and writes the disk:
+/// call it on the writer thread (`crate::apps::run_in_order`), so that two saves keep their order.
 pub fn save(output: &str, at: (f32, f32)) {
     let mut places = read_places();
     places.insert(
