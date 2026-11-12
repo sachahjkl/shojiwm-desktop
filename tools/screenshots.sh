@@ -377,28 +377,30 @@ alive() {
   fi
 }
 
+# The site shows WebP at quality 88: about a third of the PNG's size. The lossless capture stays
+# in $work, where the crops below are cut from.
 shot() {
   local name="$1"
   mkdir -p "$out"
   import -window "$window" "$work/$name-full.png"
-  cp "$work/$name-full.png" "$out/$name.png"
-  magick "$out/$name.png" -strip -define png:compression-level=9 "$out/$name.png"
-  say "wrote $out/$name.png"
+  magick "$work/$name-full.png" -strip -quality 88 "$out/$name.webp"
+  say "wrote $out/$name.webp"
   if [ "$name" = "${UNTIL:-}" ]; then
     say "$UNTIL: the last picture asked for"
     exit 0
   fi
 }
 
-# A piece of a capture, blown up with no smoothing so every pixel shows.
+# A piece of a capture, blown up with no smoothing so every pixel shows. Lossless WebP: lossy
+# compression would blur the pixels that the crop is there to show.
 #   detail <source shot> <name> <x> <y> <w> <h> [zoom]
 detail() {
   local src="$1" name="$2" x="$3" y="$4" w="$5" h="$6" zoom="${7:-8}"
   mkdir -p "$out/details"
   magick "$work/$src-full.png" -crop "${w}x${h}+${x}+${y}" +repage \
     -filter point -resize "${zoom}00%" \
-    -strip -define png:compression-level=9 "$out/details/$name.png"
-  say "wrote assets/site/details/$name.png"
+    -strip -define webp:lossless=true "$out/details/$name.webp"
+  say "wrote assets/site/details/$name.webp"
 }
 
 # A client window. foot is small, Wayland native and needs no GPU.
@@ -455,9 +457,9 @@ sleep 2
 
 shot "desktop"
 # The two frames on their own, cut out of the picture above.
-magick "$out/desktop.png" -crop "900x620+180+0" +repage \
-  -strip -define png:compression-level=9 "$out/frames.png"
-say "wrote assets/site/frames.png"
+magick "$work/desktop-full.png" -crop "900x620+180+0" +repage \
+  -strip -quality 88 "$out/frames.webp"
+say "wrote assets/site/frames.webp"
 
 alive "after the first picture"
 

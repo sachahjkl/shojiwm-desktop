@@ -1,5 +1,5 @@
 # Publishes site/ to GitHub Pages, with CHANGELOG.md as changelog.md (read by changelog.html), the logo and the screenshots of assets/site beside it:
-# assets/site/*.png in shots/, the Kernel captures in shots/kernel/, the close-ups in shots/details/.
+# assets/site/*.webp in shots/, the Kernel captures in shots/kernel/, the close-ups in shots/details/.
 # The pictures are the branch site-shots, checked out at assets/site.
 # Pages use the "GitHub Actions" source (set once: gh api -X POST repos/sachahjkl/shojiwm-desktop/pages -f build_type=workflow).
 name: Pages
@@ -43,9 +43,9 @@ jobs:
           cp CHANGELOG.md _site/changelog.md
           cp assets/logo.svg _site/logo.svg
           cp .project/image.png _site/logo.png
-          cp assets/site/*.png _site/shots/
-          cp assets/site/kernel/*.png _site/shots/kernel/
-          cp assets/site/details/*.png _site/shots/details/
+          cp assets/site/*.webp _site/shots/
+          cp assets/site/kernel/*.webp _site/shots/kernel/
+          cp assets/site/details/*.webp _site/shots/details/
       - uses: actions/upload-pages-artifact@v5
         with:
           path: _site

@@ -81,8 +81,9 @@ def cut(image, out, name, x, y, w, h, zoom=ZOOM):
         return
     crop = image.crop((x, y, x + w, y + h))
     crop = crop.resize((w * zoom, h * zoom), Image.NEAREST)
-    crop.save(os.path.join(out, name + ".png"))
-    print("wrote", os.path.join(os.path.basename(out), name + ".png"))
+    # Lossless: lossy compression would blur the pixels that the crop is there to show.
+    crop.save(os.path.join(out, name + ".webp"), lossless=True)
+    print("wrote", os.path.join(os.path.basename(out), name + ".webp"))
 
 
 def window_box(right, top, size):

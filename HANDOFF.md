@@ -98,7 +98,7 @@ tools/screenshots.sh
 THEME=kernel OUT=assets/site/kernel tools/screenshots.sh
 
 # the zoomed crops of one capture
-python3 -I tools/details.py assets/site/desktop.png assets/site/details \
+python3 -I tools/details.py assets/site/desktop.webp assets/site/details \
   front=770x569 back=616x398
 
 # a reference next to one of our captures, with the error per region
