@@ -31,8 +31,13 @@ vec4 paint_main(PaintContext ctx) {
     float cover = shoji_rrect_coverage(p, whole, vec4(r, r, 0.0, 0.0));
     if (cover <= 0.0) { return vec4(0.0); }
 
-    // the body: the tint (the client covers its middle)
+    // the body: the tint round the client, black under it. A client shows
+    // nothing there for a moment when it takes its view down before it
+    // closes (GTK does); black reads as a window going, the tint as a flash.
     vec4 c = line_tint;
+    if (p.x >= bw && p.x < size.x - bw && p.y >= cap && p.y < size.y - bw) {
+        c = vec4(0.0, 0.0, 0.0, 1.0);
+    }
 
     // the caption plate
     float o = outer > 0.5 ? line : 0.0;
