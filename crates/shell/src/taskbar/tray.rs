@@ -486,9 +486,25 @@ fn tray_lines(item: &TrayItem, entries: &[TrayMenuItem]) -> Vec<MenuLine> {
                 MenuLine::submenu(m.label.clone(), tray_lines(item, &m.children))
             };
             line.icon(m.icon_name.clone().unwrap_or_default())
+                .keys(m.shortcut.as_deref().map(shortcut_text).unwrap_or_default())
                 .enabled(m.enabled)
         })
         .collect()
+}
+
+/// A menu shortcut as DBusMenu names it ("Control+Shift+Print") in the words Windows 7 menus
+/// use ("Ctrl+Shift+Print").
+fn shortcut_text(keys: &str) -> String {
+    keys.split('+')
+        .map(|k| match k {
+            "Super" => "Win".to_string(),
+            "Control" => "Ctrl".to_string(),
+            // (a letter is its keysym, lower case: menus show the key's cap)
+            other if other.chars().count() == 1 => other.to_uppercase(),
+            other => other.to_string(),
+        })
+        .collect::<Vec<_>>()
+        .join("+")
 }
 
 /// One notification-area icon: on the taskbar (`in_taskbar`), or in the popover.

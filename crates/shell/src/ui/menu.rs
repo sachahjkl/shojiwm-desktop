@@ -43,6 +43,7 @@ enum Mark {
 pub struct MenuLine {
     kind: Kind,
     label: String,
+    keys: String,
     icon: String,
     mark: Mark,
     enabled: bool,
@@ -56,6 +57,7 @@ impl MenuLine {
         Self {
             kind,
             label,
+            keys: String::new(),
             icon: String::new(),
             mark: Mark::None,
             enabled: true,
@@ -94,6 +96,13 @@ impl MenuLine {
     /// An icon in front of the label: a name of the icon theme, or a file.
     pub fn icon(mut self, icon: impl Into<String>) -> Self {
         self.icon = icon.into();
+        self
+    }
+
+    /// The keys that do the same, such as "Ctrl+Q", dim at the end of the line as Windows 7
+    /// menus show them.
+    pub fn keys(mut self, keys: impl Into<String>) -> Self {
+        self.keys = keys.into();
         self
     }
 
@@ -336,6 +345,24 @@ fn line_row(state: MenuState, i: usize, line: &MenuLine, gutter: bool, choosable
         })
         .children(lead)
         .child(label);
+    let row = if line.keys.is_empty() {
+        row
+    } else {
+        let keys = line.keys.clone();
+        row.child(
+            div()
+                .flex_none()
+                .pr(ARROW_ROOM)
+                .whitespace_nowrap()
+                .dyn_style(move |s| {
+                    s.font_family(font())
+                        .text_size(theme().font_size)
+                        .text_color(scheme().text)
+                        .opacity(if enabled { 0.6 } else { DISABLED_OPACITY })
+                })
+                .child(text(move || keys.clone())),
+        )
+    };
     let row = if arrow {
         row.child(
             div()
