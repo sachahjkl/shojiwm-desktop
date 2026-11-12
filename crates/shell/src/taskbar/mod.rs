@@ -39,7 +39,7 @@ const HIDDEN_STRIP: f32 = 2.0;
 const SLIDE: f32 = 160.0;
 /// How long the thumbnails stay after the pointer has left the button, so that it can move
 /// into them.
-const HIDE_THUMBNAILS: Duration = Duration::from_millis(180);
+const HIDE_THUMBNAILS: Duration = Duration::from_millis(400);
 /// The glass of the show-desktop strip, at rest and under the pointer: three stops each.
 const SHOW_DESKTOP_REST: [Color; 3] = [rgba(0xffffff40), rgba(0xffffff1a), rgba(0xffffff26)];
 const SHOW_DESKTOP_HOT: [Color; 3] = [rgba(0xffffff80), rgba(0xffffff4d), rgba(0xffffff66)];

@@ -10,6 +10,7 @@
 use super::Bar;
 use super::media::{player_program, transport};
 use crate::apps::{icon_for, title_of, window_groups};
+use crate::settings::motion;
 use crate::theme::{bar_at_top, corner, scheme, theme};
 use crate::ui::{font, popup_frame, shell_icon, vertical_gradient};
 use anti_webui::prelude::*;
@@ -32,6 +33,13 @@ const CLOSE_HEIGHT: f32 = 17.0;
 const CARD_ICON: f32 = 32.0;
 /// The room between the cards and the media buttons.
 const TOOLBAR_GAP: f32 = 8.0;
+/// How long a closed window's card takes to fade and fold, while the others close up and the
+/// layer narrows around them.
+const FOLD: f32 = 220.0;
+
+fn fold() -> Transition {
+    Transition::ms(motion(FOLD)).ease_out()
+}
 
 thread_local! {
     /// The `ext_foreign_toplevel_list` identifier of the window the compositor highlights.
@@ -65,19 +73,48 @@ fn shown_windows(bar: &Bar) -> Vec<Toplevel> {
         .unwrap_or_default()
 }
 
-/// Where the layer goes: centred on the button, kept on the screen, away from the bar.
-fn margin(bar: &Bar, count: usize) -> Margin {
+/// The width of the frame around `count` cards (a fraction while one folds).
+fn frame_width(count: f32) -> f32 {
     let t = theme();
-    let n = count.max(1) as f32;
-    let width = t.thumb_padding * 2.0 + n * t.thumb_width + (n - 1.0) * t.thumb_gap;
+    let n = count.max(1.0);
+    t.thumb_padding * 2.0 + n * t.thumb_width + (n - 1.0) * t.thumb_gap
+}
+
+/// Where the frame around `count` cards starts on the screen: centred on the button, kept on
+/// the screen.
+fn frame_left(bar: &Bar, count: f32) -> f32 {
+    let width = frame_width(count);
     let screen = bar
         .output
         .current()
         .map_or(bar.output.logical_size.width, |o| o.logical_size.width) as f32;
     let center = bar.preview.with(|p| p.as_ref().map_or(0.0, |p| p.center));
-    let left = (center - width / 2.0)
-        .clamp(0.0, (screen - width).max(0.0))
-        .round() as i32;
+    (center - width / 2.0).clamp(0.0, (screen - width).max(0.0))
+}
+
+/// How many cards the frame is drawn for, and how many the layer has room for.
+///
+/// The layer never narrows while the thumbnails are shown: the compositor sizes it a frame or
+/// more after it is asked to, and a frame folding inside a layer that narrows late would slide
+/// aside. So the layer keeps the room of the most cards it has had, and the frame folds inside
+/// it, where the input region follows it.
+#[derive(Clone, Copy)]
+struct Place {
+    count: Animated<f32>,
+    room: Signal<f32>,
+}
+
+impl Place {
+    /// Where the frame is in the layer.
+    fn offset(&self, bar: &Bar) -> f32 {
+        frame_left(bar, self.count.get()) - frame_left(bar, self.room.get())
+    }
+}
+
+/// Where the layer goes: around the frame of `count` cards, away from the bar.
+fn margin(bar: &Bar, count: f32) -> Margin {
+    let t = theme();
+    let left = frame_left(bar, count).round() as i32;
     let away = (t.taskbar_height + t.popup_gap).round() as i32;
     if bar_at_top() {
         Margin {
@@ -96,6 +133,32 @@ fn margin(bar: &Bar, count: usize) -> Margin {
 
 /// Opens the thumbnails' layer while the bar shows a preview, and keeps it over the button.
 pub(super) fn follow(bar: Bar) {
+    // Before the layer's effect: the layer opens with the room this gives.
+    let place = Place {
+        count: animated(0.0_f32),
+        room: signal(0.0_f32),
+    };
+    let shown_key: Rc<RefCell<Option<String>>> = Rc::default();
+    {
+        let bar = bar.clone();
+        effect(move || {
+            let key = bar.preview.with(|p| p.as_ref().map(|p| p.key.clone()));
+            let n = shown_windows(&bar).len() as f32;
+            untrack(|| {
+                let same = *shown_key.borrow() == key;
+                if same && n < place.count.get_untracked() {
+                    // A window closed: its card folds, the layer keeps its room.
+                    place.count.to(n, fold());
+                } else if same && n <= place.room.get_untracked() {
+                    place.count.set(n);
+                } else {
+                    place.count.set(n);
+                    place.room.set(n);
+                }
+                *shown_key.borrow_mut() = key;
+            });
+        });
+    }
     let open = {
         let bar = bar.clone();
         memo(move || bar.preview.with(Option::is_some))
@@ -126,18 +189,26 @@ pub(super) fn follow(bar: Bar) {
                     .exclusive(Exclusive::Ignore)
                     .keyboard(Keyboard::None)
                     .fit_content()
-                    .margin(margin(&bar, shown_windows(&bar).len()))
+                    .margin(margin(&bar, place.room.get_untracked()))
                     .output(&bar.output)
                     .namespace("shojiwm-desktop-thumbnails");
                 let shown = bar.clone();
-                *handle.borrow_mut() = Some(open_layer(options, move || view(shown)));
+                *handle.borrow_mut() = Some(open_layer(options, move || view(shown, place)));
             });
         });
     }
     effect(move || {
-        let place = margin(&bar, shown_windows(&bar).len());
+        let at = margin(&bar, place.room.get());
+        // The rest of the layer lets the pointer through to what is under it.
+        let input = InputRegion::Rects(vec![RectI {
+            x: place.offset(&bar).floor() as i32,
+            y: 0,
+            width: frame_width(place.count.get()).ceil() as i32 + 1,
+            height: i32::from(u16::MAX),
+        }]);
         if let Some(layer) = handle.borrow().as_ref() {
-            layer.set_margin(place);
+            layer.set_margin(at);
+            layer.set_input_region(input);
         }
     });
 }
@@ -156,7 +227,7 @@ fn player_of(windows: &[Toplevel]) -> Option<Player> {
     })
 }
 
-fn view(bar: Bar) -> Div {
+fn view(bar: Bar, place: Place) -> Div {
     let windows = {
         let bar = bar.clone();
         memo(move || shown_windows(&bar))
@@ -166,18 +237,31 @@ fn view(bar: Bar) -> Div {
         let bar = bar.clone();
         effect(move || {
             if windows.with(Vec::is_empty) {
-                // Not while this layer is being worked on: the change closes it.
-                let preview = bar.preview;
-                set_timeout(Duration::ZERO, move || preview.set(None));
+                // After the last card has folded, and not while this layer is being worked on:
+                // the change closes it.
+                // The bar's own state, not this layer's: the layer may be gone by then.
+                let bar = bar.clone();
+                set_timeout(Duration::from_millis(motion(FOLD)), move || {
+                    if untrack(|| shown_windows(&bar).is_empty()) {
+                        bar.preview.set(None);
+                    }
+                });
             }
         });
     }
     let player = memo(move || windows.with(|w| player_of(w)));
     let hover = bar.clone();
     let cards = bar.clone();
-    popup_frame()
+    let room = bar.clone();
+    let frame = popup_frame()
         .items_center()
-        .dyn_style(|s| s.p(theme().thumb_padding))
+        // Each card carries half the gap on either side, so that a folding card takes its gap
+        // with it: the padding gives that half back at the ends.
+        .dyn_style(|s| {
+            let t = theme();
+            s.py(t.thumb_padding)
+                .px(t.thumb_padding - t.thumb_gap / 2.0)
+        })
         .on_hover(move |inside| {
             hover.preview_inside.set(inside);
             if !inside {
@@ -185,20 +269,27 @@ fn view(bar: Bar) -> Div {
             }
         })
         .child(
-            div()
-                .flex()
-                .flex_row()
-                .dyn_style(|s| s.gap(theme().thumb_gap))
-                .child(for_each(
+            div().flex().flex_row().child(
+                for_each(
                     move || windows.get(),
                     |t| t.id(),
                     move |t| card(cards.clone(), t),
-                )),
+                )
+                .exit(|s| s.opacity(0.0).w(0.0))
+                .transition(fold()),
+            ),
         )
         .child(show(
             move || player.with(Option::is_some),
             move || div().mt(TOOLBAR_GAP).child(transport(move || player.get())),
-        ))
+        ));
+    // The layer's room, with the frame where the cards it shows are centred.
+    div()
+        .flex()
+        .flex_col()
+        .items_start()
+        .dyn_style(move |s| s.w(frame_width(place.room.get())))
+        .child(frame.dyn_style(move |s| s.ml(place.offset(&room))))
 }
 
 thread_local! {
@@ -372,10 +463,10 @@ fn card(bar: Bar, window: Toplevel) -> Div {
             }
             frame_bar.preview.set(None);
         })
+        // The thumbnails stay, as Windows 7's do: the card folds and the others close up.
         .on_aux_click(move |e| {
             if e.button == Some(PointerButton::Middle) {
                 close();
-                bar.preview.set(None);
             }
         });
     // The window stands out on the screen while the pointer is on its card; a card that goes
@@ -394,6 +485,30 @@ fn card(bar: Bar, window: Toplevel) -> Div {
         }
     };
     on_cleanup(release.clone());
+    // The slot: the card and half the gap on either side. It folds to nothing when the window
+    // closes, clipping the card, which keeps its own width.
+    div()
+        .flex_none()
+        .flex()
+        .flex_row()
+        .overflow_clip()
+        .dyn_style(|s| {
+            let t = theme();
+            s.w(t.thumb_width + t.thumb_gap)
+        })
+        .child(card_body(card_ui, first, asked, release, now, title, frame))
+}
+
+/// The card itself, in its slot.
+fn card_body(
+    card_ui: Interaction,
+    first: Option<String>,
+    asked: Rc<RefCell<Option<String>>>,
+    release: impl Fn() + 'static,
+    now: Memo<Option<Toplevel>>,
+    title: Div,
+    frame: Div,
+) -> Div {
     div()
         .flex_none()
         .flex()
@@ -410,7 +525,10 @@ fn card(bar: Bar, window: Toplevel) -> Div {
                 release();
             }
         })
-        .dyn_style(|s| s.w(theme().thumb_width))
+        .dyn_style(|s| {
+            let t = theme();
+            s.w(t.thumb_width).ml(t.thumb_gap / 2.0)
+        })
         .child(title)
         .child(frame)
 }
