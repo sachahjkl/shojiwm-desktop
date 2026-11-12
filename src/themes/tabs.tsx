@@ -16,6 +16,7 @@ import {
   computed,
   paintShader,
   useState,
+  type PaintShaderHandle,
   type ReadonlySignal,
   type WaylandWindow,
 } from "shoji_wm";
@@ -70,6 +71,15 @@ export interface TabStyle {
   /** The close button's icon, an SVG path from the configuration's root, and its plate under the pointer. */
   closeIcon: string;
   closeHover: string;
+  /**
+   * The close button's plate drawn as the theme draws its window's close
+   * button, from whether the pointer is on it and whether it is held; it
+   * replaces `closeHover`. None: `closeHover`'s plain plate.
+   */
+  closePlate?: (
+    hover: ReadonlySignal<boolean>,
+    pressed: ReadonlySignal<boolean>,
+  ) => PaintShaderHandle;
 }
 
 /** What a frame gives its tab strip. */
@@ -143,6 +153,7 @@ const Tab = ({
 }: TabProps) => {
   const [hover, setHover] = useState(false);
   const [closeHover, setCloseHover] = useState(false);
+  const [closePressed, setClosePressed] = useState(false);
   const top = shown ? style.top : style.idleTop;
   const bottom = shown ? 0 : style.idleBottom;
   const plateHeight = computed(() => Math.max(0, height() - top - bottom));
@@ -361,15 +372,16 @@ const Tab = ({
         >
           <Box style={{ position: "relative", width: 18, height: 18 }}>
             <Box
+              paint={style.closePlate?.(closeHover, closePressed)}
               style={{
                 position: "absolute",
                 inset: 0,
                 width: 18,
                 height: 18,
                 borderRadius: Math.min(3, style.radius),
-                background: computed(() =>
-                  closeHover() ? style.closeHover : CLEAR,
-                ),
+                background: style.closePlate
+                  ? CLEAR
+                  : computed(() => (closeHover() ? style.closeHover : CLEAR)),
                 pointerEvents: "none",
               }}
             />
@@ -390,6 +402,7 @@ const Tab = ({
             />
             <Button
               onHoverChange={setCloseHover}
+              onActiveChange={setClosePressed}
               onClick={() => window.close()}
               style={{
                 position: "absolute",

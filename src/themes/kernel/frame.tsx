@@ -35,13 +35,13 @@ import { highlightShadow } from "../../highlight";
 export const KTAB: TabStyle = {
   // The shown tab: a dark plate, as the window under it, outlined on its top
   // and sides by the frame's outer line, open at its foot where it joins the
-  // window. The others: no plate, their title alone, a thin line between them.
+  // window. The others: no plate, their title alone, nothing between them.
   active: KCOLOR.tabShown,
   activeAway: KCOLOR.tabShownAway,
   idle: "#00000000",
   idleAway: "#00000000",
   hover: KCOLOR.tabHover,
-  separator: "#ffffff1f",
+  separator: "#00000000",
   edge: KCOLOR.outline,
   accent: "#00000000",
   accentAway: "#00000000",
@@ -66,7 +66,42 @@ export const KTAB: TabStyle = {
   radius: 0,
   closeIcon: "./assets/kernel/close.svg",
   closeHover: KCOLOR.closeBottom,
+  closePlate: (hover, pressed) => closePlate(hover, pressed),
 };
+
+/**
+ * A tab's close button under the pointer, drawn as the window's: the red
+ * plate in its gradient, its line of light and its seam, the gradient upside
+ * down while held; nothing away from the pointer.
+ */
+function closePlate(
+  hover: ReadonlySignal<boolean>,
+  pressed: ReadonlySignal<boolean>,
+) {
+  const clear = colour("#00000000");
+  const top = computed(() =>
+    !hover()
+      ? clear
+      : colour(pressed() ? KCOLOR.closeBottom : KCOLOR.closeTopHover),
+  );
+  const bottom = computed(() =>
+    !hover()
+      ? clear
+      : colour(pressed() ? KCOLOR.closeTop : KCOLOR.closeBottomHover),
+  );
+  return paintShader("./assets/kernel/plate.frag", {
+    uniforms: {
+      top: [0, 1, 2, 3].map((i) =>
+        computed(() => top()[i]),
+      ) as unknown as ShaderUniformVec4,
+      bottom: [0, 1, 2, 3].map((i) =>
+        computed(() => bottom()[i]),
+      ) as unknown as ShaderUniformVec4,
+      light: computed(() => (hover() ? 0.32 : 0)),
+      seam: computed(() => (hover() ? 0.55 : 0)),
+    },
+  });
+}
 
 /** `#rrggbbaa` to the four numbers a shader uniform takes. */
 function colour(hex: string): [number, number, number, number] {
