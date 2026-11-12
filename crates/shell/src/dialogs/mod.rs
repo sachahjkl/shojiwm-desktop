@@ -8,6 +8,7 @@
 
 mod admin_menu;
 mod alt_tab;
+mod close_group;
 mod frame;
 mod run;
 mod screen_saver;
@@ -28,6 +29,12 @@ static RUN_ON: OnceLock<SharedSignal<String>> = OnceLock::new();
 static SHUTDOWN_ON: OnceLock<SharedSignal<String>> = OnceLock::new();
 static ADMIN_MENU_ON: OnceLock<SharedSignal<String>> = OnceLock::new();
 static SAVER_PREVIEW: OnceLock<SharedSignal<bool>> = OnceLock::new();
+/// "Close all tabs?": the screen it shows on ("" closed) and the windows of the group.
+static CLOSE_GROUP: OnceLock<SharedSignal<(String, Vec<String>)>> = OnceLock::new();
+
+fn close_group_slot() -> &'static SharedSignal<(String, Vec<String>)> {
+    CLOSE_GROUP.get_or_init(|| shared_signal((String::new(), Vec::new())))
+}
 
 /// The screen showing a dialog, by connector name; "" when it is closed.
 fn slot(cell: &'static OnceLock<SharedSignal<String>>) -> &'static SharedSignal<String> {
@@ -97,6 +104,19 @@ pub fn admin_menu_toggle_on(output_name: &str) {
 
 pub fn admin_menu_close() {
     slot(&ADMIN_MENU_ON).set(String::new());
+}
+
+// ----- "Close all tabs?" -------------------------------------------------------------------------
+
+/// Asks on a screen ("": the main screen) whether the windows named by `identifiers` (a group's
+/// tabs) should all close.
+pub fn close_group_ask(output_name: &str, identifiers: Vec<String>) {
+    crate::start_menu::close();
+    close_group_slot().set((screen_or_primary(output_name), identifiers));
+}
+
+pub fn close_group_close() {
+    close_group_slot().set((String::new(), Vec::new()));
 }
 
 // ----- the screen saver --------------------------------------------------------------------------
@@ -178,6 +198,14 @@ pub fn install() {
         let here = name.clone();
         layer_while(
             &output,
+            move || close_group_slot().with(|(on, _)| *on == here),
+            || dialog_layer("shojiwm-desktop-closegroup"),
+            |_| close_group::view(close_group_slot().with_untracked(|(_, ids)| ids.clone())),
+        );
+
+        let here = name.clone();
+        layer_while(
+            &output,
             move || slot(&ADMIN_MENU_ON).with(|o| *o == here),
             || dialog_layer("shojiwm-desktop-adminmenu"),
             |output| admin_menu::view(output.name),
@@ -241,6 +269,15 @@ fn install_ipc() {
         match function {
             "openOn" => shutdown_open_on(first(args)),
             "close" => shutdown_close(),
+            _ => return Err(format!("no function {function}")),
+        }
+        Ok(String::new())
+    });
+    ipc::handle("closegroup", |function, args| {
+        match function {
+            // The screen, then the identifiers of the group's windows.
+            "ask" => close_group_ask(first(args), args.iter().skip(1).cloned().collect()),
+            "close" => close_group_close(),
             _ => return Err(format!("no function {function}")),
         }
         Ok(String::new())

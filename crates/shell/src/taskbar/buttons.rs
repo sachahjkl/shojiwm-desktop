@@ -17,8 +17,8 @@ use crate::apps::{
     launch, move_button, pin_dropped_at, title_of,
 };
 use crate::settings::{motion, settings};
-use crate::theme::{corner, item_radius, theme};
-use crate::ui::{font, shell_icon, vertical_gradient};
+use crate::theme::{Align, away_from_bar, corner, item_radius, theme};
+use crate::ui::{font, shell_icon, shell_tooltip, vertical_gradient};
 use anti_webui::prelude::*;
 use std::cell::Cell;
 use std::rc::Rc;
@@ -643,7 +643,15 @@ fn task_button(bar: Bar, row: Row, key: String) -> Div {
     let menu_bar = bar.clone();
     let menu_key = key.clone();
 
-    div()
+    // A program pinned but not running: its name under the pointer (a running one shows its
+    // windows' thumbnails instead).
+    let pinned_name = move || {
+        group.with(|g| match g {
+            Some(g) if g.windows.is_empty() => g.name.clone(),
+            _ => String::new(),
+        })
+    };
+    let button = div()
         .absolute()
         .top(0.0)
         .bottom(0.0)
@@ -713,5 +721,6 @@ fn task_button(bar: Bar, row: Row, key: String) -> Div {
             {
                 launch(&entry);
             }
-        })
+        });
+    shell_tooltip(button, away_from_bar(Align::Center), pinned_name)
 }

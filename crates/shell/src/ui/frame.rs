@@ -99,7 +99,7 @@ pub fn tooltip_frame() -> Div {
 /// `target` with a tooltip of `label` (lines split by `\n`): it shows once the pointer has
 /// rested on `target` for 600 ms, `placement` from it, and goes when the pointer leaves or
 /// presses. For something on the bar, give `away_from_bar(Align::Center)`. The text is read
-/// each time it shows. `target` is what comes back.
+/// each time it shows; an empty text shows nothing. `target` is what comes back.
 pub fn shell_tooltip(
     target: Div,
     placement: Placement,
@@ -115,6 +115,10 @@ pub fn shell_tooltip(
     tooltip_with(target, options, move |_| {
         move || {
             let label = label.clone();
+            // No text, no tooltip: the frame would show empty.
+            if untrack(|| label()).is_empty() {
+                return div();
+            }
             tooltip_frame().child(text(move || label()))
         }
     })

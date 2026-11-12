@@ -181,6 +181,31 @@ function openShutdownDialog(): void {
   });
 }
 
+/**
+ * The close button of a frame: a window alone closes; a window with tabs asks
+ * first, in the shell, whether all its tabs should close (the shell names
+ * them and closes them). The shell knows the windows by their
+ * ext-foreign-toplevel-list identifiers.
+ */
+function closeFromFrame(window: WaylandWindow): void {
+  const members = WINDOWS.groups.membersPeek(window.id);
+  const identifiers = members
+    .map((id) => WINDOWS.windowById(id)?.toplevelIdentifier())
+    .filter((id): id is string => typeof id === "string");
+  if (members.length < 2 || identifiers.length !== members.length) {
+    window.close();
+    return;
+  }
+  COMPOSITOR.process.spawn({
+    command: shellCall(
+      "closegroup",
+      "ask",
+      WINDOWS.outputName() ?? "",
+      ...identifiers,
+    ),
+  });
+}
+
 // Alt+F4 closes the focused window; with none, as on the desktop, it asks
 // what the computer should do, as Windows 7 does.
 COMPOSITOR.key.bind("close-window", "Alt+F4", () => {
@@ -559,6 +584,7 @@ COMPOSITOR.window.composition = (window: WaylandWindow) => {
         glassSuspended: ALT_TAB.blurSuspended(),
         onMinimize: () => WINDOWS.setMinimized(window, true),
         onToggleMaximize: () => WINDOWS.toggleMaximized(window),
+        onClose: () => closeFromFrame(window),
         tabs: {
           groups: WINDOWS.groups,
           windowOf: (id) => WINDOWS.windowById(id),

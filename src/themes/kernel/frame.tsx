@@ -419,7 +419,7 @@ export function kernelFrame(
             label="Close"
             focused={focused}
             close
-            onClick={() => window.close()}
+            onClick={options.onClose}
           />
         </Box>
       </Box>

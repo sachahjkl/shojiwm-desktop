@@ -28,6 +28,8 @@ export interface FrameOptions {
   glassSuspended: boolean;
   onMinimize: () => void;
   onToggleMaximize: () => void;
+  /** The close button: the window, or every tab of its group after a question. */
+  onClose: () => void;
   /** The window's group, drawn as tabs in its caption. */
   tabs: TabOptions;
 }

@@ -414,7 +414,7 @@ export function aeroFrame(
           width={CAPTION_BUTTON.close}
           label="Close"
           focused={focused}
-          onClick={() => window.close()}
+          onClick={options.onClose}
         />
       </Box>
     </Box>,
