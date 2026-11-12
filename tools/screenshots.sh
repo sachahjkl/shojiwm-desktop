@@ -284,6 +284,15 @@ cleanup() {
   for pid in "${pids[@]:-}"; do
     [ -n "$pid" ] && kill "$pid" 2>/dev/null || true
   done
+  # What the session started on its own (the portals, which D-Bus activation detaches)
+  # outlives the processes above: anything with this session's runtime folder is its own.
+  for pid in $(pgrep -u "$(id -u)"); do
+    # This script has the folder too.
+    [ "$pid" = "$$" ] && continue
+    if tr '\0' '\n' <"/proc/$pid/environ" 2>/dev/null | grep -qx "XDG_RUNTIME_DIR=$work/run"; then
+      kill "$pid" 2>/dev/null || true
+    fi
+  done
   rm -rf "$work"
 }
 trap cleanup EXIT
