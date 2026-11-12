@@ -342,6 +342,7 @@ fn keep_right_press(target: Div) -> Div {
     target.on_pointer_down(|e| {
         if e.button == Some(PointerButton::Secondary) {
             e.stop_propagation();
+            crate::start_menu::close();
         }
     })
 }
@@ -373,6 +374,8 @@ fn view(bar: Bar) -> Div {
                 .transition(Transition::ms(motion(SLIDE)).ease_out())
         })
         .on_pointer_down(move |e| {
+            // A press on the bar closes the Start menu, as on Windows; the orb keeps its own.
+            crate::start_menu::close();
             if e.button == Some(PointerButton::Secondary) {
                 let at = RectI::new(e.position.x as i32, e.rect.y, 1, e.rect.height);
                 menu_bar.toggle_context_menu("taskbar", at);
@@ -606,6 +609,7 @@ fn show_desktop(bar: Bar) -> Div {
         .on_pointer_down(move |e| {
             if e.button == Some(PointerButton::Secondary) {
                 e.stop_propagation();
+                crate::start_menu::close();
                 menu_bar.toggle_context_menu("desktop", e.rect);
             }
         })

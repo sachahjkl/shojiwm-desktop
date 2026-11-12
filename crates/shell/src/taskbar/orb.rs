@@ -46,12 +46,9 @@ pub(super) fn start_button(bar: Bar) -> View {
 fn with_clicks(button: Div, bar: Bar) -> Div {
     let left = bar.clone();
     button
-        .on_pointer_down(|e| {
-            // Its own menu, not the bar's.
-            if e.button == Some(PointerButton::Secondary) {
-                e.stop_propagation();
-            }
-        })
+        // Its own presses: its own menu, not the bar's, and its click opens or closes the Start
+        // menu, which a press reaching the bar would close first.
+        .on_pointer_down(|e| e.stop_propagation())
         .on_click(move |_| {
             left.close_popups();
             crate::start_menu::toggle_on(&left.name);

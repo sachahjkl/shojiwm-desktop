@@ -185,14 +185,29 @@ fn catcher_layer(output: &Output) {
             .namespace("no_blur"),
         || div().size_full().on_pointer_down(|_| close()),
     );
+    // The screen but the bar: a press on the bar reaches it (a button, a jump list), and the bar
+    // closes the menu itself (taskbar::close_start_menu_from_bar).
+    let size = output.logical_size;
     effect(move || {
         let open = state().open_on.with(|o| !o.is_empty());
         layer.set_input_region(if open {
-            InputRegion::Full
+            InputRegion::Rects(vec![outside_bar(
+                size.width,
+                size.height,
+                theme().taskbar_height as i32,
+                bar_at_top(),
+            )])
         } else {
             InputRegion::Empty
         });
     });
+}
+
+/// The part of a screen `width` by `height` that a bar `bar` high, at its top or its bottom,
+/// leaves.
+fn outside_bar(width: i32, height: i32, bar: i32, at_top: bool) -> RectI {
+    let bar = bar.clamp(0, height);
+    RectI::new(0, if at_top { bar } else { 0 }, width, height - bar)
 }
 
 /// Where the menu's layer stands: on the bar's side, by the screen's left edge, past the bar.
@@ -324,4 +339,22 @@ fn launcher_layers() {
             });
         });
     });
+}
+
+#[cfg(test)]
+mod tests {
+    use super::outside_bar;
+    use anti_webui::prelude::RectI;
+
+    #[test]
+    fn the_catcher_leaves_the_bar() {
+        assert_eq!(
+            outside_bar(1920, 1080, 40, false),
+            RectI::new(0, 0, 1920, 1040)
+        );
+        assert_eq!(
+            outside_bar(1920, 1080, 40, true),
+            RectI::new(0, 40, 1920, 1040)
+        );
+    }
 }

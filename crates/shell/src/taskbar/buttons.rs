@@ -710,6 +710,7 @@ fn task_button(bar: Bar, row: Row, key: String) -> Div {
         .on_pointer_down(move |e| {
             if e.button == Some(PointerButton::Secondary) {
                 e.stop_propagation();
+                crate::start_menu::close();
                 menu_bar.preview.set(None);
                 menu_bar.tray_menu.set(None);
                 let again =

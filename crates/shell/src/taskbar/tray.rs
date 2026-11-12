@@ -591,6 +591,7 @@ fn tray_icon(bar: Bar, item: TrayItem, in_taskbar: bool) -> Div {
             match e.button {
                 Some(PointerButton::Secondary) => {
                     e.stop_propagation();
+                    crate::start_menu::close();
                     if item.has_menu {
                         press_menu();
                     }
