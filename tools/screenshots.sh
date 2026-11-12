@@ -18,8 +18,9 @@
 #
 # The shell is this flake's (crates/shell). The compositor can be overridden
 # with SHOJIWM_FLAKE (a local clone: SHOJIWM_FLAKE=path:/src/ShojiWM#default).
-# The default is the integration branch of the fork, which carries what this
-# configuration uses before upstream has it (labels' textShadow).
+# The default is this flake's packages.shojiwm: the integration branch of the
+# fork pinned in flake.lock, which carries what this configuration uses before
+# upstream has it (labels' textShadow).
 #
 # BUILD says how the shell and the compositor are built:
 #
@@ -44,7 +45,7 @@ repo="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 out="${OUT:-$repo/assets/site}"
 
 if [ "${1:-}" != "--inner" ]; then
-  shojiwm_flake="${SHOJIWM_FLAKE:-github:sachahjkl/ShojiWM/integration#default}"
+  shojiwm_flake="${SHOJIWM_FLAKE:-path:$repo#shojiwm}"
   # The compositor first and the shell last in PATH, as they always were.
   compositor=("$shojiwm_flake")
   shell=("path:$repo#shell")

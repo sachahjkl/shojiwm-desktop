@@ -285,7 +285,7 @@ program `Activated` when they go down and `Deactivated` when any of them goes
 up. Hold-to-talk shortcuts therefore work. There is no dialog to choose other
 keys: change them in the program.
 
-On NixOS:
+On NixOS, `nixosModules.default` sets it up. Without that module:
 
 ```nix
 xdg.portal = {
@@ -357,7 +357,57 @@ to the text log-on, which starts the default session.
 
 ## Install
 
-### With Nix
+### Try it
+
+Run the desktop in a window of your current session:
+
+```sh
+nix run github:sachahjkl/shojiwm-desktop
+```
+
+It runs ShojiWM nested, with the packaged configuration. Its settings, logs
+and session bus are in a temporary folder: it does not change `~/.config`.
+Close the window to stop it.
+
+### On NixOS
+
+Import the module and turn it on:
+
+```nix
+{
+  inputs.shojiwm-desktop = {
+    url = "github:sachahjkl/shojiwm-desktop";
+    inputs.nixpkgs.follows = "nixpkgs";
+  };
+}
+```
+
+```nix
+imports = [inputs.shojiwm-desktop.nixosModules.default];
+services.shojiwm-desktop = {
+  enable = true;
+  users = ["alice"];
+};
+```
+
+The module installs ShojiWM (its module, `programs.shojiwm`), the shell, the
+GlobalShortcuts portal, the Aero icon theme, Inter and wl-clipboard. It adds
+the session "ShojiWM (UWSM)" and links `src`, `assets` and `shell` of each
+user's `~/.config/shojiwm` to the packaged configuration. It has these
+options:
+
+- `users`: the accounts that get the configuration.
+- `checkout`: the path of a checkout of this repository, linked instead of the
+  package. A change to it then needs no rebuild.
+- `environment`: the session's variables, written to uwsm's env file, for
+  example `SHOJIWM_DESKTOP_TERMINAL` or `SHOJIWM_DESKTOP_OUTPUTS` (see
+  "Changing it"). The `XKB_DEFAULT_*` variables default to
+  `services.xserver.xkb`.
+
+The module also imports the log-on screen's module (see "The log-on screen").
+With one account in `users`, the log-on screen logs that account on.
+
+### With Nix, elsewhere
 
 Install the shell, then the configuration into `~/.config/shojiwm`:
 
@@ -370,21 +420,9 @@ The second command copies `src`, `assets`, `shell` (the shell's pictures),
 `package.json` and `tsconfig.json`. It does not touch `node_modules`, which
 ShojiWM manages, or `settings.json`.
 
-To use the flake as an input of your own system flake:
-
-```nix
-{
-  inputs.shojiwm-desktop = {
-    url = "github:sachahjkl/shojiwm-desktop";
-    inputs.nixpkgs.follows = "nixpkgs";
-  };
-}
-```
-
-Put `packages.<system>.shell` in `environment.systemPackages`.
-`packages.<system>.default` is the configuration tree. Link its directories
-into `~/.config/shojiwm` with whatever manages your home files, or run
-`apps.<system>.install`.
+`packages.<system>.default` is the configuration tree,
+`packages.<system>.shell` the shell, and `packages.<system>.shojiwm` the
+compositor, from the ShojiWM pinned in `flake.lock`.
 
 ### Without Nix
 
@@ -506,7 +544,7 @@ The Control Panel's pages are `appearance`, `background`, `display`,
 | `tools/dev.sh`                                  | Runs ShojiWM nested in a window, on this checkout.                                                                                                          |
 | `assets/logo.svg`, `.project/`                  | The project logo (drawn by hand), its 512 px rendering, and the project description that sacha.house reads.                                                 |
 | `site/`, `.github/workflows/pages.yml`          | The project site (overview, gallery, documentation), and the workflow that publishes it to GitHub Pages with the logo and the screenshots.                  |
-| `flake.nix`                                     | The packages, the install command, the log-on screen module, and the checks.                                                                                |
+| `flake.nix`, `nix/*.mod.nix`                    | The flake: one flake-parts module per part (packages, apps, NixOS modules, checks, development shells).                                                     |
 
 ## Changing it
 
