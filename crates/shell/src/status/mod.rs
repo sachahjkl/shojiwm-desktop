@@ -178,14 +178,43 @@ pub fn install() {
 // ----- the pieces the icons and panels share ---------------------------------------------------
 
 /// A click on an icon of the notification area opens or closes its panel; a double click opens
-/// its settings instead (the Control Panel's page, the Sound window), as Windows does.
-fn click_or_settings(e: &PointerEvent, output_name: &str, panel: Panel, settings: impl Fn()) {
+/// its settings instead (the Control Panel's page, the Sound window), as Windows does. The panel
+/// waits for the double click's delay: once open, it would take the second press.
+fn click_or_settings(
+    e: &PointerEvent,
+    output_name: &str,
+    panel: Panel,
+    settings: impl Fn() + 'static,
+) {
+    let waiting = PENDING_CLICK.with(|p| p.borrow_mut().take());
+    if let Some((was, timer)) = waiting {
+        timer.cancel();
+        if was == panel {
+            close(panel);
+            settings();
+            return;
+        }
+    }
     if e.click_count >= 2 {
         close(panel);
         settings();
-    } else {
-        toggle(output_name, panel);
+        return;
     }
+    let output_name = output_name.to_owned();
+    let timer = set_timeout(DOUBLE_CLICK, move || {
+        PENDING_CLICK.with(|p| p.borrow_mut().take());
+        toggle(&output_name, panel);
+    });
+    PENDING_CLICK.with(|p| *p.borrow_mut() = Some((panel, timer)));
+}
+
+/// The longest wait between the two clicks of a double click.
+const DOUBLE_CLICK: std::time::Duration = std::time::Duration::from_millis(300);
+
+thread_local! {
+    /// An icon clicked once, its panel waiting to see whether a second click comes.
+    static PENDING_CLICK: std::cell::RefCell<Option<(Panel, Timeout)>> =
+        const { std::cell::RefCell::new(None) };
 }
 
 /// The white veil over an icon of the bar: stronger while its panel is open than under the

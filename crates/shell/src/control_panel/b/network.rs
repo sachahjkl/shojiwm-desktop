@@ -30,6 +30,9 @@ const DETAIL_LABEL: f32 = 150.0;
 const ADAPTER_WIDTH: f32 = 260.0;
 /// The line of the map where the way is cut.
 const CUT_RED: Color = rgb(0xd9302a);
+/// A line of the map where the way is open, and the size of the badge on each line.
+const OPEN_GREEN: Color = rgb(0x2e9d48);
+const MAP_BADGE: f32 = 18.0;
 
 /// What the page keeps while it shows: the connection whose properties are open and the one
 /// asked to be forgotten (by UUID), and the last error.
@@ -247,8 +250,8 @@ fn map() -> Div {
         .child(column(internet.into_view(), plain("Internet"), None))
 }
 
-/// A line of the map, at the height of the pictures' middles: whole while `whole`, else red
-/// and cut by a cross.
+/// A line of the map, at the height of the pictures' middles: with a green check while `whole`,
+/// else red and cut by a cross.
 fn map_line(whole: impl Fn() -> bool + Copy + 'static) -> Div {
     let half = || div().flex_1().h(2.0);
     div()
@@ -266,11 +269,22 @@ fn map_line(whole: impl Fn() -> bool + Copy + 'static) -> Div {
                 CUT_RED
             })
         }))
-        // In a box: a text's own style cannot take it out of the layout.
+        // In its middle a round badge: a green check where the way is open, a red cross where
+        // it is cut.
         .child(
             div()
-                .dyn_style(move |s| if whole() { s.hidden() } else { s })
-                .child(text("\u{2715}").text_size(14.0).text_color(CUT_RED)),
+                .flex_none()
+                .size(MAP_BADGE)
+                .rounded(MAP_BADGE / 2.0)
+                .flex()
+                .items_center()
+                .justify_center()
+                .dyn_style(move |s| s.bg(if whole() { OPEN_GREEN } else { CUT_RED }))
+                .child(
+                    text(move || if whole() { "\u{2714}" } else { "\u{2715}" })
+                        .text_size(11.0)
+                        .text_color(Color::WHITE),
+                ),
         )
         .child(half().dyn_style(move |s| {
             s.bg(if whole() {
