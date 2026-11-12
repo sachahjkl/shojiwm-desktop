@@ -45,6 +45,7 @@ fn main() {
         }
         return;
     }
+    keep_crashes();
     if args.first().map(String::as_str) == Some("greeter") {
         if let Err(e) = greeter::run() {
             eprintln!("shojiwm-shell greeter: {e}");
@@ -92,4 +93,34 @@ fn main() {
         eprintln!("shojiwm-shell: {e}");
         std::process::exit(1);
     }
+}
+
+/// A crash of the shell is written to `$XDG_STATE_HOME/shojiwm-desktop/shell-crashes.log`, its
+/// time, its message and its backtrace: the compositor starts the shell with its output on
+/// /dev/null and starts it again at once, so nothing else says it stopped. The file is written as
+/// the shell dies, never while it runs.
+fn keep_crashes() {
+    let default = std::panic::take_hook();
+    std::panic::set_hook(Box::new(move |info| {
+        use std::io::Write;
+        let dir = paths::state_dir();
+        let _ = std::fs::create_dir_all(&dir);
+        if let Ok(mut file) = std::fs::OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(dir.join("shell-crashes.log"))
+        {
+            let at = std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .map_or(0, |d| d.as_secs());
+            let thread = std::thread::current();
+            let _ = writeln!(
+                file,
+                "--- {at} (unix time), thread {}\n{info}\n{}",
+                thread.name().unwrap_or("?"),
+                std::backtrace::Backtrace::force_capture()
+            );
+        }
+        default(info);
+    }));
 }
