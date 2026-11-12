@@ -24,7 +24,7 @@ export function motion(ms: number): number {
 
 /** Animation lengths, in milliseconds. Short, as on Windows 7. */
 export const TIMING = {
-  open: 140,
+  open: 110,
   close: 110,
   minimize: 130,
   management: 160,

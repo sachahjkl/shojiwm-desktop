@@ -35,6 +35,7 @@ import "./display";
 import { layerGlassEffect, popupGlassEffect, windowGlassEffect } from "./glass";
 import {
   FloatingWindowManager,
+  type ManagerSnapshot,
   WIN_FULLSCREEN,
   WIN_MINIMIZED,
   WIN_RECT,
@@ -113,6 +114,22 @@ const ZOOM = createZoom();
 
 const FULLSCREEN_Z_INDEX = 2_000_000_000;
 
+// A reload (Super+Shift+R) starts the configuration afresh: the windows keep
+// their place, stack, tabs and Alt+Tab order through it.
+const MANAGER_STATE = "desktop.window-manager";
+COMPOSITOR.onDisable((event) => {
+  if (event.isReloading) {
+    event.persist(MANAGER_STATE, WINDOWS.snapshot());
+  }
+});
+COMPOSITOR.onEnable((event) => {
+  if (event.isReloading) {
+    const kept = event.restore<ManagerSnapshot>(MANAGER_STATE);
+    if (kept) {
+      WINDOWS.restoreSnapshot(kept);
+    }
+  }
+});
 COMPOSITOR.event.onOpen((window) => WINDOWS.onOpen(window));
 COMPOSITOR.event.onFirstCommit((window) => WINDOWS.onFirstCommit(window));
 COMPOSITOR.event.onStartClose((window) => WINDOWS.onStartClose(window));

@@ -115,6 +115,14 @@ export const TABBED_PROGRAMS: ReadonlySet<string> = new Set([
   "com.mitchellh.ghostty",
 ]);
 
+/** A group as kept across a configuration reload. */
+export interface GroupSnapshot {
+  members: string[];
+  active: string;
+  first: number;
+  follow: boolean;
+}
+
 interface Group {
   members: string[];
   active: string;
@@ -391,6 +399,42 @@ export class WindowGroups {
       this.groups.set(group.members[0], group);
     }
     return { changed: true, next };
+  }
+
+  /** The groups, to keep across a configuration reload. */
+  public snapshot(): GroupSnapshot[] {
+    return [...this.groups.values()].map((group) => ({
+      members: [...group.members],
+      active: group.active,
+      first: group.first,
+      follow: group.follow,
+    }));
+  }
+
+  /**
+   * Makes a kept group again. Its windows must be open; one already in a
+   * group (a new one, made since) leaves the kept group as it is.
+   */
+  public restore(kept: GroupSnapshot): void {
+    if (
+      kept.members.length < 2 ||
+      kept.members.some((id) => this.groupOf.has(id))
+    ) {
+      return;
+    }
+    const group: Group = {
+      members: [...kept.members],
+      active: kept.members.includes(kept.active)
+        ? kept.active
+        : kept.members[0],
+      first: kept.first,
+      follow: kept.follow,
+    };
+    for (const id of group.members) {
+      this.groupOf.set(id, group);
+    }
+    this.groups.set(group.members[0], group);
+    this.changed(group.members);
   }
 
   /** Set or clear the drop shown; unchanged values are not set again. */

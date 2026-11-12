@@ -40,6 +40,7 @@ import {
   stripLayout,
   tabAt,
   type DropTarget,
+  type GroupSnapshot,
 } from "./groups";
 import { frameMetrics } from "./themes/choice";
 
@@ -76,7 +77,8 @@ export const WIN_PLACED = createWindowState<boolean>("placed", {
   default: false,
 });
 
-const OPEN_EASING = cubicBezier(0.1, 0.9, 0.2, 1);
+// The close's curve played backwards: opening is the close in reverse.
+const OPEN_EASING = cubicBezier(0, 0, 0.6, 1);
 const CLOSE_EASING = cubicBezier(0.4, 0, 1, 1);
 const MINIMIZE_CHANNEL = "desktop.minimize";
 const OPEN_CHANNEL = "desktop.open";
@@ -209,6 +211,37 @@ interface TabDrag {
   grabY: number;
 }
 
+/** A window's state as kept across a configuration reload. */
+interface WindowSnapshot {
+  rect: Rect;
+  restoreRect: Rect | null;
+  fullscreenRect: Rect | null;
+  snapped: "left" | "right" | null;
+  minimized: boolean;
+  maximized: boolean;
+  fullscreen: boolean;
+}
+
+/**
+ * What the manager keeps across a configuration reload (Super+Shift+R): a
+ * reload starts the configuration afresh, and the windows, open all along,
+ * come back through onOpen as if new.
+ */
+export interface ManagerSnapshot {
+  windows: Record<string, WindowSnapshot>;
+  /** Window ids, back to front. */
+  stack: string[];
+  mru: string[];
+  groups: GroupSnapshot[];
+  lastPlace: [string, { output: string; rect: Rect }][];
+  hiddenByShowDesktop: string[];
+  currentOutput: string | null;
+}
+
+function keptRect(rect: ManagedWindowRect | null): Rect | null {
+  return rect ? snapshotRect(rect) : null;
+}
+
 export class FloatingWindowManager {
   private readonly stack = createWindowStack();
   /**
@@ -217,6 +250,17 @@ export class FloatingWindowManager {
    */
   private frontToBack: WaylandWindow[] = [];
   private readonly windowsById = new Map<string, WaylandWindow>();
+  /**
+   * After a configuration reload, until every window kept has come back:
+   * their states, the stack and the groups as they were, and the window that
+   * had the keyboard.
+   */
+  private restoring: {
+    windows: Map<string, WindowSnapshot>;
+    stack: string[];
+    groups: GroupSnapshot[];
+    focus: string | null;
+  } | null = null;
   /** Window ids, most recently focused first. Drives Alt+Tab. */
   private mru: string[] = [];
   /**
@@ -475,9 +519,99 @@ export class FloatingWindowManager {
 
   // ----- lifecycle --------------------------------------------------------
 
+  /** The state to keep across a configuration reload. */
+  public snapshot(): ManagerSnapshot {
+    const windows: Record<string, WindowSnapshot> = {};
+    for (const [id, window] of this.windowsById) {
+      if (this.closing.has(id) || !window.state[WIN_PLACED].peek()) {
+        continue;
+      }
+      const state = window.state;
+      windows[id] = {
+        rect: snapshotRect(state[WIN_RECT].peek()),
+        restoreRect: keptRect(state[WIN_RESTORE_RECT].peek()),
+        fullscreenRect: keptRect(state[WIN_FULLSCREEN_RECT].peek()),
+        snapped: state[WIN_SNAPPED].peek(),
+        minimized: state[WIN_MINIMIZED].peek(),
+        maximized: state[WIN_MAXIMIZED].peek(),
+        fullscreen: state[WIN_FULLSCREEN].peek(),
+      };
+    }
+    // Windows kept by the reload before, not back yet, stay kept.
+    for (const [id, kept] of this.restoring?.windows ?? []) {
+      windows[id] ??= kept;
+    }
+    return {
+      windows,
+      stack: this.stack.windows().map((window) => window.id),
+      mru: [...this.mru],
+      groups: this.groups.snapshot(),
+      lastPlace: [...this.lastPlace],
+      hiddenByShowDesktop: [...this.hiddenByShowDesktop],
+      currentOutput: this.currentOutput ?? null,
+    };
+  }
+
+  /** Takes back what `snapshot` kept, before the windows come back. */
+  public restoreSnapshot(kept: ManagerSnapshot): void {
+    this.mru = [...kept.mru];
+    this.lastPlace = new Map(kept.lastPlace);
+    this.hiddenByShowDesktop = [...kept.hiddenByShowDesktop];
+    this.currentOutput = kept.currentOutput ?? undefined;
+    this.restoring = {
+      windows: new Map(Object.entries(kept.windows)),
+      stack: kept.stack,
+      groups: kept.groups,
+      focus: kept.mru[0] ?? null,
+    };
+  }
+
+  /** A window open before the configuration reloaded comes back as it was. */
+  private reopen(window: WaylandWindow, kept: WindowSnapshot): void {
+    const restoring = this.restoring;
+    if (!restoring) {
+      return;
+    }
+    restoring.windows.delete(window.id);
+    const state = window.state;
+    state[WIN_RECT].set(kept.rect);
+    state[WIN_RESTORE_RECT].set(kept.restoreRect);
+    state[WIN_FULLSCREEN_RECT].set(kept.fullscreenRect);
+    state[WIN_SNAPPED].set(kept.snapped);
+    state[WIN_MINIMIZED].set(kept.minimized);
+    state[WIN_MAXIMIZED].set(kept.maximized);
+    state[WIN_FULLSCREEN].set(kept.fullscreen);
+    // Placed already: onFirstCommit leaves it where it is, with no animation.
+    state[WIN_PLACED].set(true);
+    // The stack as it was: the windows back so far, back to front.
+    for (const id of restoring.stack) {
+      const other = this.windowsById.get(id);
+      if (other) {
+        this.stack.raise(other);
+      }
+    }
+    this.restack();
+    for (const group of restoring.groups) {
+      if (group.members.every((id) => this.windowsById.has(id))) {
+        this.groups.restore(group);
+      }
+    }
+    if (window.id === restoring.focus) {
+      window.focus();
+    }
+    if (restoring.windows.size === 0) {
+      this.restoring = null;
+    }
+  }
+
   public onOpen(window: WaylandWindow): void {
     this.windowsById.set(window.id, window);
     this.stack.add(window);
+    const kept = this.restoring?.windows.get(window.id);
+    if (kept) {
+      this.reopen(window, kept);
+      return;
+    }
     this.restack();
     this.mru = [window.id, ...this.mru.filter((id) => id !== window.id)];
     // A new window takes the keyboard, as on Windows. ShojiWM gives it only
@@ -487,6 +621,12 @@ export class FloatingWindowManager {
   }
 
   public onFirstCommit(window: WaylandWindow): void {
+    // A configuration reload brings the open windows back here, not through
+    // onOpen: without this they would be missing from the stack, Alt+Tab and
+    // the drop targets.
+    if (!this.windowsById.has(window.id)) {
+      this.onOpen(window);
+    }
     const appId = window.appId();
     if (appId) {
       this.appIds.set(window.id, appId);
@@ -509,7 +649,7 @@ export class FloatingWindowManager {
     window.scheduleAnimation({
       channel: OPEN_CHANNEL,
       rect: {
-        from: { x: 0, y: 24, width: 0, height: 0 },
+        from: { x: 0, y: 16, width: 0, height: 0 },
         to: { x: 0, y: 0, width: 0, height: 0 },
         duration: motion(TIMING.open),
         easing: OPEN_EASING,
