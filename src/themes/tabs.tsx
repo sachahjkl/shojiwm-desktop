@@ -206,7 +206,8 @@ const Tab = ({
           pointerEvents: "none",
         }}
       />
-      {/* the outline of a tab that is not shown; the sides of the shown one */}
+      {/* the outline of the shown tab: its top and its sides, open at its foot,
+          where it joins the window */}
       <Box
         style={{
           position: "absolute",
@@ -214,10 +215,10 @@ const Tab = ({
           top,
           width,
           height: plateHeight,
-          border:
-            shown || style.edge === CLEAR
-              ? undefined
-              : { px: 1, color: style.edge },
+          borderTop:
+            shown && style.edge !== CLEAR
+              ? { px: 1, color: style.edge }
+              : undefined,
           borderLeft:
             shown && style.edge !== CLEAR
               ? { px: 1, color: style.edge }
@@ -334,6 +335,8 @@ const Tab = ({
               options.onTabPress(window);
             }
           }}
+          // A middle click closes the tab, as in a browser.
+          onMiddleClick={() => window.close()}
           style={{
             position: "absolute",
             inset: 0,

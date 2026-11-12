@@ -63,15 +63,11 @@ export const KCOLOR = {
   /** A minimise or maximise button: clear until the pointer is on it. */
   buttonHover: "#ffffff1f",
   buttonPress: "#00000040",
-  /** A group's tabs: the shown one is a plate of the frame's tint, joined to the client, a bar of the accent on its top. */
-  tabActive: "#2c5d93ff",
-  tabActiveAway: "#29313aff",
-  tabAccent: "#6aa8f0ff",
-  tabAccentAway: "#5b6876ff",
-  /** The other tabs: recessed plates, darker than the caption. */
-  tabIdle: "#14263aff",
-  tabIdleAway: "#13181eff",
-  tabHover: "#1f3a58ff",
+  /** The shown tab: dark, as a window's content, to join it. */
+  tabShown: "#121a24ff",
+  tabShownAway: "#13171cff",
+  /** A tab that is not shown, under the pointer. */
+  tabHover: "#ffffff14",
   tabText: "#b9c6d4ff",
   tabTextAway: "#aab5c1ff",
   tabTextIdleAway: "#8d99a6ff",

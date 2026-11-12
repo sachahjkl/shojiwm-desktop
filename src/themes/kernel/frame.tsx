@@ -33,22 +33,24 @@ import { highlightShadow } from "../../highlight";
 
 /** The tabs of a group, on the caption plate. */
 export const KTAB: TabStyle = {
-  active: KCOLOR.tabActive,
-  activeAway: KCOLOR.tabActiveAway,
-  idle: KCOLOR.tabIdle,
-  idleAway: KCOLOR.tabIdleAway,
+  // The shown tab: a dark plate, as the window under it, outlined on its top
+  // and sides by the frame's outer line, open at its foot where it joins the
+  // window. The others: no plate, their title alone, a thin line between them.
+  active: KCOLOR.tabShown,
+  activeAway: KCOLOR.tabShownAway,
+  idle: "#00000000",
+  idleAway: "#00000000",
   hover: KCOLOR.tabHover,
-  // Flat plates, no outline: the accent line alone marks the shown tab, a
-  // thin line parts the others.
   separator: "#ffffff1f",
-  edge: "#00000000",
-  accent: KCOLOR.tabAccent,
-  accentAway: KCOLOR.tabAccentAway,
-  accentHeight: 2,
+  edge: KCOLOR.outline,
+  accent: "#00000000",
+  accentAway: "#00000000",
+  accentHeight: 0,
   light: "#00000000",
-  // the shown tab stands 2 px above the others and covers the dark line under the caption
+  // every tab as tall; the shown one reaches the window, over the line under
+  // the caption
   top: 3,
-  idleTop: 5,
+  idleTop: 3,
   idleBottom: 1,
   ghost: KCOLOR.tabGhost,
   ghostLine: KCOLOR.tabGhostLine,
