@@ -67,6 +67,19 @@ COMPOSITOR.env.apply({
 });
 COMPOSITOR.env.publish();
 
+// Num Lock when the session starts: as it was at the end of the last session
+// unless the session says otherwise (SHOJIWM_DESKTOP_NUM_LOCK: on, off,
+// restore). The keymap itself comes from XKB_DEFAULT_*, so only this is set.
+const numLockChoice = COMPOSITOR.env.get("SHOJIWM_DESKTOP_NUM_LOCK");
+const numLock: "on" | "off" | "restore" =
+  numLockChoice === "on" || numLockChoice === "off" ? numLockChoice : "restore";
+COMPOSITOR.input.configure((input) => {
+  input.global = {
+    ...input.global,
+    keyboard: { ...input.global?.keyboard, numLock },
+  };
+});
+
 // The shell (crates/shell): the taskbar, the Start menu, the desktop and the
 // rest of what is not a window frame.
 // A service: if the shell stops (a crash), the compositor starts it again.

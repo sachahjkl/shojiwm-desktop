@@ -156,6 +156,12 @@
           # other sessions keep their Qt settings.
           qt.enable = lib.mkEnableOption "Qt programs that follow the desktop's GTK theme (gtk3 platform theme, Fusion style) in this session" // {default = true;};
 
+          numLock = lib.mkOption {
+            type = lib.types.enum ["on" "off" "restore"];
+            default = "restore";
+            description = "Num Lock when the session starts: on, off, or as it was at the end of the last session (the compositor remembers it).";
+          };
+
           fileManagerEntry = lib.mkOption {
             type = lib.types.nullOr lib.types.str;
             default = "classeur.desktop";
@@ -245,6 +251,8 @@
               # to share, instead of its built-in picker. A full path: the
               # portal is a user service, with systemd's PATH.
               SHOJIWM_PORTAL_PICKER = "${lib.getExe packages.shell} pick-source";
+              # src/index.tsx gives it to the compositor's keyboard config.
+              SHOJIWM_DESKTOP_NUM_LOCK = cfg.numLock;
               QT_QPA_PLATFORMTHEME = lib.optionalString cfg.qt.enable "gtk3";
               QT_STYLE_OVERRIDE = lib.optionalString cfg.qt.enable "Fusion";
               # "none": the compositor binds no Print Screen key (src/index.tsx).

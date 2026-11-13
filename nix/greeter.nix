@@ -71,6 +71,7 @@
             kb_layout  = ${builtins.toJSON cfg.keyboard.layout},
             kb_variant = ${builtins.toJSON cfg.keyboard.variant},
             kb_options = ${builtins.toJSON cfg.keyboard.options},
+            numlock_by_default = ${lib.boolToString cfg.keyboard.numLock},
         },
     })
   '';
@@ -158,6 +159,13 @@ in {
         type = lib.types.str;
         default = config.services.xserver.xkb.options;
         defaultText = lib.literalExpression "config.services.xserver.xkb.options";
+      };
+      # The log-on screen knows no user yet, so it cannot restore one's state:
+      # on, as most keyboards' number pads are used for digits.
+      numLock = lib.mkOption {
+        type = lib.types.bool;
+        default = true;
+        description = "Whether Num Lock is on on the log-on screen.";
       };
     };
   };
