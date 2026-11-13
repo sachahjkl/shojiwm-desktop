@@ -113,6 +113,9 @@ export function tabAt(x: number, layout: StripLayout, count: number): number {
  */
 export const TABBED_PROGRAMS: ReadonlySet<string> = new Set([
   "com.mitchellh.ghostty",
+  // foot and footclient: their spawn-terminal key opens a tab, in the folder
+  // of the shell shown.
+  "foot",
 ]);
 
 /** A group as kept across a configuration reload. */

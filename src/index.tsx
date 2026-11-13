@@ -100,8 +100,8 @@ COMPOSITOR.process.service("shell", {
 // client's own title bar when it insists on one (Firefox, GTK header bars).
 // A client that speaks no decoration protocol (GTK 4, as File Roller) draws
 // its own, as xdg-shell has it: a frame would add a second title bar.
-// Ghostty asks for ours (window-decoration = server); its tabs are windows of
-// one group in our frame (src/groups.ts, TABBED_PROGRAMS).
+// Ghostty and foot ask for ours; their tabs are windows of one group in our
+// frame (src/groups.ts, TABBED_PROGRAMS).
 COMPOSITOR.window.decoration.configure((_window, context) => ({
   mode: context.canNegotiate
     ? (context.clientPreference ?? "server")
