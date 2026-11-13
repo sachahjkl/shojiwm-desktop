@@ -889,7 +889,7 @@ const SYSTEM_ICONS: &[(&str, &str)] = &[
 /// How many programs started last the launcher lists (0 for none).
 const LAUNCHER_COUNTS: &[i64] = &[0, 10, 15, 20, 25, 30, 40, 50];
 
-/// The taskbar, the desktop icons, the Start menu and the power button.
+/// The taskbar, the window tabs, the desktop icons, the Start menu and the power button.
 pub fn taskbar_page() -> Div {
     let check = |label: &'static str, get: fn(&Settings) -> bool, set: fn(&mut Settings, bool)| {
         cp_check(label, setting(get, set))
@@ -943,6 +943,24 @@ pub fn taskbar_page() -> Div {
             "Use Aero Peek to preview the desktop",
             |s| s.peek,
             |s, v| s.peek = v,
+        ))
+        .child(sub_heading("Window tabs"))
+        .child(check(
+            "Group any windows as tabs",
+            |s| s.tabs_everywhere,
+            |s, v| s.tabs_everywhere = v,
+        ))
+        .child(wide_note(
+            "Drag a window onto the title bar of another to put both in one frame, as tabs.",
+        ))
+        .child(check(
+            "Open new terminal windows as tabs",
+            |s| s.terminal_tabs,
+            |s, v| s.terminal_tabs = v,
+        ))
+        .child(wide_note(
+            "A new Ghostty or foot window opens as a tab of the one used last, and their \
+             windows can be dragged onto each other as tabs.",
         ))
         .child(sub_heading("Desktop icons"))
         .child(note("Show these on the desktop, beside the Recycle Bin:"))

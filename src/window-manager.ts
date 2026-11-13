@@ -35,7 +35,8 @@ import type {
 } from "shoji_wm/types";
 import { TIMING, motion } from "./motion";
 import {
-  TABBED_PROGRAMS,
+  canGroup,
+  opensAsTab,
   GROUPS,
   stripLayout,
   tabAt,
@@ -1527,6 +1528,16 @@ export class FloatingWindowManager {
         return null;
       }
       const members = this.groups.membersPeek(window.id);
+      if (
+        !canGroup(
+          this.appIdsOf(this.groups.membersPeek(dragged.id)),
+          this.appIdsOf(members),
+        )
+      ) {
+        // The caption seen does not take it: no ghost tab, and the window
+        // in front hides the captions behind it.
+        return null;
+      }
       const tabs = members.length;
       const scroll = this.groups.scrollPeek(window.id);
       const layout = stripLayout(
@@ -1565,15 +1576,26 @@ export class FloatingWindowManager {
   }
 
   /**
+   * The app id of each of `ids`, null when unknown: the one read while the
+   * window lived when its client has gone.
+   */
+  private appIdsOf(ids: readonly string[]): (string | null)[] {
+    return ids.map(
+      (id) => this.windowsById.get(id)?.appId() ?? this.appIds.get(id) ?? null,
+    );
+  }
+
+  /**
    * A new window of a program in TABBED_PROGRAMS opens as a tab of the
    * window used last, when that one is of the same program (its "new tab"
-   * key opened it). Started from elsewhere, it opens alone.
+   * key opened it) and the Control Panel lets it (`opensAsTab`). Started from
+   * elsewhere, it opens alone.
    */
   private openAsTab(window: WaylandWindow): void {
     const appId = window.appId();
     if (
       !appId ||
-      !TABBED_PROGRAMS.has(appId) ||
+      !opensAsTab(appId) ||
       window.isTransient() ||
       usesClientDecoration(window)
     ) {
@@ -1590,7 +1612,13 @@ export class FloatingWindowManager {
     ) {
       return;
     }
-    const tabs = this.groups.membersPeek(host.id).length;
+    const members = this.groups.membersPeek(host.id);
+    // The host can be in a group of other programs, made while "Group any
+    // windows as tabs" was on: terminal tabs alone do not grow it.
+    if (!canGroup([appId], this.appIdsOf(members))) {
+      return;
+    }
+    const tabs = members.length;
     this.dropInto(
       [window.id],
       { dragged: window.id, target: host.id, index: tabs },

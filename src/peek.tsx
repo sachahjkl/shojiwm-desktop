@@ -42,6 +42,7 @@ import {
 } from "./window-manager";
 import { setAnimationSpeed, setAnimations } from "./motion";
 import { setSquareCorners } from "./themes/aero/corners";
+import { setTabSettings } from "./groups";
 import { setTheme } from "./themes/choice";
 import { setPrograms } from "./programs";
 import { setGlassColour, setGlassLevel } from "./glass";
@@ -128,6 +129,10 @@ export function createPeek(manager: FloatingWindowManager): Peek {
         params !== null &&
         (params as { square?: unknown }).square === true,
     );
+    return true;
+  });
+  server.handle("tabs", (params) => {
+    setTabSettings(params);
     return true;
   });
   server.handle("programs", (params) => {

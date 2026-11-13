@@ -213,6 +213,8 @@ chmod -R u+w "$XDG_CONFIG_HOME/shojiwm"
 # The programs pinned by default (Thunar, Chromium, kitty) are not installed
 # here. Pin two that are, so the taskbar shows one pinned program with
 # windows open and one with none, and the Start menu has a pinned list. The
+# two terminals stay two windows (TERMINAL_TABS=true: one, as tabs), for the
+# detail crops that know where every edge is. The
 # shell reads the rest of its settings from their defaults. taskbarCompact is
 # written out for the step that switches it with sed.
 cat >"$XDG_CONFIG_HOME/shojiwm/settings.json" <<JSON
@@ -224,6 +226,7 @@ cat >"$XDG_CONFIG_HOME/shojiwm/settings.json" <<JSON
   "startPinned": ["foot.desktop", "footclient.desktop"],
   "taskbarPinned": ["foot.desktop", "footclient.desktop"],
   "taskbarCompact": true,
+  "terminalTabs": ${TERMINAL_TABS:-false},
   "trayHidden": ["CopyQ_copyq"]
 }
 JSON

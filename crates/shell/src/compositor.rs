@@ -1,6 +1,7 @@
 //! The shell's line to the compositor, for what the shell alone cannot do: Aero Peek, the
 //! show-desktop toggle that brings the windows back, the screens' modes, and the settings the
-//! window frames are drawn with (theme, corners, glass, animations, programs).
+//! window frames are drawn with and the windows behave by (theme, corners, glass, animations,
+//! programs, window tabs).
 //!
 //! `src/peek.tsx` listens and hands the path to the shell in `$SHOJIWM_DESKTOP_SOCKET` when it starts
 //! it. The wire format is ShojiWM's: one JSON object per line, `{ "method", "params" }`, and
@@ -198,6 +199,10 @@ pub fn share_settings() {
     share("corners", || {
         let square = settings().with(|s| s.square_corners);
         json!({ "square": square })
+    });
+    share("tabs", || {
+        let (everywhere, terminal) = settings().with(|s| (s.tabs_everywhere, s.terminal_tabs));
+        json!({ "everywhere": everywhere, "terminal": terminal })
     });
     crate::settings::follow_look();
     share("theme", || {

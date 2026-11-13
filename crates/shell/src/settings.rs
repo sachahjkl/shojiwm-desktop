@@ -48,6 +48,11 @@ pub struct Settings {
     pub glass_blur: i64,
     /// The square variant of Aero.
     pub square_corners: bool,
+    /// Any window dropped on another's caption joins it as a tab.
+    pub tabs_everywhere: bool,
+    /// New windows of a terminal that asks for tabs (the compositor's TABBED_PROGRAMS) open as
+    /// tabs of its window used last, and its windows can be dropped on each other as tabs.
+    pub terminal_tabs: bool,
     /// "aero" or "kernel".
     pub theme: String,
     /// The programs the desktop starts, by key (terminal, fileManager, taskManager, clipboard,
@@ -129,6 +134,8 @@ impl Default for Settings {
             taskbar_compact: true,
             glass_blur: 2,
             square_corners: false,
+            tabs_everywhere: false,
+            terminal_tabs: true,
             theme: "kernel".into(),
             programs: Map::new(),
             animation_speed: 1.0,
@@ -200,6 +207,8 @@ const KEYS: &[&str] = &[
     "taskbarCompact",
     "glassBlur",
     "squareCorners",
+    "tabsEverywhere",
+    "terminalTabs",
     "theme",
     "programs",
     "animationSpeed",
@@ -292,6 +301,8 @@ impl Settings {
         set!(taskbar_compact, b("taskbarCompact"));
         set!(glass_blur, i("glassBlur"));
         set!(square_corners, b("squareCorners"));
+        set!(tabs_everywhere, b("tabsEverywhere"));
+        set!(terminal_tabs, b("terminalTabs"));
         set!(theme, st("theme"));
         set!(programs, m("programs"));
         set!(animation_speed, f("animationSpeed"));
@@ -370,6 +381,8 @@ impl Settings {
             "taskbarCompact": self.taskbar_compact,
             "glassBlur": self.glass_blur,
             "squareCorners": self.square_corners,
+            "tabsEverywhere": self.tabs_everywhere,
+            "terminalTabs": self.terminal_tabs,
             "theme": self.theme,
             "programs": self.programs,
             "animationSpeed": self.animation_speed,

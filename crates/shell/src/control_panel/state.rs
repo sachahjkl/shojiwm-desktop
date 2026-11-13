@@ -196,6 +196,11 @@ pub const TASKS: &[Task] = &[
         words: "taskbar combine group buttons windows",
     },
     Task {
+        text: "Group windows as tabs",
+        page: "taskbar",
+        words: "tabs tabbed group windows frame terminal ghostty foot drag title bar",
+    },
+    Task {
         text: "Show labels on taskbar buttons",
         page: "taskbar",
         words: "taskbar labels compact icons text",

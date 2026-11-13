@@ -7,8 +7,9 @@
  * window draws a tab per window of its group.
  *
  * A window joins a group when another window is dropped on its caption, or a
- * tab on its tab strip. While such a drag is over a caption, `dropOn` says
- * where the window would go, and that caption shows a ghost tab there.
+ * tab on its tab strip, when `canGroup` allows it (the Control Panel's
+ * choices). While such a drag is over a caption, `dropOn` says where the
+ * window would go, and that caption shows a ghost tab there.
  *
  * This module keeps the model and the tab layout only. The window manager
  * moves windows, gives the keyboard and applies the states: it calls
@@ -109,7 +110,8 @@ export function tabAt(x: number, layout: StripLayout, count: number): number {
 
 /**
  * The programs whose new windows open as tabs of the window used last, when
- * it is theirs (FloatingWindowManager.openAsTab).
+ * it is theirs (FloatingWindowManager.openAsTab), while the Control Panel's
+ * "Open new terminal windows as tabs" is on (`opensAsTab`).
  */
 export const TABBED_PROGRAMS: ReadonlySet<string> = new Set([
   "com.mitchellh.ghostty",
@@ -117,6 +119,55 @@ export const TABBED_PROGRAMS: ReadonlySet<string> = new Set([
   // of the shell shown.
   "foot",
 ]);
+
+// The Control Panel's two choices, sent by the shell ("tabs", peek.tsx).
+// Until it has sent them, its defaults: the compositor runs before the shell.
+let tabsEverywhere = false;
+let terminalTabs = true;
+
+/** The shell's `{ everywhere, terminal }`; a field missing keeps its value. */
+export function setTabSettings(params: unknown): void {
+  if (typeof params !== "object" || params === null) {
+    return;
+  }
+  const choice = params as { everywhere?: unknown; terminal?: unknown };
+  if (typeof choice.everywhere === "boolean") {
+    tabsEverywhere = choice.everywhere;
+  }
+  if (typeof choice.terminal === "boolean") {
+    terminalTabs = choice.terminal;
+  }
+}
+
+/** Whether a new window of `appId` opens as a tab of its program's last window. */
+export function opensAsTab(appId: string | null | undefined): boolean {
+  return terminalTabs && !!appId && TABBED_PROGRAMS.has(appId);
+}
+
+/**
+ * Whether the windows of the programs `dragged` can join a group of the
+ * programs `target` (each list one app id per window, null when unknown).
+ * Every path that makes or grows a group asks this; detaching, switching and
+ * closing tabs do not, so a group made before a setting went off keeps
+ * working. With terminal tabs alone, a group holds one tabbed program only.
+ */
+export function canGroup(
+  dragged: readonly (string | null | undefined)[],
+  target: readonly (string | null | undefined)[],
+): boolean {
+  if (tabsEverywhere) {
+    return true;
+  }
+  if (!terminalTabs) {
+    return false;
+  }
+  const first = dragged[0];
+  return (
+    !!first &&
+    TABBED_PROGRAMS.has(first) &&
+    [...dragged, ...target].every((appId) => appId === first)
+  );
+}
 
 /** A group as kept across a configuration reload. */
 export interface GroupSnapshot {
