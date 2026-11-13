@@ -122,7 +122,7 @@ export const TABBED_PROGRAMS: ReadonlySet<string> = new Set([
 
 // The Control Panel's two choices, sent by the shell ("tabs", peek.tsx).
 // Until it has sent them, its defaults: the compositor runs before the shell.
-let tabsEverywhere = false;
+let tabsEverywhere = true;
 let terminalTabs = true;
 
 /** The shell's `{ everywhere, terminal }`; a field missing keeps its value. */

@@ -134,7 +134,7 @@ impl Default for Settings {
             taskbar_compact: true,
             glass_blur: 2,
             square_corners: false,
-            tabs_everywhere: false,
+            tabs_everywhere: true,
             terminal_tabs: true,
             theme: "kernel".into(),
             programs: Map::new(),

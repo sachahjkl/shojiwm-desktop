@@ -1528,6 +1528,14 @@ export class FloatingWindowManager {
         return null;
       }
       const members = this.groups.membersPeek(window.id);
+      // Never a window that draws its own title bar, whatever the Control
+      // Panel says: the tab strip would sit over or under that bar.
+      if (
+        !this.drawnByUs(this.groups.membersPeek(dragged.id)) ||
+        !this.drawnByUs(members)
+      ) {
+        return null;
+      }
       if (
         !canGroup(
           this.appIdsOf(this.groups.membersPeek(dragged.id)),
@@ -1576,6 +1584,17 @@ export class FloatingWindowManager {
   }
 
   /**
+   * Whether every window of `ids` is in our frame (server decorations): only
+   * those can be tabs. A window gone or not known yet counts as not.
+   */
+  private drawnByUs(ids: readonly string[]): boolean {
+    return ids.every((id) => {
+      const window = this.windowsById.get(id);
+      return window !== undefined && !usesClientDecoration(window);
+    });
+  }
+
+  /**
    * The app id of each of `ids`, null when unknown: the one read while the
    * window lived when its client has gone.
    */
@@ -1613,6 +1632,9 @@ export class FloatingWindowManager {
       return;
     }
     const members = this.groups.membersPeek(host.id);
+    if (!this.drawnByUs(members)) {
+      return;
+    }
     // The host can be in a group of other programs, made while "Group any
     // windows as tabs" was on: terminal tabs alone do not grow it.
     if (!canGroup([appId], this.appIdsOf(members))) {

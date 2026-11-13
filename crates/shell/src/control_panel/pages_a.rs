@@ -951,7 +951,9 @@ pub fn taskbar_page() -> Div {
             |s, v| s.tabs_everywhere = v,
         ))
         .child(wide_note(
-            "Drag a window onto the title bar of another to put both in one frame, as tabs.",
+            "Drag a window onto the title bar of another to put both in one frame, as tabs. \
+             Windows that draw their own title bar (as Firefox and GNOME programs do) never \
+             become tabs: their title bar would sit under the tabs.",
         ))
         .child(check(
             "Open new terminal windows as tabs",
@@ -959,8 +961,8 @@ pub fn taskbar_page() -> Div {
             |s, v| s.terminal_tabs = v,
         ))
         .child(wide_note(
-            "A new Ghostty or foot window opens as a tab of the one used last, and their \
-             windows can be dragged onto each other as tabs.",
+            "A new Ghostty or foot window opens as a tab of the one used last. With the \
+             choice above off, their windows can still be dragged onto each other as tabs.",
         ))
         .child(sub_heading("Desktop icons"))
         .child(note("Show these on the desktop, beside the Recycle Bin:"))
