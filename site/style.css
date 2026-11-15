@@ -102,6 +102,151 @@ html {
   scroll-padding-top: 5rem;
 }
 
+/* The desktop's Kernel scroll bar (crates/shell/src/ui/scroll.rs, flat as in the Kernel GTK
+   theme): a trough with a border, a square thumb with a border and three grip lines in its
+   middle, which turn blue under the pointer, and an arrow button at each end. In both looks and
+   in every scrolled box of the page. */
+:root {
+  --sb-trough: #f1f1f1;
+  --sb-trough-border: #d7d7d7;
+  --sb-thumb: #e8e8e8;
+  --sb-thumb-border: #9b9b9b;
+  --sb-thumb-hot: #d0ecfa;
+  --sb-thumb-pressed: #b4def4;
+  --sb-hot-border: #3c7fb1;
+  --sb-grip: #8e8e8e;
+  --sb-grip-hot: #3c7fb1;
+  --sb-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='7' height='4'%3E%3Cpath d='M0 4h7L3.5 0z' fill='%23606060'/%3E%3C/svg%3E");
+  --sb-arrow-down: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='7' height='4'%3E%3Cpath d='M0 0h7L3.5 4z' fill='%23606060'/%3E%3C/svg%3E");
+  --sb-arrow-left: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='7'%3E%3Cpath d='M4 0v7L0 3.5z' fill='%23606060'/%3E%3C/svg%3E");
+  --sb-arrow-right: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='7'%3E%3Cpath d='M0 0v7L4 3.5z' fill='%23606060'/%3E%3C/svg%3E");
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --sb-trough: #2c3743;
+    --sb-trough-border: #1b232b;
+    --sb-thumb: #43515e;
+    --sb-thumb-border: #56687a;
+    --sb-thumb-hot: #305273;
+    --sb-thumb-pressed: #355f85;
+    --sb-hot-border: #4b8fd0;
+    --sb-grip: #22303c;
+    --sb-grip-hot: #9cc8ee;
+    --sb-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='7' height='4'%3E%3Cpath d='M0 4h7L3.5 0z' fill='%23a7b4c0'/%3E%3C/svg%3E");
+    --sb-arrow-down: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='7' height='4'%3E%3Cpath d='M0 0h7L3.5 4z' fill='%23a7b4c0'/%3E%3C/svg%3E");
+    --sb-arrow-left: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='7'%3E%3Cpath d='M4 0v7L0 3.5z' fill='%23a7b4c0'/%3E%3C/svg%3E");
+    --sb-arrow-right: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='7'%3E%3Cpath d='M0 0v7L4 3.5z' fill='%23a7b4c0'/%3E%3C/svg%3E");
+  }
+}
+
+::-webkit-scrollbar {
+  width: 14px;
+  height: 14px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--sb-trough);
+}
+
+::-webkit-scrollbar-track:vertical {
+  border-left: 1px solid var(--sb-trough-border);
+}
+
+::-webkit-scrollbar-track:horizontal {
+  border-top: 1px solid var(--sb-trough-border);
+}
+
+::-webkit-scrollbar-corner {
+  background: var(--sb-trough);
+}
+
+/* Three lines of 1px with 1px between them: a 7x5 picture in the thumb's middle. */
+::-webkit-scrollbar-thumb {
+  --sb-grip-now: var(--sb-grip);
+  border: 1px solid var(--sb-thumb-border);
+  background-color: var(--sb-thumb);
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+::-webkit-scrollbar-thumb:vertical {
+  min-height: 24px;
+  background-size: 7px 5px;
+  background-image: linear-gradient(
+    to bottom,
+    var(--sb-grip-now) 0 1px,
+    transparent 1px 2px,
+    var(--sb-grip-now) 2px 3px,
+    transparent 3px 4px,
+    var(--sb-grip-now) 4px 5px
+  );
+}
+
+::-webkit-scrollbar-thumb:horizontal {
+  min-width: 24px;
+  background-size: 5px 7px;
+  background-image: linear-gradient(
+    to right,
+    var(--sb-grip-now) 0 1px,
+    transparent 1px 2px,
+    var(--sb-grip-now) 2px 3px,
+    transparent 3px 4px,
+    var(--sb-grip-now) 4px 5px
+  );
+}
+
+::-webkit-scrollbar-thumb:hover {
+  --sb-grip-now: var(--sb-grip-hot);
+  border-color: var(--sb-hot-border);
+  background-color: var(--sb-thumb-hot);
+}
+
+::-webkit-scrollbar-thumb:active {
+  --sb-grip-now: var(--sb-grip-hot);
+  border-color: var(--sb-hot-border);
+  background-color: var(--sb-thumb-pressed);
+}
+
+/* One arrow at each end, as the desktop's bar has. */
+::-webkit-scrollbar-button:single-button {
+  display: block;
+  width: 14px;
+  height: 14px;
+  background-color: var(--sb-trough);
+  background-image: var(--sb-arrow);
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+::-webkit-scrollbar-button:single-button:hover {
+  background-color: var(--sb-thumb-hot);
+}
+
+::-webkit-scrollbar-button:single-button:active {
+  background-color: var(--sb-thumb-pressed);
+}
+
+::-webkit-scrollbar-button:single-button:vertical:increment {
+  background-image: var(--sb-arrow-down);
+}
+
+::-webkit-scrollbar-button:single-button:horizontal:decrement {
+  background-image: var(--sb-arrow-left);
+}
+
+::-webkit-scrollbar-button:single-button:horizontal:increment {
+  background-image: var(--sb-arrow-right);
+}
+
+/* Firefox has no scroll bar parts to draw: the same colours, on its own bar. Only there, as
+   Chromium drops the parts above for a page that sets scrollbar-color. */
+@supports not selector(::-webkit-scrollbar) {
+  html {
+    scrollbar-color: var(--sb-thumb) var(--sb-trough);
+  }
+}
+
 body {
   margin: 0;
   background: var(--paper);
