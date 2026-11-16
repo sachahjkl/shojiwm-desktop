@@ -174,8 +174,10 @@ pub(super) fn follow(bar: Bar) {
                     old.close();
                 }
                 if !on {
-                    // The pointer may never have left a card.
+                    // The pointer may never have left a card, nor the frame: a layer that closes
+                    // calls no hover handler.
                     highlight(None);
+                    bar.preview_inside.set(false);
                     return;
                 }
                 let edge = if bar_at_top() {

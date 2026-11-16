@@ -669,6 +669,11 @@ fn task_button(bar: Bar, row: Row, key: String) -> Div {
         if inside && untrack(|| count.get()) > 0 {
             let bar = hover_bar.clone();
             let key = hover_key.clone();
+            // Thumbnails already open go over to this button at once, as on Windows 7.
+            if untrack(|| bar.preview.with(Option::is_some)) {
+                bar.show_preview(key, center());
+                return;
+            }
             let wait = Duration::from_millis(untrack(|| theme().thumb_delay) as u64);
             rest.set(Some(set_timeout(wait, move || {
                 bar.show_preview(key, center())

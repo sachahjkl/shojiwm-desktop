@@ -426,6 +426,16 @@ pub(super) fn follow_overflow(bar: Bar) {
         let open = bar.overflow_open;
         memo(move || open.get() && !hidden.with(Vec::is_empty))
     };
+    // The last hidden icon gone, the popover is closed for good: else the bar would count it
+    // as open, and it would open again by itself with the next icon hidden.
+    {
+        let overflow_open = bar.overflow_open;
+        effect(move || {
+            if hidden.with(Vec::is_empty) && overflow_open.get_untracked() {
+                overflow_open.set(false);
+            }
+        });
+    }
     // The popover's width as last laid out; until then, what its grid and padding make.
     let width = signal(0.0_f32);
     catcher(&bar, open);

@@ -617,6 +617,8 @@ export class FloatingWindowManager {
     }
     this.restack();
     this.mru = [window.id, ...this.mru.filter((id) => id !== window.id)];
+    // A new window ends Show desktop too.
+    this.hiddenByShowDesktop = [];
     // A new window takes the keyboard, as on Windows. ShojiWM gives it only
     // when the configuration asks for it here, while the window opens: the
     // first paint no longer decides.
@@ -1127,6 +1129,11 @@ export class FloatingWindowManager {
   public setMinimized(window: WaylandWindow, minimized: boolean): void {
     if (window.state[WIN_MINIMIZED]() === minimized) {
       return;
+    }
+    // A window brought back after Show desktop ends it, as on Windows 7: the
+    // next Show desktop minimises everything again.
+    if (!minimized) {
+      this.hiddenByShowDesktop = [];
     }
     window.state[WIN_MINIMIZED].set(minimized);
     window.scheduleAnimation({
