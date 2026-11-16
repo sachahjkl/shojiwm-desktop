@@ -5,3 +5,5 @@ __pycache__/
 portal/target/
 target/
 /assets/site/
+# The dev shell links it to the store: tracked, it breaks once the store path is collected.
+/.pre-commit-config.yaml
