@@ -66,11 +66,13 @@
           # (inspecteur, classeur, papier, cliche). Each package is installed;
           # null installs none and keeps only the command.
           programs = let
-            role = description: package: command:
+            # backgroundArguments: how the program starts to wait in the
+            # notification area for the session (null: it does not).
+            role = description: package: command: backgroundArguments:
               lib.mkOption {
                 inherit description;
                 default = {};
-                type = lib.types.submodule {
+                type = lib.types.submodule ({config, ...}: {
                   options = {
                     package = lib.mkOption {
                       type = lib.types.nullOr lib.types.package;
@@ -83,20 +85,35 @@
                       default = command;
                       description = "The command the desktop runs for this role.";
                     };
+                    background = lib.mkOption {
+                      type = lib.types.nullOr lib.types.str;
+                      default =
+                        if config.package == null || backgroundArguments == null
+                        then null
+                        else lib.concatStringsSep " " ([(lib.getExe config.package)] ++ lib.optional (backgroundArguments != "") backgroundArguments);
+                      defaultText = lib.literalMD "the package's program, started for the session where the role needs one running";
+                      description = ''
+                        A command that runs for the whole ShojiWM session (a user
+                        service of the graphical session, started again if it
+                        fails): the clipboard history must be there to keep what
+                        is copied, the screen capture to hold Print Screen. null
+                        starts nothing.
+                      '';
+                    };
                   };
-                };
+                });
               };
             ours = name: inputs.${name}.packages.${pkgs.stdenv.hostPlatform.system}.default or null;
           in {
-            taskManager = role "The task manager: Ctrl+Shift+Escape, the taskbar's and the clock's menus." (ours "inspecteur") "uwsm app -- inspecteur";
-            systemMonitor = role "What the CPU Meter gadget's button opens." null "uwsm app -- inspecteur --section performance";
-            fileManager = role "The file manager: the desktop's folders, Computer, the keys that open a folder." (ours "classeur") "uwsm app -- classeur";
-            clipboard = role "The clipboard history: Super+V." (ours "papier") "papier toggle";
+            taskManager = role "The task manager: Ctrl+Shift+Escape, the taskbar's and the clock's menus." (ours "inspecteur") "uwsm app -- inspecteur" null;
+            systemMonitor = role "What the CPU Meter gadget's button opens." null "uwsm app -- inspecteur --section performance" null;
+            fileManager = role "The file manager: the desktop's folders, Computer, the keys that open a folder." (ours "classeur") "uwsm app -- classeur" null;
+            clipboard = role "The clipboard history: Super+V." (ours "papier") "papier toggle" "--hidden";
             screenCapture = role ''
               The screen capture. An empty command: the program binds Print
               Screen itself (through the GlobalShortcuts portal), as cliche
               does, and the compositor leaves the key to it.
-            '' (ours "cliche") "";
+            '' (ours "cliche") "" "";
           };
 
           # The GTK theme of the session. The shell's light or dark switch
@@ -377,16 +394,38 @@
               # Once the session's variables are in, before
               # graphical-session.target (the programs that bind keys start
               # after it), it is started again if it runs.
-              services.portal-for-shojiwm = {
-                description = "xdg-desktop-portal again with the ShojiWM session's variables";
-                wantedBy = ["wayland-session@shojiwm.desktop.target"];
-                after = ["wayland-wm@shojiwm.desktop.service"];
-                before = ["graphical-session.target" "wayland-session@shojiwm.desktop.target"];
-                serviceConfig = {
-                  Type = "oneshot";
-                  ExecStart = "${pkgs.systemd}/bin/systemctl --user try-restart xdg-desktop-portal.service";
-                };
-              };
+              services =
+                {
+                  portal-for-shojiwm = {
+                    description = "xdg-desktop-portal again with the ShojiWM session's variables";
+                    wantedBy = ["wayland-session@shojiwm.desktop.target"];
+                    after = ["wayland-wm@shojiwm.desktop.service"];
+                    before = ["graphical-session.target" "wayland-session@shojiwm.desktop.target"];
+                    serviceConfig = {
+                      Type = "oneshot";
+                      ExecStart = "${pkgs.systemd}/bin/systemctl --user try-restart xdg-desktop-portal.service";
+                    };
+                  };
+                }
+                # The roles' programs that wait in the notification area for the
+                # session (programs.<role>.background), in this session only: the
+                # user manager starts graphical-session.target for the others too.
+                // lib.mapAttrs' (name: role:
+                  lib.nameValuePair "shojiwm-desktop-${name}" {
+                    description = "The ShojiWM desktop's ${name} program (${role.background})";
+                    wantedBy = ["graphical-session.target"];
+                    partOf = ["graphical-session.target"];
+                    after = ["graphical-session.target"];
+                    unitConfig.ConditionEnvironment = "XDG_CURRENT_DESKTOP=ShojiWM";
+                    # The session's PATH, not NixOS's minimal one: the programs
+                    # start others (a browser, an editor, wl-copy).
+                    environment.PATH = lib.mkForce null;
+                    serviceConfig = {
+                      ExecStart = role.background;
+                      Restart = "on-failure";
+                      RestartSec = 2;
+                    };
+                  }) (lib.filterAttrs (_: role: role.background != null) cfg.programs);
 
               tmpfiles.users = lib.genAttrs cfg.users (user: {
                 rules = map (name: "L+ ${config.users.users.${user}.home}/.config/shojiwm/${name} - - - - ${configSource}/${name}") [
