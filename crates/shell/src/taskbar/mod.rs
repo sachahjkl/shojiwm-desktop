@@ -6,7 +6,8 @@
 //! The bar owns the popups its buttons ask for (the thumbnails, the jump lists, its own menus,
 //! the tray's menus and its popover), so that one of each is open at a time. The menus are
 //! AntiWebUI popups, which take the pointer: a press outside closes them, so the QML shell's
-//! full-screen click-catcher is not needed.
+//! full-screen click-catcher is not needed. The thumbnails and the popover of hidden icons are
+//! layers of their own instead, which take no grab (see `thumbnails` and `tray`).
 //!
 //! With auto-hide, the bar slides to a 2 px line at the screen's edge and comes back when the
 //! pointer reaches it; windows then have the whole screen.
@@ -78,6 +79,9 @@ pub(crate) struct Bar {
     pub tray_drop: Signal<Option<(String, usize)>>,
     /// The row of the notification area's shown icons, to place a drop among them.
     pub tray_row: NodeRef,
+    /// The width of the bar's right-hand end, from the notification area's arrow to the
+    /// screen's edge: the popover of hidden icons is centred over the arrow from it.
+    pub tray_end: Signal<f32>,
     pub hovered: Signal<bool>,
     /// Up for a moment after the pointer left.
     pub staying: Signal<bool>,
@@ -99,6 +103,7 @@ impl Bar {
             tray_menu: signal(None),
             tray_drop: signal(None),
             tray_row: node_ref(),
+            tray_end: signal(0.0),
             hovered: signal(false),
             staying: signal(false),
             stay_timer: Rc::default(),
@@ -304,7 +309,8 @@ pub fn open(output: Output) {
         })
     };
     effect(move || layer.set_input_region(region.get()));
-    thumbnails::follow(bar);
+    thumbnails::follow(bar.clone());
+    tray::follow_overflow(bar);
 }
 
 /// Shows the desktop: through the compositor, which brings the windows back on a second
@@ -376,6 +382,10 @@ fn view(bar: Bar) -> Div {
         .on_pointer_down(move |e| {
             // A press on the bar closes the Start menu, as on Windows; the orb keeps its own.
             crate::start_menu::close();
+            // And the popover of hidden icons, which has no grab to close it: the notification
+            // area keeps its presses from here, so that the arrow toggles it and an icon can be
+            // dragged into it.
+            tray::close_overflow(&menu_bar);
             if e.button == Some(PointerButton::Secondary) {
                 let at = RectI::new(e.position.x as i32, e.rect.y, 1, e.rect.height);
                 menu_bar.toggle_context_menu("taskbar", at);
@@ -493,12 +503,16 @@ fn glass() -> Vec<Div> {
 
 /// The Start button, the buttons, and the right hand end.
 fn contents(bar: Bar) -> Div {
+    let end = bar.tray_end;
+    // At the bar's right edge, as the buttons take the rest: its width is how far the arrow,
+    // its first part, is from the screen's right edge.
     let status = div()
         .flex_none()
         .flex()
         .flex_row()
         .items_center()
         .dyn_style(|s| s.gap(theme().tray_gap))
+        .on_resized(move |width, _| end.set(width))
         .child(tray::area(bar.clone()))
         .child(keep_right_press(
             div()

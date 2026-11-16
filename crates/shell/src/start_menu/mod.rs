@@ -205,7 +205,7 @@ fn catcher_layer(output: &Output) {
 
 /// The part of a screen `width` by `height` that a bar `bar` high, at its top or its bottom,
 /// leaves.
-fn outside_bar(width: i32, height: i32, bar: i32, at_top: bool) -> RectI {
+pub(crate) fn outside_bar(width: i32, height: i32, bar: i32, at_top: bool) -> RectI {
     let bar = bar.clamp(0, height);
     RectI::new(0, if at_top { bar } else { 0 }, width, height - bar)
 }

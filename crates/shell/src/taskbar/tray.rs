@@ -9,15 +9,22 @@
 //!
 //! A left click activates an item, a right click opens its menu (its DBusMenu, in the theme's
 //! menus). An item that offers nothing but a menu opens it on either button.
+//!
+//! The popover is a layer of its own over the bar, not a popup: a popup holds a pointer grab,
+//! and the compositor starts a drag only from a press of the grab it is in, so no icon could
+//! be dragged out of a popup. With no grab, a catcher layer over the rest of the screen and the
+//! bar's own press close it.
 
 use super::Bar;
 use crate::settings::{Settings, change, motion, settings};
-use crate::theme::{Align, away_from_bar, item_radius, scheme, theme};
+use crate::theme::{bar_at_top, item_radius, scheme, theme};
 use crate::ui::{MenuLine, bar_menu_options, cp_link, popup_frame, popup_menu, shell_icon};
 use anti_webui::prelude::*;
 use anti_webui::shell::prelude::*;
 use anti_webui::shell::{MenuToggle, TrayMenuItem, TrayStatus};
+use std::cell::RefCell;
 use std::path::PathBuf;
+use std::rc::Rc;
 use std::time::Duration;
 
 /// The MIME type of a notification-area icon being dragged: its item id.
@@ -42,11 +49,15 @@ const ICON_ROOM: f32 = 8.0;
 const CELL_ROOM: f32 = 12.0;
 /// The faint copy of a dragged icon where it would land.
 const GHOST_OPACITY: f32 = 0.45;
-/// The popover's columns, at most.
-const COLUMNS: usize = 4;
+/// The popover's columns, at most: it grows sideways first, as Windows 7's does.
+const COLUMNS: usize = 6;
 /// The popover's padding and the room between its parts.
 const OVERFLOW_PAD: f32 = 8.0;
 const OVERFLOW_GAP: f32 = 6.0;
+/// The popover's border, on either side.
+const OVERFLOW_BORDER: f32 = 1.0;
+/// The room the popover leaves between itself and the arrow, past the theme's popup gap.
+const OVERFLOW_AWAY: f32 = 2.0;
 
 /// The programs' items, but blueman's: the shell draws its own Bluetooth icon and panel when
 /// there is an adapter, and its applet keeps running only for its pairing agent.
@@ -276,6 +287,16 @@ pub(super) fn area(bar: Bar) -> Div {
         .flex_row()
         .items_center()
         .gap(ROW_GAP)
+        // A press here does not reach the bar, which would close the popover: the arrow toggles
+        // it, and an icon pressed here may be dragged into it. (A drag starts from the icon's
+        // own gesture, which the stop does not touch.) A right press goes on: it opens the bar's
+        // menu, or an icon stops it for its own.
+        .on_pointer_down(|e| {
+            if e.button == Some(PointerButton::Primary) {
+                e.stop_propagation();
+                crate::start_menu::close();
+            }
+        })
         .child(arrow(bar.clone(), hidden))
         .child(icons)
 }
@@ -286,7 +307,7 @@ fn arrow(bar: Bar, hidden: Memo<Vec<TrayItem>>) -> Div {
     let over = signal(false);
     let dragging = memo(|| dragged::<TrayDrag>().is_some());
     let open = bar.overflow_open;
-    let click = bar.clone();
+    let click = bar;
     div()
         .relative()
         .flex_none()
@@ -336,70 +357,214 @@ fn arrow(bar: Bar, hidden: Memo<Vec<TrayItem>>) -> Div {
         // An icon dropped on the arrow goes to the popover.
         .drop_target::<TrayDrag>(hide_dropped)
         .on_drag_hover(move |inside| over.set(inside))
-        .child(overflow(bar, hidden))
 }
 
-/// The popover of hidden icons, over the arrow, as Windows 7 shows it: the icons in a grid, and
-/// "Customize..." under them, which opens the Control Panel's page for them.
-fn overflow(bar: Bar, hidden: Memo<Vec<TrayItem>>) -> Show {
-    let open = bar.overflow_open;
-    show(
-        move || open.get() && !hidden.with(Vec::is_empty),
+/// Closes the popover of hidden icons, unless one of its icons is being dragged: the drag
+/// comes back to it until it ends.
+pub(super) fn close_overflow(bar: &Bar) {
+    if untrack(dragged::<TrayDrag>).is_none() {
+        bar.overflow_open.set(false);
+    }
+}
+
+/// The side of a cell of the popover.
+fn cell() -> f32 {
+    theme().tray_icon_size + CELL_ROOM
+}
+
+/// The width of the popover's grid of `count` icons: rows of up to [`COLUMNS`], left to right.
+fn grid_width(count: usize) -> f32 {
+    count.clamp(1, COLUMNS) as f32 * cell()
+}
+
+/// Where the popover's layer goes: centred over the arrow, kept on the screen, as far from the
+/// arrow as a popup of the bar would be. The arrow stands in the middle of the bar's height.
+fn overflow_margin(bar: &Bar, width: f32) -> Margin {
+    let t = theme();
+    let arrow_height = t.tray_icon_size + ICON_ROOM;
+    let away =
+        ((t.taskbar_height + arrow_height) / 2.0 + t.popup_gap + OVERFLOW_AWAY).round() as i32;
+    let screen = bar
+        .output
+        .current()
+        .map_or(bar.output.logical_size.width, |o| o.logical_size.width) as f32;
+    let arrow_middle = bar.tray_end.get() - ARROW_WIDTH / 2.0;
+    let right = (arrow_middle - width / 2.0)
+        .clamp(0.0, (screen - width).max(0.0))
+        .round() as i32;
+    if bar_at_top() {
+        Margin {
+            top: away,
+            right,
+            ..Default::default()
+        }
+    } else {
+        Margin {
+            bottom: away,
+            right,
+            ..Default::default()
+        }
+    }
+}
+
+/// The edges the popover's layer is anchored to: the bar's, and the right, where the arrow's
+/// place is measured from.
+fn overflow_anchor() -> Anchor {
+    let edge = if bar_at_top() {
+        Anchor::TOP
+    } else {
+        Anchor::BOTTOM
+    };
+    edge | Anchor::RIGHT
+}
+
+/// Opens the popover's layer while the bar has it open, and keeps it over the arrow; keeps the
+/// catcher that closes it on a press anywhere else on the screen.
+pub(super) fn follow_overflow(bar: Bar) {
+    let hidden = memo(hidden_items);
+    let open = {
+        let open = bar.overflow_open;
+        memo(move || open.get() && !hidden.with(Vec::is_empty))
+    };
+    // The popover's width as last laid out; until then, what its grid and padding make.
+    let width = signal(0.0_f32);
+    catcher(&bar, open);
+    let handle: Rc<RefCell<Option<LayerHandle>>> = Rc::default();
+    {
+        let bar = bar.clone();
+        let handle = handle.clone();
+        effect(move || {
+            let on = open.get();
+            untrack(|| {
+                if let Some(old) = handle.borrow_mut().take() {
+                    old.close();
+                }
+                if !on {
+                    return;
+                }
+                let grid = grid_width(hidden.with(Vec::len));
+                width.set(grid + 2.0 * (OVERFLOW_PAD + OVERFLOW_BORDER));
+                // The keyboard on demand: Escape closes it once it has been clicked, and the
+                // window the user types in keeps the keyboard until then.
+                let options = LayerOptions::new()
+                    .layer(Layer::Top)
+                    .anchor(overflow_anchor())
+                    .exclusive(Exclusive::Ignore)
+                    .keyboard(Keyboard::OnDemand)
+                    .fit_content()
+                    .margin(overflow_margin(&bar, width.get_untracked()))
+                    .output(&bar.output)
+                    .namespace("shojiwm-desktop-tray-overflow");
+                let shown = bar.clone();
+                *handle.borrow_mut() =
+                    Some(open_layer(options, move || overflow(shown, hidden, width)));
+            });
+        });
+    }
+    effect(move || {
+        let (anchor, margin) = (overflow_anchor(), overflow_margin(&bar, width.get()));
+        if let Some(layer) = handle.borrow().as_ref() {
+            layer.set_anchor(anchor);
+            layer.set_margin(margin);
+        }
+    });
+}
+
+/// The surface over the screen but the bar that closes the popover on a press. It stays mapped
+/// and empties its input region while the popover is closed, as the Start menu's does: unmapping
+/// two layers in one frame ended the shell's Wayland connection. Opened before the popover's
+/// layer, it stands under it. A press on the bar reaches the bar, which closes the popover
+/// itself, and a drop on the bar is the bar's.
+fn catcher(bar: &Bar, open: Memo<bool>) {
+    let closer = bar.clone();
+    let layer = open_layer(
+        LayerOptions::new()
+            .layer(Layer::Top)
+            .anchor(Anchor::ALL)
+            .exclusive(Exclusive::Ignore)
+            .keyboard(Keyboard::None)
+            .input_region(InputRegion::Empty)
+            .output(&bar.output)
+            .namespace("no_blur"),
         move || {
-            let bar = bar.clone();
-            let customize = bar.clone();
-            let dismiss = bar.clone();
-            let (placement, gap) =
-                untrack(|| (away_from_bar(Align::Center), theme().popup_gap as i32 + 2));
-            popup()
-                .placement(placement)
-                .gap(gap)
-                .on_dismiss(move || dismiss.overflow_open.set(false))
-                .child(
-                    popup_frame()
-                        .p(OVERFLOW_PAD)
-                        .gap(OVERFLOW_GAP)
-                        .items_center()
-                        // An icon dragged here from the taskbar is hidden.
-                        .drop_target::<TrayDrag>(hide_dropped)
-                        .child(
-                            div()
-                                .flex()
-                                .flex_row()
-                                .flex_wrap()
-                                .dyn_style(move |s| {
-                                    let columns = hidden.with(Vec::len).clamp(1, COLUMNS) as f32;
-                                    s.w(columns * (theme().tray_icon_size + CELL_ROOM))
-                                })
-                                .child(for_each(
-                                    move || hidden.get(),
-                                    |item| item.key(),
-                                    move |item| {
-                                        div()
-                                            .flex_none()
-                                            .flex()
-                                            .items_center()
-                                            .justify_center()
-                                            .dyn_style(|s| {
-                                                s.size(theme().tray_icon_size + CELL_ROOM)
-                                            })
-                                            .child(tray_icon(bar.clone(), item, false))
-                                    },
-                                )),
-                        )
-                        .child(
-                            div()
-                                .self_stretch()
-                                .h(1.0)
-                                .dyn_style(|s| s.bg(scheme().menu_divider)),
-                        )
-                        .child(cp_link("Customize...", false, move || {
-                            customize.overflow_open.set(false);
-                            crate::control_panel::open_page("notifications");
-                        })),
-                )
+            div()
+                .size_full()
+                .on_pointer_down(move |_| close_overflow(&closer))
         },
-    )
+    );
+    let size = bar.output.logical_size;
+    effect(move || {
+        layer.set_input_region(if open.get() {
+            InputRegion::Rects(vec![crate::start_menu::outside_bar(
+                size.width,
+                size.height,
+                theme().taskbar_height as i32,
+                bar_at_top(),
+            )])
+        } else {
+            InputRegion::Empty
+        });
+    });
+}
+
+/// The popover of hidden icons, on its layer, as Windows 7 shows it: the icons in rows, and
+/// "Customize..." under them, which opens the Control Panel's page for them. Its width goes to
+/// `width`, to centre the layer over the arrow.
+fn overflow(bar: Bar, hidden: Memo<Vec<TrayItem>>, width: Signal<f32>) -> Div {
+    let customize = bar.clone();
+    let escape = bar.clone();
+    popup_frame()
+        .p(OVERFLOW_PAD)
+        .gap(OVERFLOW_GAP)
+        .items_center()
+        // The frame never narrows below its grid: a frame sized to its content could otherwise
+        // let the grid wrap down to a single column.
+        .dyn_style(move |s| {
+            s.min_w(grid_width(hidden.with(Vec::len)) + 2.0 * (OVERFLOW_PAD + OVERFLOW_BORDER))
+        })
+        .on_resized(move |w, _| width.set(w))
+        .on_key_down(move |e| {
+            if e.key == Key::Named(NamedKey::Escape) {
+                close_overflow(&escape);
+            }
+        })
+        // An icon dragged here from the taskbar is hidden.
+        .drop_target::<TrayDrag>(hide_dropped)
+        .child(
+            div()
+                .flex_none()
+                .flex()
+                .flex_row()
+                .flex_wrap()
+                // Exactly as wide as its columns, whatever the frame around it would give.
+                .dyn_style(move |s| {
+                    let w = grid_width(hidden.with(Vec::len));
+                    s.w(w).min_w(w).max_w(w)
+                })
+                .child(for_each(
+                    move || hidden.get(),
+                    |item| item.key(),
+                    move |item| {
+                        div()
+                            .flex_none()
+                            .flex()
+                            .items_center()
+                            .justify_center()
+                            .dyn_style(|s| s.size(cell()).min_w(cell()))
+                            .child(tray_icon(bar.clone(), item, false))
+                    },
+                )),
+        )
+        .child(
+            div()
+                .self_stretch()
+                .h(1.0)
+                .dyn_style(|s| s.bg(scheme().menu_divider)),
+        )
+        .child(cp_link("Customize...", false, move || {
+            customize.overflow_open.set(false);
+            crate::control_panel::open_page("notifications");
+        }))
 }
 
 /// The file of an icon named `name`, in the program's own folder or in the icon theme. It
