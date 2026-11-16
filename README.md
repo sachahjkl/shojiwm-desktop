@@ -84,7 +84,7 @@ or mocked up. `tools/screenshots.sh` makes them on a machine with no display:
 ShojiWM's nested backend inside an X server with no screen, Mesa rendering in
 software, and the keys and the pointer driven by xdotool. The Aero captures
 are in `assets/site/`, the Kernel captures under the same names in
-`assets/site/kernel/`. The [gallery](https://desktop.froment.software/gallery.html)
+`assets/site/kernel/`. The [gallery](https://desktop.froment.software/gallery/)
 shows them all.
 
 The pictures are not in the history of `main`: they are the branch `site-shots`, one commit
@@ -611,14 +611,17 @@ pre-commit hooks. `tools/dev.sh` runs ShojiWM nested in a window of the
 current session, with `src`, `assets` and `shell` of `~/.config/shojiwm`
 linked to the checkout.
 
-`tools/screenshots.sh` takes every picture. `THEME=kernel` runs the session
-in Kernel, `OUT` names the folder (`assets/site` by default), `UNTIL` stops
-after the picture of that name, `KEEP=1` keeps the session up at the end, and
-`SHOJIWM_FLAKE` points at another ShojiWM:
+`tools/screenshots.sh` takes every picture, as AVIF and as WebP, with sample
+data only (mock network, Bluetooth and sound devices, a made-up account and
+host name). `THEME=kernel` runs the session in Kernel and `THEME=all` runs
+Aero, then Kernel. `OUT` names the folder (`assets/site` by default,
+`assets/site/kernel` for Kernel), `UNTIL` stops after the picture of that
+name, `KEEP=1` keeps the session up at the end, and `SHOJIWM_FLAKE` points at
+another ShojiWM:
 
 ```sh
-tools/screenshots.sh
-THEME=kernel OUT=assets/site/kernel tools/screenshots.sh
+THEME=all tools/screenshots.sh
+THEME=kernel UNTIL=desktop tools/screenshots.sh
 ```
 
 ## Checks
@@ -716,5 +719,5 @@ folder and emblems over it for the libraries. Their licence is next to them.
 
 Windows, Windows 7 and Aero are trademarks of Microsoft Corporation. This
 project is not affiliated with, endorsed or sponsored by Microsoft. The
-[legal page](https://desktop.froment.software/legal.html) gives the details:
+[legal page](https://desktop.froment.software/legal/) gives the details:
 how it was made, the licences, trademarks and the site's privacy.

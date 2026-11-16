@@ -43,7 +43,8 @@ function currentLook() {
   return document.documentElement.dataset.look === "aero" ? "aero" : "kernel";
 }
 
-// Swaps every picture that has a Kernel version (data-kernel) to the look chosen.
+// Swaps every picture that has a Kernel version (data-kernel) to the look chosen. The AVIF
+// source of its <picture> goes first in the browser's choice, so it changes with it.
 function applyLook(look) {
   document.documentElement.dataset.look = look;
   try {
@@ -53,6 +54,10 @@ function applyLook(look) {
   }
   for (const img of document.querySelectorAll("img[data-kernel]")) {
     const src = look === "kernel" ? img.dataset.kernel : img.dataset.aero;
+    const avif = img.parentElement?.querySelector('source[type="image/avif"]');
+    if (avif) {
+      avif.setAttribute("srcset", src.replace(/\.webp$/, ".avif"));
+    }
     img.setAttribute("src", src);
     const link = img.closest("a");
     if (link) {
@@ -136,11 +141,17 @@ function createLightbox() {
     return text || link.querySelector("img")?.alt || "";
   }
 
+  // The file the page has loaded for a link's picture (the AVIF where the browser reads it),
+  // else the link's own file (WebP): the same picture at full size.
+  function sourceOf(link) {
+    return link.querySelector("img")?.currentSrc || link.href;
+  }
+
   function preload(i) {
     const link = links[(i + links.length) % links.length];
     if (link) {
       const img = new Image();
-      img.src = link.href;
+      img.src = sourceOf(link);
     }
   }
 
@@ -151,7 +162,7 @@ function createLightbox() {
     stage.classList.add("loading");
     image.onload = () => stage.classList.remove("loading");
     image.onerror = () => stage.classList.remove("loading");
-    image.src = link.href;
+    image.src = sourceOf(link);
     image.alt = thumbnail?.alt || "";
     image.classList.toggle("details", link.hasAttribute("data-pixelated"));
     caption.textContent = captionOf(link);

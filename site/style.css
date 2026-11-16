@@ -593,6 +593,12 @@ li + li {
   aspect-ratio: 1280 / 800;
 }
 
+/* The AVIF/WebP wrapper: the picture fills the link as the image did before it. */
+.shot picture {
+  display: block;
+  height: 100%;
+}
+
 .shot img {
   display: block;
   width: 100%;
