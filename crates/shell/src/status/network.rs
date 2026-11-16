@@ -346,8 +346,12 @@ fn panel() -> Div {
                 .max_h(LIST_HEIGHT)
                 .dyn_style(move |s| if wifi_on.get() { s } else { s.hidden() }),
         )
+        // In a box: hidden() hides a box, and a bare text stayed shown under the list.
         .child(
-            small_text("Wireless is turned off.", || scheme().text_muted)
+            div()
+                .child(small_text("Wireless is turned off.", || {
+                    scheme().text_muted
+                }))
                 .dyn_style(move |s| if wifi_on.get() { s.hidden() } else { s }),
         );
     popup_frame()
