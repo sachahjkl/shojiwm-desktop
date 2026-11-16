@@ -8,6 +8,7 @@
 //! The rectangle is the tab's, in logical pixels from the screen's top-left; the window is named
 //! by its `ext_foreign_toplevel_list` identifier.
 
+use crate::taskbar::live_picture;
 use crate::theme::theme;
 use crate::ui::{font, popup_frame};
 use anti_webui::prelude::*;
@@ -26,8 +27,6 @@ const TITLE_HEIGHT: f32 = 20.0;
 const GAP: f32 = 6.0;
 /// How long the pointer rests on a tab before its preview shows.
 const SHOW_AFTER: Duration = Duration::from_millis(400);
-/// How often the live picture is taken again.
-const LIVE_EVERY: Duration = Duration::from_millis(250);
 
 #[derive(Clone, Debug, PartialEq)]
 struct Request {
@@ -147,19 +146,8 @@ fn view(identifier: &str, scale: f32) -> Div {
         .find(|t| t.identifier.as_deref() == Some(identifier));
     let title = window.as_ref().map(|t| t.title.clone()).unwrap_or_default();
     let picture = window.map(|t| {
-        let shot = capture(
-            &t,
-            CaptureOptions::default()
-                .max_size(
-                    (PICTURE_WIDTH * scale).ceil() as u32,
-                    (PICTURE_HEIGHT * scale).ceil() as u32,
-                )
-                .every(LIVE_EVERY),
-        );
-        bitmap_view(move || shot.picture())
-            .w(PICTURE_WIDTH)
-            .h(PICTURE_HEIGHT)
-            .object_fit(ObjectFit::Contain)
+        let (_, picture) = live_picture(&t, PICTURE_WIDTH, PICTURE_HEIGHT, scale);
+        picture.w(PICTURE_WIDTH).h(PICTURE_HEIGHT)
     });
     popup_frame()
         .p(PADDING)

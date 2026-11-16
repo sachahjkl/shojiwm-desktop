@@ -137,7 +137,7 @@ fn local_x(e: &DropEvent) -> f32 {
 /// cut off rather than running under the clock.
 pub(super) fn buttons(bar: Bar) -> Div {
     let available = signal(0.0f32);
-    let groups = memo(crate::apps::window_groups);
+    let groups = bar.groups;
     let slots = memo(move || {
         let t = theme();
         let compact = settings().with(|s| s.taskbar_compact);
@@ -344,24 +344,28 @@ fn plate(kind: Plate, shown: impl Fn() -> bool + 'static) -> Div {
         })
 }
 
+/// The pointer is off the button `key`: the bar hides the thumbnails unless it reaches them or
+/// another button. Only this button's: the next one may already have said the pointer is on it.
+fn leave(bar: &Bar, key: &str) {
+    if bar
+        .button_inside
+        .with_untracked(|b| b.as_deref() == Some(key))
+    {
+        bar.button_inside.set(None);
+    }
+}
+
 fn task_button(bar: Bar, row: Row, key: String) -> Div {
     let index = {
         let key = key.clone();
         memo(move || row.positions.with(|p| p.get(&key).copied()))
     };
-    let group = {
-        let key = key.clone();
-        memo(move || {
-            let i = index.get()?;
-            row.groups.with(|g| {
-                g.get(i)
-                    .filter(|g| g.key == key)
-                    // An index not yet updated: a pass over the row finds it.
-                    .or_else(|| g.iter().find(|g| g.key == key))
-                    .cloned()
-            })
-        })
-    };
+    // `positions` is derived from `groups`: reading `groups` here brings it up to date first,
+    // so the index always points at this button's group.
+    let group = memo(move || {
+        let i = index.get()?;
+        row.groups.with(|g| g.get(i).cloned())
+    });
     let slot = memo(move || {
         index
             .get()
@@ -669,6 +673,7 @@ fn task_button(bar: Bar, row: Row, key: String) -> Div {
         if inside && untrack(|| count.get()) > 0 {
             let bar = hover_bar.clone();
             let key = hover_key.clone();
+            bar.button_inside.set(Some(key.clone()));
             // Thumbnails already open go over to this button at once, as on Windows 7.
             if untrack(|| bar.preview.with(Option::is_some)) {
                 bar.show_preview(key, center());
@@ -679,7 +684,7 @@ fn task_button(bar: Bar, row: Row, key: String) -> Div {
                 bar.show_preview(key, center())
             })));
         } else if !inside {
-            hover_bar.hide_preview_soon();
+            leave(&hover_bar, &hover_key);
         }
     };
     let grab_bar = bar.clone();
@@ -697,7 +702,8 @@ fn task_button(bar: Bar, row: Row, key: String) -> Div {
         match g.phase {
             GrabPhase::Start => {
                 grab_cancel();
-                grab_bar.hide_preview_soon();
+                // A dragged button shows no thumbnails: they go as if the pointer had left.
+                leave(&grab_bar, &grab_key);
                 reordering.set(true);
             }
             GrabPhase::Move => {
@@ -801,6 +807,8 @@ fn task_button(bar: Bar, row: Row, key: String) -> Div {
                     launch(entry);
                 }
             } else if g.windows.len() > 1 {
+                // The pointer came in while the program had no window, which did not count.
+                click_bar.button_inside.set(Some(click_key.clone()));
                 click_bar.show_preview(click_key.clone(), center());
             } else {
                 activate_group(&g);

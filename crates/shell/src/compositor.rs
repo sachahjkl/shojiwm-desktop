@@ -7,16 +7,22 @@
 //! it. The wire format is ShojiWM's: one JSON object per line, `{ "method", "params" }`, and
 //! `{ "id", "method", "params" }` for a request, answered by `{ "id", "result" }`.
 //!
-//! The line lives on a thread of its own and is tried again each second while it is down: the
-//! compositor can be reloaded, which closes its end. Each time it comes up, the settings the
-//! frames are drawn with are sent again.
+//! The line lives on a thread of its own. The compositor can be reloaded, which closes its end;
+//! until the shell sends its settings again, the new configuration runs with its defaults (window
+//! tabs everywhere, the default look). So the close is seen at once (the reader's end of file),
+//! the socket is tried again as soon as it is made again (inotify on its folder, with a short
+//! bounded backoff for a socket made but not listening yet), and the settings the frames are
+//! drawn with go first on the new line.
 
 use crate::settings::{animations, settings};
+use crate::watch::Watch;
 use anti_webui::prelude::*;
 use serde_json::{Value, json};
 use std::collections::HashMap;
 use std::io::{BufRead, BufReader, Write};
+use std::net::Shutdown;
 use std::os::unix::net::UnixStream;
+use std::path::Path;
 use std::sync::mpsc::{Receiver, Sender, channel};
 use std::sync::{Arc, Mutex, OnceLock};
 use std::time::Duration;
@@ -28,7 +34,15 @@ type Answer = Box<dyn FnOnce(Option<Value>) + Send>;
 enum Out {
     /// A message, and for a request its id and where its answer goes.
     Line(String, Option<(u64, Answer)>),
+    /// The compositor closed connection number `n`: told by its reader, so that the line's thread,
+    /// which waits on this channel, knows at once.
+    Closed(u64),
 }
+
+/// The first wait between two tries of the socket, doubled after each failure up to [`LAST_RETRY`].
+/// The socket's creation wakes the wait before its end.
+const FIRST_RETRY: Duration = Duration::from_millis(10);
+const LAST_RETRY: Duration = Duration::from_millis(250);
 
 struct Line {
     out: Sender<Out>,
@@ -68,24 +82,46 @@ fn line() -> &'static Arc<Line> {
 
 type Pending = Arc<Mutex<HashMap<u64, Answer>>>;
 
+/// Connects to `path`, trying again when the socket is made and after a short backoff.
+fn connect(path: &str, rx: &Receiver<Out>, watch: &mut Option<Watch>) -> UnixStream {
+    let mut retry = FIRST_RETRY;
+    loop {
+        if let Ok(stream) = UnixStream::connect(path) {
+            return stream;
+        }
+        // Messages sent while the line is down are lost, as the QML shell's were; the settings
+        // are sent again when it comes up.
+        while let Ok(out) = rx.try_recv() {
+            if let Out::Line(_, Some((_, answer))) = out {
+                answer(None);
+            }
+        }
+        // An event left from an earlier wait only costs one more try.
+        match watch.as_mut().map(|w| w.wait(Some(retry))) {
+            Some(Ok(_)) => {}
+            Some(Err(_)) => {
+                *watch = None;
+                std::thread::sleep(retry);
+            }
+            None => std::thread::sleep(retry),
+        }
+        retry = (retry * 2).min(LAST_RETRY);
+    }
+}
+
 fn run(path: String, rx: Receiver<Out>, line: Arc<Line>) {
     let pending: Pending = Arc::default();
+    let mut watch = Watch::files(&[Path::new(&path)]).ok();
+    let mut connection: u64 = 0;
     loop {
-        let Ok(stream) = UnixStream::connect(&path) else {
-            std::thread::sleep(Duration::from_secs(1));
-            // Messages sent while the line is down are lost, as the QML shell's were; the
-            // settings are sent again when it comes up.
-            while let Ok(Out::Line(_, request)) = rx.try_recv() {
-                if let Some((_, answer)) = request {
-                    answer(None);
-                }
-            }
-            continue;
-        };
+        let stream = connect(&path, &rx, &mut watch);
+        connection += 1;
         line.up.set(true);
         let reader = stream.try_clone().ok();
         let answers = pending.clone();
-        let reading = reader.map(|r| {
+        let closed = line.out.clone();
+        let this = connection;
+        if let Some(r) = reader {
             std::thread::spawn(move || {
                 for text in BufReader::new(r).lines() {
                     let Ok(text) = text else { break };
@@ -104,8 +140,9 @@ fn run(path: String, rx: Receiver<Out>, line: Arc<Line>) {
                         answer(v.get("result").cloned());
                     }
                 }
-            })
-        });
+                let _ = closed.send(Out::Closed(this));
+            });
+        }
         let mut writer = stream;
         let resend: Vec<String> = line
             .latest
@@ -116,7 +153,7 @@ fn run(path: String, rx: Receiver<Out>, line: Arc<Line>) {
             .collect();
         let mut ok = resend.iter().all(|m| writeln!(writer, "{m}").is_ok());
         while ok {
-            match rx.recv_timeout(Duration::from_millis(500)) {
+            match rx.recv() {
                 Ok(Out::Line(text, request)) => {
                     if let Some((id, answer)) = request {
                         pending.lock().unwrap().insert(id, answer);
@@ -125,17 +162,17 @@ fn run(path: String, rx: Receiver<Out>, line: Arc<Line>) {
                         .and_then(|_| writer.flush())
                         .is_ok();
                 }
-                Err(std::sync::mpsc::RecvTimeoutError::Timeout) => {
-                    ok = reading.as_ref().is_some_and(|r| !r.is_finished());
-                }
-                Err(std::sync::mpsc::RecvTimeoutError::Disconnected) => return,
+                // A close of an earlier connection, told after this one came up, is no news.
+                Ok(Out::Closed(n)) => ok = n != connection,
+                Err(_) => return,
             }
         }
         line.up.set(false);
+        // Ends the reader when a write failed first.
+        let _ = writer.shutdown(Shutdown::Both);
         for (_, answer) in pending.lock().unwrap().drain() {
             answer(None);
         }
-        std::thread::sleep(Duration::from_secs(1));
     }
 }
 

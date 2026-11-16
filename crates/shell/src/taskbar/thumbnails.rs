@@ -9,7 +9,7 @@
 
 use super::Bar;
 use super::media::{player_program, transport};
-use crate::apps::{icon_for, title_of, window_groups};
+use crate::apps::{icon_for, title_of};
 use crate::settings::motion;
 use crate::theme::{bar_at_top, corner, scheme, theme};
 use crate::ui::{font, popup_frame, shell_icon, vertical_gradient};
@@ -17,12 +17,37 @@ use anti_webui::prelude::*;
 use anti_webui::shell::prelude::*;
 use serde_json::json;
 use std::cell::RefCell;
-use std::collections::HashMap;
 use std::rc::Rc;
 use std::time::Duration;
 
 /// How often a live picture is taken again while the window changes.
 const LIVE_EVERY: Duration = Duration::from_millis(250);
+
+/// A live picture of `window`, whole inside a box of `width` × `height` logical pixels on a
+/// screen of `scale`, for the taskbar's thumbnails and the preview of a window's tab. The capture
+/// comes back with it, for a caller that shows something else until the first picture.
+pub(crate) fn live_picture(
+    window: &Toplevel,
+    width: f32,
+    height: f32,
+    scale: f32,
+) -> (Capture, BitmapView) {
+    let scale = scale.max(1.0);
+    let shot = capture(
+        window,
+        CaptureOptions::default()
+            .max_size(
+                (width * scale).ceil() as u32,
+                (height * scale).ceil() as u32,
+            )
+            .every(LIVE_EVERY),
+    );
+    let picture = {
+        let shot = shot.clone();
+        bitmap_view(move || shot.picture()).object_fit(ObjectFit::Contain)
+    };
+    (shot, picture)
+}
 /// The close button of a card: red under the pointer, as the caption's.
 const CLOSE_BORDER: Color = rgb(0x7a1a12);
 const CLOSE_TOP: Color = rgb(0xf08a7c);
@@ -66,11 +91,13 @@ fn shown_windows(bar: &Bar) -> Vec<Toplevel> {
     let Some(key) = bar.preview.with(|p| p.as_ref().map(|p| p.key.clone())) else {
         return Vec::new();
     };
-    window_groups()
-        .into_iter()
-        .find(|g| g.key == key)
-        .map(|g| g.windows)
-        .unwrap_or_default()
+    bar.groups.with(|groups| {
+        groups
+            .iter()
+            .find(|g| g.key == key)
+            .map(|g| g.windows.clone())
+            .unwrap_or_default()
+    })
 }
 
 /// The width of the frame around `count` cards (a fraction while one folds).
@@ -264,18 +291,15 @@ fn view(bar: Bar, place: Place) -> Div {
             s.py(t.thumb_padding)
                 .px(t.thumb_padding - t.thumb_gap / 2.0)
         })
-        .on_hover(move |inside| {
-            hover.preview_inside.set(inside);
-            if !inside {
-                hover.hide_preview_soon();
-            }
-        })
+        // The bar hides the thumbnails when the pointer has left them: a timer here would go
+        // with this layer.
+        .on_hover(move |inside| hover.preview_inside.set(inside))
         .child(
             div().flex().flex_row().child(
                 for_each(
                     move || windows.get(),
                     |t| t.id(),
-                    move |t| card(cards.clone(), t),
+                    move |t| card(cards.clone(), windows, t),
                 )
                 .exit(|s| s.opacity(0.0).w(0.0))
                 .transition(fold()),
@@ -294,66 +318,23 @@ fn view(bar: Bar, place: Place) -> Div {
         .child(frame.dyn_style(move |s| s.ml(place.offset(&room))))
 }
 
-thread_local! {
-    static WINDOWS_BY_ID: std::cell::Cell<Option<Memo<HashMap<u64, Toplevel>>>> =
-        const { std::cell::Cell::new(None) };
-}
-
-/// Every window by its id, made once for all the cards: a card finds its own without a pass
-/// over the list. Reading it tracks it.
-fn windows_by_id() -> Memo<HashMap<u64, Toplevel>> {
-    WINDOWS_BY_ID.with(|cell| {
-        cell.get().unwrap_or_else(|| {
-            let (m, _) = untrack(|| {
-                create_root(|| {
-                    memo(|| {
-                        toplevels()
-                            .all()
-                            .into_iter()
-                            .map(|t| (t.id(), t))
-                            .collect::<HashMap<_, _>>()
-                    })
-                })
-            });
-            cell.set(Some(m));
-            m
-        })
-    })
-}
-
-/// One window: its title and close button, and its picture, which shows it on a click.
-fn card(bar: Bar, window: Toplevel) -> Div {
+/// One window of `shown`: its title and close button, and its picture, which shows it on a
+/// click.
+fn card(bar: Bar, shown: Memo<Vec<Toplevel>>, window: Toplevel) -> Div {
     let id = window.id();
-    let by_id = windows_by_id();
-    let now = memo(move || by_id.with(|all| all.get(&id).cloned()));
+    // The window as it is now (its title, its identifier), from the few of its group.
+    let now = memo(move || shown.with(|all| all.iter().find(|t| t.id() == id).cloned()));
     let card_ui = Interaction::new();
     let frame_ui = Interaction::new();
     let close_ui = Interaction::new();
     let t = untrack(theme);
-    let shot = t.live_thumbnails.then(|| {
-        let scale = bar.output.scale.max(1.0);
-        let (w, h) = (
-            (t.thumb_width * scale).ceil() as u32,
-            (t.thumb_height * scale).ceil() as u32,
-        );
-        capture(
-            &window,
-            CaptureOptions::default().max_size(w, h).every(LIVE_EVERY),
-        )
-    });
-    let has_picture = {
-        let shot = shot.clone();
-        memo(move || shot.as_ref().is_some_and(|s| s.picture().is_some()))
-    };
-    let picture = shot.map(|shot| {
-        bitmap_view(move || shot.picture())
-            .absolute()
-            .left(1.0)
-            .top(1.0)
-            .right(1.0)
-            .bottom(1.0)
-            .object_fit(ObjectFit::Contain)
-    });
+    let live = t
+        .live_thumbnails
+        .then(|| live_picture(&window, t.thumb_width, t.thumb_height, bar.output.scale));
+    let shot = live.as_ref().map(|(shot, _)| shot.clone());
+    let has_picture = memo(move || shot.as_ref().is_some_and(|s| s.picture().is_some()));
+    let picture =
+        live.map(|(_, picture)| picture.absolute().left(1.0).top(1.0).right(1.0).bottom(1.0));
     let close = move || {
         if let Some(w) = untrack(|| now.get()) {
             let _ = w.close();

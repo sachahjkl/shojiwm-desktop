@@ -76,45 +76,21 @@ pub fn watch(program: &str, args: &[&str], on_line: impl Fn(String) + 'static) {
 }
 
 /// Calls `on_change` on the interface thread after something is made, removed, renamed or written
-/// in the folder `dir` (not below it). The folder is watched with inotify on a thread of its own,
-/// without a process; changes that come together are told once.
+/// in the folder `dir` (not below it). The folder is watched with inotify ([`crate::watch`]) on a
+/// thread of its own, without a process; changes that come together are told once.
 pub fn watch_folder(dir: &std::path::Path, on_change: impl Fn() + 'static) {
     let to_ui = ui_channel(move |()| on_change());
     let dir = dir.to_owned();
     let _ = std::thread::Builder::new()
         .name("watch folder".into())
         .spawn(move || {
-            use std::os::unix::ffi::OsStrExt;
-            let Ok(path) = std::ffi::CString::new(dir.as_os_str().as_bytes()) else {
+            let Ok(mut watch) = crate::watch::Watch::folders(&[&dir]) else {
                 return;
             };
-            // SAFETY: plain calls on a descriptor this thread owns; `buf` outlives each read.
-            unsafe {
-                let fd = libc::inotify_init1(libc::IN_CLOEXEC);
-                if fd < 0 {
-                    return;
-                }
-                let mask = libc::IN_CREATE
-                    | libc::IN_DELETE
-                    | libc::IN_MOVED_FROM
-                    | libc::IN_MOVED_TO
-                    | libc::IN_CLOSE_WRITE
-                    | libc::IN_ATTRIB
-                    | libc::IN_DELETE_SELF
-                    | libc::IN_MOVE_SELF;
-                if libc::inotify_add_watch(fd, path.as_ptr(), mask) < 0 {
-                    libc::close(fd);
-                    return;
-                }
-                let mut buf = [0u8; 4096];
-                loop {
-                    let n = libc::read(fd, buf.as_mut_ptr().cast(), buf.len());
-                    if n <= 0 {
-                        break;
-                    }
+            while let Ok(changed) = watch.wait(None) {
+                if changed {
                     to_ui.send(());
                 }
-                libc::close(fd);
             }
         });
 }

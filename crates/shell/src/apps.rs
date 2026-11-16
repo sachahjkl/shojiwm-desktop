@@ -36,8 +36,6 @@ pub const FREQUENT_LIMIT: usize = 7;
 const RECENT_PROGRAMS_KEPT: usize = 100;
 /// How many recent files a jump list shows.
 pub const RECENT_LIMIT: usize = 8;
-/// How often `recently-used.xbel` and `user-dirs.dirs` are looked at for changes.
-const WATCH: Duration = Duration::from_secs(2);
 
 /// The MIME type of a program dragged in the shell (from the Start menu, the launcher, the
 /// desktop): its `.desktop` file name. A drag of a program carries
@@ -1437,35 +1435,47 @@ fn modified(path: &Path) -> Option<SystemTime> {
 }
 
 /// A thread that reads `recently-used.xbel` and `user-dirs.dirs` now, then again each time their
-/// time changes, looked at every [`WATCH`], and posts what it parsed.
+/// time changes, and posts what it parsed. It wakes on inotify ([`crate::watch`]); the time tells
+/// a real change from an event of another file of the folder.
 fn watch_files(to_ui: UiSender<Watched>) {
     let _ = std::thread::Builder::new()
         .name("shell file watch".into())
         .spawn(move || {
             let (recent, dirs) = (recent_xbel_path(), user_dirs_path());
+            // Set before the first read, so that a change during that read is not missed.
+            let mut watch = crate::watch::Watch::files(&[&recent, &dirs]);
             // `None` until looked at once, then the time seen.
             let mut seen_recent: Option<Option<SystemTime>> = None;
             let mut seen_dirs: Option<Option<SystemTime>> = None;
             loop {
-                let now = modified(&recent);
-                if seen_recent != Some(now) {
-                    seen_recent = Some(now);
-                    let text = std::fs::read_to_string(&recent).ok();
+                if let Some(text) = reread(&recent, &mut seen_recent) {
                     to_ui.send(Watched::RecentFiles(
                         text.map(parse_recent).unwrap_or_default(),
                     ));
                 }
-                let now = modified(&dirs);
-                if seen_dirs != Some(now) {
-                    seen_dirs = Some(now);
-                    let text = std::fs::read_to_string(&dirs).ok();
+                if let Some(text) = reread(&dirs, &mut seen_dirs) {
                     to_ui.send(Watched::UserDirs(
                         text.map(parse_user_dirs).unwrap_or_default(),
                     ));
                 }
-                std::thread::sleep(WATCH);
+                // Without inotify (out of watches), the values of the start stay.
+                let Ok(watch) = watch.as_mut() else { return };
+                if watch.wait(None).is_err() {
+                    return;
+                }
             }
         });
+}
+
+/// The text of `path` (`None` inside when it cannot be read) if its time is not `seen`, which
+/// then becomes its time.
+fn reread(path: &Path, seen: &mut Option<Option<SystemTime>>) -> Option<Option<String>> {
+    let now = modified(path);
+    if *seen == Some(now) {
+        return None;
+    }
+    *seen = Some(now);
+    Some(std::fs::read_to_string(path).ok())
 }
 
 #[cfg(test)]

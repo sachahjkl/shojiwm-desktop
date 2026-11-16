@@ -122,6 +122,8 @@ export const TABBED_PROGRAMS: ReadonlySet<string> = new Set([
 
 // The Control Panel's two choices, sent by the shell ("tabs", peek.tsx).
 // Until it has sent them, its defaults: the compositor runs before the shell.
+// A configuration reload sets them again at once from the last ones received
+// (peek.tsx, SETTINGS_STATE), before the shell reconnects.
 let tabsEverywhere = true;
 let terminalTabs = true;
 

@@ -12,7 +12,7 @@
 //!
 //! The popover is a layer of its own over the bar, not a popup: a popup holds a pointer grab,
 //! and the compositor starts a drag only from a press of the grab it is in, so no icon could
-//! be dragged out of a popup. With no grab, a catcher layer over the rest of the screen and the
+//! be dragged out of a popup. With no grab, the screen's catcher ([`crate::catcher`]) and the
 //! bar's own press close it.
 
 use super::Bar;
@@ -418,8 +418,8 @@ fn overflow_anchor() -> Anchor {
     edge | Anchor::RIGHT
 }
 
-/// Opens the popover's layer while the bar has it open, and keeps it over the arrow; keeps the
-/// catcher that closes it on a press anywhere else on the screen.
+/// Opens the popover's layer while the bar has it open, and keeps it over the arrow; the
+/// screen's catcher closes it on a press anywhere else on the screen.
 pub(super) fn follow_overflow(bar: Bar) {
     let hidden = memo(hidden_items);
     let open = {
@@ -438,7 +438,17 @@ pub(super) fn follow_overflow(bar: Bar) {
     }
     // The popover's width as last laid out; until then, what its grid and padding make.
     let width = signal(0.0_f32);
-    catcher(&bar, open);
+    // The screen's catcher closes it on a press elsewhere. It opens with the Start menu's layers,
+    // after this, but the popover's layer opens later still, over it.
+    {
+        let name = bar.name.clone();
+        let closer = bar.clone();
+        crate::catcher::claim(
+            move |screen| screen == name && open.get(),
+            crate::catcher::Reach::OutsideBar,
+            move || close_overflow(&closer),
+        );
+    }
     let handle: Rc<RefCell<Option<LayerHandle>>> = Rc::default();
     {
         let bar = bar.clone();
@@ -480,50 +490,19 @@ pub(super) fn follow_overflow(bar: Bar) {
     });
 }
 
-/// The surface over the screen but the bar that closes the popover on a press. It stays mapped
-/// and empties its input region while the popover is closed, as the Start menu's does: unmapping
-/// two layers in one frame ended the shell's Wayland connection. Opened before the popover's
-/// layer, it stands under it. A press on the bar reaches the bar, which closes the popover
-/// itself, and a drop on the bar is the bar's.
-fn catcher(bar: &Bar, open: Memo<bool>) {
-    let closer = bar.clone();
-    let layer = open_layer(
-        LayerOptions::new()
-            .layer(Layer::Top)
-            .anchor(Anchor::ALL)
-            .exclusive(Exclusive::Ignore)
-            .keyboard(Keyboard::None)
-            .input_region(InputRegion::Empty)
-            .output(&bar.output)
-            .namespace("no_blur"),
-        move || {
-            div()
-                .size_full()
-                .on_pointer_down(move |_| close_overflow(&closer))
-        },
-    );
-    let size = bar.output.logical_size;
-    effect(move || {
-        layer.set_input_region(if open.get() {
-            InputRegion::Rects(vec![crate::start_menu::outside_bar(
-                size.width,
-                size.height,
-                theme().taskbar_height as i32,
-                bar_at_top(),
-            )])
-        } else {
-            InputRegion::Empty
-        });
-    });
-}
-
 /// The popover of hidden icons, on its layer, as Windows 7 shows it: the icons in rows, and
 /// "Customize..." under them, which opens the Control Panel's page for them. Its width goes to
 /// `width`, to centre the layer over the arrow.
 fn overflow(bar: Bar, hidden: Memo<Vec<TrayItem>>, width: Signal<f32>) -> Div {
     let customize = bar.clone();
     let escape = bar.clone();
+    // With no node focused, AntiWebUI gives the keys to the layer's own root, above this frame:
+    // focused, the frame gets Escape once the layer has the keyboard.
+    let frame = node_ref();
+    request_frame(move |_| frame.focus());
     popup_frame()
+        .node_ref(frame)
+        .focusable()
         .p(OVERFLOW_PAD)
         .gap(OVERFLOW_GAP)
         .items_center()

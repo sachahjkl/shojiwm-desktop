@@ -7,11 +7,11 @@
 //!
 //! The layers:
 //!
-//! - the click-catcher of each screen, under the menu and over everything else, which closes the
-//!   menu. It stays mapped and empties its input region while the menu is closed, as the QML
-//!   shell's did: unmapping two layers in one frame ended the shell's Wayland connection;
-//! - the menu of each screen, on the bar's side, also mapped at all times and empty while closed;
-//! - while the launcher is open: a catcher over its screen, and the launcher's panel.
+//! - the click-catcher of each screen ([`crate::catcher`]), under the menu and over the bar,
+//!   which closes the menu and the launcher;
+//! - the menu of each screen, on the bar's side, mapped at all times and empty while closed: as
+//!   the catcher, it is not unmapped;
+//! - while the launcher is open: the launcher's panel.
 
 mod launcher;
 mod menu;
@@ -132,13 +132,28 @@ fn menu_height() -> f32 {
     }
 }
 
-/// The IPC targets, the menu's layers on each screen and the launcher's. Call once, from the
-/// root, after the taskbars have opened: the click-catcher must stand over the bar.
+/// The IPC targets, the click-catcher and the menu's layers on each screen, and the launcher's.
+/// Call once, from the root, after the taskbars have opened: the click-catcher must stand over
+/// the bar.
 pub fn install() {
     let _ = state();
     ipc();
+    // Every screen's catcher: a press on any screen closes the menu. The bar closes it itself on
+    // a press on it (taskbar::close_start_menu_from_bar).
+    crate::catcher::claim(
+        |_| state().open_on.with(|o| !o.is_empty()),
+        crate::catcher::Reach::OutsideBar,
+        close,
+    );
+    // The launcher is not the bar's: a press on the bar closes it too.
+    crate::catcher::claim(
+        |screen| state().launcher_open.get() && launcher_output().is_some_and(|o| o.name == screen),
+        crate::catcher::Reach::Screen,
+        close_launcher,
+    );
     for_each_output(|output| {
-        catcher_layer(&output);
+        // Before the menu's layer, to stand under it.
+        crate::catcher::open(&output);
         menu_layer(output);
     });
     launcher_layers();
@@ -169,45 +184,6 @@ fn ipc() {
         }
         Ok(String::new())
     });
-}
-
-/// The surface the size of the screen that closes the menu on a press anywhere outside it. It
-/// asks for no blur: there is nothing of it to see.
-fn catcher_layer(output: &Output) {
-    let layer = open_layer(
-        LayerOptions::new()
-            .layer(Layer::Top)
-            .anchor(Anchor::ALL)
-            .exclusive(Exclusive::Ignore)
-            .keyboard(Keyboard::None)
-            .input_region(InputRegion::Empty)
-            .output(output)
-            .namespace("no_blur"),
-        || div().size_full().on_pointer_down(|_| close()),
-    );
-    // The screen but the bar: a press on the bar reaches it (a button, a jump list), and the bar
-    // closes the menu itself (taskbar::close_start_menu_from_bar).
-    let size = output.logical_size;
-    effect(move || {
-        let open = state().open_on.with(|o| !o.is_empty());
-        layer.set_input_region(if open {
-            InputRegion::Rects(vec![outside_bar(
-                size.width,
-                size.height,
-                theme().taskbar_height as i32,
-                bar_at_top(),
-            )])
-        } else {
-            InputRegion::Empty
-        });
-    });
-}
-
-/// The part of a screen `width` by `height` that a bar `bar` high, at its top or its bottom,
-/// leaves.
-pub(crate) fn outside_bar(width: i32, height: i32, bar: i32, at_top: bool) -> RectI {
-    let bar = bar.clamp(0, height);
-    RectI::new(0, if at_top { bar } else { 0 }, width, height - bar)
 }
 
 /// Where the menu's layer stands: on the bar's side, by the screen's left edge, past the bar.
@@ -285,35 +261,27 @@ fn menu_layer(output: Output) {
     });
 }
 
-/// The launcher's two layers, while it is open: a catcher over its screen without glass, and
-/// the panel, as tall as it ever gets so that it is not resized at each key.
+/// The screen of the launcher: the one asked for, else the first. Reading it tracks it.
+fn launcher_output() -> Option<Output> {
+    let wanted = state().launcher_screen.get();
+    let all = outputs();
+    all.iter()
+        .find(|o| o.name == wanted)
+        .or_else(|| all.first())
+        .cloned()
+}
+
+/// The launcher's panel while it is open, as tall as it ever gets so that it is not resized at
+/// each key. Its screen's catcher closes it on a press outside it.
 fn launcher_layers() {
     effect(|| {
-        let s = state();
-        if !s.launcher_open.get() {
+        if !state().launcher_open.get() {
             return;
         }
-        let wanted = s.launcher_screen.get();
-        let all = outputs();
-        let Some(output) = all
-            .iter()
-            .find(|o| o.name == wanted)
-            .or_else(|| all.first())
-            .cloned()
-        else {
+        let Some(output) = launcher_output() else {
             return;
         };
         untrack(move || {
-            open_layer(
-                LayerOptions::new()
-                    .layer(Layer::Overlay)
-                    .anchor(Anchor::ALL)
-                    .exclusive(Exclusive::Ignore)
-                    .keyboard(Keyboard::None)
-                    .output(&output)
-                    .namespace("no_blur"),
-                || div().size_full().on_pointer_down(|_| close_launcher()),
-            );
             let screen_height = output.logical_size.height as f32;
             let top = (screen_height * 0.18).round() as i32;
             let (width, height) = launcher::window_size(&output);
@@ -339,22 +307,4 @@ fn launcher_layers() {
             });
         });
     });
-}
-
-#[cfg(test)]
-mod tests {
-    use super::outside_bar;
-    use anti_webui::prelude::RectI;
-
-    #[test]
-    fn the_catcher_leaves_the_bar() {
-        assert_eq!(
-            outside_bar(1920, 1080, 40, false),
-            RectI::new(0, 0, 1920, 1040)
-        );
-        assert_eq!(
-            outside_bar(1920, 1080, 40, true),
-            RectI::new(0, 40, 1920, 1040)
-        );
-    }
 }

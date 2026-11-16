@@ -84,11 +84,54 @@ export function createPeek(manager: FloatingWindowManager): Peek {
   const peeking = signal(false);
 
   const server = createIpcServer(SHELL_SOCKET);
+
+  /**
+   * The settings the shell sent last, by method, kept through a reload. The
+   * shell sends them again only once it has reconnected to the new socket:
+   * until then the new configuration would draw with its defaults (the
+   * theme, the glass, the corners, tabs everywhere) whatever the user chose.
+   */
+  const settings = new Map<string, unknown>();
+  const SETTINGS_STATE = "desktop.shell-settings";
+  /** Every handler of a setting, to replay the kept ones on a reload. */
+  const appliers = new Map<string, (params: unknown) => unknown>();
+  function setting(method: string, apply: (params: unknown) => unknown): void {
+    appliers.set(method, apply);
+    server.handle(method, (params) => {
+      // Last received last: replayed in the order the shell sent them.
+      settings.delete(method);
+      settings.set(method, params);
+      return apply(params);
+    });
+  }
+
   // On a reload, close the socket and the shell's connection: the shell
   // then connects to the new configuration's socket and sends its settings
   // again. Left open, the old connection was read by no one.
-  COMPOSITOR.onDisable(() => server.close());
+  COMPOSITOR.onDisable((event) => {
+    if (event.isReloading) {
+      event.persist(SETTINGS_STATE, [...settings]);
+    }
+    server.close();
+  });
+  COMPOSITOR.onEnable((event) => {
+    if (!event.isReloading) {
+      return;
+    }
+    const kept = event.restore<[string, unknown][]>(SETTINGS_STATE) ?? [];
+    for (const [method, params] of kept) {
+      const apply = appliers.get(method);
+      // A setting the new configuration no longer knows is dropped; one the
+      // shell has sent again already is newer.
+      if (apply && !settings.has(method)) {
+        settings.set(method, params);
+        apply(params);
+      }
+    }
+  });
   // The GlobalShortcuts portal service binds its keys over this socket too.
+  // Not a kept setting: a key bound before the service reconnects would
+  // swallow its presses with no one to tell.
   serveShortcuts(server);
   server.handle("peek", (params) => {
     const on =
@@ -98,7 +141,7 @@ export function createPeek(manager: FloatingWindowManager): Peek {
     peeking.set(on);
     return on;
   });
-  server.handle("animations", (params) => {
+  setting("animations", (params) => {
     const on =
       typeof params !== "object" ||
       params === null ||
@@ -110,7 +153,7 @@ export function createPeek(manager: FloatingWindowManager): Peek {
     }
     return on;
   });
-  server.handle("glass", (params) => {
+  setting("glass", (params) => {
     const value =
       typeof params === "object" && params !== null
         ? Number((params as { level?: unknown }).level)
@@ -122,8 +165,8 @@ export function createPeek(manager: FloatingWindowManager): Peek {
     }
     return true;
   });
-  server.handle("theme", (params) => setTheme(params));
-  server.handle("corners", (params) => {
+  setting("theme", (params) => setTheme(params));
+  setting("corners", (params) => {
     setSquareCorners(
       typeof params === "object" &&
         params !== null &&
@@ -131,16 +174,16 @@ export function createPeek(manager: FloatingWindowManager): Peek {
     );
     return true;
   });
-  server.handle("tabs", (params) => {
+  setting("tabs", (params) => {
     setTabSettings(params);
     return true;
   });
-  server.handle("programs", (params) => {
+  setting("programs", (params) => {
     setPrograms(params);
     return true;
   });
   server.handle("screens", () => screens());
-  server.handle("display", (params) => {
+  setting("display", (params) => {
     const choices =
       typeof params === "object" && params !== null
         ? (params as { choices?: unknown }).choices

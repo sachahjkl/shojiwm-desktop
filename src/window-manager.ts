@@ -12,6 +12,7 @@
 
 import {
   COMPOSITOR,
+  createPollForEachOutput,
   createWindowStack,
   createWindowState,
   cubicBezier,
@@ -84,6 +85,12 @@ const CLOSE_EASING = cubicBezier(0.4, 0, 1, 1);
 const MINIMIZE_CHANNEL = "desktop.minimize";
 const OPEN_CHANNEL = "desktop.open";
 const CLOSE_CHANNEL = "desktop.close";
+/**
+ * How long after a configuration reload, on an output's frames, a kept
+ * window may take to come back. The first frame brings them all; the margin
+ * covers a slow first frame.
+ */
+const RESTORE_GRACE_MS = 500;
 
 /** Two presses this close together, in milliseconds, are a double click. */
 const DOUBLE_CLICK_MS = 400;
@@ -252,9 +259,9 @@ export class FloatingWindowManager {
   private frontToBack: WaylandWindow[] = [];
   private readonly windowsById = new Map<string, WaylandWindow>();
   /**
-   * After a configuration reload, until every window kept has come back:
-   * their states, the stack and the groups as they were, and the window that
-   * had the keyboard.
+   * After a configuration reload, until every window kept has come back or
+   * the first frames after it have passed (endRestoring): their states, the
+   * stack and the groups as they were, and the window that had the keyboard.
    */
   private restoring: {
     windows: Map<string, WindowSnapshot>;
@@ -540,7 +547,9 @@ export class FloatingWindowManager {
         fullscreen: state[WIN_FULLSCREEN].peek(),
       };
     }
-    // Windows kept by the reload before, not back yet, stay kept.
+    // A reload within the first frames of the one before: its kept windows
+    // not back yet may still come, so they stay kept. `restoring` ends a few
+    // frames after a reload, so this never carries a gone window for long.
     for (const [id, kept] of this.restoring?.windows ?? []) {
       windows[id] ??= kept;
     }
@@ -567,6 +576,44 @@ export class FloatingWindowManager {
       groups: kept.groups,
       focus: kept.mru[0] ?? null,
     };
+    // ShojiWM marks every live window dirty on a reload and evaluates them
+    // all in the next frame's window pass, which is when onFirstCommit
+    // brings each one back. A kept window still missing after a few frames
+    // closed during the reload: no event will ever name it. The poll is
+    // frame-driven, so with the screens asleep it waits with the windows.
+    const poll = createPollForEachOutput(
+      RESTORE_GRACE_MS,
+      () => {
+        poll.cancel();
+        this.endRestoring();
+      },
+      { dirty: "none" },
+    );
+  }
+
+  /**
+   * Ends a reload's restore: the kept windows not back are gone. Their
+   * groups re-form with the windows left, and they leave the MRU and the
+   * windows Show desktop put away.
+   */
+  private endRestoring(): void {
+    const restoring = this.restoring;
+    if (!restoring) {
+      return;
+    }
+    this.restoring = null;
+    if (restoring.windows.size === 0) {
+      return;
+    }
+    for (const group of restoring.groups) {
+      const members = group.members.filter((id) => this.windowsById.has(id));
+      if (members.length < group.members.length) {
+        this.groups.restore({ ...group, members });
+      }
+    }
+    const open = (id: string) => this.windowsById.has(id);
+    this.mru = this.mru.filter(open);
+    this.hiddenByShowDesktop = this.hiddenByShowDesktop.filter(open);
   }
 
   /** A window open before the configuration reloaded comes back as it was. */

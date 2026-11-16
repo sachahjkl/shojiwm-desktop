@@ -5,6 +5,7 @@ use super::gradient::vertical_gradient;
 use super::{clock_font, font};
 use crate::theme::{is_kernel, item_radius, popup_radius, scheme, theme};
 use anti_webui::prelude::*;
+use std::cell::Cell;
 use std::rc::Rc;
 use std::time::Duration;
 
@@ -99,7 +100,12 @@ pub fn tooltip_frame() -> Div {
 /// `target` with a tooltip of `label` (lines split by `\n`): it shows once the pointer has
 /// rested on `target` for 600 ms, `placement` from it, and goes when the pointer leaves or
 /// presses. For something on the bar, give `away_from_bar(Align::Center)`. The text is read
-/// each time it shows; an empty text shows nothing. `target` is what comes back.
+/// while the pointer rests there: an empty text opens no popup, and a text that turns empty
+/// closes it. `target` is what comes back.
+///
+/// Not AntiWebUI's `tooltip_with`: it opens its popup whatever the look builds, so an empty
+/// label still left an empty surface over the target (a running program's taskbar button,
+/// between the button and its thumbnails).
 pub fn shell_tooltip(
     target: Div,
     placement: Placement,
@@ -107,19 +113,45 @@ pub fn shell_tooltip(
 ) -> Div {
     let label: Rc<dyn Fn() -> String> = Rc::new(label);
     let gap = untrack(|| theme().popup_gap) as i32 + 2;
-    let options = TooltipOptions::new()
-        .show_after(TOOLTIP_WAIT)
-        .on_focus(false)
-        .placement(placement)
-        .gap(gap);
-    tooltip_with(target, options, move |_| {
+    let resting = signal(false);
+    let wait: Rc<Cell<Option<Timeout>>> = Rc::default();
+    let stop = {
+        let wait = wait.clone();
         move || {
-            let label = label.clone();
-            // No text, no tooltip: the frame would show empty.
-            if untrack(|| label()).is_empty() {
-                return div();
+            if let Some(t) = wait.take() {
+                t.cancel();
             }
-            tooltip_frame().child(text(move || label()))
         }
-    })
+    };
+    let hover_stop = stop.clone();
+    let shown = label.clone();
+    target
+        .on_hover(move |inside| {
+            hover_stop();
+            if inside {
+                wait.set(Some(set_timeout(TOOLTIP_WAIT, move || resting.set(true))));
+            } else {
+                resting.set(false);
+            }
+        })
+        .on_pointer_down(move |_| {
+            stop();
+            resting.set(false);
+        })
+        // The label is only read while the pointer rests: no work for the other targets.
+        .child(show(
+            move || resting.get() && !label().is_empty(),
+            move || {
+                let label = shown.clone();
+                popup()
+                    .kind(PopupKind::Tooltip)
+                    .placement(placement)
+                    .gap(gap)
+                    .child(
+                        tooltip_frame()
+                            .child(text(move || label()))
+                            .access(|a| a.role(Role::Tooltip)),
+                    )
+            },
+        ))
 }

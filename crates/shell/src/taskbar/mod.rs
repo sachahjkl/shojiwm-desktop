@@ -21,7 +21,9 @@ mod thumbnails;
 mod tray;
 
 pub use media::media_controls;
+pub(crate) use thumbnails::live_picture;
 
+use crate::apps::WindowGroup;
 use crate::settings::{change, motion, settings};
 use crate::theme::{Align, away_from_bar, bar_at_top, parse_hex, theme};
 use crate::ui::{MenuLine, popup_menu, vertical_gradient};
@@ -62,10 +64,13 @@ pub(crate) struct Bar {
     /// The screen's connector name.
     pub name: String,
     pub output: Output,
+    /// The buttons' groups: one list the row of buttons and the thumbnails read.
+    pub groups: Memo<Vec<WindowGroup>>,
     pub preview: Signal<Option<Preview>>,
     /// The pointer is over the thumbnails.
     pub preview_inside: Signal<bool>,
-    hide_timer: Rc<Cell<Option<Timeout>>>,
+    /// The key of the button with windows the pointer is on.
+    pub button_inside: Signal<Option<String>>,
     /// The key of the button whose jump list is open.
     pub jump_list: Signal<Option<String>>,
     /// The bar's own right-click menu open ("taskbar" or "desktop"), and where.
@@ -93,9 +98,10 @@ impl Bar {
         Self {
             name: output.name.clone(),
             output,
+            groups: memo(crate::apps::window_groups),
             preview: signal(None),
             preview_inside: signal(false),
-            hide_timer: Rc::default(),
+            button_inside: signal(None),
             jump_list: signal(None),
             context_menu: signal(None),
             context_at: signal(None),
@@ -146,29 +152,28 @@ impl Bar {
 
     /// Shows the thumbnails of the button `key`, whose middle is at `center`.
     pub fn show_preview(&self, key: String, center: f32) {
-        if let Some(t) = self.hide_timer.take() {
-            t.cancel();
-        }
         self.jump_list.set(None);
         self.tray_menu.set(None);
         self.preview.set(Some(Preview { key, center }));
     }
 
-    /// Hides the thumbnails in a moment, unless the pointer is in them by then.
-    pub fn hide_preview_soon(&self) {
-        if let Some(t) = self.hide_timer.take() {
-            t.cancel();
-        }
+    /// Hides the thumbnails once the pointer has been off both the buttons and the thumbnails
+    /// for [`HIDE_THUMBNAILS`], so that it can cross the gap between them. Call it from the
+    /// bar's own layer: its timer lives there, not in the thumbnails' layer, which closes.
+    fn hide_preview_when_left(&self) {
         let bar = self.clone();
-        let timer = set_timeout(HIDE_THUMBNAILS, move || {
-            bar.hide_timer.set(None);
-            if bar.preview_inside.get_untracked() {
-                bar.hide_preview_soon();
-            } else {
-                bar.preview.set(None);
+        let left = memo(move || {
+            bar.preview.with(Option::is_some)
+                && bar.button_inside.with(Option::is_none)
+                && !bar.preview_inside.get()
+        });
+        let preview = self.preview;
+        effect(move || {
+            if left.get() {
+                // Owned by this run: the pointer coming back reruns the effect and cancels it.
+                set_timeout(HIDE_THUMBNAILS, move || preview.set(None));
             }
         });
-        self.hide_timer.set(Some(timer));
     }
 
     /// Opens the bar's menu `key` at `at` (window physical pixels), or closes it when it is the
@@ -354,6 +359,7 @@ fn keep_right_press(target: Div) -> Div {
 }
 
 fn view(bar: Bar) -> Div {
+    bar.hide_preview_when_left();
     let raised = {
         let bar = bar.clone();
         memo(move || bar.raised())

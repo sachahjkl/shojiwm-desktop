@@ -11,6 +11,7 @@
 mod account;
 mod apps;
 mod background;
+mod catcher;
 mod compositor;
 mod control_panel;
 mod desktop;
@@ -33,6 +34,7 @@ mod taskbar;
 mod theme;
 mod theme_values;
 mod ui;
+mod watch;
 
 use anti_webui::shell::prelude::*;
 

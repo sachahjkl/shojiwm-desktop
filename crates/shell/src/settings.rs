@@ -14,7 +14,7 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::rc::Rc;
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::mpsc::{Receiver, RecvTimeoutError, Sender, SyncSender, channel, sync_channel};
+use std::sync::mpsc::{Receiver, Sender, SyncSender, channel, sync_channel};
 use std::sync::{Mutex, OnceLock};
 use std::time::{Duration, SystemTime};
 
@@ -508,9 +508,6 @@ fn saving() -> bool {
     SAVING.load(Ordering::Relaxed)
 }
 
-/// How often the keeper looks at the file for changes made by hand or by another program.
-const WATCH: Duration = Duration::from_millis(700);
-
 /// How long the settings must stay still before the keeper writes them: not on each step of a
 /// slider.
 const SETTLE: Duration = Duration::from_millis(300);
@@ -521,6 +518,8 @@ enum Request {
     Save(Box<Settings>),
     /// Where the keeper sends what the file says after another program changed it.
     Listen(UiSender<Settings>),
+    /// The file may have changed: told by the watch thread ([`watch_file`]).
+    Changed,
 }
 
 struct Keeper {
@@ -536,9 +535,10 @@ fn keeper() -> &'static Keeper {
     KEEPER.get_or_init(|| {
         let (requests, inbox) = channel();
         let (first_sender, first) = sync_channel(1);
+        let to_keeper = requests.clone();
         std::thread::Builder::new()
             .name("settings".into())
-            .spawn(move || keep_file(inbox, first_sender))
+            .spawn(move || keep_file(inbox, to_keeper, first_sender))
             .expect("the settings thread starts");
         Keeper {
             requests,
@@ -554,8 +554,13 @@ pub fn preload() {
     keeper();
 }
 
-/// The keeper's thread: the first read, then the writes and the watch.
-fn keep_file(inbox: Receiver<Request>, first: SyncSender<Option<Settings>>) {
+/// The keeper's thread: the first read, then the writes and the watch. `to_self` is its own inbox,
+/// for the watch thread it starts with the first listener.
+fn keep_file(
+    inbox: Receiver<Request>,
+    to_self: Sender<Request>,
+    first: SyncSender<Option<Settings>>,
+) {
     let path = path();
     let loaded = load(&path);
     // The first run: write the defaults out, so there is a file to edit.
@@ -566,23 +571,32 @@ fn keep_file(inbox: Receiver<Request>, first: SyncSender<Option<Settings>>) {
     let _ = first.send(loaded);
     drop(first);
     let mut listeners: Vec<UiSender<Settings>> = Vec::new();
-    loop {
-        match inbox.recv_timeout(WATCH) {
-            Ok(Request::Listen(listener)) => listeners.push(listener),
-            Ok(Request::Save(next)) => {
+    let mut to_self = Some(to_self);
+    let mut listen = |listener, listeners: &mut Vec<UiSender<Settings>>| {
+        listeners.push(listener);
+        // Nobody to tell before the first listener: the file is not watched until then.
+        if let Some(to_self) = to_self.take() {
+            watch_file(path.clone(), to_self.clone());
+            // A change between the first read and the watch: looked at once now.
+            let _ = to_self.send(Request::Changed);
+        }
+    };
+    while let Ok(request) = inbox.recv() {
+        match request {
+            Request::Listen(listener) => listen(listener, &mut listeners),
+            Request::Save(next) => {
                 let next = *next;
                 let (latest, more) = settle(next, &inbox, SETTLE);
-                listeners.extend(more);
+                for listener in more {
+                    listen(listener, &mut listeners);
+                }
                 if saving() {
                     save(&path, &latest);
-                    // Its own write: not read back.
+                    // Its own write: its events come after this, and the time tells them apart.
                     seen = modified(&path);
                 }
             }
-            Err(RecvTimeoutError::Timeout) => {
-                if listeners.is_empty() {
-                    continue;
-                }
+            Request::Changed => {
                 let now = modified(&path);
                 if now.is_some() && now != seen {
                     seen = now;
@@ -593,9 +607,25 @@ fn keep_file(inbox: Receiver<Request>, first: SyncSender<Option<Settings>>) {
                     }
                 }
             }
-            Err(RecvTimeoutError::Disconnected) => return,
         }
     }
+}
+
+/// A thread that tells the keeper each time the file may have changed: inotify on its folder
+/// ([`crate::watch`]), which follows the file through the renames that replace it.
+fn watch_file(path: PathBuf, keeper: Sender<Request>) {
+    let _ = std::thread::Builder::new()
+        .name("settings watch".into())
+        .spawn(move || {
+            let Ok(mut watch) = crate::watch::Watch::files(&[&path]) else {
+                return;
+            };
+            while let Ok(changed) = watch.wait(None) {
+                if changed && keeper.send(Request::Changed).is_err() {
+                    return;
+                }
+            }
+        });
 }
 
 /// The last of the saves that come until none comes for `quiet`: the one to write. The listeners
@@ -610,6 +640,8 @@ fn settle(
         match inbox.recv_timeout(quiet) {
             Ok(Request::Save(next)) => latest = *next,
             Ok(Request::Listen(listener)) => listeners.push(listener),
+            // The write that ends the wait comes after any change by hand, and wins.
+            Ok(Request::Changed) => {}
             Err(_) => return (latest, listeners),
         }
     }
